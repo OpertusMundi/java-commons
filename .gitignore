@@ -1,0 +1,9 @@
+/target
+/logs
+/.secrets
+/secrets
+
+.settings
+.project
+.classpath
+.factorypath
