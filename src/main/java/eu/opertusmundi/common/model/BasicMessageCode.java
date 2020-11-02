@@ -8,7 +8,7 @@ public enum BasicMessageCode implements MessageCode {
     // Error codes for 5XX HTTP status codes
     InternalServerError(HttpStatus.INTERNAL_SERVER_ERROR),
 
-    // Error codes 4XX HTTP status codes
+    // Error codes for 4XX HTTP status codes
     BadRequest(HttpStatus.BAD_REQUEST),
     Unauthorized(HttpStatus.UNAUTHORIZED),
     Forbidden(HttpStatus.FORBIDDEN),
@@ -32,6 +32,8 @@ public enum BasicMessageCode implements MessageCode {
     // Logging
     LogFailed(null),
 
+    // Generic errors
+    IOError(null),
     ;
 
     private final HttpStatus httpStatus;

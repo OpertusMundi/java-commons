@@ -1,10 +1,9 @@
 package eu.opertusmundi.common.model.dto;
 
 import java.io.Serializable;
-import java.util.List;
 
-import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Pattern;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -16,22 +15,25 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class AccountProfileCommandDto extends AccountProfileBaseDto implements Serializable {
+public class AccountProfileUpdateCommandDto extends AccountProfileBaseDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     @JsonIgnore
-    private Integer id;
-
-    @Valid
-    private List<AddressCommandDto> addresses;
+    protected Integer id;
 
     @Schema(description = "User first name", required = true)
     @NotEmpty
-    private String firstName;
+    protected String firstName;
 
     @Schema(description = "User last name", required = true)
     @NotEmpty
-    private String lastName;
+    protected String lastName;
+
+    @Schema(description = "User locale", required = false, defaultValue = "en")
+    @Pattern(regexp = "[a-z][a-z]")
+    @Getter
+    @Setter
+    protected String locale;
 
 }

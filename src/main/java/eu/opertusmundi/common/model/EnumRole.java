@@ -8,7 +8,8 @@ public enum EnumRole {
     ROLE_ADMIN(2, "Administrator"),
     ROLE_DEVELOPER(3, "Developer"),
     ROLE_PROVIDER(4, "Provider"),
-    ROLE_HELPDESK(5, "Helpdesk User"),
+    ROLE_CONSUMER(5, "Consumer"),
+    ROLE_HELPDESK(6, "Helpdesk User"),
     ;
 
     private final int    value;

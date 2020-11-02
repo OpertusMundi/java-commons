@@ -32,11 +32,11 @@ public class AccountProfileDto extends AccountProfileBaseDto implements Serializ
     @Schema(description = "Profile creation date")
     private ZonedDateTime createdOn;
 
-    @Schema(description = "True if public email is verified")
-    private boolean emailVerified;
+    @Schema(description = "Provider related data")
+    private ProviderData provider = new ProviderData();
 
-    @Schema(description = "When the public email has been verified")
-    private ZonedDateTime emailVerifiedAt;
+    @Schema(description = "Consumer related data")
+    private ConsumerData consumer = new ConsumerData();
 
     @Schema(description = "User first name")
     private String firstName;
@@ -44,20 +44,11 @@ public class AccountProfileDto extends AccountProfileBaseDto implements Serializ
     @Schema(description = "User last name")
     private String lastName;
 
+    @Schema(description = "User locale")
+    private String locale;
+
     @Schema(description = "Profile most recent update date")
     private ZonedDateTime modifiedOn;
-
-    @Schema(description = "Date of provider (publisher) registration")
-    private ZonedDateTime providerVerifiedAt;
-
-    @Schema(description = "Provider rating. If there are no ratings, null is returned.")
-    private Double rating;
-
-    @Schema(description = "True if user has accepted the service terms of use")
-    private boolean termsAccepted;
-
-    @Schema(description = "When user has accepted the service terms of use")
-    private ZonedDateTime termsAcceptedAt;
 
     @JsonIgnore
     public String getFullName() {
@@ -68,6 +59,43 @@ public class AccountProfileDto extends AccountProfileBaseDto implements Serializ
             return this.firstName;
         }
         return "";
+    }
+
+    public static class ProviderData implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        @Schema(description = "Current provider data. If provider is not registered, null is returned.")
+        @Getter
+        @Setter
+        private AccountProfileProviderDto current;
+
+        @Schema(description = "Provider draft data. If no update is active, null is returned.")
+        @Getter
+        @Setter
+        private AccountProfileProviderDraftDto draft;
+
+        @Schema(description = "True if the acount is a registered provider")
+        public boolean isRegistered() {
+            return this.current != null && this.current.getRegisteredOn() != null;
+        }
+
+    }
+
+    public static class ConsumerData implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        @Schema(description = "Consumer related data. If the user is not a registered consumer, null is returned.")
+        @Getter
+        @Setter
+        private AccountProfileConsumerDto current;
+
+        @Schema(description = "True if the account is a registered consumer")
+        public boolean isRegistered() {
+            return this.current != null && this.current.getRegisteredOn() != null;
+        }
+
     }
 
 }

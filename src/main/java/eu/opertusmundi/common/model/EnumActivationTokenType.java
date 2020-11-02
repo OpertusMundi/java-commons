@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public enum EnumActivationTokenType {
 
     ACCOUNT,
-    MAIL,
+    PROVIDER,
     ;
 
 }

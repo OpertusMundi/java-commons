@@ -1,20 +1,22 @@
 package eu.opertusmundi.common.model.dto;
 
-import java.io.Serializable;
 import java.time.ZonedDateTime;
-import java.util.UUID;
 
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class AddressDto extends AddressBaseDto implements Serializable {
+public class AccountProfileConsumerDto extends AccountProfileConsumerBaseDto {
 
     private static final long serialVersionUID = 1L;
 
-    private UUID          key;
-    private ZonedDateTime createdOn;
+    private AddressDto billingAddress;
+
+    private AddressDto shippingAddress;
+
+    private ZonedDateTime registeredOn;
+
     private ZonedDateTime modifiedOn;
 
 }

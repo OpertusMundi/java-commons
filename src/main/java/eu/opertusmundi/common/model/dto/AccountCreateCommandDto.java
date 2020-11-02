@@ -19,7 +19,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class AccountCommandDto extends AccountBaseDto implements Serializable {
+public class AccountCreateCommandDto extends AccountBaseDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -33,10 +33,6 @@ public class AccountCommandDto extends AccountBaseDto implements Serializable {
     @NotEmpty
     private String email;
 
-    @Schema(description = "User first name", required = true, deprecated = true)
-    @NotEmpty
-    private String firstName;
-
     @JsonIgnore
     private EnumAuthProvider idpName;
 
@@ -45,10 +41,6 @@ public class AccountCommandDto extends AccountBaseDto implements Serializable {
 
     @JsonIgnore
     private String idpUserImage;
-
-    @Schema(description = "User last name", required = true, deprecated = true)
-    @NotEmpty
-    private String lastName;
 
     @NotEmpty
     @Schema(description = "Account password", example = "s3cr3t", required = true)
@@ -61,7 +53,7 @@ public class AccountCommandDto extends AccountBaseDto implements Serializable {
     @Schema(description = "Account profile", required = true)
     @NotNull
     @Valid
-    private AccountProfileCommandDto profile;
+    private AccountProfileCreateCommandDto profile;
 
     @JsonIgnore
     protected Set<EnumRole> roles;

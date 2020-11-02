@@ -5,8 +5,6 @@ import java.time.ZonedDateTime;
 import java.util.Set;
 import java.util.UUID;
 
-import org.apache.commons.lang3.StringUtils;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import eu.opertusmundi.common.model.EnumActivationStatus;
@@ -33,26 +31,23 @@ public class AccountDto extends AccountBaseDto implements Serializable {
     @JsonIgnore
     private boolean blocked = false;
 
-    @Schema(description = "User email. Must be unique")
-    private String email;
-
-    @JsonIgnore
+    @Schema(description = "User unique key")
     private UUID key;
 
-    @Schema(description = "Date of account activation. Activation occurs when the user verifies his email address")
+    @Schema(description = "Date of account activation. Activation occurs when the user email is verified")
     private ZonedDateTime activatedAt;
 
     @Schema(description = "Activation status")
     private EnumActivationStatus activationStatus;
+
+    @Schema(description = "User email. Must be unique")
+    private String email;
 
     @Schema(description = "True if the email address is verified")
     private boolean emailVerified;
 
     @Schema(description = "Date of email verification")
     private ZonedDateTime emailVerifiedAt;
-
-    @JsonIgnore
-    private String firstName;
 
     @Schema(description = "IDP name used for account registration", example = "Google")
     private EnumAuthProvider idpName;
@@ -62,9 +57,6 @@ public class AccountDto extends AccountBaseDto implements Serializable {
 
     @Schema(description = "User image URL as retrieved by the IDP user info endpoint")
     private String idpUserImage;
-
-    @JsonIgnore
-    private String lastName;
 
     @Schema(description = "Date of registration")
     private ZonedDateTime registeredAt;
@@ -93,17 +85,6 @@ public class AccountDto extends AccountBaseDto implements Serializable {
             return false;
         }
         return this.roles.contains(role);
-    }
-
-    @JsonIgnore
-    public String getFullName() {
-        if (!StringUtils.isBlank(this.firstName)) {
-            if (!StringUtils.isBlank(this.lastName)) {
-                return this.firstName + " " + this.lastName;
-            }
-            return this.firstName;
-        }
-        return "";
     }
 
 }
