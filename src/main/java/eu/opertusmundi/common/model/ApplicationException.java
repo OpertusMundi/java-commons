@@ -10,28 +10,30 @@ import org.springframework.context.MessageSource;
 import org.springframework.util.Assert;
 
 public class ApplicationException extends RuntimeException {
+
     private static final long serialVersionUID = 1L;
 
     /**
-     * An error code that generally categorized this application-level exception.
+     * An error code that generally categorized this application-level
+     * exception.
      */
-    private final MessageCode   code;
+    private final MessageCode code;
 
     /**
-     * A message pattern for this exception (to be used when formatting with context
-     * variables)
+     * A message pattern for this exception (to be used when formatting with
+     * context variables)
      */
-    private String            pattern;
+    private String pattern;
 
     /**
      * A list of variables holding the context of this exception
      */
-    private List<Object>      vars;
+    private List<Object> vars;
 
     /**
      * A pre-formatted message for this exception
      */
-    private String            message;
+    private String message;
 
     private ApplicationException(Throwable cause, MessageCode code) {
         super(cause);

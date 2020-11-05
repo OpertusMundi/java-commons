@@ -1,7 +1,5 @@
 package eu.opertusmundi.common.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import lombok.Getter;
 
 public class ValidationMessage extends Message {
@@ -12,7 +10,6 @@ public class ValidationMessage extends Message {
     @Getter
     private final Object value;
 
-    @JsonIgnore
     @Getter
     private final Object[] arguments;
 

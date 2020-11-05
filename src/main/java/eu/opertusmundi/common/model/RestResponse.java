@@ -9,10 +9,6 @@ import org.springframework.validation.FieldError;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import eu.opertusmundi.common.model.BasicMessageCode;
-import eu.opertusmundi.common.model.Message;
-import eu.opertusmundi.common.model.MessageCode;
-import eu.opertusmundi.common.model.ValidationMessage;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public class RestResponse<Result> extends BaseResponse {
@@ -55,6 +51,26 @@ public class RestResponse<Result> extends BaseResponse {
 
     public static <R> RestResponse<R> failure() {
         return RestResponse.<R>error(new Message(BasicMessageCode.InternalServerError, "An error has occurred"));
+    }
+
+    public static <R> RestResponse<R> failure(MessageCode code, String description, Message.EnumLevel level) {
+        return RestResponse.<R>failure(new Message(code, description, level));
+    }
+
+    public static <R> RestResponse<R> failure(MessageCode code, String description) {
+        return failure(code, description, Message.EnumLevel.ERROR);
+    }
+
+    public static <R> RestResponse<R> failure(Message e) {
+        return new RestResponse<R>(null, Collections.singletonList(e));
+    }
+
+    public static <R> RestResponse<R> failure(List<Message> errors) {
+        return new RestResponse<R>(null, errors);
+    }
+
+    public static <R> RestResponse<R> accessDenied() {
+        return RestResponse.<R>failure(new Message(BasicMessageCode.Unauthorized, "Access Denied", Message.EnumLevel.ERROR));
     }
 
     public static <R> RestResponse<R> notFound() {

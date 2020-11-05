@@ -15,28 +15,40 @@ public enum BasicMessageCode implements MessageCode {
     NotFound(HttpStatus.NOT_FOUND),
 
     // Validation error codes
-    Validation(null),
-    ValidationNotUnique(null),
+    Validation,
+    ValidationNotUnique,
+    CannotDeleteSelf,
+    CannotRevokeLastAdmin,
+    ForeignKeyConstraint,
+    RecordNotFound,
+    ReferenceNotFound,
+    ValidationRequired,
+    ValidationValueMismatch,
 
     // Account
-    AccountNotFound(null),
-    EmailNotFound(null),
+    AccountNotFound,
+    EmailNotFound,
 
     // Activation Token
-    TokenNotFound(null),
-    TokenIsExpired(null),
+    TokenNotFound,
+    TokenIsExpired,
 
     // Mail
-    SendFailed(null),
+    SendFailed,
 
     // Logging
-    LogFailed(null),
+    LogFailed,
 
     // Generic errors
-    IOError(null),
+    NotImplemented,
+    IOError,
     ;
 
     private final HttpStatus httpStatus;
+
+    private BasicMessageCode() {
+        this.httpStatus = null;
+    }
 
     private BasicMessageCode(HttpStatus httpStatus) {
         this.httpStatus = httpStatus;
