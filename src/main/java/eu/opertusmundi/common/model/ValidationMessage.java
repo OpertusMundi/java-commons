@@ -18,7 +18,7 @@ public class ValidationMessage extends Message {
 
         this.field     = field;
         this.value     = value;
-        this.arguments = arguments;
+        this.arguments = null;
     }
 
 }

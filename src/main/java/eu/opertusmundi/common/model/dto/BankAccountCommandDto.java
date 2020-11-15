@@ -2,23 +2,25 @@ package eu.opertusmundi.common.model.dto;
 
 import java.io.Serializable;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@NoArgsConstructor
 @Getter
 @Setter
-public class AccountBaseDto implements Serializable {
+public class BankAccountCommandDto extends BankAccountBaseDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @JsonIgnore
-    protected boolean active;
+    @Valid
+    @NotNull
+    private AddressCommandDto ownerAddress;
 
     @JsonIgnore
-    protected boolean blocked;
+    private String tag;
 
 }

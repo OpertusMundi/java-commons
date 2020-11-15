@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import eu.opertusmundi.common.model.EnumProviderRegistrationStatus;
+import eu.opertusmundi.common.model.EnumCustomerRegistrationStatus;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
@@ -21,7 +21,7 @@ public class AccountProfileProviderDraftDto extends AccountProfileProviderBaseDt
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "Registration requests status")
-    private EnumProviderRegistrationStatus status;
+    private EnumCustomerRegistrationStatus status;
 
     @Schema(description = "Key for the contract generated during the provider registration")
     UUID contract;

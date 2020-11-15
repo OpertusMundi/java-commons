@@ -23,6 +23,7 @@
     	<commons-collections4.version>4.4</commons-collections4.version>
     	<commons-io.version>2.8.0</commons-io.version>
  	    <jackson-datatype-jts.version>2.4</jackson-datatype-jts.version>
+        <com.mangopay.version>2.11.5</com.mangopay.version>
  	    <springdoc.version>1.2.34</springdoc.version>
     </properties>
 
@@ -68,7 +69,6 @@
    	
         <!-- Hibernate -->
 
-        <!-- needed to support java-8 date types -->
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-java8</artifactId>
@@ -84,7 +84,7 @@
             <artifactId>hibernate-spatial</artifactId>
         </dependency>
 
-        <!-- Jackson JSON extra serializers -->
+        <!-- JSON extra serializers -->
 
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -125,11 +125,12 @@
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-jdbc</artifactId>
         </dependency>
-
-		<!-- Send email -->
+	
+	    <!-- MangoPay dependencies -->
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-mail</artifactId>
+		    <groupId>com.mangopay</groupId>
+		    <artifactId>mangopay2-java-sdk</artifactId>
+		    <version>${com.mangopay.version}</version>
 		</dependency>
 		
 		<!-- Open API documentation -->

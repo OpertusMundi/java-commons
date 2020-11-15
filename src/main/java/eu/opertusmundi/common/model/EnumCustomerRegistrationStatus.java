@@ -1,10 +1,9 @@
 package eu.opertusmundi.common.model;
 
-public enum EnumProviderRegistrationStatus {
+public enum EnumCustomerRegistrationStatus {
     DRAFT,
-    SUBMITTED,
-    ACCEPTED,
-    COMPLETED,
     CANCELLED,
+    SUBMITTED,
+    COMPLETED,
     ;
 }

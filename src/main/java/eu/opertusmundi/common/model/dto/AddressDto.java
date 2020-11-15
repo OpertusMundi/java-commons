@@ -1,8 +1,6 @@
 package eu.opertusmundi.common.model.dto;
 
 import java.io.Serializable;
-import java.time.ZonedDateTime;
-import java.util.UUID;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -12,9 +10,5 @@ import lombok.Setter;
 public class AddressDto extends AddressBaseDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
-    private UUID          key;
-    private ZonedDateTime createdOn;
-    private ZonedDateTime modifiedOn;
 
 }

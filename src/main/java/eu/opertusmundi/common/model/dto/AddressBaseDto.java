@@ -1,11 +1,10 @@
 package eu.opertusmundi.common.model.dto;
 
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotEmpty;
 
-import org.hibernate.validator.constraints.Length;
-
-import eu.opertusmundi.common.model.EnumAddressType;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,30 +13,25 @@ import lombok.Setter;
 @Setter
 public class AddressBaseDto {
 
-    @Length(max = 120)
-    protected String streetName;
+    @NotEmpty
+    private String line1;
 
-    @Length(max = 10)
-    protected String streetNumber;
+    private String line2;
 
-    @Length(max = 120)
-    protected String city;
+    @NotEmpty
+    private String city;
 
-    @Length(max = 80)
-    protected String region;
+    @NotEmpty
+    private String region;
 
-    @Length(max = 40)
-    protected String country;
+    @NotEmpty
+    private String postalCode;
 
-    @Length(max = 10)
-    protected String postalCode;
-
-    @Length(max = 10)
-    protected String floorApartment;
-
-    @NotNull
-    protected EnumAddressType type;
-
-    protected boolean main;
+    @Schema(
+        description = "The Country of the Address",
+        externalDocs = @ExternalDocumentation(url = "https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2")
+    )
+    @NotEmpty
+    private String country;
 
 }

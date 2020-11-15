@@ -7,8 +7,10 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class AddressCommandDto extends AddressBaseDto implements Serializable {
+public class CustomerRepresentativeDto extends CustomerRepresentativeBaseDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    private AddressDto    address;
 
 }

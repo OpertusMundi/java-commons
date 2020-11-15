@@ -23,13 +23,8 @@ public class AccountDto extends AccountBaseDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    // Account properties specific to OpertusMundi
-
     @JsonIgnore
-    private boolean active = true;
-
-    @JsonIgnore
-    private boolean blocked = false;
+    protected Integer id;
 
     @Schema(description = "User unique key")
     private UUID key;
@@ -53,7 +48,7 @@ public class AccountDto extends AccountBaseDto implements Serializable {
     private EnumAuthProvider idpName;
 
     @Schema(description = "User name as retrieved by the IDP user info endpoint")
-    private String idpUserAlias;
+    private String idpUserName;
 
     @Schema(description = "User image URL as retrieved by the IDP user info endpoint")
     private String idpUserImage;

@@ -1,11 +1,9 @@
 package eu.opertusmundi.common.model.dto;
 
 import java.io.Serializable;
-import java.util.List;
 
-import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,13 +16,11 @@ public class AccountProfileCreateCommandDto extends AccountProfileUpdateCommandD
 
     private static final long serialVersionUID = 1L;
 
-    @ArraySchema(
-        arraySchema = @Schema(
-            description = "User addreses"
-        ),
-        minItems = 0
-    )
-    @Valid
-    private List<AddressCommandDto> addresses;
+    @Schema(description = "User mobile", required = true)
+    @NotEmpty
+    protected String mobile;
+
+    @Schema(description = "User phone", required = false)
+    protected String phone;
 
 }

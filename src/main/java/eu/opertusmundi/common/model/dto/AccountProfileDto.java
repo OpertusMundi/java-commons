@@ -2,13 +2,11 @@ package eu.opertusmundi.common.model.dto;
 
 import java.io.Serializable;
 import java.time.ZonedDateTime;
-import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,16 +19,8 @@ public class AccountProfileDto extends AccountProfileBaseDto implements Serializ
 
     private static final long serialVersionUID = 1L;
 
-    @ArraySchema(
-        arraySchema = @Schema(
-            description = "User addreses"
-        ),
-        minItems = 0
-    )
-    private List<AddressDto> addresses;
-
     @Schema(description = "Profile creation date")
-    private ZonedDateTime createdOn;
+    private ZonedDateTime createdAt;
 
     @Schema(description = "Provider related data")
     private ProviderData provider = new ProviderData();
@@ -48,7 +38,7 @@ public class AccountProfileDto extends AccountProfileBaseDto implements Serializ
     private String locale;
 
     @Schema(description = "Profile most recent update date")
-    private ZonedDateTime modifiedOn;
+    private ZonedDateTime modifiedAt;
 
     @JsonIgnore
     public String getFullName() {
@@ -68,16 +58,16 @@ public class AccountProfileDto extends AccountProfileBaseDto implements Serializ
         @Schema(description = "Current provider data. If provider is not registered, null is returned.")
         @Getter
         @Setter
-        private AccountProfileProviderDto current;
+        private CustomerProfessionalDto current;
 
         @Schema(description = "Provider draft data. If no update is active, null is returned.")
         @Getter
         @Setter
-        private AccountProfileProviderDraftDto draft;
+        private CustomerDraftProfessionalDto draft;
 
         @Schema(description = "True if the acount is a registered provider")
         public boolean isRegistered() {
-            return this.current != null && this.current.getRegisteredOn() != null;
+            return this.current != null;
         }
 
     }
@@ -86,14 +76,25 @@ public class AccountProfileDto extends AccountProfileBaseDto implements Serializ
 
         private static final long serialVersionUID = 1L;
 
-        @Schema(description = "Consumer related data. If the user is not a registered consumer, null is returned.")
+        @Schema(
+            description = "Current consumer data. If a consumer is not registered, null is returned.",
+            oneOf = {CustomerIndividualDto.class, CustomerProfessionalDto.class}
+        )
         @Getter
         @Setter
-        private AccountProfileConsumerDto current;
+        private CustomerDto current;
+
+        @Schema(
+            description = "Consumer draft data. If no update is active, null is returned.",
+            oneOf = {CustomerDraftIndividualDto.class, CustomerDraftProfessionalDto.class}
+        )
+        @Getter
+        @Setter
+        private CustomerDraftDto draft;
 
         @Schema(description = "True if the account is a registered consumer")
         public boolean isRegistered() {
-            return this.current != null && this.current.getRegisteredOn() != null;
+            return this.current != null;
         }
 
     }

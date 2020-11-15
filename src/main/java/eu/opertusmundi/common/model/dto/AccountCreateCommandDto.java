@@ -23,24 +23,12 @@ public class AccountCreateCommandDto extends AccountBaseDto implements Serializa
 
     private static final long serialVersionUID = 1L;
 
-    @JsonIgnore
-    private boolean active = true;
-
-    @JsonIgnore
-    private boolean blocked = false;
-
     @Schema(description = "User email. Must be unique", required = true)
     @NotEmpty
     private String email;
 
     @JsonIgnore
     private EnumAuthProvider idpName;
-
-    @JsonIgnore
-    private String idpUserAlias;
-
-    @JsonIgnore
-    private String idpUserImage;
 
     @NotEmpty
     @Schema(description = "Account password", example = "s3cr3t", required = true)
@@ -53,7 +41,7 @@ public class AccountCreateCommandDto extends AccountBaseDto implements Serializa
     @Schema(description = "Account profile", required = true)
     @NotNull
     @Valid
-    private AccountProfileCreateCommandDto profile;
+    private AccountProfileCreateCommandDto profile = new AccountProfileCreateCommandDto();
 
     @JsonIgnore
     protected Set<EnumRole> roles;
