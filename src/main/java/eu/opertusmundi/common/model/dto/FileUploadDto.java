@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import eu.opertusmundi.common.model.EnumOwningEntityType;
+import eu.opertusmundi.common.model.EnumFileSystemType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -24,7 +24,7 @@ public class FileUploadDto {
     private String               fileName;
     private UUID                 key;
     private UUID                 owningEntityKey;
-    private EnumOwningEntityType owningEntityType;
+    private EnumFileSystemType owningEntityType;
     private Long                 size;
 
 }

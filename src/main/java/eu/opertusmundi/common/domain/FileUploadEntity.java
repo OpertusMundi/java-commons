@@ -19,7 +19,7 @@ import javax.validation.constraints.NotNull;
 
 import org.hibernate.annotations.NaturalId;
 
-import eu.opertusmundi.common.model.EnumOwningEntityType;
+import eu.opertusmundi.common.model.EnumFileSystemType;
 import eu.opertusmundi.common.model.dto.FileUploadDto;
 import lombok.Getter;
 import lombok.Setter;
@@ -60,7 +60,7 @@ public class FileUploadEntity {
     @Enumerated(EnumType.STRING)
     @Getter
     @Setter
-    private EnumOwningEntityType owningEntityType;
+    private EnumFileSystemType owningEntityType;
 
     @NotNull
     @Column(name = "`created_on`")
