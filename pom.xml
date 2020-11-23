@@ -20,13 +20,30 @@
     </parent>
 
     <properties>
+    	<spring-cloud.version>Hoxton.SR8</spring-cloud.version>
+
+        <com.mangopay.version>2.11.5</com.mangopay.version>    
     	<commons-collections4.version>4.4</commons-collections4.version>
     	<commons-io.version>2.8.0</commons-io.version>
+    	<feign-form.version>3.8.0</feign-form.version>
  	    <jackson-datatype-jts.version>2.4</jackson-datatype-jts.version>
-        <com.mangopay.version>2.11.5</com.mangopay.version>
+ 	    <org.locationtech.jts.version>1.17.1</org.locationtech.jts.version>
+        <org.locationtech.jts.spatial4j.version>0.7</org.locationtech.jts.spatial4j.version>
  	    <springdoc.version>1.2.34</springdoc.version>
     </properties>
 
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring-cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+	
     <dependencies>
 
         <!-- Spring-Boot starter dependencies -->
@@ -64,9 +81,26 @@
 		<dependency>
 			<groupId>org.springframework.security.oauth.boot</groupId>
 			<artifactId>spring-security-oauth2-autoconfigure</artifactId>
-			<version>2.3.4.RELEASE</version>
 		</dependency>
-   	
+
+		<!-- Spring Cloud -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-openfeign</artifactId>
+		</dependency>
+
+		<!-- Feign client encoders -->
+		<dependency>
+			<groupId>io.github.openfeign.form</groupId>
+			<artifactId>feign-form</artifactId>
+			<version>${feign-form.version}</version>
+		</dependency>
+	
+		<dependency>
+			<groupId>io.github.openfeign.form</groupId>
+			<artifactId>feign-form-spring</artifactId>
+		</dependency>
+  
         <!-- Hibernate -->
 
         <dependency>
@@ -84,7 +118,7 @@
             <artifactId>hibernate-spatial</artifactId>
         </dependency>
 
-        <!-- JSON extra serializers -->
+        <!-- JSON  -->
 
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -92,10 +126,10 @@
         </dependency>
 
         <dependency>
-            <groupId>com.bedatadriven</groupId>
-            <artifactId>jackson-datatype-jts</artifactId>
-            <version>${jackson-datatype-jts.version}</version>
-        </dependency>
+            <groupId>org.locationtech.spatial4j</groupId>
+            <artifactId>spatial4j</artifactId>
+            <version>${org.locationtech.jts.spatial4j.version}</version>
+        </dependency>       
 
 		<!-- Utilities -->
 		<dependency>
