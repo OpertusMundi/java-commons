@@ -5,7 +5,7 @@ import java.util.UUID;
 import eu.opertusmundi.common.model.dto.AccountDto;
 import eu.opertusmundi.common.model.dto.ProviderProfessionalCommandDto;
 
-public interface ProviderService {
+public interface ProviderRegistrationService {
 
     /**
      * Update provider draft data

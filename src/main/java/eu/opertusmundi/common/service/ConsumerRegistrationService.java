@@ -5,7 +5,7 @@ import java.util.UUID;
 import eu.opertusmundi.common.model.dto.AccountDto;
 import eu.opertusmundi.common.model.dto.CustomerCommandDto;
 
-public interface ConsumerService {
+public interface ConsumerRegistrationService {
 
     /**
      * Update consumer draft data
