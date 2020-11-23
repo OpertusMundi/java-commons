@@ -13,9 +13,9 @@ import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang3.StringUtils;
 
+import eu.opertusmundi.common.model.dto.ConsumerIndividualCommandDto;
 import eu.opertusmundi.common.model.dto.CustomerCommandDto;
 import eu.opertusmundi.common.model.dto.CustomerDto;
-import eu.opertusmundi.common.model.dto.ConsumerIndividualCommandDto;
 import eu.opertusmundi.common.model.dto.CustomerIndividualDto;
 import eu.opertusmundi.common.model.dto.EnumCustomerType;
 import eu.opertusmundi.common.model.dto.EnumKycLevel;
@@ -183,7 +183,7 @@ public class CustomerIndividualEntity extends CustomerEntity {
         c.setId(this.id);
         c.setKycLevel(this.kycLevel);
         c.setLastName(this.lastName);
-        c.setModifiedAt(this.birthdate);
+        c.setModifiedAt(this.modifiedAt);
         c.setNationality(this.nationality);
         c.setOccupation(this.occupation);
         c.setPaymentProviderUser(this.paymentProviderUser);
