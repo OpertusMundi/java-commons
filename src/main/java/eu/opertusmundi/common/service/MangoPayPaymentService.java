@@ -54,13 +54,13 @@ public class MangoPayPaymentService implements PaymentService {
 
     private static final Logger logger = LoggerFactory.getLogger(MangoPayPaymentService.class);
 
-    @Value("${opertusmundi.payments.mangopay.base-url}")
+    @Value("${opertusmundi.payments.mangopay.base-url:}")
     private String baseUrl;
 
-    @Value("${opertusmundi.payments.mangopay.client-id}")
+    @Value("${opertusmundi.payments.mangopay.client-id:}")
     private String clientId;
 
-    @Value("${opertusmundi.payments.mangopay.client-password}")
+    @Value("${opertusmundi.payments.mangopay.client-password:}")
     private String clientPassword;
 
     private MangoPayApi api;
