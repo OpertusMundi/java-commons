@@ -49,10 +49,8 @@ public class BaseCatalogueItemDto {
         this.scale                       = props.getScale();
         this.spatialDataServiceType      = props.getSpatialDataServiceType();
         this.spatialResolution           = props.getSpatialResolution();
-        this.title                       = props.getTitle();
         this.topicCategory               = props.getTopicCategory();
         this.type                        = props.getType();
-        this.version                     = props.getVersion();
 
         this.geometry = feature.getGeometry();
 
@@ -161,9 +159,6 @@ public class BaseCatalogueItemDto {
     @Schema(description = "Spatial resolution refers to the level of detail of the data set", example = "")
     private String spatialResolution;
 
-    @Schema(description = "A name given to the resource", example = "")
-    private String title;
-
     @Schema(
         description = "A high-level classification scheme to assist in the grouping and topic-based "
                     + "search of available spatial data resources",
@@ -173,9 +168,6 @@ public class BaseCatalogueItemDto {
 
     @Schema(description = "The nature or genre of the resource", example = "")
     private String type;
-
-    @Schema(description = "Version of the resource", example = "")
-    private String version;
 
     @Schema(implementation = GeometryAsJson.class, description = "Geometry as GeoJSON")
     private Geometry geometry;

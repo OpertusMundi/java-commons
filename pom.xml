@@ -27,6 +27,7 @@
     	<commons-io.version>2.8.0</commons-io.version>
     	<feign-form.version>3.8.0</feign-form.version>
  	    <jackson-datatype-jts.version>2.4</jackson-datatype-jts.version>
+        <org.camunda.bpm.version>7.13.0</org.camunda.bpm.version>
  	    <org.locationtech.jts.version>1.17.1</org.locationtech.jts.version>
         <org.locationtech.jts.spatial4j.version>0.7</org.locationtech.jts.spatial4j.version>
  	    <springdoc.version>1.2.34</springdoc.version>
@@ -167,6 +168,20 @@
 		    <version>${com.mangopay.version}</version>
 		</dependency>
 		
+		<!-- Camunda dependencies (no engine is configured, we only use DTO definitions -->
+		<dependency>
+		    <groupId>org.camunda.bpm</groupId>
+		    <artifactId>camunda-engine</artifactId>
+		    <version>${org.camunda.bpm.version}</version>
+		    <scope>provided</scope>
+		</dependency>
+
+	    <dependency>
+	      <groupId>org.camunda.bpm</groupId>
+	      <artifactId>camunda-engine-rest-core</artifactId>
+	      <version>${org.camunda.bpm.version}</version>
+	    </dependency>
+	    
 		<!-- Open API documentation -->
 		<dependency>
 		    <groupId>org.springdoc</groupId>

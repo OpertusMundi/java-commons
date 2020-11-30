@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import org.locationtech.jts.geom.Geometry;
 
-import eu.opertusmundi.common.model.catalogue.client.CatalogueAddItemCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemStoreStatistics;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import lombok.Getter;
@@ -16,8 +16,8 @@ import lombok.Setter;
 @Setter
 public class CatalogueFeature {
 
-    public CatalogueFeature(CatalogueAddItemCommandDto command) {
-        this.id       = command.getId() == null ? "" : command.getId().toString();
+    public CatalogueFeature(CatalogueItemCommandDto command) {
+        this.id       = command.getAssetKey() == null ? "" : command.getAssetKey().toString();
         this.type     = "Feature";
         this.geometry = command.getGeometry();
 
@@ -43,7 +43,7 @@ public class CatalogueFeature {
         this.properties.setPublicAccessLimitations(command.getPublicAccessLimitations());
         this.properties.setPublicationDate(command.getPublicationDate());
         this.properties.setPublisherEmail(command.getPublisherEmail());
-        this.properties.setPublisherId(command.getPublisherId());
+        this.properties.setPublisherId(command.getPublisherKey());
         this.properties.setPublisherName(command.getPublisherName());
         this.properties.setReferenceSystem(command.getReferenceSystem());
         this.properties.setResourceLocator(command.getResourceLocator());

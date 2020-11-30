@@ -8,7 +8,7 @@ import lombok.Setter;
 @Setter
 public class CatalogueClientSetStatusCommandDto {
 
-    @Schema(description = "Item new status")
+    @Schema(description = "Draft new status")
     private EnumDraftStatus status;
 
 }

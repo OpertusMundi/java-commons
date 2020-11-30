@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.model.catalogue.client;
 
+import java.io.Serializable;
+
 import org.springframework.util.Assert;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -10,7 +12,9 @@ import eu.opertusmundi.common.model.dto.PublisherDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
-public class CatalogueItemDetailsDto extends CatalogueItemDto {
+public class CatalogueItemDetailsDto extends CatalogueItemDto implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     public CatalogueItemDetailsDto(CatalogueFeature feature) {
         super(feature);

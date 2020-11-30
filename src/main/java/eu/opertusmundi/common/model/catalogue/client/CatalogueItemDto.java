@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.model.catalogue.client;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -14,7 +15,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @NoArgsConstructor
-public class CatalogueItemDto extends BaseCatalogueItemDto {
+public class CatalogueItemDto extends BaseCatalogueItemDto implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     public CatalogueItemDto(CatalogueFeature feature) {
         super(feature);
@@ -23,6 +26,8 @@ public class CatalogueItemDto extends BaseCatalogueItemDto {
 
         this.publisherId = feature.getProperties().getPublisherId();
         this.statistics  = feature.getProperties().getStoreStatistics();
+        this.title       = feature.getProperties().getTitle();
+        this.version     = feature.getProperties().getVersion();
 
         // Initialize with an empty collection. Caller must compute the
         // effective pricing models
@@ -55,5 +60,11 @@ public class CatalogueItemDto extends BaseCatalogueItemDto {
     @Getter
     @Setter
     private CatalogueItemStoreStatistics statistics;
+
+    @Schema(description = "A name given to the resource")
+    private String title;
+
+    @Schema(description = "Version of the resource")
+    private String version;
 
 }

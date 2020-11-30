@@ -271,7 +271,6 @@ public class AccountEntity {
             return null;
         }
 
-
         final PublisherDto publisher = new PublisherDto();
 
         final CustomerProfessionalEntity provider = this.profile.getProvider();
