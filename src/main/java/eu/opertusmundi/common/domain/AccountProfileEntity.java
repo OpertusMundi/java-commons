@@ -19,7 +19,7 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.Type;
 
 import eu.opertusmundi.common.model.dto.AccountProfileDto;
-import eu.opertusmundi.common.model.dto.AccountProfileUpdateCommandDto;
+import eu.opertusmundi.common.model.dto.AccountProfileCommandDto;
 import eu.opertusmundi.common.model.dto.CustomerDraftDto;
 import eu.opertusmundi.common.model.dto.CustomerDraftProfessionalDto;
 import eu.opertusmundi.common.model.dto.CustomerDto;
@@ -115,7 +115,7 @@ public class AccountProfileEntity {
      *
      * @param command The command object
      */
-    public void update(AccountProfileUpdateCommandDto command) {
+    public void update(AccountProfileCommandDto command) {
         this.phone         = command.getPhone();
         this.mobile        = command.getMobile();
         this.image         = command.getImage();
@@ -157,14 +157,14 @@ public class AccountProfileEntity {
         }
 
         // Set profile data
-        profile.setCreatedAt(this.createdAt);
+        profile.setCreatedOn(this.createdAt);
         profile.setFirstName(this.account.getFirstName());
         profile.setImage(this.image);
         profile.setImageMimeType(this.imageMimeType);
         profile.setLastName(this.account.getLastName());
         profile.setLocale(this.account.getLocale());
         profile.setMobile(this.mobile);
-        profile.setModifiedAt(this.modifiedAt);
+        profile.setModifiedOn(this.modifiedAt);
         profile.setPhone(this.phone);
 
         return profile;

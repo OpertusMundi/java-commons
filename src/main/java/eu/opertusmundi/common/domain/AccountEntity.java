@@ -32,7 +32,7 @@ import eu.opertusmundi.common.model.EnumActivationStatus;
 import eu.opertusmundi.common.model.EnumAuthProvider;
 import eu.opertusmundi.common.model.EnumRole;
 import eu.opertusmundi.common.model.dto.AccountDto;
-import eu.opertusmundi.common.model.dto.AccountProfileUpdateCommandDto;
+import eu.opertusmundi.common.model.dto.AccountProfileCommandDto;
 import eu.opertusmundi.common.model.dto.PublisherDto;
 import eu.opertusmundi.common.model.dto.SimplAccountDto;
 import lombok.Getter;
@@ -310,7 +310,7 @@ public class AccountEntity {
      *
      * @param command The command object
      */
-    public void update(AccountProfileUpdateCommandDto command) {
+    public void update(AccountProfileCommandDto command) {
         if (!StringUtils.isBlank(command.getFirstName())) {
             this.firstName = command.getFirstName();
         }

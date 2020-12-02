@@ -25,9 +25,9 @@ import eu.opertusmundi.common.model.EnumActivationStatus;
 import eu.opertusmundi.common.model.EnumAuthProvider;
 import eu.opertusmundi.common.model.EnumCustomerRegistrationStatus;
 import eu.opertusmundi.common.model.EnumRole;
-import eu.opertusmundi.common.model.dto.AccountCreateCommandDto;
+import eu.opertusmundi.common.model.dto.AccountCommandDto;
 import eu.opertusmundi.common.model.dto.AccountDto;
-import eu.opertusmundi.common.model.dto.AccountProfileUpdateCommandDto;
+import eu.opertusmundi.common.model.dto.AccountProfileCommandDto;
 import eu.opertusmundi.common.model.dto.CustomerCommandDto;
 import eu.opertusmundi.common.model.dto.ProviderProfessionalCommandDto;
 
@@ -63,7 +63,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     Optional<AccountEntity> findOneByEmailAndIdNot(String email, Integer id);
 
     @Transactional(readOnly = false)
-    default AccountDto updateProfile(AccountProfileUpdateCommandDto command) {
+    default AccountDto updateProfile(AccountProfileCommandDto command) {
         // Get account
         final AccountEntity account = this.findById(command.getId()).orElse(null);
 
@@ -86,7 +86,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     }
 
     @Transactional(readOnly = false)
-    default AccountDto create(AccountCreateCommandDto command) {
+    default AccountDto create(AccountCommandDto command) {
         final AccountEntity        account = new AccountEntity();
         final AccountProfileEntity profile = new AccountProfileEntity();
 

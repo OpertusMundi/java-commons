@@ -19,7 +19,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class AccountCreateCommandDto extends AccountBaseDto implements Serializable {
+public class AccountCommandDto extends AccountBaseDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -34,16 +34,16 @@ public class AccountCreateCommandDto extends AccountBaseDto implements Serializa
     @Schema(description = "Account password", example = "s3cr3t", required = true)
     private String password;
 
-    @NotEmpty
-    @Schema(description = "Account password verification. Must match property password.", example = "s3cr3t", required = true)
-    private String verifyPassword;
-
     @Schema(description = "Account profile", required = true)
     @NotNull
     @Valid
-    private AccountProfileCreateCommandDto profile = new AccountProfileCreateCommandDto();
+    private AccountProfileCommandDto profile;
 
     @JsonIgnore
     protected Set<EnumRole> roles;
+
+    @NotEmpty
+    @Schema(description = "Account password verification. Must match property password.", example = "s3cr3t", required = true)
+    private String verifyPassword;
 
 }

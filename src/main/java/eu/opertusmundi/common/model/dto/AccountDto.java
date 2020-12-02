@@ -23,12 +23,6 @@ public class AccountDto extends AccountBaseDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @JsonIgnore
-    protected Integer id;
-
-    @Schema(description = "User unique key")
-    private UUID key;
-
     @Schema(description = "Date of account activation. Activation occurs when the user email is verified")
     private ZonedDateTime activatedAt;
 
@@ -44,6 +38,9 @@ public class AccountDto extends AccountBaseDto implements Serializable {
     @Schema(description = "Date of email verification")
     private ZonedDateTime emailVerifiedAt;
 
+    @JsonIgnore
+    protected Integer id;
+
     @Schema(description = "IDP name used for account registration", example = "Google")
     private EnumAuthProvider idpName;
 
@@ -53,8 +50,8 @@ public class AccountDto extends AccountBaseDto implements Serializable {
     @Schema(description = "User image URL as retrieved by the IDP user info endpoint")
     private String idpUserImage;
 
-    @Schema(description = "Date of registration")
-    private ZonedDateTime registeredAt;
+    @Schema(description = "User unique key")
+    private UUID key;
 
     @JsonIgnore
     private String password;
@@ -62,10 +59,8 @@ public class AccountDto extends AccountBaseDto implements Serializable {
     @Schema(description = "User profile")
     private AccountProfileDto profile;
 
-    @Schema(description = "User name (always equal to user email)")
-    public String getUsername() {
-        return this.email;
-    }
+    @Schema(description = "Date of registration")
+    private ZonedDateTime registeredAt;
 
     @ArraySchema(
         arraySchema = @Schema(
@@ -74,6 +69,11 @@ public class AccountDto extends AccountBaseDto implements Serializable {
         minItems = 1
     )
     private Set<EnumRole> roles;
+
+    @Schema(description = "User name (always equal to user email)")
+    public String getUsername() {
+        return this.email;
+    }
 
     public boolean hasRole(EnumRole role) {
         if (this.roles == null) {

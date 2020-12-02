@@ -19,14 +19,11 @@ public class AccountProfileDto extends AccountProfileBaseDto implements Serializ
 
     private static final long serialVersionUID = 1L;
 
-    @Schema(description = "Profile creation date")
-    private ZonedDateTime createdAt;
-
-    @Schema(description = "Provider related data")
-    private ProviderData provider = new ProviderData();
-
     @Schema(description = "Consumer related data")
     private ConsumerData consumer = new ConsumerData();
+
+    @Schema(description = "Profile creation date")
+    private ZonedDateTime createdOn;
 
     @Schema(description = "User first name")
     private String firstName;
@@ -34,11 +31,13 @@ public class AccountProfileDto extends AccountProfileBaseDto implements Serializ
     @Schema(description = "User last name")
     private String lastName;
 
-    @Schema(description = "User locale")
-    private String locale;
+    private String mobile;
 
     @Schema(description = "Profile most recent update date")
-    private ZonedDateTime modifiedAt;
+    private ZonedDateTime modifiedOn;
+
+    @Schema(description = "Provider related data")
+    private ProviderData provider = new ProviderData();
 
     @JsonIgnore
     public String getFullName() {
@@ -65,7 +64,7 @@ public class AccountProfileDto extends AccountProfileBaseDto implements Serializ
         @Setter
         private CustomerDraftProfessionalDto draft;
 
-        @Schema(description = "True if the acount is a registered provider")
+        @Schema(description = "True if the account is a registered provider")
         public boolean isRegistered() {
             return this.current != null;
         }
