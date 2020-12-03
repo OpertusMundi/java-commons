@@ -1,6 +1,5 @@
-package eu.opertusmundi.common.model;
+package eu.opertusmundi.common.model.ingest;
 
-import eu.opertusmundi.common.model.ingest.IngestServiceMessageCode;
 import lombok.Getter;
 
 public class IngestServiceException extends RuntimeException {

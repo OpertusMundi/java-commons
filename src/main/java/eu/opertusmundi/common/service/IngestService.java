@@ -1,8 +1,8 @@
 package eu.opertusmundi.common.service;
 
-import eu.opertusmundi.common.model.IngestServiceException;
 import eu.opertusmundi.common.model.ingest.ClientEndpointsDto;
 import eu.opertusmundi.common.model.ingest.ClientStatusDto;
+import eu.opertusmundi.common.model.ingest.IngestServiceException;
 import eu.opertusmundi.common.model.ingest.ServerIngestDeferredResponseDto;
 
 public interface IngestService {

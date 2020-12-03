@@ -12,10 +12,10 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.feign.client.IngestServiceFeignClient;
-import eu.opertusmundi.common.model.IngestServiceException;
 import eu.opertusmundi.common.model.ingest.ClientEndpointsDto;
 import eu.opertusmundi.common.model.ingest.ClientStatusDto;
 import eu.opertusmundi.common.model.ingest.EnumIngestResponse;
+import eu.opertusmundi.common.model.ingest.IngestServiceException;
 import eu.opertusmundi.common.model.ingest.IngestServiceMessageCode;
 import eu.opertusmundi.common.model.ingest.ServerIngestDeferredResponseDto;
 
