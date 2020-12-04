@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ServerStatusResponseDto {
+public class ServerIngestStatusResponseDto {
 
     private String comment;
 

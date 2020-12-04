@@ -10,9 +10,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import eu.opertusmundi.common.feign.client.config.IngestServiceClientConfiguration;
+import eu.opertusmundi.common.model.ingest.ServerIngestDeferredResponseDto;
+import eu.opertusmundi.common.model.ingest.ServerIngestEndpointsResponseDto;
+import eu.opertusmundi.common.model.ingest.ServerIngestStatusResponseDto;
 import feign.Headers;
 
 @FeignClient(
@@ -23,7 +24,7 @@ import feign.Headers;
 public interface IngestServiceFeignClient {
 
     /**
-     * Start a new job
+     * Start a new synchronous job
      *
      * @param resource Resource file
      * @param responseType Response type
@@ -35,7 +36,25 @@ public interface IngestServiceFeignClient {
         produces = MediaType.APPLICATION_JSON_VALUE
     )
     @Headers("Content-Type: multipart/form-data")
-    ResponseEntity<JsonNode> ingest(
+    ResponseEntity<ServerIngestEndpointsResponseDto> ingestSync(
+        @RequestPart(name = "resource", required = true) File resource,
+        @RequestPart(name = "response", required = true) String responseType
+    );
+
+    /**
+     * Start a new asynchronous job
+     *
+     * @param resource Resource file
+     * @param responseType Response type
+     * @return
+     */
+    @PostMapping(
+        value   = "/ingest",
+        consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    @Headers("Content-Type: multipart/form-data")
+    ResponseEntity<ServerIngestDeferredResponseDto> ingestAsync(
         @RequestPart(name = "resource", required = true) File resource,
         @RequestPart(name = "response", required = true) String responseType
     );
@@ -47,7 +66,7 @@ public interface IngestServiceFeignClient {
      * @return
      */
     @GetMapping(value = "/status/{ticket}", produces = "application/json")
-    ResponseEntity<JsonNode> getStatus(@RequestParam("ticket") String ticket);
+    ResponseEntity<ServerIngestStatusResponseDto> getStatus(@RequestParam("ticket") String ticket);
 
     /**
      * Get endpoints for ticket
@@ -56,6 +75,6 @@ public interface IngestServiceFeignClient {
      * @return
      */
     @GetMapping(value = "/endpoints/{ticket}", produces = "application/json")
-    ResponseEntity<JsonNode> getEndpoints(@RequestParam("ticket") String ticket);
+    ResponseEntity<ServerIngestEndpointsResponseDto> getEndpoints(@RequestParam("ticket") String ticket);
 
 }

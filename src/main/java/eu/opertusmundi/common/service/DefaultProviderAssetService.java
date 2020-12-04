@@ -1,6 +1,5 @@
 package eu.opertusmundi.common.service;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,9 +32,12 @@ import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.asset.AssetDraftReviewCommandDto;
 import eu.opertusmundi.common.model.asset.AssetDraftSetStatusCommandDto;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
+import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftSortField;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
+import eu.opertusmundi.common.model.dto.EnumSortingOrder;
+import eu.opertusmundi.common.model.profiler.EnumDataProfilerSourceType;
 import eu.opertusmundi.common.repository.ProviderAssetDraftRepository;
 import feign.FeignException;
 
@@ -52,15 +54,6 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     private static final String MESSAGE_PROVIDER_REVIEW = "provider-publish-asset-user-acceptance-message";
 
-    private final List<String> sortableFields = Arrays.asList(
-        "status",
-        "createdOn",
-        "modifiedOn",
-        "title",
-        "version",
-        "account.profile.provider.name"
-    );
-
     @Autowired
     private ProviderAssetDraftRepository providerAssetDraftRepository;
 
@@ -72,15 +65,12 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     public PageResultDto<AssetDraftDto> findAllDraft(
-        UUID publisherKey, Set<EnumProviderAssetDraftStatus> status, int pageIndex, int pageSize, String orderBy, String order
+        UUID publisherKey, Set<EnumProviderAssetDraftStatus> status, int pageIndex, int pageSize,
+        EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order
     ) {
-        final Direction direction = order.equalsIgnoreCase("desc") ? Direction.DESC : Direction.ASC;
-        if (!this.sortableFields.contains(orderBy)) {
-            logger.warn("Sort field {} is not supported", orderBy);
-            orderBy = "createdOn";
-        }
+        final Direction direction = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
 
-        final PageRequest   pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy));
+        final PageRequest   pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
         Page<AssetDraftDto> page;
 
         if (status != null && !status.isEmpty() && publisherKey != null) {
@@ -134,6 +124,13 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Transactional
     public void submitDraft(CatalogueItemCommandDto command) throws AssetDraftException {
         try {
+            // Create draft if key is not set
+            if (command.getAssetKey() == null) {
+                final AssetDraftDto draft = this.updateDraft(command);
+
+                command.setAssetKey(draft.getKey());
+            }
+
             // A draft must exist with status DRAFT
             this.ensureDraftAndStatus(command.getPublisherKey(), command.getAssetKey(), EnumProviderAssetDraftStatus.DRAFT);
 
@@ -149,8 +146,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 this.setStringVariable(variables, "userId", command.getUserId());
                 this.setStringVariable(variables, "draftKey", command.getAssetKey());
                 this.setStringVariable(variables, "publisherKey", command.getPublisherKey());
-                this.setBooleanVariable(variables, "ingested", command.isIngested());
                 this.setStringVariable(variables, "source", command.getSource());
+                // TODO: Map command.getFormat() to NetCDF, Vector or RASTER
+                this.setStringVariable(variables, "sourceType", EnumDataProfilerSourceType.RASTER.toString());
+                this.setBooleanVariable(variables, "ingested", command.isIngested());
 
                 options.setBusinessKey(command.getAssetKey().toString());
                 options.setVariables(variables);
@@ -332,8 +331,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         }
 
         if (draft.getStatus() != status) {
-            throw new AssetDraftException(AssetMessageCode.INVALID_STATE,
-                    String.format("Expected status is [%s]. Found [%s]", status, draft.getStatus()));
+            throw new AssetDraftException(
+                AssetMessageCode.INVALID_STATE,
+                String.format("Expected status is [%s]. Found [%s]", status, draft.getStatus())
+            );
         }
     }
 

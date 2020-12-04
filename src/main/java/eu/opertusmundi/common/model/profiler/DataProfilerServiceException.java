@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.model.profiler;
 
+import lombok.Builder;
 import lombok.Getter;
 
 public class DataProfilerServiceException extends RuntimeException {
@@ -8,6 +9,27 @@ public class DataProfilerServiceException extends RuntimeException {
 
     @Getter
     private final DataProfilerServiceMessageCode code;
+
+    @Getter
+    private String errorDetails;
+
+    @Getter
+    private int retries;
+
+    @Getter
+    private long retryTimeout;
+
+    @Builder
+    private DataProfilerServiceException(
+        DataProfilerServiceMessageCode code, String message, String errorDetails, int retries, long retryTimeout
+    ) {
+        super(message);
+
+        this.code         = code;
+        this.errorDetails = errorDetails;
+        this.retries      = retries;
+        this.retryTimeout = retryTimeout;
+    }
 
     public DataProfilerServiceException(DataProfilerServiceMessageCode code) {
         super("Operation failed");

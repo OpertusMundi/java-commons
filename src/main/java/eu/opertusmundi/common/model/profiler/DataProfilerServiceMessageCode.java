@@ -6,6 +6,8 @@ public enum DataProfilerServiceMessageCode implements MessageCode {
     UNKNOWN,
     SOURCE_NOT_FOUND,
     SOURCE_NOT_SUPPORTED,
+    VARIABLE_NOT_FOUND,
+    INVALID_VARIABLE_VALUE,
     SERVICE_ERROR,
     ;
 

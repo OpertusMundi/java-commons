@@ -7,8 +7,10 @@ import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.asset.AssetDraftReviewCommandDto;
 import eu.opertusmundi.common.model.asset.AssetDraftSetStatusCommandDto;
+import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftSortField;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
+import eu.opertusmundi.common.model.dto.EnumSortingOrder;
 
 public interface ProviderAssetService {
 
@@ -24,13 +26,16 @@ public interface ProviderAssetService {
      * @return
      */
     PageResultDto<AssetDraftDto> findAllDraft(
-        UUID publisherKey, Set<EnumProviderAssetDraftStatus> status, int pageIndex, int pageSize, String orderBy, String order
+        UUID publisherKey, Set<EnumProviderAssetDraftStatus> status, int pageIndex, int pageSize,
+        EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order
     );
 
     default PageResultDto<AssetDraftDto> findAllDraft(
         UUID publisherKey, Set<EnumProviderAssetDraftStatus> status, int pageIndex, int pageSize
     ) {
-        return this.findAllDraft(publisherKey, status, pageIndex, pageSize, "modifiedOn", "desc");
+        return this.findAllDraft(
+            publisherKey, status, pageIndex, pageSize, EnumProviderAssetDraftSortField.MODIFIED_ON, EnumSortingOrder.DESC
+        );
     }
 
     /**

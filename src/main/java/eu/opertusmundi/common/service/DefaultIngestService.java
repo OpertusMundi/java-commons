@@ -9,15 +9,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import eu.opertusmundi.common.feign.client.IngestServiceFeignClient;
-import eu.opertusmundi.common.model.ingest.ClientEndpointsDto;
-import eu.opertusmundi.common.model.ingest.ClientStatusDto;
 import eu.opertusmundi.common.model.ingest.EnumIngestResponse;
 import eu.opertusmundi.common.model.ingest.IngestServiceException;
 import eu.opertusmundi.common.model.ingest.IngestServiceMessageCode;
 import eu.opertusmundi.common.model.ingest.ServerIngestDeferredResponseDto;
+import eu.opertusmundi.common.model.ingest.ServerIngestEndpointsResponseDto;
+import eu.opertusmundi.common.model.ingest.ServerIngestStatusResponseDto;
 
 @Service
 public class DefaultIngestService implements IngestService {
@@ -28,7 +26,7 @@ public class DefaultIngestService implements IngestService {
     private ObjectProvider<IngestServiceFeignClient> ingestClient;
 
     @Override
-    public ClientEndpointsDto ingestSync(String source) throws IngestServiceException {
+    public ServerIngestEndpointsResponseDto ingestSync(String source) throws IngestServiceException {
         try {
             final File file = new File(source);
 
@@ -38,13 +36,13 @@ public class DefaultIngestService implements IngestService {
                     String.format("Source file [%s] was not found", source)
                 );
             }
-            final ResponseEntity<JsonNode> e = this.ingestClient.getObject().ingest(
+            final ResponseEntity<ServerIngestEndpointsResponseDto> e = this.ingestClient.getObject().ingestSync(
                 file, EnumIngestResponse.PROMPT.getValue()
             );
 
-            final JsonNode serviceResponse = e.getBody();
+            final ServerIngestEndpointsResponseDto serviceResponse = e.getBody();
 
-            return ClientEndpointsDto.fromJsonNode(serviceResponse);
+            return serviceResponse;
         } catch (final Exception ex) {
             logger.error("[Ingest Service] Operation has failed", ex);
 
@@ -63,13 +61,13 @@ public class DefaultIngestService implements IngestService {
                     String.format("Source file [%s] was not found", source)
                 );
             }
-            final ResponseEntity<JsonNode> e = this.ingestClient.getObject().ingest(
+            final ResponseEntity<ServerIngestDeferredResponseDto> e = this.ingestClient.getObject().ingestAsync(
                 file, EnumIngestResponse.DEFERRED.getValue()
             );
 
-            final JsonNode serviceResponse = e.getBody();
+            final ServerIngestDeferredResponseDto serviceResponse = e.getBody();
 
-            return ServerIngestDeferredResponseDto.fromJsonNode(serviceResponse);
+            return serviceResponse;
         } catch (final Exception ex) {
             logger.error("[Ingest Service] Operation has failed", ex);
 
@@ -78,13 +76,13 @@ public class DefaultIngestService implements IngestService {
     }
 
     @Override
-    public ClientStatusDto getStatus(String ticket) throws IngestServiceException {
+    public ServerIngestStatusResponseDto getStatus(String ticket) throws IngestServiceException {
         try {
-            final ResponseEntity<JsonNode> e = this.ingestClient.getObject().getStatus(ticket);
+            final ResponseEntity<ServerIngestStatusResponseDto> e = this.ingestClient.getObject().getStatus(ticket);
 
-            final JsonNode serviceResponse = e.getBody();
+            final ServerIngestStatusResponseDto serviceResponse = e.getBody();
 
-            return ClientStatusDto.fromJsonNode(serviceResponse);
+            return serviceResponse;
         } catch (final Exception ex) {
             logger.error("[Ingest Service] Operation has failed", ex);
 
@@ -93,13 +91,13 @@ public class DefaultIngestService implements IngestService {
     }
 
     @Override
-    public ClientEndpointsDto getEndpoints(String ticket) throws IngestServiceException {
+    public ServerIngestEndpointsResponseDto getEndpoints(String ticket) throws IngestServiceException {
         try {
-            final ResponseEntity<JsonNode> e = this.ingestClient.getObject().getEndpoints(ticket);
+            final ResponseEntity<ServerIngestEndpointsResponseDto> e = this.ingestClient.getObject().getEndpoints(ticket);
 
-            final JsonNode serviceResponse = e.getBody();
+            final ServerIngestEndpointsResponseDto serviceResponse = e.getBody();
 
-            return ClientEndpointsDto.fromJsonNode(serviceResponse);
+            return serviceResponse;
         } catch (final Exception ex) {
             logger.error("[Ingest Service] Operation has failed", ex);
 
