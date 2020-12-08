@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.repository;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,6 +20,9 @@ import eu.opertusmundi.common.model.dto.ActivationTokenDto;
 @Repository
 @Transactional(readOnly = true)
 public interface ActivationTokenRepository extends JpaRepository<ActivationTokenEntity, Integer> {
+
+    @Query("SELECT t FROM ActivationToken t WHERE t.account = :id and t.valid = true")
+    List<ActivationTokenEntity> findAllByAccountId(Integer id);
 
     @Query("SELECT t FROM ActivationToken t WHERE t.token = :token and t.valid = true")
     Optional<ActivationTokenEntity> findOneByToken(UUID token);
