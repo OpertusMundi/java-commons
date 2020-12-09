@@ -3,9 +3,11 @@ package eu.opertusmundi.common.service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import org.apache.commons.lang3.StringUtils;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.message.CorrelationMessageDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
@@ -24,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import eu.opertusmundi.common.domain.AssetFileTypeEntity;
 import eu.opertusmundi.common.domain.ProviderAssetDraftEntity;
 import eu.opertusmundi.common.feign.client.BpmServerFeignClient;
 import eu.opertusmundi.common.feign.client.CatalogueFeignClient;
@@ -37,7 +40,7 @@ import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.dto.EnumSortingOrder;
-import eu.opertusmundi.common.model.profiler.EnumDataProfilerSourceType;
+import eu.opertusmundi.common.repository.AssetFileTypeRepository;
 import eu.opertusmundi.common.repository.ProviderAssetDraftRepository;
 import feign.FeignException;
 
@@ -53,6 +56,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     private static final String TASK_REVIEW = "task-review";
 
     private static final String MESSAGE_PROVIDER_REVIEW = "provider-publish-asset-user-acceptance-message";
+
+    @Autowired
+    private AssetFileTypeRepository assetFileTypeRepository;
 
     @Autowired
     private ProviderAssetDraftRepository providerAssetDraftRepository;
@@ -147,9 +153,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 this.setStringVariable(variables, "draftKey", command.getAssetKey());
                 this.setStringVariable(variables, "publisherKey", command.getPublisherKey());
                 this.setStringVariable(variables, "source", command.getSource());
-                // TODO: Map command.getFormat() to NetCDF, Vector or RASTER
-                this.setStringVariable(variables, "sourceType", EnumDataProfilerSourceType.RASTER.toString());
-                this.setBooleanVariable(variables, "ingested", command.isIngested());
+                this.setStringVariable(variables, "sourceType", this.mapFormatToSourceType(command.getFormat()));
+                this.setBooleanVariable(variables, "ingested", command.isIngested() && !StringUtils.isBlank(command.getSource()));
 
                 options.setBusinessKey(command.getAssetKey().toString());
                 options.setVariables(variables);
@@ -370,6 +375,19 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         v.setType(type);
 
         variables.put(name, v);
+    }
+
+    private String mapFormatToSourceType(String format) throws AssetDraftException {
+        final Optional<AssetFileTypeEntity> fileType = this.assetFileTypeRepository.findOneByFormat(format);
+
+        if (fileType.isPresent()) {
+            return fileType.get().getCategory().toString();
+        }
+
+        throw new AssetDraftException(
+            AssetMessageCode.FORMAT_NOT_SUPPORTED,
+            String.format("Format [%s] cannot be mapped to data profiler source type", format)
+        );
     }
 
 }
