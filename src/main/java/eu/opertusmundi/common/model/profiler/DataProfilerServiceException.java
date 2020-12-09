@@ -1,14 +1,12 @@
 package eu.opertusmundi.common.model.profiler;
 
+import eu.opertusmundi.common.model.ServiceException;
 import lombok.Builder;
 import lombok.Getter;
 
-public class DataProfilerServiceException extends RuntimeException {
+public class DataProfilerServiceException extends ServiceException {
 
     private static final long serialVersionUID = 1L;
-
-    @Getter
-    private final DataProfilerServiceMessageCode code;
 
     @Getter
     private String errorDetails;
@@ -23,30 +21,23 @@ public class DataProfilerServiceException extends RuntimeException {
     private DataProfilerServiceException(
         DataProfilerServiceMessageCode code, String message, String errorDetails, int retries, long retryTimeout
     ) {
-        super(message);
+        super(code, message);
 
-        this.code         = code;
         this.errorDetails = errorDetails;
         this.retries      = retries;
         this.retryTimeout = retryTimeout;
     }
 
     public DataProfilerServiceException(DataProfilerServiceMessageCode code) {
-        super("Operation failed");
-
-        this.code = code;
+        super(code, "Operation failed");
     }
 
     public DataProfilerServiceException(DataProfilerServiceMessageCode code, String message) {
-        super(message);
-
-        this.code = code;
+        super(code, message);
     }
 
     public DataProfilerServiceException(DataProfilerServiceMessageCode code, String message, Throwable cause) {
-        super(message, cause);
-
-        this.code = code;
+        super(code, message, cause);
     }
 
 }

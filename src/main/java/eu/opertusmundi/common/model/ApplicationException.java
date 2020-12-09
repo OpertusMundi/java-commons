@@ -9,6 +9,8 @@ import java.util.Locale;
 import org.springframework.context.MessageSource;
 import org.springframework.util.Assert;
 
+import lombok.Getter;
+
 public class ApplicationException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
@@ -17,6 +19,7 @@ public class ApplicationException extends RuntimeException {
      * An error code that generally categorized this application-level
      * exception.
      */
+    @Getter
     private final MessageCode code;
 
     /**
@@ -37,6 +40,16 @@ public class ApplicationException extends RuntimeException {
 
     private ApplicationException(Throwable cause, MessageCode code) {
         super(cause);
+        this.code = code;
+    }
+
+    protected ApplicationException(MessageCode code, String message, Throwable cause) {
+        super(message, cause);
+        this.code = code;
+    }
+
+    protected ApplicationException(MessageCode code, String message) {
+        super(message);
         this.code = code;
     }
 
@@ -104,10 +117,6 @@ public class ApplicationException extends RuntimeException {
         e.pattern = pattern;
         e.vars = new ArrayList<>(vars);
         return e;
-    }
-
-    public MessageCode getErrorCode() {
-        return this.code;
     }
 
     public List<Object> getContextVars() {

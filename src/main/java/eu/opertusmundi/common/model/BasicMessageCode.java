@@ -10,6 +10,7 @@ public enum BasicMessageCode implements MessageCode {
 
     // Error codes for 4XX HTTP status codes
     BadRequest(HttpStatus.BAD_REQUEST),
+    PayloadTooLarge(HttpStatus.PAYLOAD_TOO_LARGE),
     Unauthorized(HttpStatus.UNAUTHORIZED),
     Forbidden(HttpStatus.FORBIDDEN),
     NotFound(HttpStatus.NOT_FOUND),

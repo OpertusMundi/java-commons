@@ -1,37 +1,26 @@
 package eu.opertusmundi.common.model.file;
 
 import eu.opertusmundi.common.model.FileSystemMessageCode;
-import lombok.Getter;
+import eu.opertusmundi.common.model.ServiceException;
 
-public class FileSystemException extends RuntimeException {
+public class FileSystemException extends ServiceException {
 
     private static final long serialVersionUID = 1L;
 
-    @Getter
-    private final FileSystemMessageCode code;
-
     public FileSystemException(FileSystemMessageCode code) {
-        super("An I/O error has occurred");
-
-        this.code = code;
+        super(code, "An I/O error has occurred");
     }
 
     public FileSystemException(String message) {
-        super(message);
-
-        this.code = FileSystemMessageCode.IO_ERROR;
+        super(FileSystemMessageCode.IO_ERROR, message);
     }
 
     public FileSystemException(FileSystemMessageCode code, String message) {
-        super(message);
-
-        this.code = code;
+        super(code, message);
     }
 
     public FileSystemException(FileSystemMessageCode code, String message, Throwable cause) {
-        super(message, cause);
-
-        this.code = code;
+        super(code, message, cause);
     }
 
 }

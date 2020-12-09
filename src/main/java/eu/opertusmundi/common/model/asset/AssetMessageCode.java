@@ -7,6 +7,7 @@ public enum AssetMessageCode implements MessageCode {
     INVALID_STATE,
     DRAFT_NOT_FOUND,
     PROVIDER_NOT_FOUND,
+    FORMAT_NOT_SUPPORTED,
     BPM_SERVICE,
     CATALOGUE_SERVICE,
     ;

@@ -1,31 +1,22 @@
 package eu.opertusmundi.common.service;
 
+import eu.opertusmundi.common.model.ServiceException;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
-import lombok.Getter;
 
-public class AssetDraftException extends RuntimeException {
+public class AssetDraftException extends ServiceException {
 
     private static final long serialVersionUID = 1L;
 
-    @Getter
-    private final AssetMessageCode code;
-
     public AssetDraftException(AssetMessageCode code) {
-        super("An unhandled exception has occurred");
-
-        this.code = code;
+        super(code, "An unhandled exception has occurred");
     }
 
     public AssetDraftException(AssetMessageCode code, String message) {
-        super(message);
-
-        this.code = code;
+        super(code, message);
     }
 
     public AssetDraftException(AssetMessageCode code, String message, Throwable cause) {
-        super(message, cause);
-
-        this.code = code;
+        super(code, message, cause);
     }
 
 }

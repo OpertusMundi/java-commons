@@ -46,6 +46,7 @@ import eu.opertusmundi.common.model.EnumCustomerRegistrationStatus;
 import eu.opertusmundi.common.model.dto.AccountDto;
 import eu.opertusmundi.common.model.dto.EnumCustomerType;
 import eu.opertusmundi.common.model.dto.EnumLegalPersonType;
+import eu.opertusmundi.common.model.payment.PaymentServiceException;
 import eu.opertusmundi.common.repository.AccountRepository;
 
 @Service
