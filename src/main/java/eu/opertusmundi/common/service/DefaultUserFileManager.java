@@ -18,15 +18,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import eu.opertusmundi.common.model.FileSystemMessageCode;
+import eu.opertusmundi.common.model.UserFileNamingStrategyContext;
 import eu.opertusmundi.common.model.file.DirectoryDto;
 import eu.opertusmundi.common.model.file.FilePathCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.file.FileUploadCommand;
 
 @Service
-public class DefaultFileManager implements FileManager {
+public class DefaultUserFileManager implements UserFileManager {
 
-    private static final Logger logger = LoggerFactory.getLogger(DefaultFileManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultUserFileManager.class);
 
     private long maxUserSpace;
 
@@ -44,8 +45,9 @@ public class DefaultFileManager implements FileManager {
     @Override
     public DirectoryDto browse(FilePathCommand command) throws FileSystemException {
         try {
-            final Path userDir = this.fileNamingStrategy.getUserDir(command.getUserId(), true);
-            final Path target  = Paths.get(userDir.toString(), command.getPath());
+            final UserFileNamingStrategyContext ctx     = UserFileNamingStrategyContext.of(command.getUserId(), true);
+            final Path                          userDir = this.fileNamingStrategy.getDir(ctx);
+            final Path                          target  = Paths.get(userDir.toString(), command.getPath());
 
             return this.directoryTraverse.getDirectoryInfo(target);
         } catch (final Exception ex) {
@@ -62,9 +64,9 @@ public class DefaultFileManager implements FileManager {
                 throw new FileSystemException(FileSystemMessageCode.PATH_IS_EMPTY, "A path is required");
             }
 
-            final Path userDir = this.fileNamingStrategy.getUserDir(command.getUserId());
+            final UserFileNamingStrategyContext ctx = UserFileNamingStrategyContext.of(command.getUserId());
+            final Path                          dir = this.fileNamingStrategy.resolvePath(ctx, command.getPath());
 
-            final Path dir = Paths.get(userDir.toString(), command.getPath());
             if (Files.exists(dir)) {
                 throw new FileSystemException(
                     FileSystemMessageCode.PATH_ALREADY_EXISTS,
@@ -85,8 +87,9 @@ public class DefaultFileManager implements FileManager {
     @Override
     public void uploadFile(InputStream input, FileUploadCommand command) throws FileSystemException {
         try  {
-            final Path         userDir     = this.fileNamingStrategy.getUserDir(command.getUserId());
-            final DirectoryDto userDirInfo = this.directoryTraverse.getDirectoryInfo(userDir);
+            final UserFileNamingStrategyContext ctx         = UserFileNamingStrategyContext.of(command.getUserId());
+            final Path                          userDir     = this.fileNamingStrategy.getDir(ctx);
+            final DirectoryDto                  userDirInfo = this.directoryTraverse.getDirectoryInfo(userDir);
 
             final long size = userDirInfo.getSize();
             if (size + command.getSize() > this.maxUserSpace) {
@@ -101,7 +104,7 @@ public class DefaultFileManager implements FileManager {
             }
 
             final Path relativePath = Paths.get(command.getPath(), command.getFilename());
-            final Path absolutePath = this.fileNamingStrategy.resolvePath(command.getUserId(), relativePath);
+            final Path absolutePath = this.fileNamingStrategy.resolvePath(ctx, relativePath);
             final File localFile    = absolutePath.toFile();
 
             if (localFile.isDirectory()) {
@@ -137,9 +140,10 @@ public class DefaultFileManager implements FileManager {
                 throw new FileSystemException(FileSystemMessageCode.PATH_IS_EMPTY, "A path is required");
             }
 
-            final Path userDir      = this.fileNamingStrategy.getUserDir(command.getUserId());
-            final Path absolutePath = Paths.get(userDir.toString(), command.getPath());
-            final File file         = absolutePath.toFile();
+            final UserFileNamingStrategyContext ctx          = UserFileNamingStrategyContext.of(command.getUserId());
+            final Path                          userDir      = this.fileNamingStrategy.getDir(ctx);
+            final Path                          absolutePath = Paths.get(userDir.toString(), command.getPath());
+            final File                          file         = absolutePath.toFile();
 
             if (!file.exists()) {
                 throw new FileSystemException(FileSystemMessageCode.PATH_NOT_FOUND, "Path does not exist");
@@ -163,9 +167,10 @@ public class DefaultFileManager implements FileManager {
                 throw new FileSystemException(FileSystemMessageCode.PATH_IS_EMPTY, "A path to the file is required");
             }
 
-            final Path userDir      = this.fileNamingStrategy.getUserDir(command.getUserId());
-            final Path absolutePath = Paths.get(userDir.toString(), command.getPath().toString());
-            final File file         = absolutePath.toFile();
+            final UserFileNamingStrategyContext ctx          = UserFileNamingStrategyContext.of(command.getUserId());
+            final Path                          userDir      = this.fileNamingStrategy.getDir(ctx);
+            final Path                          absolutePath = Paths.get(userDir.toString(), command.getPath().toString());
+            final File                          file         = absolutePath.toFile();
 
             if (!file.exists()) {
                 throw new FileSystemException(FileSystemMessageCode.PATH_NOT_FOUND, "File does not exist");

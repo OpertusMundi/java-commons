@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.service;
 
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +42,8 @@ import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.dto.EnumSortingOrder;
+import eu.opertusmundi.common.model.file.FileDto;
+import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.repository.AssetFileTypeRepository;
 import eu.opertusmundi.common.repository.ProviderAssetDraftRepository;
 import feign.FeignException;
@@ -62,6 +66,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Autowired
     private ProviderAssetDraftRepository providerAssetDraftRepository;
+
+    @Autowired
+    private AssetFileManager assetFileManager;
 
     @Autowired
     private ObjectProvider<CatalogueFeignClient> catalogueClient;
@@ -107,7 +114,14 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     public AssetDraftDto findOneDraft(UUID publisherKey, UUID assetKey) {
         final ProviderAssetDraftEntity e = this.providerAssetDraftRepository.findOneByPublisherAndKey(publisherKey, assetKey).orElse(null);
 
-        return e != null ? e.toDto() : null;
+        final AssetDraftDto result = e != null ? e.toDto() : null;
+
+        if (result != null) {
+            final List<FileDto> files = this.assetFileManager.getFiles(assetKey);
+            result.setFiles(files);
+        }
+
+        return result;
     }
 
     @Override
@@ -341,6 +355,31 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 String.format("Expected status is [%s]. Found [%s]", status, draft.getStatus())
             );
         }
+    }
+
+    @Override
+    public void addFile(
+        UUID publisherKey, UUID draftKey, String fileName, InputStream input
+    ) throws FileSystemException, AccessDeniedException {
+
+        // The provider must have access to the selected draft and also the
+        // draft must be editable
+        this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
+
+        this.assetFileManager.uploadFile(draftKey, fileName, input);
+    }
+
+    @Override
+    public AssetDraftDto deleteFile(
+        UUID publisherKey, UUID draftKey, String fileName
+    ) throws FileSystemException, AccessDeniedException {
+        // The provider must have access to the selected draft and also the
+        // draft must be editable
+        this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
+
+        this.assetFileManager.deletePath(draftKey, fileName);
+
+        return this.findOneDraft(publisherKey, draftKey);
     }
 
     private ProcessInstanceDto findInstance(UUID businessKey) {

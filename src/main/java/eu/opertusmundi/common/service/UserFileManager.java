@@ -8,7 +8,7 @@ import eu.opertusmundi.common.model.file.FilePathCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.file.FileUploadCommand;
 
-public interface FileManager {
+public interface UserFileManager {
 
     DirectoryDto browse(FilePathCommand command) throws FileSystemException;
 

@@ -8,8 +8,10 @@ public enum FileSystemMessageCode implements MessageCode {
     PATH_IS_DIRECTORY,
     PATH_IS_EMPTY,
     PATH_MAX_DEPTH,
+    PATH_MAX_LENGTH,
     PATH_NOT_EMPTY,
     PATH_NOT_FOUND,
+    INVALID_PATH,
     ;
 
     @Override

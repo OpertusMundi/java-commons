@@ -22,6 +22,8 @@ public class FileSystemConfiguration {
 
     private Path userDataDir;
 
+    private Path assetDir;
+
     @Autowired
     private void setTempDataDir(@Value("${opertusmundi.file-system.temp-dir}") String d) {
         final Path path = Paths.get(d);
@@ -36,9 +38,16 @@ public class FileSystemConfiguration {
         this.userDataDir = path;
     }
 
+    @Autowired
+    private void setAssetDir(@Value("${opertusmundi.file-system.asset-dir}") String d) {
+        final Path path = Paths.get(d);
+        Assert.isTrue(path.isAbsolute(), "Expected an absolute directory path");
+        this.assetDir = path;
+    }
+
     @PostConstruct
     private void initialize() throws IOException {
-        for (final Path dataDir : Arrays.asList(this.tempDir, this.userDataDir)) {
+        for (final Path dataDir : Arrays.asList(this.tempDir, this.userDataDir, this.assetDir)) {
             try {
                 Files.createDirectories(dataDir);
             } catch (final FileAlreadyExistsException ex) {
@@ -55,6 +64,11 @@ public class FileSystemConfiguration {
     @Bean
     Path userDataDirectory() {
         return this.userDataDir;
+    }
+
+    @Bean
+    Path assetDirectory() {
+        return this.assetDir;
     }
 
 }

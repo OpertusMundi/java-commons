@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -98,12 +99,26 @@ public class RestResponse<Result> extends BaseResponse {
     }
 
     public static <R> RestResponse<R> invalid(List<FieldError> fieldErrors) {
+        return invalid(fieldErrors, null);
+    }
+
+    public static <R> RestResponse<R> invalid(List<FieldError> fieldErrors, List<ObjectError> globalErrors) {
         final List<Message> messages = fieldErrors.stream()
             .map(e -> {
                  return new ValidationMessage(
                     BasicMessageCode.Validation, e.getField(), e.getCode(), e.getRejectedValue(), e.getArguments()
                 );
             }).collect(Collectors.toList());
+
+        if (globalErrors != null) {
+            globalErrors.stream()
+                .map(e -> {
+                     return new ValidationMessage(
+                        BasicMessageCode.Validation, null, e.getCode(), e.getDefaultMessage(), e.getArguments()
+                    );
+                })
+                .forEach(messages::add);
+        }
 
         return RestResponse.<R>error(messages);
     }
