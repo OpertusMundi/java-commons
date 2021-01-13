@@ -29,8 +29,10 @@ public abstract class CustomerDto {
 
     protected ZonedDateTime modifiedAt;
 
+    @JsonIgnore
     protected String paymentProviderUser;
 
+    @JsonIgnore
     protected String paymentProviderWallet;
 
     @JsonIgnore
