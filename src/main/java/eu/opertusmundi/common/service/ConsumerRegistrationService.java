@@ -36,9 +36,8 @@ public interface ConsumerRegistrationService {
      * Complete consumer registration and update user profile
      *
      * @param userKey
-     * @param registrationKey
      * @return
      */
-    AccountDto completeRegistration(UUID userKey, UUID registrationKey);
+    AccountDto completeRegistration(UUID userKey);
 
 }

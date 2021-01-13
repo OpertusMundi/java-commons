@@ -1,8 +1,13 @@
 package eu.opertusmundi.common.service;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
+import org.camunda.bpm.engine.rest.dto.VariableValueDto;
+import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
+import org.camunda.bpm.engine.rest.dto.runtime.StartProcessInstanceDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,13 +16,15 @@ import org.springframework.util.Assert;
 import eu.opertusmundi.common.model.EnumActivationTokenType;
 import eu.opertusmundi.common.model.dto.AccountDto;
 import eu.opertusmundi.common.model.dto.ActivationTokenDto;
-import eu.opertusmundi.common.model.dto.ProviderProfessionalCommandDto;
 import eu.opertusmundi.common.model.dto.CustomerProfessionalDto;
+import eu.opertusmundi.common.model.dto.ProviderProfessionalCommandDto;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.ActivationTokenRepository;
 
 @Service
-public class DefaultProviderRegistrationService implements ProviderRegistrationService {
+public class DefaultProviderRegistrationService extends AbstractCustomerRegistrationService implements ProviderRegistrationService {
+
+    private static final String WORKFLOW_PROVIDER_REGISTRATION = "provider-registration";
 
     @Autowired
     private AccountRepository accountRepository;
@@ -25,12 +32,9 @@ public class DefaultProviderRegistrationService implements ProviderRegistrationS
     @Autowired
     private ActivationTokenRepository activationTokenRepository;
 
-    @Autowired
-    private PaymentService paymentService;
-
     @Override
     @Transactional
-    public AccountDto updateRegistration(ProviderProfessionalCommandDto command) {
+    public AccountDto updateRegistration(ProviderProfessionalCommandDto command) throws IllegalArgumentException {
         Assert.notNull(command, "Expected a non-null command");
 
         final AccountDto account = this.accountRepository.updateProviderRegistration(command);
@@ -40,7 +44,7 @@ public class DefaultProviderRegistrationService implements ProviderRegistrationS
 
     @Override
     @Transactional
-    public AccountDto submitRegistration(ProviderProfessionalCommandDto command) {
+    public AccountDto submitRegistration(ProviderProfessionalCommandDto command) throws IllegalArgumentException {
         Assert.notNull(command, "Expected a non-null command");
 
         final AccountDto account         = this.accountRepository.submitProviderRegistration(command);
@@ -48,48 +52,32 @@ public class DefaultProviderRegistrationService implements ProviderRegistrationS
         final UUID       userKey         = account.getKey();
         final UUID       registrationKey = account.getProfile().getProvider().getDraft().getKey();
 
-        /*
-         * TODO: Start workflow
-         *
-         * Workflow:
-         * Create provider - If isUpdate is false
-         * Update provider - If isUpdate is true
-         *
-         * Business Key:
-         * The registration unique key
-         *
-         * Parameters:
-         * User Key
-         * Registration Key
-         */
-        if(isUpdate) {
-            // Update workflow
-            this.paymentService.updateUser(userKey, registrationKey);
+        // Check if workflow exists
+        ProcessInstanceDto instance = this.findInstance(registrationKey);
 
-            this.paymentService.updateBankAccount(userKey, registrationKey);
+        if (instance == null) {
+            final StartProcessInstanceDto options = new StartProcessInstanceDto();
 
-            this.completeRegistration(userKey, registrationKey);
-        } else {
-            // Create workflow
-            this.paymentService.createUser(userKey, registrationKey);
+            final Map<String, VariableValueDto> variables = new HashMap<String, VariableValueDto>();
 
-            this.paymentService.createWallet(userKey, registrationKey);
+            // Set variables
+            this.setStringVariable(variables, "userKey", userKey);
+            this.setStringVariable(variables, "registrationKey", registrationKey);
+            this.setBooleanVariable(variables, "isUpdate", isUpdate);
 
-            this.paymentService.createBankAccount(userKey, registrationKey);
+            options.setBusinessKey(registrationKey.toString());
+            options.setVariables(variables);
+            options.setWithVariablesInReturn(true);
 
-            this.completeRegistration(userKey, registrationKey);
+            instance = this.bpmClient.getObject().startProcessByKey(WORKFLOW_PROVIDER_REGISTRATION, options);
         }
-
-        /*
-         * Workflow end
-         */
 
         return account;
     }
 
     @Override
     @Transactional
-    public AccountDto cancelRegistration(UUID userKey) {
+    public AccountDto cancelRegistration(UUID userKey) throws IllegalArgumentException {
         final AccountDto account = this.accountRepository.cancelProviderRegistration(userKey);
 
         return account;
@@ -97,8 +85,8 @@ public class DefaultProviderRegistrationService implements ProviderRegistrationS
 
     @Override
     @Transactional
-    public AccountDto completeRegistration(UUID userKey, UUID registrationKey) {
-        final AccountDto account = this.accountRepository.completeProviderRegistration(userKey, registrationKey);
+    public AccountDto completeRegistration(UUID userKey) throws IllegalArgumentException {
+        final AccountDto account = this.accountRepository.completeProviderRegistration(userKey);
 
         // Check if provider email requires validation
         final CustomerProfessionalDto provider = account.getProfile().getProvider().getCurrent();
@@ -113,10 +101,6 @@ public class DefaultProviderRegistrationService implements ProviderRegistrationS
         }
 
         return account;
-    }
-
-    private void sendMail(String name, ActivationTokenDto token) {
-        // TODO: Implement
     }
 
 }

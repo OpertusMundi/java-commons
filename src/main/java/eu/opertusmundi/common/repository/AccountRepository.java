@@ -136,12 +136,12 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     }
 
     @Transactional(readOnly = false)
-    default AccountDto updateConsumerRegistration(CustomerCommandDto command) {
+    default AccountDto updateConsumerRegistration(CustomerCommandDto command)  throws IllegalArgumentException {
         return this.updateConsumerRegistration(command, EnumCustomerRegistrationStatus.DRAFT);
     }
 
     @Transactional(readOnly = false)
-    default AccountDto submitConsumerRegistration(CustomerCommandDto command) {
+    default AccountDto submitConsumerRegistration(CustomerCommandDto command)  throws IllegalArgumentException {
         return this.updateConsumerRegistration(command, EnumCustomerRegistrationStatus.SUBMITTED);
     }
 
@@ -149,14 +149,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     default AccountDto updateConsumerRegistration(
         CustomerCommandDto command, EnumCustomerRegistrationStatus status
     ) throws IllegalArgumentException {
-        // Get account
-        final AccountEntity account = this.findById(command.getUserId()).orElse(null);
-
-        // Initialize profile if not already exists
-        if (account.getProfile() == null) {
-            account.setProfile(new AccountProfileEntity());
-        }
-
+        final AccountEntity        account = this.findById(command.getUserId()).orElse(null);
         final AccountProfileEntity profile = account.getProfile();
 
         // Create/Update consumer draft
@@ -221,7 +214,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     }
 
     @Transactional(readOnly = false)
-    default AccountDto completeConsumerRegistration(UUID userKey, UUID registrationKey) throws IllegalArgumentException {
+    default AccountDto completeConsumerRegistration(UUID userKey) throws IllegalArgumentException {
         // Get account
         final AccountEntity        account      = this.findOneByKey(userKey).orElse(null);
         final AccountProfileEntity profile      = account.getProfile();
@@ -259,12 +252,12 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     }
 
     @Transactional(readOnly = false)
-    default AccountDto updateProviderRegistration(ProviderProfessionalCommandDto command) {
+    default AccountDto updateProviderRegistration(ProviderProfessionalCommandDto command) throws IllegalArgumentException {
         return this.updateProviderRegistration(command, EnumCustomerRegistrationStatus.DRAFT);
     }
 
     @Transactional(readOnly = false)
-    default AccountDto submitProviderRegistration(ProviderProfessionalCommandDto command) {
+    default AccountDto submitProviderRegistration(ProviderProfessionalCommandDto command) throws IllegalArgumentException {
         return this.updateProviderRegistration(command, EnumCustomerRegistrationStatus.SUBMITTED);
     }
 
@@ -332,7 +325,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     }
 
     @Transactional(readOnly = false)
-    default AccountDto completeProviderRegistration(UUID userKey, UUID registrationKey) throws IllegalArgumentException {
+    default AccountDto completeProviderRegistration(UUID userKey) throws IllegalArgumentException {
         final AccountEntity                   account      = this.findOneByKey(userKey).orElse(null);
         final AccountProfileEntity            profile      = account.getProfile();
         final CustomerDraftProfessionalEntity registration = profile.getProviderRegistration();

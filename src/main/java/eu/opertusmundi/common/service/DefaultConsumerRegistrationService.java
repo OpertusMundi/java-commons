@@ -1,8 +1,13 @@
 package eu.opertusmundi.common.service;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
+import org.camunda.bpm.engine.rest.dto.VariableValueDto;
+import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
+import org.camunda.bpm.engine.rest.dto.runtime.StartProcessInstanceDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +22,9 @@ import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.ActivationTokenRepository;
 
 @Service
-public class DefaultConsumerRegistrationService implements ConsumerRegistrationService {
+public class DefaultConsumerRegistrationService extends AbstractCustomerRegistrationService implements ConsumerRegistrationService {
+
+    private static final String WORKFLOW_CONSUMER_REGISTRATION = "consumer-registration";
 
     @Autowired
     private AccountRepository accountRepository;
@@ -25,12 +32,9 @@ public class DefaultConsumerRegistrationService implements ConsumerRegistrationS
     @Autowired
     private ActivationTokenRepository activationTokenRepository;
 
-    @Autowired
-    private PaymentService paymentService;
-
     @Override
     @Transactional
-    public AccountDto updateRegistration(CustomerCommandDto command) {
+    public AccountDto updateRegistration(CustomerCommandDto command) throws IllegalArgumentException {
         Assert.notNull(command, "Expected a non-null command");
 
         final AccountDto account = this.accountRepository.updateConsumerRegistration(command);
@@ -40,7 +44,7 @@ public class DefaultConsumerRegistrationService implements ConsumerRegistrationS
 
     @Override
     @Transactional
-    public AccountDto submitRegistration(CustomerCommandDto command) {
+    public AccountDto submitRegistration(CustomerCommandDto command) throws IllegalArgumentException {
         Assert.notNull(command, "Expected a non-null command");
 
         final AccountDto account         = this.accountRepository.submitConsumerRegistration(command);
@@ -48,44 +52,32 @@ public class DefaultConsumerRegistrationService implements ConsumerRegistrationS
         final UUID       userKey         = account.getKey();
         final UUID       registrationKey = account.getProfile().getConsumer().getDraft().getKey();
 
-        /*
-         * TODO: Start workflow
-         *
-         * Workflow:
-         * Create consumer - If isUpdate is false
-         * Update consumer - If isUpdate is true
-         *
-         * Business Key:
-         * The registration unique key
-         *
-         * Parameters:
-         * User Key
-         * Registration Key
-         */
-        if(isUpdate) {
-            // Update workflow
-            this.paymentService.updateUser(userKey, registrationKey);
+        // Check if workflow exists
+        ProcessInstanceDto instance = this.findInstance(registrationKey);
 
-            this.completeRegistration(userKey, registrationKey);
-        } else {
-            // Create workflow
-            this.paymentService.createUser(userKey, registrationKey);
+        if (instance == null) {
+            final StartProcessInstanceDto options = new StartProcessInstanceDto();
 
-            this.paymentService.createWallet(userKey, registrationKey);
+            final Map<String, VariableValueDto> variables = new HashMap<String, VariableValueDto>();
 
-            this.completeRegistration(userKey, registrationKey);
+            // Set variables
+            this.setStringVariable(variables, "userKey", userKey);
+            this.setStringVariable(variables, "registrationKey", registrationKey);
+            this.setBooleanVariable(variables, "isUpdate", isUpdate);
+
+            options.setBusinessKey(registrationKey.toString());
+            options.setVariables(variables);
+            options.setWithVariablesInReturn(true);
+
+            instance = this.bpmClient.getObject().startProcessByKey(WORKFLOW_CONSUMER_REGISTRATION, options);
         }
-
-        /*
-         * Workflow end
-         */
 
         return account;
     }
 
     @Override
     @Transactional
-    public AccountDto cancelRegistration(UUID userKey) {
+    public AccountDto cancelRegistration(UUID userKey) throws IllegalArgumentException {
         final AccountDto account = this.accountRepository.cancelConsumerRegistration(userKey);
 
         return account;
@@ -93,8 +85,8 @@ public class DefaultConsumerRegistrationService implements ConsumerRegistrationS
 
     @Override
     @Transactional
-    public AccountDto completeRegistration(UUID userKey, UUID registrationKey) {
-        final AccountDto account = this.accountRepository.completeConsumerRegistration(userKey, registrationKey);
+    public AccountDto completeRegistration(UUID userKey) throws IllegalArgumentException {
+        final AccountDto account = this.accountRepository.completeConsumerRegistration(userKey);
 
         // Check if consumer email requires validation
         final CustomerDto consumer = account.getProfile().getConsumer().getCurrent();
@@ -109,10 +101,6 @@ public class DefaultConsumerRegistrationService implements ConsumerRegistrationS
         }
 
         return account;
-    }
-
-    private void sendMail(String name, ActivationTokenDto token) {
-        // TODO: Implement
     }
 
 }
