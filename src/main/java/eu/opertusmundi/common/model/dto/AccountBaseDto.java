@@ -13,6 +13,12 @@ import lombok.Setter;
 @Setter
 public class AccountBaseDto implements Serializable {
 
+    public AccountBaseDto(boolean active, boolean blocked) {
+        super();
+        this.active  = active;
+        this.blocked = blocked;
+    }
+
     private static final long serialVersionUID = 1L;
 
     @JsonIgnore

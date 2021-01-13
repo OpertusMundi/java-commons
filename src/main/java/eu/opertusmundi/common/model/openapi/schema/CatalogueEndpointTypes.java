@@ -21,12 +21,12 @@ public class CatalogueEndpointTypes {
     }
 
     @Schema(description = "Asset response")
-    public class ItemResponse extends RestResponse<CatalogueItemDetailsDto> {
+    public static class ItemResponse extends RestResponse<CatalogueItemDetailsDto> {
 
     }
 
     @Schema(description = "Draft response")
-    public class DraftItemResponse extends RestResponse<AssetDraftDto> {
+    public static class DraftItemResponse extends RestResponse<AssetDraftDto> {
 
     }
 

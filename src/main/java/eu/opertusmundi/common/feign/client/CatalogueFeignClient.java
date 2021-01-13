@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,7 +34,7 @@ public interface CatalogueFeignClient {
      * @param pageSize The page size
      * @return An instance of {@link CatalogCollection}
      */
-    @GetMapping(value = "/api/published/search")
+    @GetMapping(value = "/api/published/search", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<CatalogueResponse<CatalogueCollection>> findAll(
         @RequestParam("q") String query,
         @RequestParam(name = "publisher_id", required = false) String publisher,
@@ -47,7 +48,7 @@ public interface CatalogueFeignClient {
      * @param id The item unique identifier.
      * @return An instance of {@link CatalogueServerItem}
      */
-    @GetMapping(value = "/api/get", produces = "application/json")
+    @GetMapping(value = "/api/get", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> findAllById(@RequestParam("id") UUID[] id);
 
     /**
@@ -56,7 +57,7 @@ public interface CatalogueFeignClient {
      * @param id The item unique identifier.
      * @return An instance of {@link CatalogueFeature}
      */
-    @GetMapping(value = "/api/published/{id}", produces = "application/json")
+    @GetMapping(value = "/api/published/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<CatalogueResponse<CatalogueFeature>> findOneById(@PathVariable("id") UUID id);
 
     /**
@@ -65,7 +66,7 @@ public interface CatalogueFeignClient {
      * @param id The identifier of the asset to update
      * @return
      */
-    @DeleteMapping(value = "/api/published/{id}", produces = "application/json")
+    @DeleteMapping(value = "/api/published/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<Void> deletePublished(@PathVariable("id") UUID id);
 
     /**
@@ -91,7 +92,7 @@ public interface CatalogueFeignClient {
      * @param id The item unique identifier.
      * @return An instance of {@link CatalogueFeature}
      */
-    @GetMapping(value = "/api/draft/{id}", produces = "application/json")
+    @GetMapping(value = "/api/draft/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<CatalogueResponse<CatalogueFeature>> findOneDraftById(@PathVariable("id") UUID id);
 
     /**
@@ -99,7 +100,7 @@ public interface CatalogueFeignClient {
      *
      * @param feature The feature to create
      */
-    @PostMapping(value = "/api/draft/create", produces = "application/json")
+    @PostMapping(value = "/api/draft/create", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<Void> createDraft(@RequestBody CatalogueFeature feature);
 
     /**
@@ -107,7 +108,7 @@ public interface CatalogueFeignClient {
      *
      * @param feature The feature to create
      */
-    @PostMapping(value = "/api/draft/{id}", produces = "application/json")
+    @PostMapping(value = "/api/draft/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<Void> createDraftFromPublished(@PathVariable("id") UUID id);
 
     /**
@@ -115,7 +116,7 @@ public interface CatalogueFeignClient {
      *
      * @param feature The feature to create
      */
-    @PutMapping(value = "/api/draft/{id}", produces = "application/json")
+    @PutMapping(value = "/api/draft/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<Void> updateDraft(@PathVariable("id") UUID id, @RequestBody CatalogueFeature feature);
 
     /**
@@ -125,7 +126,7 @@ public interface CatalogueFeignClient {
      * @param status The new status value
      * @return
      */
-    @PutMapping(value = "/api/draft/status", produces = "application/json")
+    @PutMapping(value = "/api/draft/status", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<Void> setDraftStatus(
         @RequestParam(name = "id", required = true) UUID id,
         @RequestParam(name = "status", required = true) String status
@@ -136,7 +137,7 @@ public interface CatalogueFeignClient {
      * @param id The identifier of the draft to update
      * @return
      */
-    @DeleteMapping(value = "/api/draft/{id}", produces = "application/json")
+    @DeleteMapping(value = "/api/draft/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<Void> deleteDraft(@PathVariable("id") UUID id);
 
     /**

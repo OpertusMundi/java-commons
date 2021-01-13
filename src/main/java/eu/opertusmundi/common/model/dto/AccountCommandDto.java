@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import eu.opertusmundi.common.model.EnumAuthProvider;
 import eu.opertusmundi.common.model.EnumRole;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -20,6 +21,21 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AccountCommandDto extends AccountBaseDto implements Serializable {
+
+    @Builder
+    public AccountCommandDto(
+        boolean active, boolean blocked, @NotEmpty String email, EnumAuthProvider idpName, @NotEmpty String password,
+        @NotNull @Valid AccountProfileCommandDto profile, Set<EnumRole> roles, @NotEmpty String verifyPassword
+    ) {
+        super(active, blocked);
+
+        this.email          = email;
+        this.idpName        = idpName;
+        this.password       = password;
+        this.profile        = profile;
+        this.roles          = roles;
+        this.verifyPassword = verifyPassword;
+    }
 
     private static final long serialVersionUID = 1L;
 

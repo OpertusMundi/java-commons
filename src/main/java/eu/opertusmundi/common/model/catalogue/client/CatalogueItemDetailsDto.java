@@ -16,6 +16,10 @@ public class CatalogueItemDetailsDto extends CatalogueItemDto implements Seriali
 
     private static final long serialVersionUID = 1L;
 
+    protected CatalogueItemDetailsDto() {
+        super();
+    }
+
     public CatalogueItemDetailsDto(CatalogueFeature feature) {
         super(feature);
     }

@@ -3,9 +3,13 @@ package eu.opertusmundi.common.model.dto;
 import javax.validation.constraints.Pattern;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
 public class AccountProfileBaseDto {
@@ -16,7 +20,7 @@ public class AccountProfileBaseDto {
     @Schema(description = "User image mime type", example = "image/png")
     protected String imageMimeType;
 
-    @Schema(description = "User locale",  defaultValue = "en")
+    @Schema(description = "User locale", defaultValue = "en")
     @Pattern(regexp = "[a-z][a-z]")
     protected String locale;
 
