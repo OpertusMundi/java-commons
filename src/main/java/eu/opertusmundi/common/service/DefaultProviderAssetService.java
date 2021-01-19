@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.service;
 
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -27,6 +29,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import eu.opertusmundi.common.domain.AssetFileTypeEntity;
 import eu.opertusmundi.common.domain.ProviderAssetDraftEntity;
@@ -61,6 +68,12 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     private static final String MESSAGE_PROVIDER_REVIEW = "provider-publish-asset-user-acceptance-message";
 
+    @Value("${opertusmundi.data-profiler.metadata.exclude:}")
+    private String[] excludeMetadataProperties;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
+    
     @Autowired
     private AssetFileTypeRepository assetFileTypeRepository;
 
@@ -163,7 +176,6 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 final Map<String, VariableValueDto> variables = new HashMap<String, VariableValueDto>();
 
                 // Set variables
-                this.setStringVariable(variables, "userId", command.getUserId());
                 this.setStringVariable(variables, "draftKey", command.getAssetKey());
                 this.setStringVariable(variables, "publisherKey", command.getPublisherKey());
                 this.setStringVariable(variables, "source", command.getSource());
@@ -298,8 +310,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         try {
             // TODO : id must be created by the PID service
 
-            final ProviderAssetDraftEntity draft = this.providerAssetDraftRepository.findOneByPublisherAndKey(publisherKey, draftKey)
-                    .orElse(null);
+            final ProviderAssetDraftEntity draft = this.providerAssetDraftRepository
+        		.findOneByPublisherAndKey(publisherKey, draftKey)
+                .orElse(null);
 
             if (draft == null) {
                 throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
@@ -320,6 +333,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             // TODO: Check if asset already exists (draft key can be used as the
             // idempotent key)
+
             // Insert new asset
             this.catalogueClient.getObject().createDraft(feature);
 
@@ -341,21 +355,46 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         }
     }
 
+    @Override
     @Transactional
-    private void ensureDraftAndStatus(UUID publisherKey, UUID assetKey, EnumProviderAssetDraftStatus status) {
-        final AssetDraftDto draft = this.findOneDraft(publisherKey, assetKey);
+    public void updateMetadata(
+		UUID publisherKey, UUID draftKey, JsonNode metadata
+	) throws FileSystemException, AssetDraftException {
+		try {
+			// The provider must have access to the selected draft and also the
+			// draft must be already accepted by the HelpDesk
+			this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.SUBMITTED);
+			
+			// Store all metadata in asset repository
+			final String content = objectMapper.writeValueAsString(metadata);
+			
+			this.assetFileManager.saveText(draftKey, "metadata", "automated-metadata.json", content);
+			
+			// Filter properties before updating metadata in catalogue service
+			if(excludeMetadataProperties!=null) {	
+				Arrays.asList(this.excludeMetadataProperties).stream()
+					.filter(p -> metadata.get(p)!=null)
+					.forEach(p -> ((ObjectNode) metadata).remove(p));
+			}
 
-        if (draft == null) {
-            throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
-        }
+			this.providerAssetDraftRepository.updateMetadata(publisherKey, draftKey, metadata);
+		} catch (AssetDraftException ex) {
+			throw ex;
+		} catch (JsonProcessingException ex) {
+			throw new AssetDraftException(
+				AssetMessageCode.METADATA_SERIALIZATION,
+				String.format("Failed to serialize automated metadata for asset [%s]", draftKey)
+			);
+		} catch (final FeignException fex) {
+			logger.error(String.format("[Catalogue] Operation has failed for asset [%s]", draftKey), fex);
 
-        if (draft.getStatus() != status) {
-            throw new AssetDraftException(
-                AssetMessageCode.INVALID_STATE,
-                String.format("Expected status is [%s]. Found [%s]", status, draft.getStatus())
-            );
-        }
-    }
+			throw new AssetDraftException(AssetMessageCode.CATALOGUE_SERVICE, "Failed to update metadata", fex);
+		} catch (final Exception ex) {
+			logger.error("Failed to update metadata", ex);
+
+			throw new AssetDraftException(AssetMessageCode.ERROR, "Failed to publish asset", ex);
+		}
+	}
 
     @Override
     public void addFile(
@@ -381,7 +420,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         return this.findOneDraft(publisherKey, draftKey);
     }
-
+   
     private ProcessInstanceDto findInstance(UUID businessKey) {
         try {
             final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getInstance(businessKey.toString());
@@ -429,4 +468,20 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         );
     }
 
+    @Transactional
+    private void ensureDraftAndStatus(UUID publisherKey, UUID assetKey, EnumProviderAssetDraftStatus status) {
+        final AssetDraftDto draft = this.findOneDraft(publisherKey, assetKey);
+
+        if (draft == null) {
+            throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
+        }
+
+        if (draft.getStatus() != status) {
+            throw new AssetDraftException(
+                AssetMessageCode.INVALID_STATE,
+                String.format("Expected status is [%s]. Found [%s]", status, draft.getStatus())
+            );
+        }
+    }
+    
 }

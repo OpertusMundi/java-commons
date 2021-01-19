@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemStoreStatistics;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
@@ -21,6 +22,9 @@ public class CatalogueFeatureProperties {
 
     @JsonProperty("additional_resources")
     private String additionalResources;
+    
+    @JsonProperty("automated_metadata")
+    private JsonNode automatedMetadata;
 
     private String conformity;
 
@@ -88,7 +92,7 @@ public class CatalogueFeatureProperties {
     @JsonProperty("revision_date")
     private String revisionDate;
 
-    private String scale;
+    private Integer scale;
 
     private String status;
 
@@ -104,7 +108,7 @@ public class CatalogueFeatureProperties {
     private String title;
 
     @JsonProperty("topic_category")
-    private String topicCategory;
+    private  List<String> topicCategory;
 
     private String type;
 

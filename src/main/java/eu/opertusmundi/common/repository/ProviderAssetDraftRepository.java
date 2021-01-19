@@ -14,6 +14,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.ProviderAssetDraftEntity;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
@@ -115,6 +117,32 @@ public interface ProviderAssetDraftRepository extends JpaRepository<ProviderAsse
         this.saveAndFlush(draft);
 
         return draft.toDto();
+    }
+
+    @Transactional(readOnly = false)
+    default void updateMetadata(UUID publisherKey, UUID draftKey, JsonNode metadata) throws AssetDraftException {
+        final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
+
+        if (draft == null) {
+            throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
+        }
+
+        if (draft.getStatus() != EnumProviderAssetDraftStatus.SUBMITTED) {
+            throw new AssetDraftException(
+                AssetMessageCode.INVALID_STATE,
+                String.format("Expected status is [%s]. Found [%s]", EnumProviderAssetDraftStatus.SUBMITTED, draft.getStatus())
+            );
+        }
+
+		draft.getCommand().setAutomatedMetadata(metadata);
+		// NOTE: Workaround for updating metadata. Property command of entity
+		// ProviderAssetDraftEntity is annotated with @Convert for serializing a
+		// CatalogueItemCommandDto instance to JSON; Hence updating only the metadata
+		// nested property wont trigger an update and convertToDatabaseColumn will not be
+		// invoked.
+		draft.setModifiedOn(ZonedDateTime.now());
+
+        this.saveAndFlush(draft);
     }
 
     @Transactional(readOnly = false)

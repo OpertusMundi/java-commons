@@ -1,41 +1,21 @@
 package eu.opertusmundi.common.model.ingest;
 
 import eu.opertusmundi.common.model.ServiceException;
-import lombok.Builder;
-import lombok.Getter;
 
 public class IngestServiceException extends ServiceException {
 
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
-    @Getter
-    private String errorDetails;
+	public IngestServiceException(IngestServiceMessageCode code) {
+		super(code, "[Ingest Service] Operation has failed");
+	}
 
-    @Getter
-    private int retries;
+	public IngestServiceException(IngestServiceMessageCode code, String message) {
+		super(code, message);
+	}
 
-    @Getter
-    private long retryTimeout;
-
-    @Builder
-    private IngestServiceException(IngestServiceMessageCode code, String message, String errorDetails, int retries, long retryTimeout) {
-        super(code, message);
-
-        this.errorDetails = errorDetails;
-        this.retries      = retries;
-        this.retryTimeout = retryTimeout;
-    }
-
-    public IngestServiceException(IngestServiceMessageCode code) {
-        super(code, "Operation failed");
-    }
-
-    public IngestServiceException(IngestServiceMessageCode code, String message) {
-        super(code, message);
-    }
-
-    public IngestServiceException(IngestServiceMessageCode code, String message, Throwable cause) {
-        super(code, message, cause);
-    }
+	public IngestServiceException(IngestServiceMessageCode code, String message, Throwable cause) {
+		super(code, message, cause);
+	}
 
 }

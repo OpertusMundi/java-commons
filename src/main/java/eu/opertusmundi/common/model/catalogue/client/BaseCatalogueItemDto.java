@@ -4,9 +4,12 @@ import java.util.List;
 
 import org.locationtech.jts.geom.Geometry;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
 import eu.opertusmundi.common.model.openapi.schema.GeometryAsJson;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,6 +27,7 @@ public class BaseCatalogueItemDto {
 
         this.abstractText                = props.getAbstractText();
         this.additionalResources         = props.getAdditionalResources();
+        this.automatedMetadata 			 = props.getAutomatedMetadata();
         this.conformity                  = props.getConformity();
         this.coupledResource             = props.getCoupledResource();
         this.creationDate                = props.getCreationDate();
@@ -62,6 +66,9 @@ public class BaseCatalogueItemDto {
     @Schema(description = "Auxiliary files or additional resources to the dataset", example = "")
     private String additionalResources;
 
+	@Schema(description = "Automated metadata")
+	private JsonNode automatedMetadata;
+    
     @Schema(description = "Degree of conformity with the implementing rules/standard of the metadata followed", example = "")
     private String conformity;
 
@@ -83,7 +90,12 @@ public class BaseCatalogueItemDto {
     @Schema(description = "The file format, physical medium, or dimensions of the resource", example = "")
     private String format;
 
-    @Schema(description = "The topic of the resource", example = "")
+    @ArraySchema(
+        arraySchema = @Schema(
+            description = "Resource Keywords"
+        ),
+        minItems = 0
+    )
     private List<String> keywords;
 
     @Schema(description = "A language of the resource", example = "")
@@ -149,8 +161,8 @@ public class BaseCatalogueItemDto {
     )
     private String revisionDate;
 
-    @Schema(description = "Denominator of the scale of the data set", example = "")
-    private String scale;
+    @Schema(description = "Denominator of the scale of the data set", example = "5000")
+    private Integer scale;
 
     @Schema(description = "The nature or genre of the service", example = "")
     private String spatialDataServiceType;
@@ -159,12 +171,14 @@ public class BaseCatalogueItemDto {
     @Schema(description = "Spatial resolution refers to the level of detail of the data set", example = "")
     private String spatialResolution;
 
-    @Schema(
-        description = "A high-level classification scheme to assist in the grouping and topic-based "
-                    + "search of available spatial data resources",
-        example = ""
+    @ArraySchema(
+        arraySchema = @Schema(
+            description = "A high-level classification scheme to assist in the grouping and topic-based "
+                        + "search of available spatial data resources"
+        ),
+        minItems = 0
     )
-    private String topicCategory;
+    private  List<String> topicCategory;
 
     @Schema(description = "The nature or genre of the resource", example = "")
     private String type;

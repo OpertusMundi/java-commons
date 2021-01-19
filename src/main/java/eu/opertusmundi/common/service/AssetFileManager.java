@@ -18,5 +18,7 @@ public interface AssetFileManager {
     void deletePath(UUID key, String fileName) throws FileSystemException, AssetRepositoryException;
 
     Path resolveFilePath(UUID key, String fileName) throws FileSystemException, AssetRepositoryException;
+    
+	void saveText(UUID key, String path, String fileName, String content) throws AssetRepositoryException; 
 
 }

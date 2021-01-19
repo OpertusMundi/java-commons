@@ -2,6 +2,7 @@ package eu.opertusmundi.common.service;
 
 import java.io.File;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -47,6 +48,7 @@ public class DefaultAssetFileManager implements AssetFileManager {
 
             if (dir.exists()) {
                 for (final File entry : dir.listFiles()) {
+                	// Ignore any folders e.g. the metadata folder
                     if (entry.isFile()) {
                         result.add(new FileDto(entry.getName(), "/" + entry.getName().toString(), entry.length(), entry.lastModified()));
                     }
@@ -123,5 +125,25 @@ public class DefaultAssetFileManager implements AssetFileManager {
             throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred");
         }
     }
+    
+	@Override
+	public void saveText(UUID key, String path, String fileName, String content) throws AssetRepositoryException {
+        try {
+            final AssetFileNamingStrategyContext ctx          = AssetFileNamingStrategyContext.of(key);
+            final Path                           relativePath = Paths.get("/", path, fileName);
+            final Path                           absolutePath = this.fileNamingStrategy.resolvePath(ctx, relativePath);
+            final File                           localFile    = absolutePath.toFile();
+
+            if (localFile.exists()) {
+                FileUtils.deleteQuietly(localFile);
+            }
+
+			FileUtils.writeStringToFile(localFile, content, Charset.forName("UTF-8"));
+        } catch (final FileSystemException ex) {
+            throw ex;
+        } catch (final Exception ex) {
+            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred");
+        }
+	}
 
 }

@@ -7,7 +7,7 @@ public class TransformServiceException extends ServiceException {
     private static final long serialVersionUID = 1L;
 
     public TransformServiceException(TransformServiceMessageCode code) {
-        super(code, "Operation failed");
+        super(code, "[Transform Service] Operation has failed");
     }
 
     public TransformServiceException(TransformServiceMessageCode code, String message) {

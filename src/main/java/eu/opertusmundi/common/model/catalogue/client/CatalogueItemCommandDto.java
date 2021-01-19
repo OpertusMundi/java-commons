@@ -59,12 +59,6 @@ public class CatalogueItemCommandDto extends BaseCatalogueItemDto implements Ser
     private UUID assetKey;
 
     /**
-     * Current user id
-     */
-    @JsonIgnore
-    private Integer userId;
-
-    /**
      * Publisher unique key.
      *
      * This value is ignored during serialization/deserialization. Instead, it

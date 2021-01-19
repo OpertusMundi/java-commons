@@ -6,6 +6,8 @@ import java.util.UUID;
 
 import org.springframework.security.access.AccessDeniedException;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.asset.AssetDraftReviewCommandDto;
@@ -136,6 +138,17 @@ public interface ProviderAssetService {
      */
     void publishDraft(UUID publisherKey, UUID draftKey) throws AssetDraftException;
 
+    /**
+     * Update draft metadata
+     * 
+     * @param publisherKey
+     * @param draftKey
+     * @param metadata
+     * @throws FileSystemException
+     * @throws AssetDraftException 
+     */
+    void updateMetadata(UUID publisherKey, UUID draftKey, JsonNode metadata) throws FileSystemException, AssetDraftException;
+    
     /**
      * Uploads a file for the selected asset
      *

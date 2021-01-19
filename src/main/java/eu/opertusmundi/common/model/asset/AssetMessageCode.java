@@ -9,6 +9,7 @@ public enum AssetMessageCode implements MessageCode {
     DRAFT_NOT_FOUND,
     PROVIDER_NOT_FOUND,
     FORMAT_NOT_SUPPORTED,
+    METADATA_SERIALIZATION,
     BPM_SERVICE,
     CATALOGUE_SERVICE,
     ;
