@@ -169,7 +169,7 @@ public class BaseCatalogueItemDto {
 
 
     @Schema(description = "Spatial resolution refers to the level of detail of the data set", example = "")
-    private String spatialResolution;
+    private Integer spatialResolution;
 
     @ArraySchema(
         arraySchema = @Schema(

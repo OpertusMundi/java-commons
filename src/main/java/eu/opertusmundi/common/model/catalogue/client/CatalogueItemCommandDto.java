@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.openapi.schema.PricingModelCommandAsJson;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -25,9 +26,14 @@ public class CatalogueItemCommandDto extends BaseCatalogueItemDto implements Ser
     private static final long serialVersionUID = 1L;
 
     @Schema(
-        description = "True if the file should be imported into PostGIS database and published using WMS/WFS endpoints",
+        description = "True if the file should be imported into PostGIS database and published using WMS/WFS "
+                    + "endpoints. Ingest operation is only supported for formats of category <b>VECTOR</b>",
         required = false,
-        defaultValue = "false"
+        defaultValue = "false",
+        externalDocs = @ExternalDocumentation(
+            description = "See configuration endpoint for asset file types details",
+            url   = "#operation/configuration-01" 
+        )
     )
     private boolean ingested = false;
 

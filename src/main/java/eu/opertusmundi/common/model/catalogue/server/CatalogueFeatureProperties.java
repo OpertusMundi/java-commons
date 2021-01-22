@@ -100,7 +100,7 @@ public class CatalogueFeatureProperties {
     private String spatialDataServiceType;
 
     @JsonProperty("spatial_resolution")
-    private String spatialResolution;
+    private Integer spatialResolution;
 
     @JsonProperty("store_statistics")
     private CatalogueItemStoreStatistics storeStatistics;
