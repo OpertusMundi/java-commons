@@ -51,6 +51,7 @@ import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.dto.EnumSortingOrder;
 import eu.opertusmundi.common.model.file.FileDto;
 import eu.opertusmundi.common.model.file.FileSystemException;
+import eu.opertusmundi.common.model.profiler.EnumDataProfilerSourceType;
 import eu.opertusmundi.common.repository.AssetFileTypeRepository;
 import eu.opertusmundi.common.repository.ProviderAssetDraftRepository;
 import feign.FeignException;
@@ -68,12 +69,12 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     private static final String MESSAGE_PROVIDER_REVIEW = "provider-publish-asset-user-acceptance-message";
 
-    @Value("${opertusmundi.data-profiler.metadata.exclude:}")
-    private String[] excludeMetadataProperties;
-    
+    @Value("${opertusmundi.data-profiler.metadata.vector.exclude:}")
+    private String[] excludeVectorMetadataProperties;
+
     @Autowired
     private ObjectMapper objectMapper;
-    
+
     @Autowired
     private AssetFileTypeRepository assetFileTypeRepository;
 
@@ -91,8 +92,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     public PageResultDto<AssetDraftDto> findAllDraft(
-        UUID publisherKey, Set<EnumProviderAssetDraftStatus> status, int pageIndex, int pageSize,
-        EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order
+        UUID publisherKey, Set<EnumProviderAssetDraftStatus> status, int pageIndex,
+        int pageSize, EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order
     ) {
         final Direction direction = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
 
@@ -117,7 +118,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 .map(ProviderAssetDraftEntity::toDto);
         }
 
-        final long count = page.getTotalElements();
+        final long                count   = page.getTotalElements();
         final List<AssetDraftDto> records = page.getContent();
 
         return PageResultDto.of(pageIndex, pageSize, records, count);
@@ -272,11 +273,14 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
             }
 
-            if (draft.getStatus() != EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW
-                    && draft.getStatus() != EnumProviderAssetDraftStatus.POST_PROCESSING
-                    && draft.getStatus() != EnumProviderAssetDraftStatus.PROVIDER_REJECTED) {
-                throw new AssetDraftException(AssetMessageCode.INVALID_STATE, String.format(
-                        "Expected status in [PENDING_PROVIDER_REVIEW, POST_PROCESSING, PROVIDER_REJECTED]. Found [%s]", draft.getStatus()));
+            if (draft.getStatus() != EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW && 
+                draft.getStatus() != EnumProviderAssetDraftStatus.POST_PROCESSING && 
+                draft.getStatus() != EnumProviderAssetDraftStatus.PROVIDER_REJECTED
+            ) {
+                throw new AssetDraftException(
+                    AssetMessageCode.INVALID_STATE, 
+                    String.format("Expected status in [PENDING_PROVIDER_REVIEW, POST_PROCESSING, PROVIDER_REJECTED]. Found [%s]", draft.getStatus())
+                );
             }
 
             // Send message to workflow instance
@@ -295,8 +299,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             this.bpmClient.getObject().correlateMessage(message);
 
             // Update status
-            this.providerAssetDraftRepository.updateStatus(publisherKey, draftKey,
-                    rejected ? EnumProviderAssetDraftStatus.PROVIDER_REJECTED : EnumProviderAssetDraftStatus.POST_PROCESSING);
+            this.providerAssetDraftRepository.updateStatus(
+                publisherKey, draftKey,
+                rejected ? EnumProviderAssetDraftStatus.PROVIDER_REJECTED : EnumProviderAssetDraftStatus.POST_PROCESSING
+            );
         } catch (final FeignException fex) {
             logger.error("[Feign Client][Provider Asset] Operation has failed", fex);
 
@@ -311,7 +317,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             // TODO : id must be created by the PID service
 
             final ProviderAssetDraftEntity draft = this.providerAssetDraftRepository
-        		.findOneByPublisherAndKey(publisherKey, draftKey)
+                .findOneByPublisherAndKey(publisherKey, draftKey)
                 .orElse(null);
 
             if (draft == null) {
@@ -319,8 +325,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             }
 
             if (draft.getStatus() != EnumProviderAssetDraftStatus.POST_PROCESSING) {
-                throw new AssetDraftException(AssetMessageCode.INVALID_STATE,
-                        String.format("Expected status to be [POST_PROCESSING]. Found [%s]", draft.getStatus()));
+                throw new AssetDraftException(
+                    AssetMessageCode.INVALID_STATE,
+                    String.format("Expected status to be [POST_PROCESSING]. Found [%s]", draft.getStatus())
+                );
             }
 
             // Create feature
@@ -358,43 +366,56 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Override
     @Transactional
     public void updateMetadata(
-		UUID publisherKey, UUID draftKey, JsonNode metadata
-	) throws FileSystemException, AssetDraftException {
-		try {
-			// The provider must have access to the selected draft and also the
-			// draft must be already accepted by the HelpDesk
-			this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.SUBMITTED);
-			
-			// Store all metadata in asset repository
-			final String content = objectMapper.writeValueAsString(metadata);
-			
-			this.assetFileManager.saveText(draftKey, "metadata", "automated-metadata.json", content);
-			
-			// Filter properties before updating metadata in catalogue service
-			if(excludeMetadataProperties!=null) {	
-				Arrays.asList(this.excludeMetadataProperties).stream()
-					.filter(p -> metadata.get(p)!=null)
-					.forEach(p -> ((ObjectNode) metadata).remove(p));
-			}
+        UUID publisherKey, UUID draftKey, JsonNode metadata
+    ) throws FileSystemException, AssetDraftException {
+        try {
+            // The provider must have access to the selected draft and also the
+            // draft must be already accepted by the HelpDesk
+            final AssetDraftDto draft = this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.SUBMITTED);
 
-			this.providerAssetDraftRepository.updateMetadata(publisherKey, draftKey, metadata);
-		} catch (AssetDraftException ex) {
-			throw ex;
-		} catch (JsonProcessingException ex) {
-			throw new AssetDraftException(
-				AssetMessageCode.METADATA_SERIALIZATION,
-				String.format("Failed to serialize automated metadata for asset [%s]", draftKey)
-			);
-		} catch (final FeignException fex) {
-			logger.error(String.format("[Catalogue] Operation has failed for asset [%s]", draftKey), fex);
+            // Store all metadata in asset repository
+            final String content = objectMapper.writeValueAsString(metadata);
 
-			throw new AssetDraftException(AssetMessageCode.CATALOGUE_SERVICE, "Failed to update metadata", fex);
-		} catch (final Exception ex) {
-			logger.error("Failed to update metadata", ex);
+            this.assetFileManager.saveText(draftKey, "metadata", "automated-metadata.json", content);
 
-			throw new AssetDraftException(AssetMessageCode.ERROR, "Failed to publish asset", ex);
-		}
-	}
+            // Filter properties before updating metadata in catalogue service
+            final EnumDataProfilerSourceType type = mapFormatToSourceType(draft.getCommand().getFormat());
+
+            switch (type) {
+                case VECTOR :
+                    if (excludeVectorMetadataProperties != null) {
+                        Arrays.asList(this.excludeVectorMetadataProperties).stream()
+                            .filter(p -> metadata.get(p) != null)
+                            .forEach(p -> ((ObjectNode) metadata).remove(p));
+                    }
+                    break;
+                default :
+                    // No action
+            }
+
+            // Store filtered metadata in asset repository
+            final String filteredContent = objectMapper.writeValueAsString(metadata);
+
+            this.assetFileManager.saveText(draftKey, "metadata", "automated-metadata-minified.json", filteredContent);
+
+            this.providerAssetDraftRepository.updateMetadata(publisherKey, draftKey, metadata);
+        } catch (AssetDraftException ex) {
+            throw ex;
+        } catch (JsonProcessingException ex) {
+            throw new AssetDraftException(
+                AssetMessageCode.METADATA_SERIALIZATION,
+                String.format("Failed to serialize automated metadata for asset [%s]", draftKey)
+            );
+        } catch (final FeignException fex) {
+            logger.error(String.format("[Catalogue] Operation has failed for asset [%s]", draftKey), fex);
+
+            throw new AssetDraftException(AssetMessageCode.CATALOGUE_SERVICE, "Failed to update metadata", fex);
+        } catch (final Exception ex) {
+            logger.error("Failed to update metadata", ex);
+
+            throw new AssetDraftException(AssetMessageCode.ERROR, "Failed to publish asset", ex);
+        }
+    }
 
     @Override
     public void addFile(
@@ -420,7 +441,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         return this.findOneDraft(publisherKey, draftKey);
     }
-   
+
     private ProcessInstanceDto findInstance(UUID businessKey) {
         try {
             final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getInstance(businessKey.toString());
@@ -455,11 +476,11 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         variables.put(name, v);
     }
 
-    private String mapFormatToSourceType(String format) throws AssetDraftException {
+    private EnumDataProfilerSourceType mapFormatToSourceType(String format) throws AssetDraftException {
         final Optional<AssetFileTypeEntity> fileType = this.assetFileTypeRepository.findOneByFormat(format);
 
         if (fileType.isPresent()) {
-            return fileType.get().getCategory().toString();
+            return fileType.get().getCategory();
         }
 
         throw new AssetDraftException(
@@ -469,7 +490,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Transactional
-    private void ensureDraftAndStatus(UUID publisherKey, UUID assetKey, EnumProviderAssetDraftStatus status) {
+    private AssetDraftDto ensureDraftAndStatus(UUID publisherKey, UUID assetKey, EnumProviderAssetDraftStatus status) {
         final AssetDraftDto draft = this.findOneDraft(publisherKey, assetKey);
 
         if (draft == null) {
@@ -482,6 +503,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 String.format("Expected status is [%s]. Found [%s]", status, draft.getStatus())
             );
         }
+
+        return draft;
     }
-    
+
 }
