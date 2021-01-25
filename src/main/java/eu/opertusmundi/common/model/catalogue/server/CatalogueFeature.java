@@ -25,7 +25,8 @@ public class CatalogueFeature {
 
         this.properties.setAbstractText(command.getAbstractText());
         this.properties.setAdditionalResources(command.getAdditionalResources());
-        this.properties.setConformity(command.getConformity());
+        this.properties.setAutomatedMetadata(command.getAutomatedMetadata());
+        this.properties.setConformity(command.getConformity().getValue());
         this.properties.setCoupledResource(command.getCoupledResource());
         this.properties.setCreationDate(command.getCreationDate());
         this.properties.setDateEnd(command.getDateEnd());

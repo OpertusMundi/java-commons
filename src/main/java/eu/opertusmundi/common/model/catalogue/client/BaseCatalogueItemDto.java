@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.locationtech.jts.geom.Geometry;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
@@ -28,7 +30,7 @@ public class BaseCatalogueItemDto {
         this.abstractText                = props.getAbstractText();
         this.additionalResources         = props.getAdditionalResources();
         this.automatedMetadata 			 = props.getAutomatedMetadata();
-        this.conformity                  = props.getConformity();
+        this.conformity                  = EnumConformity.fromString(props.getConformity());
         this.coupledResource             = props.getCoupledResource();
         this.creationDate                = props.getCreationDate();
         this.dateEnd                     = props.getDateEnd();
@@ -67,10 +69,11 @@ public class BaseCatalogueItemDto {
     private String additionalResources;
 
 	@Schema(description = "Automated metadata")
+	@JsonInclude(Include.NON_NULL)
 	private JsonNode automatedMetadata;
     
     @Schema(description = "Degree of conformity with the implementing rules/standard of the metadata followed", example = "")
-    private String conformity;
+    private EnumConformity conformity;
 
     @Schema(description = "Provides information about the datasets that the service operates on", example = "")
     private String coupledResource;
