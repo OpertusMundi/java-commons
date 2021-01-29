@@ -48,7 +48,7 @@ public interface CatalogueFeignClient {
      * @param id The item unique identifier.
      * @return An instance of {@link CatalogueServerItem}
      */
-    @GetMapping(value = "/api/get", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/api/published/get", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> findAllById(@RequestParam("id") UUID[] id);
 
     /**
