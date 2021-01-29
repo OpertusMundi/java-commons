@@ -1,11 +1,13 @@
 package eu.opertusmundi.common.service;
 
 import java.io.File;
+import java.math.BigDecimal;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +26,15 @@ public class DefaultDataProfilerService implements DataProfilerService{
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultDataProfilerService.class);
 
+    @Value("${opertusmundi.data-profiler.parameters.aspect-ratio:}")
+    private BigDecimal aspectRatio;
+
+    @Value("${opertusmundi.data-profiler.parameters.height:}")
+    private Integer height;
+
+    @Value("${opertusmundi.data-profiler.parameters.width:1920}")
+    private Integer width;
+    
     @Autowired
     private ObjectProvider<DataProfilerServiceFeignClient> profilerClient;
 
@@ -43,13 +54,17 @@ public class DefaultDataProfilerService implements DataProfilerService{
 
             switch (type) {
                 case NETCDF :
-                    e = this.profilerClient.getObject().profileNetCdf(file, EnumDataProfilerResponse.DEFERRED.getValue());
+                    e = this.profilerClient.getObject().profileNetCdf(
+                        file, EnumDataProfilerResponse.DEFERRED.getValue(), this.aspectRatio, this.height, this.width 
+                    );
                     break;
                 case RASTER :
                     e = this.profilerClient.getObject().profileRaster(file, EnumDataProfilerResponse.DEFERRED.getValue());
                     break;
                 case VECTOR :
-                    e = this.profilerClient.getObject().profileVector(file, EnumDataProfilerResponse.DEFERRED.getValue());
+                    e = this.profilerClient.getObject().profileVector(
+                        file, EnumDataProfilerResponse.DEFERRED.getValue(), this.aspectRatio, this.height, this.width
+                    );
                     break;
                 default :
                     throw new DataProfilerServiceException(DataProfilerServiceMessageCode.SOURCE_NOT_SUPPORTED);

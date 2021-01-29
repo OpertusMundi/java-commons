@@ -1,13 +1,14 @@
 package eu.opertusmundi.common.feign.client;
 
 import java.io.File;
+import java.math.BigDecimal;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -26,9 +27,12 @@ public interface DataProfilerServiceFeignClient {
 
     /**
      * Start new job for data in NetCDF format
-     *
+     * 
      * @param resource
      * @param response
+     * @param aspectRatio
+     * @param height
+     * @param width
      * @return
      */
     @PostMapping(
@@ -38,7 +42,10 @@ public interface DataProfilerServiceFeignClient {
     @Headers("Content-Type: multipart/form-data")
     ResponseEntity<DataProfilerDeferredResponseDto> profileNetCdf(
         @RequestPart(name = "resource", required = true) File resource,
-        @RequestPart(name = "response", required = true) String response
+        @RequestPart(name = "response", required = true) String response,
+        @RequestPart(name = "aspect_ratio", required = false) BigDecimal aspectRatio,
+        @RequestPart(name = "height", required = false) Integer height,
+        @RequestPart(name = "width", required = false) Integer width
     );
 
     /**
@@ -60,9 +67,12 @@ public interface DataProfilerServiceFeignClient {
 
     /**
      * Start new job for vector data
-     *
+     * 
      * @param resource
      * @param response
+     * @param aspectRatio
+     * @param height
+     * @param width
      * @return
      */
     @PostMapping(
@@ -72,7 +82,10 @@ public interface DataProfilerServiceFeignClient {
     @Headers("Content-Type: multipart/form-data")
     ResponseEntity<DataProfilerDeferredResponseDto> profileVector(
         @RequestPart(name = "resource", required = true) File resource,
-        @RequestPart(name = "response", required = true) String response
+        @RequestPart(name = "response", required = true) String response,
+        @RequestPart(name = "aspect_ratio", required = false) BigDecimal aspectRatio,
+        @RequestPart(name = "height", required = false) Integer height,
+        @RequestPart(name = "width", required = false) Integer width
     );
 
     /**
@@ -82,7 +95,7 @@ public interface DataProfilerServiceFeignClient {
      * @return
      */
     @GetMapping(value = "/status/{ticket}", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<DataProfilerStatusResponseDto> getStatus(@RequestParam("ticket") String ticket);
+    ResponseEntity<DataProfilerStatusResponseDto> getStatus(@PathVariable("ticket") String ticket);
 
     /**
      * Get resource metadata
@@ -91,6 +104,6 @@ public interface DataProfilerServiceFeignClient {
      * @return
      */
     @GetMapping(value = "/resource/{ticket}", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<JsonNode> getMetadata(@RequestParam("ticket") String ticket);
+    ResponseEntity<JsonNode> getMetadata(@PathVariable("ticket") String ticket);
 
 }
