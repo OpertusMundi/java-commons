@@ -9,7 +9,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import org.apache.commons.lang3.StringUtils;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.message.CorrelationMessageDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
@@ -26,7 +25,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,12 +42,13 @@ import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.asset.AssetDraftReviewCommandDto;
 import eu.opertusmundi.common.model.asset.AssetDraftSetStatusCommandDto;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
+import eu.opertusmundi.common.model.asset.AssetRepositoryException;
+import eu.opertusmundi.common.model.asset.AssetResourceDto;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftSortField;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.dto.EnumSortingOrder;
-import eu.opertusmundi.common.model.file.FileDto;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.profiler.EnumDataProfilerSourceType;
 import eu.opertusmundi.common.repository.AssetFileTypeRepository;
@@ -125,25 +124,24 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Override
-    public AssetDraftDto findOneDraft(UUID publisherKey, UUID assetKey) {
-        final ProviderAssetDraftEntity e = this.providerAssetDraftRepository.findOneByPublisherAndKey(publisherKey, assetKey).orElse(null);
+    public AssetDraftDto findOneDraft(UUID publisherKey, UUID draftKey) {
+        final ProviderAssetDraftEntity e = this.providerAssetDraftRepository.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
 
-        final AssetDraftDto result = e != null ? e.toDto() : null;
+        final AssetDraftDto draft = e != null ? e.toDto() : null;
 
-        if (result != null) {
-            final List<FileDto> files = this.assetFileManager.getFiles(assetKey);
-            result.setFiles(files);
-        }
-
-        return result;
+        this.loadResources(draft);
+            
+        return draft;
     }
 
     @Override
     @Transactional
     public AssetDraftDto updateDraft(CatalogueItemCommandDto command) throws AssetDraftException {
-        final AssetDraftDto result = this.providerAssetDraftRepository.update(command);
+        final AssetDraftDto draft = this.providerAssetDraftRepository.update(command);
 
-        return result;
+        this.loadResources(draft);
+        
+        return draft;
     }
 
     @Override
@@ -179,9 +177,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 // Set variables
                 this.setStringVariable(variables, "draftKey", command.getAssetKey());
                 this.setStringVariable(variables, "publisherKey", command.getPublisherKey());
-                this.setStringVariable(variables, "source", command.getSource());
-                this.setStringVariable(variables, "sourceType", this.mapFormatToSourceType(command.getFormat()));
-                this.setBooleanVariable(variables, "ingested", command.isIngested() && !StringUtils.isBlank(command.getSource()));
+                this.setBooleanVariable(variables, "ingested", command.isIngested());
 
                 options.setBusinessKey(command.getAssetKey().toString());
                 options.setVariables(variables);
@@ -190,8 +186,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 instance = this.bpmClient.getObject().startProcessByKey(WORKFLOW_SELL_ASSET, options);
             }
 
-            this.providerAssetDraftRepository.update(command, EnumProviderAssetDraftStatus.SUBMITTED, instance.getDefinitionId(),
-                    instance.getId());
+            this.providerAssetDraftRepository.update(
+                command, EnumProviderAssetDraftStatus.SUBMITTED, instance.getDefinitionId(), instance.getId()
+            );
         } catch (final AssetDraftException ex) {
             throw ex;
         }
@@ -366,17 +363,25 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Override
     @Transactional
     public void updateMetadata(
-        UUID publisherKey, UUID draftKey, JsonNode metadata
+        UUID publisherKey, UUID draftKey, String resource, JsonNode value
     ) throws FileSystemException, AssetDraftException {
         try {
             // The provider must have access to the selected draft and also the
             // draft must be already accepted by the HelpDesk
             final AssetDraftDto draft = this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.SUBMITTED);
 
+            // Get existing metadata. Create JsonNode object if no metadata
+            // exists
+            if (draft.getCommand().getAutomatedMetadata() == null) {
+                draft.getCommand().setAutomatedMetadata(objectMapper.createObjectNode());
+            }
+            
+            final ObjectNode metadata = (ObjectNode) draft.getCommand().getAutomatedMetadata();
+            
             // Store all metadata in asset repository
-            final String content = objectMapper.writeValueAsString(metadata);
+            final String content = objectMapper.writeValueAsString(value);
 
-            this.assetFileManager.saveText(draftKey, "metadata", "automated-metadata.json", content);
+            this.assetFileManager.saveMetadataAsText(draftKey, resource + ".automated-metadata.json", content);
 
             // Filter properties before updating metadata in catalogue service
             final EnumDataProfilerSourceType type = mapFormatToSourceType(draft.getCommand().getFormat());
@@ -385,8 +390,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 case VECTOR :
                     if (excludeVectorMetadataProperties != null) {
                         Arrays.asList(this.excludeVectorMetadataProperties).stream()
-                            .filter(p -> metadata.get(p) != null)
-                            .forEach(p -> ((ObjectNode) metadata).remove(p));
+                            .filter(p -> value.get(p) != null)
+                            .forEach(p -> ((ObjectNode) value).remove(p));
                     }
                     break;
                 default :
@@ -394,10 +399,13 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             }
 
             // Store filtered metadata in asset repository
-            final String filteredContent = objectMapper.writeValueAsString(metadata);
+            final String filteredContent = objectMapper.writeValueAsString(value);
 
-            this.assetFileManager.saveText(draftKey, "metadata", "automated-metadata-minified.json", filteredContent);
+            this.assetFileManager.saveMetadataAsText(draftKey, resource + ".automated-metadata-minified.json", filteredContent);
 
+            // Update metadata
+            metadata.set(resource, value);
+            
             this.providerAssetDraftRepository.updateMetadata(publisherKey, draftKey, metadata);
         } catch (AssetDraftException ex) {
             throw ex;
@@ -418,26 +426,28 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Override
-    public void addFile(
+    public AssetDraftDto addResource(
         UUID publisherKey, UUID draftKey, String fileName, InputStream input
-    ) throws FileSystemException, AccessDeniedException {
+    ) throws FileSystemException, AssetRepositoryException, AssetDraftException {
 
         // The provider must have access to the selected draft and also the
         // draft must be editable
         this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
 
-        this.assetFileManager.uploadFile(draftKey, fileName, input);
+        this.assetFileManager.uploadResource(draftKey, fileName, input);
+        
+        return this.findOneDraft(publisherKey, draftKey);
     }
 
     @Override
-    public AssetDraftDto deleteFile(
+    public AssetDraftDto deleteResource(
         UUID publisherKey, UUID draftKey, String fileName
-    ) throws FileSystemException, AccessDeniedException {
+    ) throws FileSystemException, AssetDraftException {
         // The provider must have access to the selected draft and also the
         // draft must be editable
         this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
 
-        this.assetFileManager.deletePath(draftKey, fileName);
+        this.assetFileManager.deleteResource(draftKey, fileName);
 
         return this.findOneDraft(publisherKey, draftKey);
     }
@@ -476,7 +486,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         variables.put(name, v);
     }
 
-    private EnumDataProfilerSourceType mapFormatToSourceType(String format) throws AssetDraftException {
+    public EnumDataProfilerSourceType mapFormatToSourceType(String format) throws AssetDraftException {
         final Optional<AssetFileTypeEntity> fileType = this.assetFileTypeRepository.findOneByFormat(format);
 
         if (fileType.isPresent()) {
@@ -490,7 +500,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Transactional
-    private AssetDraftDto ensureDraftAndStatus(UUID publisherKey, UUID assetKey, EnumProviderAssetDraftStatus status) {
+    private AssetDraftDto ensureDraftAndStatus(
+        UUID publisherKey, UUID assetKey, EnumProviderAssetDraftStatus status
+    ) throws AssetDraftException {
         final AssetDraftDto draft = this.findOneDraft(publisherKey, assetKey);
 
         if (draft == null) {
@@ -505,6 +517,13 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         }
 
         return draft;
+    }
+    
+    private void loadResources(AssetDraftDto draft) {
+        if (draft != null) {
+            final List<AssetResourceDto> resources = this.assetFileManager.getResources(draft.getKey());
+            draft.setResources(resources);
+        }
     }
 
 }

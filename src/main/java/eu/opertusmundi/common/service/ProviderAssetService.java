@@ -12,6 +12,7 @@ import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.asset.AssetDraftReviewCommandDto;
 import eu.opertusmundi.common.model.asset.AssetDraftSetStatusCommandDto;
+import eu.opertusmundi.common.model.asset.AssetRepositoryException;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftSortField;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
@@ -143,37 +144,43 @@ public interface ProviderAssetService {
      * 
      * @param publisherKey
      * @param draftKey
+     * @param resource
      * @param metadata
      * @throws FileSystemException
      * @throws AssetDraftException 
      */
-    void updateMetadata(UUID publisherKey, UUID draftKey, JsonNode metadata) throws FileSystemException, AssetDraftException;
+    void updateMetadata(UUID publisherKey, UUID draftKey, String resource, JsonNode metadata) throws FileSystemException, AssetDraftException;
     
     /**
-     * Uploads a file for the selected asset
+     * Uploads a resource file for the selected asset
      *
      * @param publisherKey The provider unique key
      * @param draftKey The draft asset unique key
-     * @param fileName The file unique name. If a file already exists for the asset, it is overwritten
+     * @param fileName The resource file unique name. If a file already exists for the asset, it is overwritten
      * @param input An input stream of the uploaded file. The caller should close the stream.
      *
+     * @return
+     * 
      * @throws FileSystemException
-     * @throws AccessDeniedException
+     * @throws AssetRepositoryException
+     * @throws AssetDraftException
      */
-    void addFile(UUID publisherKey, UUID draftKey, String fileName, InputStream input) throws FileSystemException, AccessDeniedException;
+    AssetDraftDto addResource(
+        UUID publisherKey, UUID draftKey, String fileName, InputStream input
+    ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
 
     /**
-     * Removes a file for the selected asset
+     * Removes a resource for the selected asset
      *
      * @param publisherKey The provider unique key
      * @param draftKey The draft asset unique key
-     * @param path The path of the file to delete
+     * @param path The path of the resource file to delete
      *
      * @return
      *
      * @throws FileSystemException
-     * @throws AccessDeniedException
+     * @throws AssetDraftException
      */
-    AssetDraftDto deleteFile(UUID publisherKey, UUID draftKey, String path) throws FileSystemException, AccessDeniedException;
+    AssetDraftDto deleteResource(UUID publisherKey, UUID draftKey, String path) throws FileSystemException, AssetDraftException;
 
 }

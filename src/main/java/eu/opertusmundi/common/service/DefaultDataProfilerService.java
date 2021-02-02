@@ -1,13 +1,11 @@
 package eu.opertusmundi.common.service;
 
 import java.io.File;
-import java.math.BigDecimal;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.feign.client.DataProfilerServiceFeignClient;
 import eu.opertusmundi.common.model.profiler.DataProfilerDeferredResponseDto;
+import eu.opertusmundi.common.model.profiler.DataProfilerOptions;
 import eu.opertusmundi.common.model.profiler.DataProfilerServiceException;
 import eu.opertusmundi.common.model.profiler.DataProfilerServiceMessageCode;
 import eu.opertusmundi.common.model.profiler.DataProfilerStatusResponseDto;
@@ -25,21 +24,14 @@ import eu.opertusmundi.common.model.profiler.EnumDataProfilerSourceType;
 public class DefaultDataProfilerService implements DataProfilerService{
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultDataProfilerService.class);
-
-    @Value("${opertusmundi.data-profiler.parameters.aspect-ratio:}")
-    private BigDecimal aspectRatio;
-
-    @Value("${opertusmundi.data-profiler.parameters.height:}")
-    private Integer height;
-
-    @Value("${opertusmundi.data-profiler.parameters.width:1920}")
-    private Integer width;
-    
+   
     @Autowired
     private ObjectProvider<DataProfilerServiceFeignClient> profilerClient;
 
     @Override
-    public DataProfilerDeferredResponseDto profile(EnumDataProfilerSourceType type, String source) throws DataProfilerServiceException {
+    public DataProfilerDeferredResponseDto profile(
+        EnumDataProfilerSourceType type, String source, DataProfilerOptions options
+    ) throws DataProfilerServiceException {
         try {
             final File file = new File(source);
 
@@ -55,7 +47,18 @@ public class DefaultDataProfilerService implements DataProfilerService{
             switch (type) {
                 case NETCDF :
                     e = this.profilerClient.getObject().profileNetCdf(
-                        file, EnumDataProfilerResponse.DEFERRED.getValue(), this.aspectRatio, this.height, this.width 
+                        file,                                           // The file
+                        EnumDataProfilerResponse.DEFERRED.getValue(),   // Deferred processing mode
+                        options.getBaseMapProvider(),                   // The basemap provider. Default: OpenStreetMap
+                        options.getBaseMapName(),                       // The name of the basemap. Default: Mapnik
+                        options.getAspectRatio(),                       // The aspect ratio of the static map to be generated
+                        options.getHeight() ,                           // The height (in pixels) of the static map to be generated
+                        options.getWidth(),                             // The width (in pixels) of the static map to be generated
+                        options.getLat(),                               // The column name containing the latitude information
+                        options.getLon(),                               // The column name containing the longitude information
+                        options.getTime(),                              // The column name containing the time information
+                        options.getCrs(),                               // The CRS e.g. EPSG:4326
+                        options.getGeometry()                           // The column name containing the geometry information. Default: WKT
                     );
                     break;
                 case RASTER :
@@ -63,7 +66,18 @@ public class DefaultDataProfilerService implements DataProfilerService{
                     break;
                 case VECTOR :
                     e = this.profilerClient.getObject().profileVector(
-                        file, EnumDataProfilerResponse.DEFERRED.getValue(), this.aspectRatio, this.height, this.width
+                        file,
+                        EnumDataProfilerResponse.DEFERRED.getValue(),   // Deferred processing mode
+                        options.getBaseMapProvider(),                   // The basemap provider. Default: OpenStreetMap
+                        options.getBaseMapName(),                       // The name of the basemap. Default: Mapnik
+                        options.getAspectRatio(),                       // The aspect ratio of the static map to be generated
+                        options.getHeight() ,                           // The height (in pixels) of the static map to be generated
+                        options.getWidth(),                             // The width (in pixels) of the static map to be generated
+                        options.getLat(),                               // The column name containing the latitude information
+                        options.getLon(),                               // The column name containing the longitude information
+                        options.getTime(),                              // The column name containing the time information
+                        options.getCrs(),                               // The CRS e.g. EPSG:4326
+                        options.getGeometry()                           // The column name containing the geometry information. Default: WKT
                     );
                     break;
                 default :

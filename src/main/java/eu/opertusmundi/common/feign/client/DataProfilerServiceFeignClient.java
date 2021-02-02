@@ -30,9 +30,16 @@ public interface DataProfilerServiceFeignClient {
      * 
      * @param resource
      * @param response
+     * @param baseMapProvider
+     * @param baseMapName
      * @param aspectRatio
      * @param height
      * @param width
+     * @param lat
+     * @param lon
+     * @param time
+     * @param crs
+     * @param geometry
      * @return
      */
     @PostMapping(
@@ -41,11 +48,18 @@ public interface DataProfilerServiceFeignClient {
     )
     @Headers("Content-Type: multipart/form-data")
     ResponseEntity<DataProfilerDeferredResponseDto> profileNetCdf(
-        @RequestPart(name = "resource", required = true) File resource,
-        @RequestPart(name = "response", required = true) String response,
-        @RequestPart(name = "aspect_ratio", required = false) BigDecimal aspectRatio,
-        @RequestPart(name = "height", required = false) Integer height,
-        @RequestPart(name = "width", required = false) Integer width
+        @RequestPart(name = "resource",         required = true)  File       resource,
+        @RequestPart(name = "response",         required = true)  String     response,
+        @RequestPart(name = "basemap_provider", required = false) String     baseMapProvider,
+        @RequestPart(name = "basemap_name ",    required = false) String     baseMapName ,
+        @RequestPart(name = "aspect_ratio",     required = false) BigDecimal aspectRatio,
+        @RequestPart(name = "height",           required = false) Integer    height,
+        @RequestPart(name = "width",            required = false) Integer    width,
+        @RequestPart(name = "lat",              required = false) String     lat ,
+        @RequestPart(name = "lon",              required = false) String     lon ,
+        @RequestPart(name = "time",             required = false) String     time,
+        @RequestPart(name = "crs",              required = false) String     crs,
+        @RequestPart(name = "geometry",         required = false) String     geometry 
     );
 
     /**
@@ -70,9 +84,16 @@ public interface DataProfilerServiceFeignClient {
      * 
      * @param resource
      * @param response
+     * @param baseMapProvider
+     * @param baseMapName
      * @param aspectRatio
      * @param height
      * @param width
+     * @param lat
+     * @param lon
+     * @param time
+     * @param crs
+     * @param geometry
      * @return
      */
     @PostMapping(
@@ -81,11 +102,18 @@ public interface DataProfilerServiceFeignClient {
     )
     @Headers("Content-Type: multipart/form-data")
     ResponseEntity<DataProfilerDeferredResponseDto> profileVector(
-        @RequestPart(name = "resource", required = true) File resource,
-        @RequestPart(name = "response", required = true) String response,
-        @RequestPart(name = "aspect_ratio", required = false) BigDecimal aspectRatio,
-        @RequestPart(name = "height", required = false) Integer height,
-        @RequestPart(name = "width", required = false) Integer width
+        @RequestPart(name = "resource",         required = true)  File       resource,
+        @RequestPart(name = "response",         required = true)  String     response,
+        @RequestPart(name = "basemap_provider", required = false) String     baseMapProvider,
+        @RequestPart(name = "basemap_name ",    required = false) String     baseMapName ,
+        @RequestPart(name = "aspect_ratio",     required = false) BigDecimal aspectRatio,
+        @RequestPart(name = "height",           required = false) Integer    height,
+        @RequestPart(name = "width",            required = false) Integer    width,
+        @RequestPart(name = "lat",              required = false) String     lat ,
+        @RequestPart(name = "lon",              required = false) String     lon ,
+        @RequestPart(name = "time",             required = false) String     time,
+        @RequestPart(name = "crs",              required = false) String     crs,
+        @RequestPart(name = "geometry",         required = false) String     geometry 
     );
 
     /**

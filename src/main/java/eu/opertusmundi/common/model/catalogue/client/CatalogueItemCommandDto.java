@@ -47,9 +47,6 @@ public class CatalogueItemCommandDto extends BaseCatalogueItemDto implements Ser
     )
     private List<BasePricingModelCommandDto> pricingModels;
 
-    @Schema(description = "Path to user's remote file system", required = false)
-    private String source;
-
     @Schema(description = "A name given to the resource", required = true)
     @NotEmpty
     private String title;

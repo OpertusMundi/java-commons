@@ -21,7 +21,7 @@ import eu.opertusmundi.common.model.AssetFileNamingStrategyContext;
 import eu.opertusmundi.common.model.FileSystemMessageCode;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
-import eu.opertusmundi.common.model.file.FileDto;
+import eu.opertusmundi.common.model.asset.AssetResourceDto;
 import eu.opertusmundi.common.model.file.FileSystemException;
 
 @Service
@@ -29,33 +29,37 @@ public class DefaultAssetFileManager implements AssetFileManager {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultAssetFileManager.class);
 
+    private static final String RESOURCE_PATH = "/resources";
+    
+    private static final String METADATA_PATH = "/metadata";
+
     @Autowired
     private DefaultAssetFileNamingStrategy fileNamingStrategy;
 
     @Override
-    public List<FileDto> getFiles(UUID key) throws FileSystemException, AssetRepositoryException {
+    public List<AssetResourceDto> getResources(UUID key) throws FileSystemException, AssetRepositoryException {
         try {
             if (key == null) {
-                return new ArrayList<FileDto>();
+                return new ArrayList<AssetResourceDto>();
             }
 
             final AssetFileNamingStrategyContext ctx     = AssetFileNamingStrategyContext.of(key);
             final Path                           userDir = this.fileNamingStrategy.getDir(ctx);
-            final Path                           target  = Paths.get(userDir.toString());
+            final Path                           target  = Paths.get(userDir.toString(), RESOURCE_PATH);
 
-            final List<FileDto> result = new ArrayList<FileDto>();
-            final File          dir    = target.toFile();
+            final List<AssetResourceDto> resources = new ArrayList<AssetResourceDto>();
+            final File                   dir       = target.toFile();
 
             if (dir.exists()) {
                 for (final File entry : dir.listFiles()) {
                 	// Ignore any folders e.g. the metadata folder
                     if (entry.isFile()) {
-                        result.add(new FileDto(entry.getName(), "/" + entry.getName().toString(), entry.length(), entry.lastModified()));
+                        resources.add(new AssetResourceDto(entry.getName(), entry.length(), entry.lastModified()));
                     }
                 }
             }
 
-            return result;
+            return resources;
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
@@ -66,13 +70,18 @@ public class DefaultAssetFileManager implements AssetFileManager {
     }
 
     @Override
-    public void uploadFile(UUID key, String fileName, InputStream input) throws AssetRepositoryException, FileSystemException {
+    public void uploadResource(UUID key, String fileName, InputStream input) throws AssetRepositoryException, FileSystemException {
         try {
             final AssetFileNamingStrategyContext ctx          = AssetFileNamingStrategyContext.of(key);
-            final Path                           relativePath = Paths.get("/", fileName);
+            final Path                           relativePath = Paths.get(RESOURCE_PATH, fileName);
             final Path                           absolutePath = this.fileNamingStrategy.resolvePath(ctx, relativePath);
             final File                           localFile    = absolutePath.toFile();
 
+            // Create parent directory
+            if (!absolutePath.getParent().toFile().exists()) {
+                FileUtils.forceMkdir(absolutePath.getParent().toFile());
+            }
+            
             if (localFile.exists()) {
                 FileUtils.deleteQuietly(localFile);
             }
@@ -86,10 +95,11 @@ public class DefaultAssetFileManager implements AssetFileManager {
     }
 
     @Override
-    public void deletePath(UUID key, String path) throws FileSystemException, AssetRepositoryException {
+    public void deleteResource(UUID key, String fileName) throws FileSystemException, AssetRepositoryException {
         try {
             final AssetFileNamingStrategyContext ctx          = AssetFileNamingStrategyContext.of(key);
-            final Path                           absolutePath = this.fileNamingStrategy.resolvePath(ctx, path);
+            final Path                           relativePath = Paths.get(RESOURCE_PATH, fileName);
+            final Path                           absolutePath = this.fileNamingStrategy.resolvePath(ctx, relativePath);
             final File                           file         = absolutePath.toFile();
 
             if (!file.exists()) {
@@ -105,11 +115,11 @@ public class DefaultAssetFileManager implements AssetFileManager {
     }
 
     @Override
-    public Path resolveFilePath(UUID key, String fileName) throws FileSystemException, AssetRepositoryException {
+    public Path resolveResourcePath(UUID key, String fileName) throws FileSystemException, AssetRepositoryException {
         try {
             final AssetFileNamingStrategyContext ctx          = AssetFileNamingStrategyContext.of(key);
-            final Path                           assetDir     = this.fileNamingStrategy.getDir(ctx);
-            final Path                           absolutePath = Paths.get(assetDir.toString(), fileName);
+            final Path                           relativePath = Paths.get(RESOURCE_PATH, fileName);
+            final Path                           absolutePath = this.fileNamingStrategy.resolvePath(ctx, relativePath);
             final File                           file         = absolutePath.toFile();
 
             if (!file.exists()) {
@@ -127,13 +137,18 @@ public class DefaultAssetFileManager implements AssetFileManager {
     }
     
 	@Override
-	public void saveText(UUID key, String path, String fileName, String content) throws AssetRepositoryException {
+    public void saveMetadataAsText(UUID key, String fileName, String content) throws AssetRepositoryException {
         try {
             final AssetFileNamingStrategyContext ctx          = AssetFileNamingStrategyContext.of(key);
-            final Path                           relativePath = Paths.get("/", path, fileName);
+            final Path                           relativePath = Paths.get(METADATA_PATH,  fileName);
             final Path                           absolutePath = this.fileNamingStrategy.resolvePath(ctx, relativePath);
             final File                           localFile    = absolutePath.toFile();
 
+            // Create parent directory
+            if (!absolutePath.getParent().toFile().exists()) {
+                FileUtils.forceMkdir(absolutePath.getParent().toFile());
+            }
+            
             if (localFile.exists()) {
                 FileUtils.deleteQuietly(localFile);
             }

@@ -109,7 +109,6 @@ public interface ProviderAssetDraftRepository extends JpaRepository<ProviderAsse
         draft.setModifiedOn(now);
         draft.setProcessDefinition(processDefinition);
         draft.setProcessInstance(processInstance);
-        draft.setSource(command.getSource());
         draft.setStatus(status);
         draft.setTitle(command.getTitle());
         draft.setVersion(command.getVersion());

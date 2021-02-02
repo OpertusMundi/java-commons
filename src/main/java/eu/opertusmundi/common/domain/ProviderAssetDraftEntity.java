@@ -113,11 +113,6 @@ public class ProviderAssetDraftEntity {
     @Setter
     private boolean ingested;
 
-    @Column(name = "`source`")
-    @Getter
-    @Setter
-    private String source;
-
     @Column(name = "`created_on`", nullable = false)
     @Getter
     private final ZonedDateTime createdOn = ZonedDateTime.now();
@@ -139,7 +134,6 @@ public class ProviderAssetDraftEntity {
         a.setKey(this.key);
         a.setModifiedOn(this.modifiedOn);
         a.setProviderRejectionReason(this.providerRejectionReason);
-        a.setSource(this.source);
         a.setStatus(this.status);
         a.setTitle(this.title);
         a.setVersion(this.version);

@@ -6,19 +6,19 @@ import java.util.List;
 import java.util.UUID;
 
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
-import eu.opertusmundi.common.model.file.FileDto;
+import eu.opertusmundi.common.model.asset.AssetResourceDto;
 import eu.opertusmundi.common.model.file.FileSystemException;
 
 public interface AssetFileManager {
 
-    List<FileDto> getFiles(UUID key) throws FileSystemException, AssetRepositoryException;
+    List<AssetResourceDto> getResources(UUID key) throws FileSystemException, AssetRepositoryException;
 
-    void uploadFile(UUID key, String fileName, InputStream input) throws FileSystemException, AssetRepositoryException;
+    void uploadResource(UUID key, String fileName, InputStream input) throws FileSystemException, AssetRepositoryException;
 
-    void deletePath(UUID key, String fileName) throws FileSystemException, AssetRepositoryException;
+    void deleteResource(UUID key, String fileName) throws FileSystemException, AssetRepositoryException;
 
-    Path resolveFilePath(UUID key, String fileName) throws FileSystemException, AssetRepositoryException;
+    Path resolveResourcePath(UUID key, String fileName) throws FileSystemException, AssetRepositoryException;
     
-	void saveText(UUID key, String path, String fileName, String content) throws AssetRepositoryException; 
+	void saveMetadataAsText(UUID key, String fileName, String content) throws AssetRepositoryException; 
 
 }

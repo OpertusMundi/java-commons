@@ -42,9 +42,6 @@ public abstract class BaseAssetDraftDto {
     @Schema(description = "Rejection reason if the draft has been rejected by the provider")
     private String providerRejectionReason;
 
-    @Schema(description = "Path to user's remote file system")
-    private String source;
-
     @Schema(
         description = "True if the file should be imported into PostGIS database and published using WMS/WFS endpoints"
     )
