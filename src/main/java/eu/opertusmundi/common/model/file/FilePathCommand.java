@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.model.file;
 
+import javax.validation.constraints.NotEmpty;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -17,6 +19,7 @@ public class FilePathCommand {
         example = "/tutorial",
         required = true
     )
+    @NotEmpty
     private String path;
 
     @JsonIgnore

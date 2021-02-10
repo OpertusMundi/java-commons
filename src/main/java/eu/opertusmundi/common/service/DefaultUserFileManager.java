@@ -31,7 +31,7 @@ public class DefaultUserFileManager implements UserFileManager {
 
     private long maxUserSpace;
 
-    @Value("${opertus-mundi.file-system.user-max-space:20971520}")
+    @Value("${opertus-mundi.file-system.user-max-space:20971520000}")
     private void setMaxUserSpace(String maxUserSpace) {
         this.maxUserSpace = this.parseSize(maxUserSpace);
     }
@@ -44,6 +44,10 @@ public class DefaultUserFileManager implements UserFileManager {
 
     @Override
     public DirectoryDto browse(FilePathCommand command) throws FileSystemException {
+        Assert.notNull(command, "Expected a non-null command");
+        Assert.notNull(command.getUserId(), "Expected a non-null user id");
+        Assert.isTrue(!StringUtils.isBlank(command.getPath()), "Expected a non-empty path");
+        
         try {
             final UserFileNamingStrategyContext ctx     = UserFileNamingStrategyContext.of(command.getUserId(), true);
             final Path                          userDir = this.fileNamingStrategy.getDir(ctx);
@@ -59,6 +63,9 @@ public class DefaultUserFileManager implements UserFileManager {
 
     @Override
     public void createPath(FilePathCommand command) throws FileSystemException {
+        Assert.notNull(command, "Expected a non-null command");
+        Assert.notNull(command.getUserId(), "Expected a non-null user id");
+        
         try {
             if (StringUtils.isEmpty(command.getPath())) {
                 throw new FileSystemException(FileSystemMessageCode.PATH_IS_EMPTY, "A path is required");
@@ -86,6 +93,10 @@ public class DefaultUserFileManager implements UserFileManager {
 
     @Override
     public void uploadFile(InputStream input, FileUploadCommand command) throws FileSystemException {
+        Assert.notNull(command, "Expected a non-null command");
+        Assert.notNull(command.getUserId(), "Expected a non-null user id");
+        Assert.isTrue(command.getSize() > 0, "Expected file size to be greater than 0");
+        
         try  {
             final UserFileNamingStrategyContext ctx         = UserFileNamingStrategyContext.of(command.getUserId());
             final Path                          userDir     = this.fileNamingStrategy.getDir(ctx);
@@ -99,11 +110,11 @@ public class DefaultUserFileManager implements UserFileManager {
             if (StringUtils.isBlank(command.getPath())) {
                 command.setPath("/");
             }
-            if (StringUtils.isEmpty(command.getFilename())) {
+            if (StringUtils.isEmpty(command.getFileName())) {
                 throw new FileSystemException(FileSystemMessageCode.PATH_IS_EMPTY, "File name is not set");
             }
 
-            final Path relativePath = Paths.get(command.getPath(), command.getFilename());
+            final Path relativePath = Paths.get(command.getPath(), command.getFileName());
             final Path absolutePath = this.fileNamingStrategy.resolvePath(ctx, relativePath);
             final File localFile    = absolutePath.toFile();
 
@@ -135,6 +146,9 @@ public class DefaultUserFileManager implements UserFileManager {
 
     @Override
     public void deletePath(FilePathCommand command) throws FileSystemException {
+        Assert.notNull(command, "Expected a non-null command");
+        Assert.notNull(command.getUserId(), "Expected a non-null user id");
+        
         try {
             if (StringUtils.isEmpty(command.getPath())) {
                 throw new FileSystemException(FileSystemMessageCode.PATH_IS_EMPTY, "A path is required");
@@ -162,6 +176,9 @@ public class DefaultUserFileManager implements UserFileManager {
 
     @Override
     public Path resolveFilePath(FilePathCommand command) throws FileSystemException {
+        Assert.notNull(command, "Expected a non-null command");
+        Assert.notNull(command.getUserId(), "Expected a non-null user id");
+        
         try {
             if (StringUtils.isEmpty(command.getPath())) {
                 throw new FileSystemException(FileSystemMessageCode.PATH_IS_EMPTY, "A path to the file is required");

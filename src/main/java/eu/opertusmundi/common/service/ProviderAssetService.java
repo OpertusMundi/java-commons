@@ -4,15 +4,15 @@ import java.io.InputStream;
 import java.util.Set;
 import java.util.UUID;
 
-import org.springframework.security.access.AccessDeniedException;
-
 import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.asset.AssetDraftReviewCommandDto;
 import eu.opertusmundi.common.model.asset.AssetDraftSetStatusCommandDto;
+import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceCommandDto;
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
+import eu.opertusmundi.common.model.asset.AssetResourceCommandDto;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftSortField;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
@@ -154,33 +154,33 @@ public interface ProviderAssetService {
     /**
      * Uploads a resource file for the selected asset
      *
-     * @param publisherKey The provider unique key
-     * @param draftKey The draft asset unique key
-     * @param fileName The resource file unique name. If a file already exists for the asset, it is overwritten
+     * @param command Resource metadata. If a file with the same name already already exists for the asset, it is overwritten
      * @param input An input stream of the uploaded file. The caller should close the stream.
      *
-     * @return
+     * @return The updated draft
      * 
      * @throws FileSystemException
      * @throws AssetRepositoryException
      * @throws AssetDraftException
      */
     AssetDraftDto addResource(
-        UUID publisherKey, UUID draftKey, String fileName, InputStream input
+        AssetResourceCommandDto command, InputStream input
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
-
+    
     /**
-     * Removes a resource for the selected asset
+     * Uploads an additional resource file for the selected asset
      *
-     * @param publisherKey The provider unique key
-     * @param draftKey The draft asset unique key
-     * @param path The path of the resource file to delete
+     * @param command Resource metadata. If a file with the same name already already exists for the asset, it is overwritten
+     * @param input An input stream of the uploaded file. The caller should close the stream.
      *
-     * @return
-     *
+     * @return The updated draft
+     * 
      * @throws FileSystemException
+     * @throws AssetRepositoryException
      * @throws AssetDraftException
      */
-    AssetDraftDto deleteResource(UUID publisherKey, UUID draftKey, String path) throws FileSystemException, AssetDraftException;
+    AssetDraftDto addAdditionalResource(
+        AssetFileAdditionalResourceCommandDto command, InputStream input
+    ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
 
 }

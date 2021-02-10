@@ -1,12 +1,9 @@
 package eu.opertusmundi.common.service;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,11 +34,6 @@ public class DefaultUserFileNamingStrategy extends AbstractFileNamingStrategy<Us
     private Path userDataDirectory;
 
     @Override
-    public String getScheme() {
-        return SCHEME;
-    }
-
-    @Override
     public Path getDir(UserFileNamingStrategyContext ctx) throws IOException {
         Assert.notNull(ctx, "Expected a non-null context");
 
@@ -56,50 +48,6 @@ public class DefaultUserFileNamingStrategy extends AbstractFileNamingStrategy<Us
         }
 
         return baseDir;
-    }
-
-    @Override
-    public URI convertToUri(UserFileNamingStrategyContext ctx, Path relativePath) {
-        Assert.notNull(ctx, "Expected a non-null context");
-        Assert.notNull(relativePath, "A path is required");
-        Assert.isTrue(!relativePath.isAbsolute(), "Expected a relative path");
-
-        URI uri = null;
-        try {
-            uri = new URI(SCHEME, String.valueOf(ctx.getId()), "/" + relativePath.toString(), null);
-        } catch (final URISyntaxException ex) {
-            throw new IllegalArgumentException(ex);
-        }
-        return uri;
-    }
-
-    @Override
-    public URI convertToUri(Path path) {
-        Assert.notNull(path, "A path is required");
-        Assert.isTrue(path.isAbsolute(), "Expected an absolute path");
-        Assert.isTrue(path.startsWith(this.userDataDirectory), "The path is outside user-data directory");
-
-        final Path userPath       = this.userDataDirectory.relativize(path);
-        final int  userPathLength = userPath.getNameCount();
-
-        Assert.isTrue(userPathLength > 1, "The relative path is too short");
-
-        final int userId = Integer.parseInt(userPath.getName(0).toString());
-
-        return this.convertToUri(UserFileNamingStrategyContext.of(userId), userPath.subpath(1, userPathLength));
-    }
-
-    @Override
-    public Path resolveUri(URI uri) throws IOException {
-        Assert.notNull(uri, "A user-data URI is required");
-        Assert.isTrue(SCHEME.equals(uri.getScheme()), "The given URI has an unexpected scheme");
-
-        final int    userId = Integer.parseInt(uri.getHost());
-        final String path   = uri.getPath();
-
-        Assert.isTrue(path.startsWith("/"), "The URI path was expected as an absolute path");
-
-        return this.resolvePath(UserFileNamingStrategyContext.of(userId), Paths.get(path.substring(1)));
     }
 
     @Override

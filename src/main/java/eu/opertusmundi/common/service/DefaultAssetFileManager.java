@@ -12,49 +12,67 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import eu.opertusmundi.common.model.AssetFileNamingStrategyContext;
 import eu.opertusmundi.common.model.FileSystemMessageCode;
+import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceCommandDto;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
-import eu.opertusmundi.common.model.asset.AssetResourceDto;
+import eu.opertusmundi.common.model.asset.AssetResourceCommandDto;
+import eu.opertusmundi.common.model.file.FileDto;
 import eu.opertusmundi.common.model.file.FileSystemException;
 
 @Service
 public class DefaultAssetFileManager implements AssetFileManager {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultAssetFileManager.class);
+    
+    private static final Logger assetRepositoryLogger = LoggerFactory.getLogger("ASSET_REPOSITORY");
 
     private static final String RESOURCE_PATH = "/resources";
     
+    private static final String ADDITIONAL_RESOURCE_PATH = "/additional-resources";
+    
     private static final String METADATA_PATH = "/metadata";
-
+    
     @Autowired
     private DefaultAssetFileNamingStrategy fileNamingStrategy;
+    
+    @Override
+    public List<FileDto> getResources(UUID publisherKey, UUID draftKey) throws FileSystemException, AssetRepositoryException {
+        return this.getResources(publisherKey, draftKey, RESOURCE_PATH);
+    }
 
     @Override
-    public List<AssetResourceDto> getResources(UUID key) throws FileSystemException, AssetRepositoryException {
+    public List<FileDto> getAdditionalResources(UUID publisherKey, UUID draftKey) throws FileSystemException, AssetRepositoryException {
+        return this.getResources(publisherKey, draftKey, ADDITIONAL_RESOURCE_PATH);
+    }
+
+    private List<FileDto> getResources(UUID publisherKey, UUID draftKey, String relativePath) throws FileSystemException, AssetRepositoryException {
+        Assert.notNull(publisherKey, "Expected non-null publisher key");
+        Assert.notNull(draftKey, "Expected non-null draft key");
+
         try {
-            if (key == null) {
-                return new ArrayList<AssetResourceDto>();
-            }
-
-            final AssetFileNamingStrategyContext ctx     = AssetFileNamingStrategyContext.of(key);
+            final AssetFileNamingStrategyContext ctx     = AssetFileNamingStrategyContext.of(publisherKey, draftKey);
             final Path                           userDir = this.fileNamingStrategy.getDir(ctx);
-            final Path                           target  = Paths.get(userDir.toString(), RESOURCE_PATH);
+            final Path                           target  = Paths.get(userDir.toString(), relativePath);
 
-            final List<AssetResourceDto> resources = new ArrayList<AssetResourceDto>();
+            final List<FileDto> resources = new ArrayList<FileDto>();
             final File                   dir       = target.toFile();
 
             if (dir.exists()) {
                 for (final File entry : dir.listFiles()) {
-                	// Ignore any folders e.g. the metadata folder
+                    // Ignore any folders e.g. the metadata folder
                     if (entry.isFile()) {
-                        resources.add(new AssetResourceDto(entry.getName(), entry.length(), entry.lastModified()));
+                        resources.add(new FileDto(
+                            entry.getName(), Paths.get(relativePath, entry.getName()).toString(), entry.length(), entry.lastModified()
+                        ));
                     }
                 }
             }
@@ -63,17 +81,44 @@ public class DefaultAssetFileManager implements AssetFileManager {
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
-            logger.error("[FileSystem] Failed to load files", ex);
+            logger.error(
+                String.format("[FileSystem] Failed to load files from path [%s]/[%s]/[%s]", publisherKey, draftKey, relativePath), ex
+            );
 
             throw new AssetRepositoryException("An unknown error has occurred");
         }
     }
 
     @Override
-    public void uploadResource(UUID key, String fileName, InputStream input) throws AssetRepositoryException, FileSystemException {
+    public void uploadResource(
+        AssetResourceCommandDto command, InputStream input
+    ) throws AssetRepositoryException, FileSystemException {
+        Assert.notNull(command, "Expected a non-null command");
+        Assert.isTrue(command.getSize() > 0, "Expected file size to be greater than 0");
+        
+        this.saveResourceFile(command.getPublisherKey(), command.getDraftKey(), RESOURCE_PATH, command.getFileName(), input);
+    }
+
+    @Override
+    public void uploadAdditionalResource(
+        AssetFileAdditionalResourceCommandDto command, InputStream input
+    ) throws AssetRepositoryException, FileSystemException {
+        Assert.notNull(command, "Expected a non-null command");
+        Assert.isTrue(command.getSize() > 0, "Expected file size to be greater than 0");
+        
+        this.saveResourceFile(command.getPublisherKey(), command.getDraftKey(), ADDITIONAL_RESOURCE_PATH, command.getFileName(), input);
+    }
+    
+    private void saveResourceFile(
+        UUID publisherKey, UUID draftKey, String path, String fileName, InputStream input
+    ) throws AssetRepositoryException, FileSystemException {
+        Assert.notNull(publisherKey, "Exepcted a non-null publisher key");
+        Assert.notNull(draftKey, "Exepcted a non-null draft key");
+        Assert.isTrue(!StringUtils.isBlank(fileName), "Expected a non-empty file name");
+        
         try {
-            final AssetFileNamingStrategyContext ctx          = AssetFileNamingStrategyContext.of(key);
-            final Path                           relativePath = Paths.get(RESOURCE_PATH, fileName);
+            final AssetFileNamingStrategyContext ctx          = AssetFileNamingStrategyContext.of(publisherKey, draftKey);
+            final Path                           relativePath = Paths.get(path, fileName);
             final Path                           absolutePath = this.fileNamingStrategy.resolvePath(ctx, relativePath);
             final File                           localFile    = absolutePath.toFile();
 
@@ -95,10 +140,25 @@ public class DefaultAssetFileManager implements AssetFileManager {
     }
 
     @Override
-    public void deleteResource(UUID key, String fileName) throws FileSystemException, AssetRepositoryException {
+    public void deleteResource(UUID publisherKey, UUID draftKey, String fileName) throws FileSystemException, AssetRepositoryException {
+        this.deleteResource(publisherKey, draftKey, RESOURCE_PATH, fileName);
+    }
+
+    @Override
+    public void deleteAdditionalResource(UUID publisherKey, UUID draftKey, String fileName) throws FileSystemException, AssetRepositoryException {
+        this.deleteResource(publisherKey, draftKey, ADDITIONAL_RESOURCE_PATH, fileName);
+    }
+
+    private void deleteResource(
+        UUID publisherKey, UUID draftKey, String path, String fileName
+    ) throws FileSystemException, AssetRepositoryException {
+        Assert.notNull(publisherKey, "Exepcted a non-null publisher key");
+        Assert.notNull(draftKey, "Exepcted a non-null draft key");
+        Assert.isTrue(!StringUtils.isBlank(fileName), "Expected a non-empty file name");
+        
         try {
-            final AssetFileNamingStrategyContext ctx          = AssetFileNamingStrategyContext.of(key);
-            final Path                           relativePath = Paths.get(RESOURCE_PATH, fileName);
+            final AssetFileNamingStrategyContext ctx          = AssetFileNamingStrategyContext.of(publisherKey, draftKey);
+            final Path                           relativePath = Paths.get(path, fileName);
             final Path                           absolutePath = this.fileNamingStrategy.resolvePath(ctx, relativePath);
             final File                           file         = absolutePath.toFile();
 
@@ -106,7 +166,9 @@ public class DefaultAssetFileManager implements AssetFileManager {
                 throw new FileSystemException(FileSystemMessageCode.PATH_NOT_FOUND, "Path does not exist");
             }
 
-            Files.delete(absolutePath);
+            if (!FileUtils.deleteQuietly(absolutePath.toFile())) {
+                assetRepositoryLogger.error(String.format("Resource [%s] was not deleted", relativePath));
+            }
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
@@ -115,10 +177,23 @@ public class DefaultAssetFileManager implements AssetFileManager {
     }
 
     @Override
-    public Path resolveResourcePath(UUID key, String fileName) throws FileSystemException, AssetRepositoryException {
+    public Path resolveResourcePath(UUID publisherKey, UUID draftKey, String fileName) throws FileSystemException, AssetRepositoryException {       
+        return this.resolveResourcePath(publisherKey, draftKey, RESOURCE_PATH, fileName);
+    }
+
+    @Override
+    public Path resolveAdditionalResourcePath(UUID publisherKey, UUID draftKey, String fileName) throws FileSystemException, AssetRepositoryException {       
+        return this.resolveResourcePath(publisherKey, draftKey, ADDITIONAL_RESOURCE_PATH, fileName);
+    }
+
+    private Path resolveResourcePath(UUID publisherKey, UUID draftKey, String path, String fileName) throws FileSystemException, AssetRepositoryException {
+        Assert.notNull(publisherKey, "Exepcted a non-null publisher key");
+        Assert.notNull(draftKey, "Exepcted a non-null draft key");
+        Assert.isTrue(!StringUtils.isBlank(fileName), "Expected a non-empty file name");
+        
         try {
-            final AssetFileNamingStrategyContext ctx          = AssetFileNamingStrategyContext.of(key);
-            final Path                           relativePath = Paths.get(RESOURCE_PATH, fileName);
+            final AssetFileNamingStrategyContext ctx          = AssetFileNamingStrategyContext.of(publisherKey, draftKey);
+            final Path                           relativePath = Paths.get(path, fileName);
             final Path                           absolutePath = this.fileNamingStrategy.resolvePath(ctx, relativePath);
             final File                           file         = absolutePath.toFile();
 
@@ -130,16 +205,21 @@ public class DefaultAssetFileManager implements AssetFileManager {
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
-            logger.warn("[FileSystem] Failed to resolve path [/{}] for asset [{}]", fileName, key);
+            logger.warn("[FileSystem] Failed to resolve path [/{}] for asset [{}]", fileName, publisherKey, draftKey);
 
             throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred");
         }
     }
     
 	@Override
-    public void saveMetadataAsText(UUID key, String fileName, String content) throws AssetRepositoryException {
+    public void saveMetadataAsText(UUID publisherKey, UUID draftKey, String fileName, String content) throws AssetRepositoryException {
+	    Assert.notNull(publisherKey, "Exepcted a non-null publisher key");
+        Assert.notNull(draftKey, "Exepcted a non-null draft key");
+        Assert.isTrue(!StringUtils.isBlank(fileName), "Expected a non-empty file name");
+        Assert.isTrue(!StringUtils.isBlank(content), "Expected non-empty content");
+        
         try {
-            final AssetFileNamingStrategyContext ctx          = AssetFileNamingStrategyContext.of(key);
+            final AssetFileNamingStrategyContext ctx          = AssetFileNamingStrategyContext.of(publisherKey, draftKey);
             final Path                           relativePath = Paths.get(METADATA_PATH,  fileName);
             final Path                           absolutePath = this.fileNamingStrategy.resolvePath(ctx, relativePath);
             final File                           localFile    = absolutePath.toFile();
@@ -160,5 +240,21 @@ public class DefaultAssetFileManager implements AssetFileManager {
             throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred");
         }
 	}
+
+    public void deleteAllFiles(UUID publisherKey, UUID draftKey) {
+        Assert.notNull(publisherKey, "Exepcted a non-null publisher key");
+        Assert.notNull(draftKey, "Exepcted a non-null draft key");
+        
+        try {
+            final AssetFileNamingStrategyContext ctx          = AssetFileNamingStrategyContext.of(publisherKey, draftKey);
+            final Path                           absolutePath = this.fileNamingStrategy.getDir(ctx);
+
+            if (!FileUtils.deleteQuietly(absolutePath.toFile())) {
+                assetRepositoryLogger.error(String.format("Asset [%s]/[%s] file-system was not deleted", publisherKey, draftKey));
+            }
+        } catch (Exception ex) {
+            // Ignore
+        }
+    }
 
 }

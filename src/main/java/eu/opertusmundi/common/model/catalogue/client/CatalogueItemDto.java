@@ -22,10 +22,9 @@ public class CatalogueItemDto extends BaseCatalogueItemDto implements Serializab
     public CatalogueItemDto(CatalogueFeature feature) {
         super(feature);
 
-        this.id = UUID.fromString(feature.getId());
+        this.id = feature.getId();
 
         this.publisherId = feature.getProperties().getPublisherId();
-        this.statistics  = feature.getProperties().getStoreStatistics();
         this.title       = feature.getProperties().getTitle();
         this.version     = feature.getProperties().getVersion();
 
@@ -34,10 +33,10 @@ public class CatalogueItemDto extends BaseCatalogueItemDto implements Serializab
         this.pricingModels = new ArrayList<BasePricingModelDto>();
     }
 
-    @Schema(description = "Catalogue item identifier (UUID)", example = "f5edff99-426b-4b17-a4f8-3d423a6c491b")
+    @Schema(description = "Catalogue item identifier (PID)")
     @Getter
     @Setter
-    private UUID id;
+    private String id;
 
     @ArraySchema(
         arraySchema = @Schema(
@@ -56,15 +55,14 @@ public class CatalogueItemDto extends BaseCatalogueItemDto implements Serializab
     @Setter
     protected UUID publisherId;
 
-    @Schema(description = "Asset statistics")
+    @Schema(description = "A name given to the resource")
     @Getter
     @Setter
-    private CatalogueItemStoreStatistics statistics;
-
-    @Schema(description = "A name given to the resource")
     private String title;
 
     @Schema(description = "Version of the resource")
+    @Getter
+    @Setter
     private String version;
 
 }

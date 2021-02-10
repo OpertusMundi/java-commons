@@ -1,6 +1,8 @@
 package eu.opertusmundi.common.model.catalogue.client;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.locationtech.jts.geom.Geometry;
 
@@ -14,29 +16,30 @@ import eu.opertusmundi.common.model.openapi.schema.GeometryAsJson;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class BaseCatalogueItemDto {
+public abstract class BaseCatalogueItemDto {
 
     protected BaseCatalogueItemDto() {
-
+        this.keywords      = Collections.emptyList();
+        this.scales        = Collections.emptyList();
+        this.suitableFor   = Collections.emptyList();
+        this.topicCategory = Collections.emptyList();
     }
 
     protected BaseCatalogueItemDto(CatalogueFeature feature) {
         final CatalogueFeatureProperties props = feature.getProperties();
 
         this.abstractText                = props.getAbstractText();
-        this.additionalResources         = props.getAdditionalResources();
-        this.automatedMetadata 			 = props.getAutomatedMetadata();
+        this.automatedMetadata           = props.getAutomatedMetadata();
         this.conformity                  = EnumConformity.fromString(props.getConformity());
-        this.coupledResource             = props.getCoupledResource();
         this.creationDate                = props.getCreationDate();
         this.dateEnd                     = props.getDateEnd();
         this.dateStart                   = props.getDateStart();
         this.format                      = props.getFormat();
-        this.keywords                    = props.getKeywords();
         this.language                    = props.getLanguage();
         this.license                     = props.getLicense();
         this.lineage                     = props.getLineage();
@@ -52,31 +55,35 @@ public class BaseCatalogueItemDto {
         this.referenceSystem             = props.getReferenceSystem();
         this.resourceLocator             = props.getResourceLocator();
         this.revisionDate                = props.getRevisionDate();
-        this.scale                       = props.getScale();
-        this.spatialDataServiceType      = props.getSpatialDataServiceType();
+        this.spatialDataServiceType      = EnumSpatialDataServiceType.fromString(props.getSpatialDataServiceType());
         this.spatialResolution           = props.getSpatialResolution();
-        this.topicCategory               = props.getTopicCategory();
-        this.type                        = props.getType();
+        this.suitableFor                 = props.getSuitableFor();
+        this.type                        = EnumType.fromString(props.getType());
 
         this.geometry = feature.getGeometry();
 
+        this.keywords = props.getKeywords().stream()
+            .map(Keyword::new)
+            .collect(Collectors.toList());
+               
+        this.scales = props.getScales().stream()
+            .map(Scale::new)
+            .collect(Collectors.toList());
+
+        this.topicCategory = props.getTopicCategory().stream()
+            .map(EnumTopicCategory::fromString)
+            .collect(Collectors.toList());
     }
 
-    @Schema(description = "An abstract of the resource", example = "")
+    @Schema(description = "An abstract of the resource")
     private String abstractText;
-
-    @Schema(description = "Auxiliary files or additional resources to the dataset", example = "")
-    private String additionalResources;
-
+    
 	@Schema(description = "Automated metadata")
 	@JsonInclude(Include.NON_NULL)
 	private JsonNode automatedMetadata;
     
-    @Schema(description = "Degree of conformity with the implementing rules/standard of the metadata followed", example = "")
+    @Schema(description = "Degree of conformity with the implementing rules/standard of the metadata followed")
     private EnumConformity conformity;
-
-    @Schema(description = "Provides information about the datasets that the service operates on", example = "")
-    private String coupledResource;
 
     @Schema(
         description = "A point or period of time associated with the creation event in the lifecycle of the resource",
@@ -90,30 +97,34 @@ public class BaseCatalogueItemDto {
     @Schema(description = "The temporal extent of the resource (start date)", example = "2020-06-02")
     private String dateStart;
 
-    @Schema(description = "The file format, physical medium, or dimensions of the resource", example = "")
+    @Schema(description = "The file format, physical medium, or dimensions of the resource", example = "ESRI Shapefile")
     private String format;
 
+    @Schema(implementation = GeometryAsJson.class, description = "Geometry as GeoJSON")
+    private Geometry geometry;
+    
+    @Schema(description = "The topic of the resource")
     @ArraySchema(
         arraySchema = @Schema(
             description = "Resource Keywords"
         ),
         minItems = 0
     )
-    private List<String> keywords;
+    private List<Keyword> keywords;
 
-    @Schema(description = "A language of the resource", example = "")
+    @Schema(description = "A language of the resource")
     private String language;
 
-    @Schema(description = "Information about resource licensing", example = "")
+    @Schema(description = "Information about resource licensing")
     private String license;
 
-    @Schema(description = "General explanation of the data producer’s knowledge about the lineage of a dataset", example = "")
+    @Schema(description = "General explanation of the data producer’s knowledge about the lineage of a dataset")
     private String lineage;
 
     @Schema(description = "The date which specifies when the metadata record was created or updated", example = "2020-06-02")
     private String metadataDate;
 
-    @Schema(description = "The language in which the metadata elements are expressed", example = "")
+    @Schema(description = "The language in which the metadata elements are expressed")
     private String metadataLanguage;
 
     @Schema(
@@ -126,10 +137,10 @@ public class BaseCatalogueItemDto {
     )
     private String metadataPointOfContactName;
 
-    @Schema(description = "Provides the ID of a parent dataset", example = "")
+    @Schema(description = "Provides the ID of a parent dataset")
     private String parentId;
 
-    @Schema(description = "Information on the limitations and the reasons for them", example = "")
+    @Schema(description = "Information on the limitations and the reasons for them")
     private String publicAccessLimitations;
 
     @Schema(
@@ -139,24 +150,23 @@ public class BaseCatalogueItemDto {
     )
     private String publicationDate;
 
-    @Schema(description = "Email of an entity responsible for making the resource available", example = "")
+    @Schema(description = "Email of an entity responsible for making the resource available")
     private String publisherEmail;
 
-    @Schema(description = "Name of an entity responsible for making the resource available", example = "")
+    @Schema(description = "Name of an entity responsible for making the resource available")
     private String publisherName;
 
-    @Schema(description = "Information about the reference system", example = "")
+    @Schema(description = "Information about the reference system", example = "EPSG:4326")
     private String referenceSystem;
 
     @Schema(
-        description = "The ‘navigation section’ of a metadata record which point users to the location (URL) "
+        description = "The 'navigation section' of a metadata record which point users to the location (URL) "
                     + "where the data can be downloaded, or to where additional information about the resource "
                     + "may be provided",
         example = ""
     )
-    private String resourceLocator;
-
-
+    private String resourceLocator;    
+    
     @Schema(
         description = "A point or period of time associated with the revision event in the "
                     + "lifecycle of the resource",
@@ -164,29 +174,75 @@ public class BaseCatalogueItemDto {
     )
     private String revisionDate;
 
-    @Schema(description = "Denominator of the scale of the data set", example = "5000")
-    private Integer scale;
+    @ArraySchema(
+        arraySchema = @Schema(
+            description = "Scale refers to the level of detail of the data set"
+        ),
+        minItems = 0
+    )
+    private List<Scale> scales;
 
-    @Schema(description = "The nature or genre of the service", example = "")
-    private String spatialDataServiceType;
+    @Schema(description = "The nature or genre of the service", example = "TMS")
+    private EnumSpatialDataServiceType spatialDataServiceType;
 
-
-    @Schema(description = "Spatial resolution refers to the level of detail of the data set", example = "")
+    @Schema(description = "Spatial resolution refers to the level of detail of the data set", example = "1000")
     private Integer spatialResolution;
 
     @ArraySchema(
         arraySchema = @Schema(
-            description = "A high-level classification scheme to assist in the grouping and topic-based "
-                        + "search of available spatial data resources"
+            description = "A description of geospatial analysis or processing that the dataset is suitable for"
         ),
         minItems = 0
     )
-    private  List<String> topicCategory;
+    private  List<String> suitableFor;
+       
+    @ArraySchema(
+        arraySchema = @Schema(
+            description = "A high-level classification scheme to assist in the grouping and topic-based "
+                        + "search of available spatial data resources",
+            example = "BIOTA"
+        ),
+        minItems = 0
+    )
+    private  List<EnumTopicCategory> topicCategory;
 
-    @Schema(description = "The nature or genre of the resource", example = "")
-    private String type;
+    @Schema(description = "The nature or genre of the resource")
+    private EnumType type;
 
-    @Schema(implementation = GeometryAsJson.class, description = "Geometry as GeoJSON")
-    private Geometry geometry;
+    @NoArgsConstructor
+    @Getter
+    @Setter
+    public static class Keyword {
 
+        @Schema(description = "Keyword value")
+        private String keyword;
+
+        @Schema(description = "A related theme")
+        private String theme;
+
+        public Keyword(CatalogueFeatureProperties.Keyword k) {
+            this.keyword = k.getKeyword();
+            this.theme   = k.getTheme();
+        }
+
+    }
+    
+    @NoArgsConstructor
+    @Getter
+    @Setter
+    public static class Scale {
+
+        @Schema(description = "Scale value")
+        private Integer scale;
+
+        @Schema(description = "A short description")
+        private String theme;
+
+        public Scale(CatalogueFeatureProperties.Scale s) {
+            this.scale = s.getScale();
+            this.theme = s.getTheme();
+        }
+
+    }
+    
 }

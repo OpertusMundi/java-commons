@@ -6,9 +6,9 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class CatalogueItemStoreStatistics {
+public class CatalogueItemStatistics {
 
-    public CatalogueItemStoreStatistics() {
+    public CatalogueItemStatistics() {
         this.downloads = 0;
         this.sales     = 0;
         this.rating    = null;

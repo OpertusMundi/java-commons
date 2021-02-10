@@ -12,6 +12,8 @@ public enum AssetMessageCode implements MessageCode {
     METADATA_SERIALIZATION,
     BPM_SERVICE,
     CATALOGUE_SERVICE,
+    RESOURCE_NOT_FOUND,
+    ADDITIONAL_RESOURCE_NOT_FOUND,
     ;
 
     @Override

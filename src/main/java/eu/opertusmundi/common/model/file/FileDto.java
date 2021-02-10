@@ -23,7 +23,7 @@ public class FileDto extends FileSystemEntry {
         super(name, path, attrs);
     }
 
-    public FileDto(Path path, long size, long modifiedOn) {
+    public FileDto(Path path, long size, ZonedDateTime modifiedOn) {
         this(path.getFileName().toString(), path.toString(), size, modifiedOn);
     }
 
