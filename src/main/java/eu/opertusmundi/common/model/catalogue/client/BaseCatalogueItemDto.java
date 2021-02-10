@@ -118,7 +118,7 @@ public abstract class BaseCatalogueItemDto {
     @Schema(description = "Information about resource licensing")
     private String license;
 
-    @Schema(description = "General explanation of the data producer’s knowledge about the lineage of a dataset")
+    @Schema(description = "General explanation of the data producer's knowledge about the lineage of a dataset")
     private String lineage;
 
     @Schema(description = "The date which specifies when the metadata record was created or updated", example = "2020-06-02")
