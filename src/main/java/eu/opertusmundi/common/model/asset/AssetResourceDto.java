@@ -11,7 +11,6 @@ import eu.opertusmundi.common.model.catalogue.server.CatalogueResource;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
-//@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class AssetResourceDto implements Serializable {
 
@@ -26,8 +25,8 @@ public class AssetResourceDto implements Serializable {
     @Schema(description = "File name")
     private final String fileName;
 
-    @Schema(description = "Date of upload")
-    private ZonedDateTime createdOn;
+    @Schema(description = "Date of last update")
+    private ZonedDateTime modifiedOn;
 
     @Schema(description = "File format")
     private String format;
@@ -37,14 +36,14 @@ public class AssetResourceDto implements Serializable {
         @JsonProperty("id") UUID id, 
         @JsonProperty("fileName") String fileName, 
         @JsonProperty("size") long size,
-        @JsonProperty("createdOn") ZonedDateTime createdOn, 
+        @JsonProperty("modifiedOn") ZonedDateTime modifiedOn, 
         @JsonProperty("format") String format
     ) {
-        this.id        = id;
-        this.fileName  = fileName;
-        this.size      = size;
-        this.createdOn = createdOn;
-        this.format    = format;
+        this.id         = id;
+        this.fileName   = fileName;
+        this.size       = size;
+        this.modifiedOn = modifiedOn;
+        this.format     = format;
     }
 
     public CatalogueResource toCatalogueResource() {
@@ -53,9 +52,9 @@ public class AssetResourceDto implements Serializable {
 
     public void patch(AssetResourceDto r) {
         // Id and file name are immutable
-        this.size      = r.size;
-        this.createdOn = r.createdOn;
-        this.format    = r.format;
+        this.size       = r.size;
+        this.modifiedOn = r.modifiedOn;
+        this.format     = r.format;
     }
 
 }

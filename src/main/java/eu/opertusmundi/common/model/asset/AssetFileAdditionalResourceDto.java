@@ -25,7 +25,7 @@ public class AssetFileAdditionalResourceDto extends AssetAdditionalResourceDto {
         this.modifiedOn  = modifiedOn;
     }
 
-    @Schema(description = "Additional resouce file unique identifier")
+    @Schema(description = "Additional resource file unique identifier")
     @Getter
     private UUID id;
 

@@ -21,8 +21,10 @@ public class AssetDraftDto {
     )
     private UUID key;
 
+    @Schema(description = "Asset title")
     private String title;
 
+    @Schema(description = "Asset version")
     private String version;
 
     @Schema(description = "Draft data", implementation = CatalogueItemCommandDto.class)
@@ -48,8 +50,10 @@ public class AssetDraftDto {
     )
     private boolean ingested = false;
 
+    @Schema(description = "Creation date in ISO format")
     private ZonedDateTime createdOn;
 
+    @Schema(description = "Date of lat update in ISO format")
     private ZonedDateTime modifiedOn;
     
     @Schema(description = "Publisher details")

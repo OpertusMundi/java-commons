@@ -8,11 +8,13 @@ import org.locationtech.jts.geom.Geometry;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
 import eu.opertusmundi.common.model.openapi.schema.GeometryAsJson;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -76,6 +78,7 @@ public abstract class BaseCatalogueItemDto {
     }
 
     @Schema(description = "An abstract of the resource")
+    @JsonProperty("abstract")
     private String abstractText;
     
 	@Schema(description = "Automated metadata")
@@ -112,7 +115,10 @@ public abstract class BaseCatalogueItemDto {
     )
     private List<Keyword> keywords;
 
-    @Schema(description = "A language of the resource")
+    @Schema(
+        description = "A language of the resource as an ISO 639-1 two-letter code",
+        externalDocs = @ExternalDocumentation(url = "https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes")
+    )
     private String language;
 
     @Schema(description = "Information about resource licensing")
@@ -124,7 +130,10 @@ public abstract class BaseCatalogueItemDto {
     @Schema(description = "The date which specifies when the metadata record was created or updated", example = "2020-06-02")
     private String metadataDate;
 
-    @Schema(description = "The language in which the metadata elements are expressed")
+    @Schema(
+        description = "The language in which the metadata elements are expressed as a ISO 639-1 two-letter code", 
+        externalDocs = @ExternalDocumentation(url = "https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes")
+    )
     private String metadataLanguage;
 
     @Schema(

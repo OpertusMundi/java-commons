@@ -25,7 +25,7 @@ public class AssetUriAdditionalResourceDto extends AssetAdditionalResourceDto {
     @Schema(description = "The text displayed for the URI. If not set, the uri value is used as text")
     private String text;
 
-    @Schema(description = "The actual URI")
+    @Schema(description = "The URI value")
     private String uri;
 
     public CatalogueAdditionalResource toCatalogueResource() {
