@@ -77,6 +77,9 @@ public class CatalogueItemCommandDto extends BaseCatalogueItemDto implements Ser
     @NotEmpty
     private String title;
 
+    @Schema(description = "The nature or genre of the resource", required = true)
+    private EnumType type;
+    
     @Schema(description = "Version of the resource", required = true)
     @NotEmpty
     private String version;

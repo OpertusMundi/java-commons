@@ -4,6 +4,8 @@ import java.io.Serializable;
 
 import javax.validation.constraints.NotBlank;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,6 +18,12 @@ public class AssetResourceCommandDto extends BaseAssetResourceCommandDto impleme
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * Computed from the format value
+     */
+    @JsonIgnore
+    private EnumAssetSourceType category;
+    
     @Schema(description = "File format")
     @NotBlank
     private String format;

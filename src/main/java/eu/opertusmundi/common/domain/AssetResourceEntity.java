@@ -5,6 +5,8 @@ import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -18,6 +20,7 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.asset.AssetResourceDto;
+import eu.opertusmundi.common.model.asset.EnumAssetSourceType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -81,9 +84,10 @@ public class AssetResourceEntity {
     private Long size;
 
     @Column(name = "`category`")
+    @Enumerated(EnumType.STRING)
     @Getter
     @Setter
-    private String category;
+    private EnumAssetSourceType category;
 
     @NotNull
     @Column(name = "`format`")

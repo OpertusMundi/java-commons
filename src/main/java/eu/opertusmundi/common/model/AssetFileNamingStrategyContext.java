@@ -1,7 +1,5 @@
 package eu.opertusmundi.common.model;
 
-import java.util.UUID;
-
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,19 +7,16 @@ import lombok.Setter;
 @Setter
 public class AssetFileNamingStrategyContext extends FileNamingStrategyContext {
 
-    protected AssetFileNamingStrategyContext(UUID publisherKey, UUID draftKey, boolean createIfNotExists) {
-        super(createIfNotExists);
+    protected AssetFileNamingStrategyContext(String pid) {
+        super(false);
 
-        this.publisherKey = publisherKey;
-        this.draftKey     = draftKey;
+        this.pid = pid;
     }
 
-    private UUID publisherKey;
+    private String pid;
 
-    private UUID draftKey;
-
-    public static AssetFileNamingStrategyContext of(UUID publisherKey, UUID draftKey) {
-        return new AssetFileNamingStrategyContext(publisherKey, draftKey, true);
+    public static AssetFileNamingStrategyContext of(String pid) {
+        return new AssetFileNamingStrategyContext(pid);
     }
 
 }

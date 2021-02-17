@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.service;
 
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Set;
 import java.util.UUID;
 
@@ -15,6 +16,7 @@ import eu.opertusmundi.common.model.asset.AssetRepositoryException;
 import eu.opertusmundi.common.model.asset.AssetResourceCommandDto;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftSortField;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
+import eu.opertusmundi.common.model.asset.MetadataProperty;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.dto.EnumSortingOrder;
 import eu.opertusmundi.common.model.file.FileSystemException;
@@ -149,7 +151,7 @@ public interface ProviderAssetService {
      * @throws FileSystemException
      * @throws AssetDraftException 
      */
-    void updateMetadata(UUID publisherKey, UUID draftKey, String resource, JsonNode metadata) throws FileSystemException, AssetDraftException;
+    void updateMetadata(UUID publisherKey, UUID draftKey, UUID resource, JsonNode metadata) throws FileSystemException, AssetDraftException;
     
     /**
      * Uploads a resource file for the selected asset
@@ -182,5 +184,61 @@ public interface ProviderAssetService {
     AssetDraftDto addAdditionalResource(
         AssetFileAdditionalResourceCommandDto command, InputStream input
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
+    
+    /**
+     * Resolve the path of an additional file resource of an asset
+     * 
+     * @param pid
+     * @param resourceKey
+     * @return
+     * 
+     * @throws FileSystemException If an I/O error occurs 
+     * @throws AssetRepositoryException If resolve operation fails
+     */
+    Path resolveAssetAdditionalResource(String pid, UUID resourceKey) throws FileSystemException, AssetRepositoryException;
+    
+    /**
+     * Resolve the path of an additional file resource of a draft asset
+     * 
+     * @param publisherKey
+     * @param draftKey
+     * @param resourceKey
+     * @return
+     * 
+     * @throws FileSystemException If an I/O error occurs 
+     * @throws AssetRepositoryException If resolve operation fails
+     */
+    Path resolveDraftAdditionalResource(UUID publisherKey, UUID draftKey, UUID resourceKey) throws FileSystemException, AssetRepositoryException;
 
+    /**
+     * Resolve path to metadata property file for a specific resource of a draft asset
+     * 
+     * @param pid
+     * @param resourceKey
+     * @param propertyName
+     * @return
+     * 
+     * @throws FileSystemException If an I/O error occurs 
+     * @throws AssetRepositoryException If resolve operation fails
+     */
+    MetadataProperty resolveAssetMetadataProperty(
+        String pid, UUID resourceKey, String propertyName
+    ) throws FileSystemException, AssetRepositoryException;
+    
+    /**
+     * Resolve path to metadata property file for a specific resource of a draft asset
+     * 
+     * @param publisherKey
+     * @param draftKey
+     * @param resourceKey
+     * @param propertyName
+     * @return
+     * 
+     * @throws FileSystemException If an I/O error occurs 
+     * @throws AssetRepositoryException If resolve operation fails
+     */
+    MetadataProperty resolveDraftMetadataProperty(
+        UUID publisherKey, UUID draftKey, UUID resourceKey, String propertyName
+    ) throws FileSystemException, AssetRepositoryException;
+    
 }

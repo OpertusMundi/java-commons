@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
+import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
 import eu.opertusmundi.common.model.openapi.schema.PricingModelAsJson;
 import eu.opertusmundi.common.model.pricing.BasePricingModelDto;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -22,11 +23,14 @@ public class CatalogueItemDto extends BaseCatalogueItemDto implements Serializab
     public CatalogueItemDto(CatalogueFeature feature) {
         super(feature);
 
+        final CatalogueFeatureProperties props = feature.getProperties();
+        
         this.id = feature.getId();
 
-        this.publisherId = feature.getProperties().getPublisherId();
-        this.title       = feature.getProperties().getTitle();
-        this.version     = feature.getProperties().getVersion();
+        this.publisherId = props.getPublisherId();
+        this.title       = props.getTitle();
+        this.type        = EnumType.fromString(props.getType());
+        this.version     = props.getVersion();
 
         // Initialize with an empty collection. Caller must compute the
         // effective pricing models
@@ -59,6 +63,10 @@ public class CatalogueItemDto extends BaseCatalogueItemDto implements Serializab
     @Getter
     @Setter
     private String title;
+    
+    @Schema(description = "The nature or genre of the resource")
+    private EnumType type;
+
 
     @Schema(description = "Version of the resource")
     @Getter

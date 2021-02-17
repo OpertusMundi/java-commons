@@ -8,6 +8,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -15,6 +17,7 @@ import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.catalogue.client.BaseCatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemStatistics;
+import eu.opertusmundi.common.model.catalogue.client.EnumConformity;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import lombok.Getter;
@@ -29,7 +32,9 @@ public class CatalogueFeatureProperties {
     public CatalogueFeatureProperties(CatalogueItemCommandDto command) {
         this.abstractText                = command.getAbstractText();
         this.automatedMetadata           = command.getAutomatedMetadata();
-        this.conformity                  = command.getConformity().getValue();
+        this.conformity                  = command.getConformity() != null 
+            ? command.getConformity().getValue()
+            : EnumConformity.NOT_EVALUATED.getValue();
         this.creationDate                = command.getCreationDate();
         this.dateEnd                     = command.getDateEnd();
         this.dateStart                   = command.getDateStart();
@@ -50,13 +55,15 @@ public class CatalogueFeatureProperties {
         this.referenceSystem             = command.getReferenceSystem();
         this.resourceLocator             = command.getResourceLocator();
         this.revisionDate                = command.getRevisionDate();
-        this.spatialDataServiceType      = command.getSpatialDataServiceType().getValue();
+        this.spatialDataServiceType      = command.getSpatialDataServiceType() != null
+            ? command.getSpatialDataServiceType().getValue()
+            : null;
         this.spatialResolution           = command.getSpatialResolution();
         this.statistics                  = new CatalogueItemStatistics();
         this.status                      = EnumProviderAssetDraftStatus.DRAFT.name().toLowerCase();
         this.suitableFor                 = this.toStream(command.getSuitableFor()).collect(Collectors.toList());
         this.title                       = command.getTitle();
-        this.type                        = command.getType().getValue();
+        this.type                        = command.getType() != null ? command.getType().getValue() : null;
         this.version                     = command.getVersion();
         this.versions                    = Collections.emptyList();
 
@@ -167,6 +174,7 @@ public class CatalogueFeatureProperties {
     private String status;
 
     @JsonProperty("spatial_data_service_type")
+    @JsonInclude(Include.NON_NULL)
     private String spatialDataServiceType;
 
     @JsonProperty("spatial_resolution")

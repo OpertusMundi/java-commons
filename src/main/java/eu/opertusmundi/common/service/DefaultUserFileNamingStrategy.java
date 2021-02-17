@@ -28,16 +28,14 @@ public class DefaultUserFileNamingStrategy extends AbstractFileNamingStrategy<Us
     @Value("${opertus-mundi.file-system.max-length:255}")
     private int maxLength;
 
-    public static final String SCHEME = "user-data";
-
     @Autowired
-    private Path userDataDirectory;
+    private Path userDirectory;
 
     @Override
     public Path getDir(UserFileNamingStrategyContext ctx) throws IOException {
         Assert.notNull(ctx, "Expected a non-null context");
 
-        final Path baseDir = this.userDataDirectory.resolve(Integer.toString(ctx.getId()));
+        final Path baseDir = this.userDirectory.resolve(Integer.toString(ctx.getId()));
 
         if (ctx.isCreateIfNotExists() && !Files.exists(baseDir)) {
             try {

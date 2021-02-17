@@ -58,7 +58,7 @@ public interface CatalogueFeignClient {
      * @return An instance of {@link CatalogueFeature}
      */
     @GetMapping(value = "/api/published/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<CatalogueResponse<CatalogueFeature>> findOneById(@PathVariable("id") UUID id);
+    ResponseEntity<CatalogueResponse<CatalogueFeature>> findOneById(@PathVariable("id") String id);
 
     /**
      * Delete a published asset
@@ -128,7 +128,7 @@ public interface CatalogueFeignClient {
      */
     @PutMapping(value = "/api/draft/status", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<Void> setDraftStatus(
-        @RequestParam(name = "id", required = true) UUID id,
+        @RequestParam(name = "id", required = true) String id,
         @RequestParam(name = "status", required = true) String status
     );
 

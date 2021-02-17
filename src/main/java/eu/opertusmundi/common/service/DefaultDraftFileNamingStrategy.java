@@ -11,19 +11,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
-import eu.opertusmundi.common.model.AssetFileNamingStrategyContext;
+import eu.opertusmundi.common.model.DraftFileNamingStrategyContext;
 
 @Service
-public class DefaultAssetFileNamingStrategy extends AbstractFileNamingStrategy<AssetFileNamingStrategyContext> {
+public class DefaultDraftFileNamingStrategy extends AbstractFileNamingStrategy<DraftFileNamingStrategyContext> {
 
     @Autowired
-    private Path assetDirectory;
+    private Path draftDirectory;
 
     @Override
-    public Path getDir(AssetFileNamingStrategyContext ctx) throws IOException {
+    public Path getDir(DraftFileNamingStrategyContext ctx) throws IOException {
         Assert.notNull(ctx, "Expected a non-null context");
 
-        final Path baseDir = this.assetDirectory.resolve(Paths.get(ctx.getPid()));
+        final Path baseDir = this.draftDirectory.resolve(Paths.get(ctx.getPublisherKey().toString(), ctx.getDraftKey().toString()));
 
         if (ctx.isCreateIfNotExists() && !Files.exists(baseDir)) {
             try {

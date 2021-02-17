@@ -12,13 +12,13 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.feign.client.DataProfilerServiceFeignClient;
+import eu.opertusmundi.common.model.asset.EnumAssetSourceType;
 import eu.opertusmundi.common.model.profiler.DataProfilerDeferredResponseDto;
 import eu.opertusmundi.common.model.profiler.DataProfilerOptions;
 import eu.opertusmundi.common.model.profiler.DataProfilerServiceException;
 import eu.opertusmundi.common.model.profiler.DataProfilerServiceMessageCode;
 import eu.opertusmundi.common.model.profiler.DataProfilerStatusResponseDto;
 import eu.opertusmundi.common.model.profiler.EnumDataProfilerResponse;
-import eu.opertusmundi.common.model.profiler.EnumDataProfilerSourceType;
 
 @Service
 public class DefaultDataProfilerService implements DataProfilerService{
@@ -30,7 +30,7 @@ public class DefaultDataProfilerService implements DataProfilerService{
 
     @Override
     public DataProfilerDeferredResponseDto profile(
-        EnumDataProfilerSourceType type, String source, DataProfilerOptions options
+        EnumAssetSourceType type, String source, DataProfilerOptions options
     ) throws DataProfilerServiceException {
         try {
             final File file = new File(source);

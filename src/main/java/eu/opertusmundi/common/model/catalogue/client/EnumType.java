@@ -7,7 +7,7 @@ import lombok.Getter;
 public enum EnumType {
 
     RASTER("raster"), 
-    SERVICE("service "),
+    SERVICE("service"),
     VECTOR("vector"),
     ;
 

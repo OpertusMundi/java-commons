@@ -6,6 +6,7 @@ import java.util.UUID;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueAdditionalResource;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import lombok.Setter;
 
 public class AssetFileAdditionalResourceDto extends AssetAdditionalResourceDto {
 
@@ -39,10 +40,12 @@ public class AssetFileAdditionalResourceDto extends AssetAdditionalResourceDto {
 
     @Schema(description = "File size")
     @Getter
+    @Setter
     private Long size;
 
     @Schema(description = "Date of last update")
     @Getter
+    @Setter
     private ZonedDateTime modifiedOn;
 
     public CatalogueAdditionalResource toCatalogueResource() {

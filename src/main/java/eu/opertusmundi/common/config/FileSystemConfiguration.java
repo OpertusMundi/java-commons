@@ -20,22 +20,31 @@ public class FileSystemConfiguration {
 
     private Path tempDir;
 
-    private Path userDataDir;
+    private Path userDir;
 
+    private Path draftDir;
+    
     private Path assetDir;
 
     @Autowired
-    private void setTempDataDir(@Value("${opertusmundi.file-system.temp-dir}") String d) {
+    private void setTempDir(@Value("${opertusmundi.file-system.temp-dir}") String d) {
         final Path path = Paths.get(d);
         Assert.isTrue(path.isAbsolute(), "Expected an absolute directory path");
         this.tempDir = path;
     }
 
     @Autowired
-    private void setUserDataDir(@Value("${opertusmundi.file-system.data-dir}") String d) {
+    private void setUserDir(@Value("${opertusmundi.file-system.data-dir}") String d) {
         final Path path = Paths.get(d);
         Assert.isTrue(path.isAbsolute(), "Expected an absolute directory path");
-        this.userDataDir = path;
+        this.userDir = path;
+    }
+
+    @Autowired
+    private void setDraftDir(@Value("${opertusmundi.file-system.draft-dir}") String d) {
+        final Path path = Paths.get(d);
+        Assert.isTrue(path.isAbsolute(), "Expected an absolute directory path");
+        this.draftDir = path;
     }
 
     @Autowired
@@ -44,10 +53,10 @@ public class FileSystemConfiguration {
         Assert.isTrue(path.isAbsolute(), "Expected an absolute directory path");
         this.assetDir = path;
     }
-
+    
     @PostConstruct
     private void initialize() throws IOException {
-        for (final Path dataDir : Arrays.asList(this.tempDir, this.userDataDir, this.assetDir)) {
+        for (final Path dataDir : Arrays.asList(this.tempDir, this.userDir, this.draftDir, this.assetDir)) {
             try {
                 Files.createDirectories(dataDir);
             } catch (final FileAlreadyExistsException ex) {
@@ -57,15 +66,20 @@ public class FileSystemConfiguration {
     }
 
     @Bean
-    Path tempDataDirectory() {
+    Path tempDirectory() {
         return this.tempDir;
     }
 
     @Bean
-    Path userDataDirectory() {
-        return this.userDataDir;
+    Path userDirectory() {
+        return this.userDir;
     }
 
+    @Bean
+    Path draftDirectory() {
+        return this.draftDir;
+    }
+    
     @Bean
     Path assetDirectory() {
         return this.assetDir;

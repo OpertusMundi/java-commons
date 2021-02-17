@@ -40,6 +40,11 @@ public interface AssetAdditionalResourceRepository extends JpaRepository<AssetAd
         @Param("draftKey") UUID draftKey, @Param("fileName") String fileName
     );
 
+    @Query("SELECT r FROM AssetAdditionalResource r WHERE r.key = :resourceKey and r.pid = :pid")
+    Optional<AssetAdditionalResourceEntity> findOneByAssetPidAndResourceKey(
+        @Param("pid") String pid, @Param("resourceKey") UUID resourceKey
+    );
+    
     @Query("SELECT r FROM AssetAdditionalResource r WHERE r.key = :resourceKey and r.draftKey = :draftKey")
     Optional<AssetAdditionalResourceEntity> findOneByDraftKeyAndResourceKey(
         @Param("draftKey") UUID draftKey, @Param("resourceKey") UUID resourceKey
@@ -48,6 +53,9 @@ public interface AssetAdditionalResourceRepository extends JpaRepository<AssetAd
     @Query("SELECT r FROM AssetAdditionalResource r WHERE r.draftKey = :key")
     List<AssetAdditionalResourceEntity> findAllResourcesByDraftKey(@Param("key") UUID draftKey);
 
+    @Query("SELECT r FROM AssetAdditionalResource r WHERE r.pid = :pid")
+    List<AssetAdditionalResourceEntity> findAllResourcesByAssetPid(@Param("pid") String pid);
+    
     @Transactional(readOnly = false)
     default AssetFileAdditionalResourceDto update(AssetFileAdditionalResourceCommandDto command) throws AssetDraftException {
         Assert.notNull(command, "Expected a non-null command");
@@ -94,6 +102,13 @@ public interface AssetAdditionalResourceRepository extends JpaRepository<AssetAd
         return resource.toDto();
     }
     
+    @Transactional(readOnly = false)
+    default void linkDraftResourcesToAsset(UUID draftKey, String pid) {
+        final List<AssetAdditionalResourceEntity> resources = this.findAllResourcesByDraftKey(draftKey);
+
+        resources.forEach(r -> r.setPid(pid));
+    }
+
     @Transactional(readOnly = false)
     default AssetFileAdditionalResourceDto delete(UUID draftKey, UUID resourceKey) {
         Assert.notNull(draftKey, "Expected a non-null draft key");

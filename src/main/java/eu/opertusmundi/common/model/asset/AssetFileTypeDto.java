@@ -1,6 +1,5 @@
 package eu.opertusmundi.common.model.asset;
 
-import eu.opertusmundi.common.model.profiler.EnumDataProfilerSourceType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,7 +9,7 @@ import lombok.Setter;
 public class AssetFileTypeDto {
 
     @Schema(description = "Asset category")
-    private EnumDataProfilerSourceType category;
+    private EnumAssetSourceType category;
 
     private String format;
 

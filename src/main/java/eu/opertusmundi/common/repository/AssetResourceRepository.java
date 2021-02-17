@@ -44,8 +44,16 @@ public interface AssetResourceRepository extends JpaRepository<AssetResourceEnti
         @Param("draftKey") UUID draftKey, @Param("resourceKey") UUID resourceKey
     );
     
+    @Query("SELECT r FROM AssetResource r WHERE r.key = :resourceKey and r.pid = :pid")
+    Optional<AssetResourceEntity> findOneByAssetPidAndResourceKey(
+        @Param("pid") String pid, @Param("resourceKey") UUID resourceKey
+    );
+    
     @Query("SELECT r FROM AssetResource r WHERE r.draftKey = :key")
     List<AssetResourceEntity> findAllResourcesByDraftKey(@Param("key") UUID draftKey);
+    
+    @Query("SELECT r FROM AssetResource r WHERE r.pid = :pid")
+    List<AssetResourceEntity> findAllResourcesByAssetPid(@Param("pid") String pid);
     
     @Transactional(readOnly = false)
     default AssetResourceDto update(AssetResourceCommandDto command) throws AssetDraftException {
@@ -85,7 +93,7 @@ public interface AssetResourceRepository extends JpaRepository<AssetResourceEnti
         }
 
         resource.setAccount(account);
-        resource.setCategory(null);
+        resource.setCategory(command.getCategory());
         resource.setFileName(command.getFileName());
         resource.setFormat(command.getFormat());
         resource.setSize(command.getSize());
@@ -95,6 +103,13 @@ public interface AssetResourceRepository extends JpaRepository<AssetResourceEnti
         return resource.toDto();
     }
 
+    @Transactional(readOnly = false)
+    default void linkDraftResourcesToAsset(UUID draftKey, String pid) {
+        final List<AssetResourceEntity> resources = this.findAllResourcesByDraftKey(draftKey);
+
+        resources.forEach(r -> r.setPid(pid));
+    }
+    
     @Transactional(readOnly = false)
     default void deleteAll(UUID draftKey) {
         Assert.notNull(draftKey, "Expected a non-null draft key");

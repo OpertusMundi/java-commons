@@ -60,7 +60,6 @@ public abstract class BaseCatalogueItemDto {
         this.spatialDataServiceType      = EnumSpatialDataServiceType.fromString(props.getSpatialDataServiceType());
         this.spatialResolution           = props.getSpatialResolution();
         this.suitableFor                 = props.getSuitableFor();
-        this.type                        = EnumType.fromString(props.getType());
 
         this.geometry = feature.getGeometry();
 
@@ -214,9 +213,6 @@ public abstract class BaseCatalogueItemDto {
         minItems = 0
     )
     private  List<EnumTopicCategory> topicCategory;
-
-    @Schema(description = "The nature or genre of the resource")
-    private EnumType type;
 
     @NoArgsConstructor
     @Getter

@@ -23,6 +23,9 @@ public enum EnumSpatialDataServiceType {
     }
 
     public static EnumSpatialDataServiceType fromString(String value) {
+        if (value == null) {
+            return null;
+        }
         return Arrays.stream(EnumSpatialDataServiceType.values())
             .filter(r -> r.value.equalsIgnoreCase(value))
             .findFirst()

@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.model.asset;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
@@ -40,16 +41,18 @@ public abstract class AssetAdditionalResourceDto implements Serializable {
     protected AssetAdditionalResourceDto(EnumAssetAdditionalResource type) {
         this.type = type;
     }
-
-    public static AssetAdditionalResourceDto fromCatalogueResource(CatalogueAdditionalResource resource) {
-        final EnumAssetAdditionalResource type = EnumAssetAdditionalResource.fromString(resource.getType());
+    
+    public static AssetAdditionalResourceDto fromCatalogueResource(CatalogueAdditionalResource r) {
+        final EnumAssetAdditionalResource type = EnumAssetAdditionalResource.fromString(r.getType());
 
         // Load only URI resources from the catalogue
         switch (type) {
             case URI:
-                return new AssetUriAdditionalResourceDto(resource.getValue(), resource.getName());
+                return new AssetUriAdditionalResourceDto(r.getValue(), r.getName());
             default :
-                return null;
+                return new AssetFileAdditionalResourceDto(
+                    UUID.fromString(r.getId()), r.getValue(), null, r.getName(), null
+                );
         }
     }
     
