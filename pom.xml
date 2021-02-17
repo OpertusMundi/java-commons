@@ -31,7 +31,7 @@
 		<org.camunda.bpm.version>7.13.0</org.camunda.bpm.version>
 		<org.locationtech.jts.version>1.17.1</org.locationtech.jts.version>
 		<org.locationtech.jts.spatial4j.version>0.7</org.locationtech.jts.spatial4j.version>
-		<springdoc.version>1.2.34</springdoc.version>
+		<springdoc.version>1.5.4</springdoc.version>
 	</properties>
 
 	<dependencyManagement>
@@ -204,7 +204,13 @@
 		<!-- Open API documentation -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
-			<artifactId>springdoc-openapi-common</artifactId>
+			<artifactId>springdoc-openapi-ui</artifactId>
+			<version>${springdoc.version}</version>
+		</dependency>
+	
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-security</artifactId>
 			<version>${springdoc.version}</version>
 		</dependency>
 
