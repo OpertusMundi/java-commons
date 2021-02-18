@@ -31,7 +31,7 @@ public class CatalogueFeatureProperties {
 
     public CatalogueFeatureProperties(CatalogueItemCommandDto command) {
         this.abstractText                = command.getAbstractText();
-        this.automatedMetadata           = command.getAutomatedMetadata();
+        this.automatedMetadata           = command.getAutomatedMetadata().deepCopy();
         this.conformity                  = command.getConformity() != null 
             ? command.getConformity().getValue()
             : EnumConformity.NOT_EVALUATED.getValue();

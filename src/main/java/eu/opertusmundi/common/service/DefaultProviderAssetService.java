@@ -348,6 +348,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             // TODO : id must be created by the PID service
             final String pid = "topio." + draftKey.toString();
 
+            // Validate draft state
             final AssetDraftDto draft = this.findOneDraft(publisherKey, draftKey);
 
             if (draft == null) {
@@ -362,24 +363,22 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             }
 
             // Create feature
-            final CatalogueFeature feature = draft.getCommand().toFeature();
-            
-            feature.setId(pid);
-            feature.getProperties().setPublisherId(publisherKey);
+            final CatalogueFeature feature = this.convertDraftToFeature(pid, publisherKey, draft);           
 
-            // Link draft file-system to asset file-system
+            // Link draft file-system to asset file-system by creating a
+            // symbolic link
             this.draftFileManager.linkDraftFilesToAsset(publisherKey, draftKey, pid);
 
+            // Publish asset. Create a draft record first and then set its
+            // status to published.
+            
             // TODO: Check if asset already exists (draft key can be used as the
             // idempotent key)
 
-            // Insert new asset
             this.catalogueClient.getObject().createDraft(feature);
-
-            // Publish asset
             this.catalogueClient.getObject().setDraftStatus(pid, DRAFT_PUBLISHED_STATUS);
             
-            // Link resources
+            // Link resource files to the new PID value
             this.assetResourceRepository.linkDraftResourcesToAsset(draftKey, pid);
             this.assetAdditionalResourceRepository.linkDraftResourcesToAsset(draftKey, pid);
             
@@ -397,54 +396,98 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             throw new AssetDraftException(AssetMessageCode.ERROR, "Failed to publish asset", ex);
         }
     }
+    
+    private CatalogueFeature convertDraftToFeature(String pid, UUID publisherKey, AssetDraftDto draft) {
+        final CatalogueFeature feature = draft.getCommand().toFeature();
+        
+        feature.setId(pid);
+        feature.getProperties().setPublisherId(publisherKey);
+        
+        // Redirect draft metadata property links to asset ones before
+        // publishing the asset to the catalogue
+        for (AssetResourceDto r : draft.getCommand().getResources()) {
+            final EnumAssetSourceType               source     = mapFormatToSourceType(r.getFormat());
+            final List<AssetMetadataPropertyEntity> properties = this.assetMetadataPropertyRepository.findAllByAssetType(source);
+            final ObjectNode                        metadata   = (ObjectNode) feature.getProperties().getAutomatedMetadata().get(r.getId().toString());
+            
+            if (metadata == null || metadata.isNull()) {
+                continue;
+            }
+            
+            for(AssetMetadataPropertyEntity p: properties) {
+                final String   propertyName = p.getName();
+                final JsonNode propertyNode = metadata.get(propertyName);
+    
+                // Ignore undefined or null nodes
+                if (propertyNode == null || propertyNode.isNull()) {
+                    continue;
+                }
+
+                final String uri = String.format(
+                    "/assets/%s/resources/%s/metadata/%s",
+                    pid, r.getId(), propertyName
+                );
+    
+                metadata.put(propertyName, uri);
+            }
+        }
+        
+        return feature;
+    }
 
     @Override
     @Transactional
     public void updateMetadata(
-        UUID publisherKey, UUID draftKey, UUID resource, JsonNode value
+        UUID publisherKey, UUID draftKey, UUID resourceKey, JsonNode value
     ) throws FileSystemException, AssetDraftException {
         try {
             // The provider must have access to the selected draft and also the
             // draft must be already accepted by the HelpDesk
-            final AssetDraftDto draft = this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.SUBMITTED);
-
+            final AssetDraftDto draft = this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.SUBMITTED);           
+            
             // Get existing metadata. Create JsonNode object if no metadata
-            // exists
+            // already exists
             if (draft.getCommand().getAutomatedMetadata() == null) {
                 draft.getCommand().setAutomatedMetadata(objectMapper.createObjectNode());
             }
-            
             final ObjectNode metadata = (ObjectNode) draft.getCommand().getAutomatedMetadata();
-            
+      
             // Store all metadata in asset repository
             final String content = objectMapper.writeValueAsString(value);
 
-            this.draftFileManager.saveMetadataAsText(publisherKey, draftKey, resource + ".automated-metadata.json", content);
+            this.draftFileManager.saveMetadataAsText(publisherKey, draftKey, resourceKey + ".automated-metadata.json", content);
 
             // Filter properties before updating metadata in catalogue service
-            final EnumAssetSourceType               source     = mapFormatToSourceType(draft.getCommand().getFormat());
+            final AssetResourceDto                  resource   = draft.getResourceByKey(resourceKey);
+            final EnumAssetSourceType               source     = mapFormatToSourceType(resource.getFormat());
             final List<AssetMetadataPropertyEntity> properties = this.assetMetadataPropertyRepository.findAllByAssetType(source);
             
             for(AssetMetadataPropertyEntity p: properties) {
-                final String propertyName    = p.getName();
-                final JsonNode propertyValue = value.get(propertyName);
+                final String   propertyName = p.getName();
+                final JsonNode propertyNode = value.get(propertyName);
 
-                if (propertyValue == null) {
-                    return;
+                // Ignore undefined or null nodes
+                if (propertyNode == null || propertyNode.isNull()) {
+                    continue;
                 }
                 
-                final String fileName = this.getMetadataPropertyFileName(resource ,propertyName ,p.getType());
-
+                final String fileName = this.getMetadataPropertyFileName(resourceKey, propertyName, p.getType());
+                
                 switch (p.getType()) {
                     case PNG :
-                        this.draftFileManager.saveMetadataPropertyAsImage(publisherKey, draftKey, fileName, propertyValue.asText());
+                        this.draftFileManager.saveMetadataPropertyAsImage(publisherKey, draftKey, fileName, propertyNode.asText());
                         break;
                     case JSON :
-                        this.draftFileManager.saveMetadataPropertyAsJson(publisherKey, draftKey, fileName, objectMapper.writeValueAsString(propertyValue));
+                        this.draftFileManager.saveMetadataPropertyAsJson(publisherKey, draftKey, fileName, objectMapper.writeValueAsString(propertyNode));
                         break;
                 }
+                
+                final String uri = String.format(
+                    "/drafts/%s/resources/%s/metadata/%s",
+                    draftKey, resourceKey, propertyName
+                );
 
-                ((ObjectNode) value).remove(propertyName); 
+                ((ObjectNode) value).put(propertyName, uri);
             }
 
             // Store filtered metadata in asset repository
@@ -453,7 +496,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             this.draftFileManager.saveMetadataAsText(publisherKey, draftKey, resource + ".automated-metadata-minified.json", filteredContent);
 
             // Update metadata
-            metadata.set(resource.toString(), value);
+            metadata.set(resourceKey.toString(), value);
             
             this.draftRepository.updateMetadata(publisherKey, draftKey, metadata);
         } catch (AssetDraftException ex) {
@@ -722,8 +765,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         return assetAdditionalResourceRepository.delete(draftKey, resourceKey);
     }
 
-    private String getMetadataPropertyFileName(UUID resource, String propertyName, EnumMetadataPropertyType propertyType) {
-        return StringUtils.joinWith(".", resource, "property", propertyName, propertyType.getExtension());
+    private String getMetadataPropertyFileName(UUID resourceKey, String propertyName, EnumMetadataPropertyType propertyType) {
+        return StringUtils.joinWith(".", resourceKey, "property", propertyName, propertyType.getExtension());
     }
 
 }

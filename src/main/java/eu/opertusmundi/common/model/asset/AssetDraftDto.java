@@ -58,5 +58,12 @@ public class AssetDraftDto {
     
     @Schema(description = "Publisher details")
     private PublisherDto publisher;
+    
+    public AssetResourceDto getResourceByKey(UUID key) {
+        return this.getCommand().getResources().stream()
+            .filter(r -> r.getId().equals(key))
+            .findFirst()
+            .orElse(null);
+    }
 
 }

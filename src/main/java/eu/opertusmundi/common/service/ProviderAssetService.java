@@ -146,12 +146,12 @@ public interface ProviderAssetService {
      * 
      * @param publisherKey
      * @param draftKey
-     * @param resource
+     * @param resourceKey
      * @param metadata
      * @throws FileSystemException
      * @throws AssetDraftException 
      */
-    void updateMetadata(UUID publisherKey, UUID draftKey, UUID resource, JsonNode metadata) throws FileSystemException, AssetDraftException;
+    void updateMetadata(UUID publisherKey, UUID draftKey, UUID resourceKey, JsonNode metadata) throws FileSystemException, AssetDraftException;
     
     /**
      * Uploads a resource file for the selected asset
