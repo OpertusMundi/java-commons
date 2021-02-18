@@ -493,7 +493,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             // Store filtered metadata in asset repository
             final String filteredContent = objectMapper.writeValueAsString(value);
 
-            this.draftFileManager.saveMetadataAsText(publisherKey, draftKey, resource + ".automated-metadata-minified.json", filteredContent);
+            this.draftFileManager.saveMetadataAsText(publisherKey, draftKey, resourceKey + ".automated-metadata-minified.json", filteredContent);
 
             // Update metadata
             metadata.set(resourceKey.toString(), value);
