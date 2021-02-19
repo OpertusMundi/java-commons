@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.apache.logging.log4j.core.util.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
@@ -15,7 +14,7 @@ import eu.opertusmundi.common.model.DraftFileNamingStrategyContext;
 
 @Service
 public class DefaultDraftFileNamingStrategy extends AbstractFileNamingStrategy<DraftFileNamingStrategyContext> {
-
+   
     @Autowired
     private Path draftDirectory;
 
@@ -27,7 +26,7 @@ public class DefaultDraftFileNamingStrategy extends AbstractFileNamingStrategy<D
 
         if (ctx.isCreateIfNotExists() && !Files.exists(baseDir)) {
             try {
-                FileUtils.mkdir(baseDir.toFile(), true);
+                Files.createDirectories(baseDir, DEFAULT_DIRECTORY_ATTRIBUTE);
             } catch (final FileAlreadyExistsException ex) {
                 // Another thread may have created this entry
             }

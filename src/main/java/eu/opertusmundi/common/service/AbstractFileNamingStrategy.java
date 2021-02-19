@@ -3,6 +3,8 @@ package eu.opertusmundi.common.service;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermissions;
 
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -12,6 +14,9 @@ import eu.opertusmundi.common.model.file.FileSystemException;
 
 public abstract class AbstractFileNamingStrategy<C extends FileNamingStrategyContext> implements UserFileNamingStrategy<C> {
 
+    protected static final FileAttribute<?> DEFAULT_DIRECTORY_ATTRIBUTE =
+        PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxr-x"));
+    
     @Override
     public Path resolvePath(C ctx, String relativePath) throws IOException, FileSystemException {
         Assert.notNull(ctx, "Expected a non-null context");

@@ -39,7 +39,7 @@ public class DefaultUserFileNamingStrategy extends AbstractFileNamingStrategy<Us
 
         if (ctx.isCreateIfNotExists() && !Files.exists(baseDir)) {
             try {
-                Files.createDirectory(baseDir);
+                Files.createDirectories(baseDir, DEFAULT_DIRECTORY_ATTRIBUTE);
             } catch (final FileAlreadyExistsException ex) {
                 // Another thread may have created this entry
             }

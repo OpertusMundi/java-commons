@@ -8,6 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -44,6 +46,9 @@ public class DefaultDraftFileManager implements DraftFileManager {
     
     private static final String METADATA_PATH = "/metadata";
     
+    protected static final FileAttribute<?> DEFAULT_DIRECTORY_ATTRIBUTE =
+        PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxr-x"));
+
     @Autowired
     private DefaultDraftFileNamingStrategy draftNamingStrategy;
     
@@ -118,8 +123,8 @@ public class DefaultDraftFileManager implements DraftFileManager {
     private void saveResourceFile(
         UUID publisherKey, UUID draftKey, String path, String fileName, InputStream input
     ) throws AssetRepositoryException, FileSystemException {
-        Assert.notNull(publisherKey, "Exepcted a non-null publisher key");
-        Assert.notNull(draftKey, "Exepcted a non-null draft key");
+        Assert.notNull(publisherKey, "Expected a non-null publisher key");
+        Assert.notNull(draftKey, "Expected a non-null draft key");
         Assert.isTrue(!StringUtils.isBlank(fileName), "Expected a non-empty file name");
         
         try {
@@ -130,7 +135,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
 
             // Create parent directory
             if (!absolutePath.getParent().toFile().exists()) {
-                FileUtils.forceMkdir(absolutePath.getParent().toFile());
+                Files.createDirectories(absolutePath.getParent(), DEFAULT_DIRECTORY_ATTRIBUTE);
             }
             
             if (localFile.exists()) {
@@ -158,8 +163,8 @@ public class DefaultDraftFileManager implements DraftFileManager {
     private void deleteResource(
         UUID publisherKey, UUID draftKey, String path, String fileName
     ) throws FileSystemException, AssetRepositoryException {
-        Assert.notNull(publisherKey, "Exepcted a non-null publisher key");
-        Assert.notNull(draftKey, "Exepcted a non-null draft key");
+        Assert.notNull(publisherKey, "Expected a non-null publisher key");
+        Assert.notNull(draftKey, "Expected a non-null draft key");
         Assert.isTrue(!StringUtils.isBlank(fileName), "Expected a non-empty file name");
         
         try {
@@ -190,8 +195,8 @@ public class DefaultDraftFileManager implements DraftFileManager {
     public Path resolveMetadataPropertyPath(
         UUID publisherKey, UUID draftKey, String fileName
     ) throws FileSystemException, AssetRepositoryException {
-        Assert.notNull(publisherKey, "Exepcted a non-null publisher key");
-        Assert.notNull(draftKey, "Exepcted a non-null draft key");
+        Assert.notNull(publisherKey, "Expected a non-null publisher key");
+        Assert.notNull(draftKey, "Expected a non-null draft key");
         Assert.isTrue(!StringUtils.isBlank(fileName), "Expected a non-empty file name");
         
         try {
@@ -215,8 +220,8 @@ public class DefaultDraftFileManager implements DraftFileManager {
     }
 
     private Path resolveResourcePath(UUID publisherKey, UUID draftKey, String path, String fileName) throws FileSystemException, AssetRepositoryException {
-        Assert.notNull(publisherKey, "Exepcted a non-null publisher key");
-        Assert.notNull(draftKey, "Exepcted a non-null draft key");
+        Assert.notNull(publisherKey, "Expected a non-null publisher key");
+        Assert.notNull(draftKey, "Expected a non-null draft key");
         Assert.isTrue(!StringUtils.isBlank(fileName), "Expected a non-empty file name");
         
         try {
@@ -239,11 +244,11 @@ public class DefaultDraftFileManager implements DraftFileManager {
         }
     }
     
-    private File prepareMetadataFile(
+    private Path prepareMetadataFile(
         UUID publisherKey, UUID draftKey, String fileName, String content
     ) throws FileSystemException, IOException {
-        Assert.notNull(publisherKey, "Exepcted a non-null publisher key");
-        Assert.notNull(draftKey, "Exepcted a non-null draft key");
+        Assert.notNull(publisherKey, "Expected a non-null publisher key");
+        Assert.notNull(draftKey, "Expected a non-null draft key");
         Assert.isTrue(!StringUtils.isBlank(fileName), "Expected a non-empty file name");
         Assert.isTrue(!StringUtils.isBlank(content), "Expected non-empty content");
         
@@ -254,22 +259,22 @@ public class DefaultDraftFileManager implements DraftFileManager {
         
         // Create parent directory
         if (!absolutePath.getParent().toFile().exists()) {
-            FileUtils.forceMkdir(absolutePath.getParent().toFile());
+            Files.createDirectories(absolutePath.getParent(), DEFAULT_DIRECTORY_ATTRIBUTE);
         }
         
         if (localFile.exists()) {
             FileUtils.deleteQuietly(localFile);
         }
         
-        return localFile;
+        return absolutePath;
     }
     
     @Override
     public void saveMetadataAsText(UUID publisherKey, UUID draftKey, String fileName, String content) throws AssetRepositoryException {
         try {
-            final File file = this.prepareMetadataFile(publisherKey, draftKey, fileName, content);
+            final Path path = this.prepareMetadataFile(publisherKey, draftKey, fileName, content);
 
-            FileUtils.writeStringToFile(file, content, Charset.forName("UTF-8"));
+            FileUtils.writeStringToFile(path.toFile(), content, Charset.forName("UTF-8"));
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
@@ -281,10 +286,10 @@ public class DefaultDraftFileManager implements DraftFileManager {
         UUID publisherKey, UUID draftKey, String fileName, String content
     ) throws FileSystemException, AssetRepositoryException {
         try {
-            final File   file = this.prepareMetadataFile(publisherKey, draftKey, fileName, content);
+            final Path   path = this.prepareMetadataFile(publisherKey, draftKey, fileName, content);
             final byte[] data = Base64.getDecoder().decode(content);
             
-            FileUtils.writeByteArrayToFile(file, data);
+            FileUtils.writeByteArrayToFile(path.toFile(), data);
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
@@ -296,9 +301,9 @@ public class DefaultDraftFileManager implements DraftFileManager {
         UUID publisherKey, UUID draftKey, String fileName, String content
     ) throws FileSystemException, AssetRepositoryException {
         try {
-            final File file = this.prepareMetadataFile(publisherKey, draftKey, fileName, content);
+            final Path path = this.prepareMetadataFile(publisherKey, draftKey, fileName, content);
 
-            FileUtils.writeStringToFile(file, content, Charset.forName("UTF-8"));
+            FileUtils.writeStringToFile(path.toFile(), content, Charset.forName("UTF-8"));
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
@@ -307,8 +312,8 @@ public class DefaultDraftFileManager implements DraftFileManager {
     }
 
     public void deleteAllFiles(UUID publisherKey, UUID draftKey) {
-        Assert.notNull(publisherKey, "Exepcted a non-null publisher key");
-        Assert.notNull(draftKey, "Exepcted a non-null draft key");
+        Assert.notNull(publisherKey, "Expected a non-null publisher key");
+        Assert.notNull(draftKey, "Expected a non-null draft key");
         
         try {
             final DraftFileNamingStrategyContext ctx          = DraftFileNamingStrategyContext.of(publisherKey, draftKey);
