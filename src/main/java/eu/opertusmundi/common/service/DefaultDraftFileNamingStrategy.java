@@ -22,18 +22,21 @@ public class DefaultDraftFileNamingStrategy extends AbstractFileNamingStrategy<D
     public Path getDir(DraftFileNamingStrategyContext ctx) throws IOException {
         Assert.notNull(ctx, "Expected a non-null context");
 
-        final Path baseDir = this.draftDirectory.resolve(Paths.get(ctx.getPublisherKey().toString(), ctx.getDraftKey().toString()));
+        final Path publisherDir = this.draftDirectory.resolve(Paths.get(ctx.getPublisherKey().toString()));
+        final Path draftDir     = publisherDir.resolve(Paths.get(ctx.getDraftKey().toString()));
 
-        if (ctx.isCreateIfNotExists() && !Files.exists(baseDir)) {
-            try {
-                Files.createDirectories(baseDir);
-                Files.setPosixFilePermissions(baseDir, DEFAULT_DIRECTORY_PERMISSIONS);
-            } catch (final FileAlreadyExistsException ex) {
-                // Another thread may have created this entry
+        for (Path p : new Path[]{publisherDir, draftDir}) {
+            if (ctx.isCreateIfNotExists() && !Files.exists(p)) {
+                try {
+                    Files.createDirectories(p);
+                    Files.setPosixFilePermissions(p, DEFAULT_DIRECTORY_PERMISSIONS);
+                } catch (final FileAlreadyExistsException ex) {
+                    // Another thread may have created this entry
+                }
             }
         }
 
-        return baseDir;
+        return draftDir;
     }
 
 }
