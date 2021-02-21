@@ -5,9 +5,10 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Arrays;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 
@@ -28,8 +29,7 @@ public class FileSystemConfiguration {
     
     private Path assetDir;
 
-    protected static final FileAttribute<?> DEFAULT_DIRECTORY_ATTRIBUTE =
-        PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxr-x"));
+    private static final Set<PosixFilePermission> DEFAULT_DIRECTORY_PERMISSIONS = PosixFilePermissions.fromString("rwxrwxr-x");
     
     @Autowired
     private void setTempDir(@Value("${opertusmundi.file-system.temp-dir}") String d) {
@@ -63,7 +63,8 @@ public class FileSystemConfiguration {
     private void initialize() throws IOException {
         for (final Path dataDir : Arrays.asList(this.tempDir, this.userDir, this.draftDir, this.assetDir)) {
             try {
-                Files.createDirectories(dataDir, DEFAULT_DIRECTORY_ATTRIBUTE);
+                Files.createDirectories(dataDir);
+                Files.setPosixFilePermissions(dataDir, DEFAULT_DIRECTORY_PERMISSIONS);
             } catch (final FileAlreadyExistsException ex) {
 
             }

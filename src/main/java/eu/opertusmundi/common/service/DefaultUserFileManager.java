@@ -6,9 +6,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Locale;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -33,8 +34,7 @@ public class DefaultUserFileManager implements UserFileManager {
 
     private long maxUserSpace;
 
-    protected static final FileAttribute<?> DEFAULT_DIRECTORY_ATTRIBUTE =
-        PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxr-x"));
+    private static final Set<PosixFilePermission> DEFAULT_DIRECTORY_PERMISSIONS = PosixFilePermissions.fromString("rwxrwxr-x");
 
     @Value("${opertus-mundi.file-system.user-max-space:20971520000}")
     private void setMaxUserSpace(String maxUserSpace) {
@@ -86,7 +86,8 @@ public class DefaultUserFileManager implements UserFileManager {
                 );
             }
 
-            Files.createDirectories(dir, DEFAULT_DIRECTORY_ATTRIBUTE);
+            Files.createDirectories(dir);
+            Files.setPosixFilePermissions(dir, DEFAULT_DIRECTORY_PERMISSIONS);
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
@@ -130,7 +131,8 @@ public class DefaultUserFileManager implements UserFileManager {
             final String localFolder = localFile.getParent();
 
             if (!StringUtils.isBlank(localFolder)) {
-                Files.createDirectories(Paths.get(localFolder), DEFAULT_DIRECTORY_ATTRIBUTE);
+                Files.createDirectories(Paths.get(localFolder));
+                Files.setPosixFilePermissions(Paths.get(localFolder), DEFAULT_DIRECTORY_PERMISSIONS);
             }
 
             if (localFile.exists()) {

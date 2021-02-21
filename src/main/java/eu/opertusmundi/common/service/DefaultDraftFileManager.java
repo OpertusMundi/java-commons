@@ -8,11 +8,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
@@ -46,8 +47,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
     
     private static final String METADATA_PATH = "/metadata";
     
-    protected static final FileAttribute<?> DEFAULT_DIRECTORY_ATTRIBUTE =
-        PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxr-x"));
+    private static final Set<PosixFilePermission> DEFAULT_DIRECTORY_PERMISSIONS = PosixFilePermissions.fromString("rwxrwxr-x");
 
     @Autowired
     private DefaultDraftFileNamingStrategy draftNamingStrategy;
@@ -135,7 +135,8 @@ public class DefaultDraftFileManager implements DraftFileManager {
 
             // Create parent directory
             if (!absolutePath.getParent().toFile().exists()) {
-                Files.createDirectories(absolutePath.getParent(), DEFAULT_DIRECTORY_ATTRIBUTE);
+                Files.createDirectories(absolutePath.getParent());
+                Files.setPosixFilePermissions(absolutePath.getParent(), DEFAULT_DIRECTORY_PERMISSIONS);
             }
             
             if (localFile.exists()) {
@@ -259,7 +260,8 @@ public class DefaultDraftFileManager implements DraftFileManager {
         
         // Create parent directory
         if (!absolutePath.getParent().toFile().exists()) {
-            Files.createDirectories(absolutePath.getParent(), DEFAULT_DIRECTORY_ATTRIBUTE);
+            Files.createDirectories(absolutePath.getParent());
+            Files.setPosixFilePermissions(absolutePath.getParent(), DEFAULT_DIRECTORY_PERMISSIONS);
         }
         
         if (localFile.exists()) {

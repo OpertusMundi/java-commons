@@ -26,7 +26,8 @@ public class DefaultAssetFileNamingStrategy extends AbstractFileNamingStrategy<A
 
         if (ctx.isCreateIfNotExists() && !Files.exists(baseDir)) {
             try {
-                Files.createDirectories(baseDir, DEFAULT_DIRECTORY_ATTRIBUTE);
+                Files.createDirectories(baseDir);
+                Files.setPosixFilePermissions(baseDir, DEFAULT_DIRECTORY_PERMISSIONS);
             } catch (final FileAlreadyExistsException ex) {
                 // Another thread may have created this entry
             }
