@@ -50,7 +50,7 @@ public class DefaultUserFileNamingStrategy extends AbstractFileNamingStrategy<Us
     }
 
     @Override
-    public void validatePath(String path) throws FileSystemException {
+    protected void validatePath(String path) throws FileSystemException {
         final String[] parts = StringUtils.split(path, "/");
 
         if (parts.length > this.maxDepth) {

@@ -55,8 +55,9 @@ public class DefaultUserFileManager implements UserFileManager {
         
         try {
             final UserFileNamingStrategyContext ctx     = UserFileNamingStrategyContext.of(command.getUserId(), true);
-            final Path                          userDir = this.fileNamingStrategy.getDir(ctx);
-            final Path                          target  = Paths.get(userDir.toString(), command.getPath());
+            final Path                          target = command.getPath().equals("/")
+                ? this.fileNamingStrategy.getDir(ctx)
+                : this.fileNamingStrategy.resolvePath(ctx, command.getPath());
 
             return this.directoryTraverse.getDirectoryInfo(target);
         } catch (final Exception ex) {
@@ -162,8 +163,7 @@ public class DefaultUserFileManager implements UserFileManager {
             }
 
             final UserFileNamingStrategyContext ctx          = UserFileNamingStrategyContext.of(command.getUserId());
-            final Path                          userDir      = this.fileNamingStrategy.getDir(ctx);
-            final Path                          absolutePath = Paths.get(userDir.toString(), command.getPath());
+            final Path                          absolutePath = this.fileNamingStrategy.resolvePath(ctx, command.getPath());
             final File                          file         = absolutePath.toFile();
 
             if (!file.exists()) {
@@ -192,8 +192,7 @@ public class DefaultUserFileManager implements UserFileManager {
             }
 
             final UserFileNamingStrategyContext ctx          = UserFileNamingStrategyContext.of(command.getUserId());
-            final Path                          userDir      = this.fileNamingStrategy.getDir(ctx);
-            final Path                          absolutePath = Paths.get(userDir.toString(), command.getPath().toString());
+            final Path                          absolutePath = this.fileNamingStrategy.resolvePath(ctx, command.getPath());
             final File                          file         = absolutePath.toFile();
 
             if (!file.exists()) {

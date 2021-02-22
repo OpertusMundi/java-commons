@@ -39,7 +39,7 @@ public abstract class AbstractFileNamingStrategy<C extends FileNamingStrategyCon
         return Paths.get(baseDir.toString(), relativePath.toString());
     }
 
-    public void validatePath(String path) throws FileSystemException {
+    protected void validatePath(String path) throws FileSystemException {
 
     }
 
