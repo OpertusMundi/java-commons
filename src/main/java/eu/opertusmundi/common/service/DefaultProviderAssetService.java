@@ -124,8 +124,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         Page<AssetDraftDto> page;
 
         if (status != null && !status.isEmpty() && publisherKey != null) {
-            page = this.draftRepository.findAllByPublisherAndStatus(publisherKey, status, pageRequest)
-                    .map(ProviderAssetDraftEntity::toDto);
+            page = this.draftRepository.findAllByPublisherAndStatus(publisherKey, status, pageRequest).map(ProviderAssetDraftEntity::toDto);
         } else if (publisherKey != null) {
             page = this.draftRepository.findAllByPublisher(publisherKey, pageRequest).map(ProviderAssetDraftEntity::toDto);
         } else if (status != null && !status.isEmpty()) {
@@ -424,7 +423,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 }
 
                 final String uri = String.format(
-                    "/assets/%s/resources/%s/metadata/%s",
+                    "/action/assets/%s/resources/%s/metadata/%s",
                     pid, r.getId(), propertyName
                 );
     
@@ -483,7 +482,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 }
                 
                 final String uri = String.format(
-                    "/drafts/%s/resources/%s/metadata/%s",
+                    "/action/drafts/%s/resources/%s/metadata/%s",
                     draftKey, resourceKey, propertyName
                 );
 
