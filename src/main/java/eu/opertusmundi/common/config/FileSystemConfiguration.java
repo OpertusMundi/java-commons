@@ -63,8 +63,10 @@ public class FileSystemConfiguration {
     private void initialize() throws IOException {
         for (final Path dataDir : Arrays.asList(this.tempDir, this.userDir, this.draftDir, this.assetDir)) {
             try {
-                Files.createDirectories(dataDir);
-                Files.setPosixFilePermissions(dataDir, DEFAULT_DIRECTORY_PERMISSIONS);
+                if(!dataDir.toFile().exists()) {
+                    Files.createDirectories(dataDir);
+                    Files.setPosixFilePermissions(dataDir, DEFAULT_DIRECTORY_PERMISSIONS);
+                }
             } catch (final FileAlreadyExistsException ex) {
 
             }
