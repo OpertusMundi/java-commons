@@ -43,13 +43,13 @@ public interface CatalogueFeignClient {
     );
 
     /**
-     * Get a set of items item by their identifiers
+     * Get a set of items by their identifiers
      *
-     * @param id The item unique identifier.
+     * @param id A list of item unique identifiers.
      * @return An instance of {@link CatalogueServerItem}
      */
     @GetMapping(value = "/api/published/get", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> findAllById(@RequestParam("id") UUID[] id);
+    ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> findAllById(@RequestParam("id") String[] id);
 
     /**
      * Get an item by id
@@ -67,7 +67,7 @@ public interface CatalogueFeignClient {
      * @return
      */
     @DeleteMapping(value = "/api/published/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<Void> deletePublished(@PathVariable("id") UUID id);
+    ResponseEntity<Void> deletePublished(@PathVariable("id") String id);
 
     /**
      * Search draft items
@@ -93,7 +93,7 @@ public interface CatalogueFeignClient {
      * @return An instance of {@link CatalogueFeature}
      */
     @GetMapping(value = "/api/draft/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<CatalogueResponse<CatalogueFeature>> findOneDraftById(@PathVariable("id") UUID id);
+    ResponseEntity<CatalogueResponse<CatalogueFeature>> findOneDraftById(@PathVariable("id") String id);
 
     /**
      * Create a new draft item
@@ -109,7 +109,7 @@ public interface CatalogueFeignClient {
      * @param feature The feature to create
      */
     @PostMapping(value = "/api/draft/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<Void> createDraftFromPublished(@PathVariable("id") UUID id);
+    ResponseEntity<Void> createDraftFromPublished(@PathVariable("id") String id);
 
     /**
      * Create a new draft item
@@ -117,7 +117,7 @@ public interface CatalogueFeignClient {
      * @param feature The feature to create
      */
     @PutMapping(value = "/api/draft/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<Void> updateDraft(@PathVariable("id") UUID id, @RequestBody CatalogueFeature feature);
+    ResponseEntity<Void> updateDraft(@PathVariable("id") String id, @RequestBody CatalogueFeature feature);
 
     /**
      * Update draft item status
@@ -138,7 +138,7 @@ public interface CatalogueFeignClient {
      * @return
      */
     @DeleteMapping(value = "/api/draft/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<Void> deleteDraft(@PathVariable("id") UUID id);
+    ResponseEntity<Void> deleteDraft(@PathVariable("id") String id);
 
     /**
      * Search history items
@@ -153,7 +153,7 @@ public interface CatalogueFeignClient {
      */
     @GetMapping(value = "/api/history/search")
     ResponseEntity<CatalogueResponse<CatalogueCollection>> findAllHistory(
-        @RequestParam(name = "item_id", required = false) UUID id,
+        @RequestParam(name = "item_id", required = false) String id,
         @RequestParam(name = "publisher_id", required = false) UUID publisher,
         @RequestParam(name = "deleted", required = false) Boolean deleted,
         @RequestParam(name = "page", defaultValue = "1") int pageIndex,
