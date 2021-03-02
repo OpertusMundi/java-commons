@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.AssetAdditionalResourceEntity;
 import eu.opertusmundi.common.domain.AssetFileTypeEntity;
 import eu.opertusmundi.common.domain.AssetMetadataPropertyEntity;
@@ -63,6 +64,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.dto.EnumSortingOrder;
 import eu.opertusmundi.common.model.file.FileSystemException;
+import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.AssetAdditionalResourceRepository;
 import eu.opertusmundi.common.repository.AssetFileTypeRepository;
 import eu.opertusmundi.common.repository.AssetMetadataPropertyRepository;
@@ -95,11 +97,14 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     private AssetMetadataPropertyRepository assetMetadataPropertyRepository;
 
     @Autowired
-    private AssetResourceRepository assetResourceRepository;
+    private DraftRepository draftRepository;
 
     @Autowired
-    private DraftRepository draftRepository;
+    private AccountRepository accountRepository;
     
+    @Autowired
+    private AssetResourceRepository assetResourceRepository;
+   
     @Autowired
     private AssetAdditionalResourceRepository assetAdditionalResourceRepository;
 
@@ -115,6 +120,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Autowired
     private ObjectProvider<BpmServerFeignClient> bpmClient;
 
+    @Autowired
+    private PersistentIdentifierService pidService;
+    
     @Override
     public PageResultDto<AssetDraftDto> findAllDraft(UUID publisherKey, Set<EnumProviderAssetDraftStatus> status, int pageIndex,
             int pageSize, EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order) {
@@ -344,9 +352,6 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Transactional
     public void publishDraft(UUID publisherKey, UUID draftKey) throws AssetDraftException {
         try {
-            // TODO : id must be created by the PID service
-            final String pid = "topio." + draftKey.toString();
-
             // Validate draft state
             final AssetDraftDto draft = this.findOneDraft(publisherKey, draftKey);
 
@@ -360,7 +365,22 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                     String.format("Expected status to be [POST_PROCESSING]. Found [%s]", draft.getStatus())
                 );
             }
+            
+            // Get PID service user id for publisher
+            final AccountEntity publisher            = this.accountRepository.findOneByKey(publisherKey).orElse(null);
+            final Integer       ownerId              = publisher.getProfile().getProvider().getPidServiceUserId();
+            final String        assetType            = draft.getCommand().getType().toString();
+            final String        assetTypeDescription = draft.getCommand().getType().getDescription();
+            final String        assetDescription     = draft.getCommand().getTitle();
 
+            // Register asset type
+            pidService.registerAssetType(assetType, assetTypeDescription);
+            
+            // Register asset
+            final String pid = pidService.registerAsset(
+                draftKey.toString(), ownerId, assetType, assetDescription
+            );
+            
             // Create feature
             final CatalogueFeature feature = this.convertDraftToFeature(pid, publisherKey, draft);           
 
