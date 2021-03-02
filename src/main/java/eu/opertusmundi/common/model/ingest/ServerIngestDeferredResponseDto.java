@@ -1,7 +1,6 @@
 package eu.opertusmundi.common.model.ingest;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,12 +10,13 @@ import lombok.Setter;
 @Setter
 public class ServerIngestDeferredResponseDto {
 
-    @JsonProperty("endpoints")
-    private String endpointsResource;
+    @Schema(description = "The status endpoint to poll for the status of the request.")
+    private String status;
 
-    @JsonProperty("status")
-    private String statusResource;
-
+    @Schema(description = "The ticket corresponding to the request.")
     private String ticket;
+
+    @Schema(description = "The response type as requested.")
+    private String type;
 
 }
