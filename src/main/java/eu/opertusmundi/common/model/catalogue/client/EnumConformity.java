@@ -22,9 +22,7 @@ public enum EnumConformity {
         return Arrays.stream(EnumConformity.values())
             .filter(r -> r.value.equalsIgnoreCase(value))
             .findFirst()
-            .orElseThrow(
-                () -> new IllegalArgumentException(String.format("Value [%s] is not a member of enum EnumConformity", value))
-            );
+            .orElse(EnumConformity.NOT_EVALUATED);
     }
 
 }

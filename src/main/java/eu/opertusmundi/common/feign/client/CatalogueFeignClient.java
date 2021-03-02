@@ -31,6 +31,7 @@ public interface CatalogueFeignClient {
      *
      * @param query Search query
      * @param pageIndex The page index. Page index is 1-based
+     * @param publisher Publisher unique identifier
      * @param pageSize The page size
      * @return An instance of {@link CatalogCollection}
      */
@@ -112,9 +113,25 @@ public interface CatalogueFeignClient {
     ResponseEntity<Void> createDraftFromPublished(@PathVariable("id") String id);
 
     /**
-     * Create a new draft item
+     * Create a new draft item from an existing catalogue item
      *
-     * @param feature The feature to create
+     * @param id The identifier of the harvested item
+     */
+    @PostMapping(value = "/api/draft/create_from_harvest/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<Void> createDraftFromHarvester(@PathVariable("id") String id);
+    
+    /**
+     * Create a new draft item from an ISO (XML) document
+     *
+     * @param xml The feature to create
+     */
+    @PostMapping(value = "/api/draft/create_from_iso/", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<Void> createDraftFromIso(@RequestParam("xml") String xml);
+
+    /**
+     * Update an existing draft item
+     *
+     * @param feature The updated feature
      */
     @PutMapping(value = "/api/draft/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<Void> updateDraft(@PathVariable("id") String id, @RequestBody CatalogueFeature feature);
@@ -158,6 +175,34 @@ public interface CatalogueFeignClient {
         @RequestParam(name = "deleted", required = false) Boolean deleted,
         @RequestParam(name = "page", defaultValue = "1") int pageIndex,
         @RequestParam(name = "per_page", defaultValue = "10") int pageSize
+    );
+
+    /**
+     * Harvest catalogue metadata
+     * 
+     * @param url
+     * @param harvester
+     * @return
+     */
+    @PostMapping(value = "/api/harvest", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<Void> harvestCatalogue(
+        @RequestParam("url") String url,
+        @RequestParam("harvester") String harvester
+    );
+    
+    /**
+     * Search harvested items
+     *
+     * @param url Catalogue URL
+     * @param pageIndex The page index. Page index is 1-based
+     * @param pageSize The page size
+     * @return An instance of {@link CatalogCollection}
+     */
+    @GetMapping(value = "/api/harvest/search", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<CatalogueResponse<CatalogueCollection>> findAllHarvest(
+        @RequestParam("harvest_url") String url, 
+        @RequestParam("page") int pageIndex, 
+        @RequestParam("per_page") int pageSize
     );
 
 }

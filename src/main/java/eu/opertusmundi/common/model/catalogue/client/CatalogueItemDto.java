@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
 import eu.opertusmundi.common.model.openapi.schema.PricingModelAsJson;
@@ -52,6 +55,7 @@ public class CatalogueItemDto extends BaseCatalogueItemDto implements Serializab
     )
     @Getter
     @Setter
+    @JsonInclude(Include.NON_EMPTY)
     private List<BasePricingModelDto> pricingModels;
 
     @Schema(description = "Id of an entity responsible for making the resource available")
@@ -65,8 +69,9 @@ public class CatalogueItemDto extends BaseCatalogueItemDto implements Serializab
     private String title;
     
     @Schema(description = "The nature or genre of the resource")
+    @Getter
+    @Setter
     private EnumType type;
-
 
     @Schema(description = "Version of the resource")
     @Getter

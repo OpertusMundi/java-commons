@@ -25,7 +25,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class CatalogueItemCommandDto extends BaseCatalogueItemDto implements Serializable {
+public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

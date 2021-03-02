@@ -10,9 +10,13 @@ import lombok.Setter;
 @Setter
 public class PageRequestDto {
 
-    public PageRequestDto(int page, int size) {
+    protected PageRequestDto(int page, int size) {
         this.page = page;
         this.size = size;
+    }
+    
+    public static PageRequestDto of(int page, int size) {
+        return new PageRequestDto(page, size);
     }
 
     @Schema(

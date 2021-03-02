@@ -14,7 +14,7 @@ public class CatalogueSearchQuery extends PageRequestDto {
     private String query;
 
     public PageRequestDto toPageRequest() {
-        return new PageRequestDto(this.page, this.size);
+        return PageRequestDto.of(this.page, this.size);
     }
 
 }

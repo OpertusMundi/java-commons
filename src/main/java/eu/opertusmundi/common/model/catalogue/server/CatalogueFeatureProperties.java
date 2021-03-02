@@ -1,12 +1,9 @@
 package eu.opertusmundi.common.model.catalogue.server;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -20,6 +17,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemStatistics;
 import eu.opertusmundi.common.model.catalogue.client.EnumConformity;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
+import eu.opertusmundi.common.util.StreamUtils;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -38,6 +36,9 @@ public class CatalogueFeatureProperties {
         this.creationDate                = command.getCreationDate();
         this.dateEnd                     = command.getDateEnd();
         this.dateStart                   = command.getDateStart();
+        this.deliveryMethod              = command.getDeliveryMethod() != null 
+            ? command.getDeliveryMethod().getValue().toString() 
+            : null;
         this.format                      = command.getFormat();
         this.language                    = command.getLanguage();
         this.license                     = command.getLicense();
@@ -61,22 +62,22 @@ public class CatalogueFeatureProperties {
         this.spatialResolution           = command.getSpatialResolution();
         this.statistics                  = new CatalogueItemStatistics();
         this.status                      = EnumProviderAssetDraftStatus.DRAFT.name().toLowerCase();
-        this.suitableFor                 = this.toStream(command.getSuitableFor()).collect(Collectors.toList());
+        this.suitableFor                 = StreamUtils.from(command.getSuitableFor()).collect(Collectors.toList());
         this.title                       = command.getTitle();
         this.type                        = command.getType() != null ? command.getType().getValue() : null;
         this.version                     = command.getVersion();
         this.versions                    = Collections.emptyList();
 
-        this.additionalResources = this.toStream(command.getAdditionalResources())
+        this.additionalResources = StreamUtils.from(command.getAdditionalResources())
             .map(r -> r.toCatalogueResource())
             .collect(Collectors.toList());
       
-        this.keywords = this.toStream(command.getKeywords())
+        this.keywords = StreamUtils.from(command.getKeywords())
             .map(Keyword::new)
             .collect(Collectors.toList());
         
         // Resources are stored by the asset data repository
-        final List<CatalogueResource> feeatureResources = this.toStream(command.getResources())
+        final List<CatalogueResource> feeatureResources = StreamUtils.from(command.getResources())
             .map(r -> r.toCatalogueResource())
             .collect(Collectors.toList());
         
@@ -84,13 +85,13 @@ public class CatalogueFeatureProperties {
 
         // Store only pricing model parameters. The effective price will be
         // computed by the user of the object
-        this.pricingModels = this.toStream(command.getPricingModels()).collect(Collectors.toList());
+        this.pricingModels = StreamUtils.from(command.getPricingModels()).collect(Collectors.toList());
                
-        this.scales= this.toStream(command.getScales())
+        this.scales= StreamUtils.from(command.getScales())
             .map(Scale::new)
             .collect(Collectors.toList());
        
-        this.topicCategory = this.toStream(command.getTopicCategory())
+        this.topicCategory = StreamUtils.from(command.getTopicCategory())
             .map(EnumTopicCategory::getValue)
             .collect(Collectors.toList());
     }
@@ -115,6 +116,10 @@ public class CatalogueFeatureProperties {
     @JsonProperty("date_start")
     private String dateStart;
 
+    @JsonProperty("delivery_method")
+    @JsonInclude(Include.NON_NULL)
+    private String deliveryMethod;
+    
     private String format;
 
     private List<Keyword> keywords;
@@ -227,12 +232,6 @@ public class CatalogueFeatureProperties {
 
         private String theme;
 
-    }
-    
-    private <T> Stream<T> toStream(Collection<T> collection) {
-        return Optional.ofNullable(collection)
-          .map(Collection::stream)
-          .orElseGet(Stream::empty);
     }
 
 }

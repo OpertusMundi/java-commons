@@ -2,11 +2,8 @@ package eu.opertusmundi.common.model.catalogue.client;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.springframework.util.Assert;
 
@@ -19,12 +16,13 @@ import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
 import eu.opertusmundi.common.model.dto.PublisherDto;
 import eu.opertusmundi.common.model.openapi.schema.AssetEndpointTypes;
+import eu.opertusmundi.common.util.StreamUtils;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
-public class CatalogueItemDetailsDto extends CatalogueItemDto implements Serializable {
+public final class CatalogueItemDetailsDto extends CatalogueItemDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -41,7 +39,7 @@ public class CatalogueItemDetailsDto extends CatalogueItemDto implements Seriali
         this.versions   = props.getVersions();
         this.resources  = new ArrayList<AssetResourceDto>();
         
-        this.additionalResources = this.toStream(props.getAdditionalResources())
+        this.additionalResources = StreamUtils.from(props.getAdditionalResources())
             .map(AssetAdditionalResourceDto::fromCatalogueResource)
             .collect(Collectors.toList());
     }
@@ -89,9 +87,4 @@ public class CatalogueItemDetailsDto extends CatalogueItemDto implements Seriali
     @Setter
     private List<String> versions;
 
-    private <T> Stream<T> toStream(Collection<T> collection) {
-        return Optional.ofNullable(collection)
-            .map(Collection::stream)
-            .orElseGet(Stream::empty);
-    }
 }

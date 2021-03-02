@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
 import eu.opertusmundi.common.model.openapi.schema.GeometryAsJson;
+import eu.opertusmundi.common.util.StreamUtils;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -41,6 +42,7 @@ public abstract class BaseCatalogueItemDto {
         this.creationDate                = props.getCreationDate();
         this.dateEnd                     = props.getDateEnd();
         this.dateStart                   = props.getDateStart();
+        this.deliveryMethod              = EnumDeliveryMethod.fromString(props.getDeliveryMethod());
         this.format                      = props.getFormat();
         this.language                    = props.getLanguage();
         this.license                     = props.getLicense();
@@ -63,15 +65,15 @@ public abstract class BaseCatalogueItemDto {
 
         this.geometry = feature.getGeometry();
 
-        this.keywords = props.getKeywords().stream()
+        this.keywords = StreamUtils.from(props.getKeywords())
             .map(Keyword::new)
             .collect(Collectors.toList());
                
-        this.scales = props.getScales().stream()
+        this.scales = StreamUtils.from(props.getScales())
             .map(Scale::new)
             .collect(Collectors.toList());
 
-        this.topicCategory = props.getTopicCategory().stream()
+        this.topicCategory = StreamUtils.from(props.getTopicCategory())
             .map(EnumTopicCategory::fromString)
             .collect(Collectors.toList());
     }
@@ -99,6 +101,9 @@ public abstract class BaseCatalogueItemDto {
     @Schema(description = "The temporal extent of the resource (start date)", example = "2020-06-02")
     private String dateStart;
 
+    @Schema(description = "Channel of asset distribution")
+    private EnumDeliveryMethod deliveryMethod;
+    
     @Schema(description = "The file format, physical medium, or dimensions of the resource", example = "ESRI Shapefile")
     private String format;
 
@@ -202,7 +207,7 @@ public abstract class BaseCatalogueItemDto {
         ),
         minItems = 0
     )
-    private  List<String> suitableFor;
+    private List<String> suitableFor;
        
     @ArraySchema(
         arraySchema = @Schema(
@@ -212,7 +217,7 @@ public abstract class BaseCatalogueItemDto {
         ),
         minItems = 0
     )
-    private  List<EnumTopicCategory> topicCategory;
+    private List<EnumTopicCategory> topicCategory;
 
     @NoArgsConstructor
     @Getter
