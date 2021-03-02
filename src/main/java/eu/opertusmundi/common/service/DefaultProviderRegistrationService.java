@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.model.EnumActivationTokenType;
 import eu.opertusmundi.common.model.dto.AccountDto;
 import eu.opertusmundi.common.model.dto.ActivationTokenDto;
@@ -32,6 +33,9 @@ public class DefaultProviderRegistrationService extends AbstractCustomerRegistra
     @Autowired
     private ActivationTokenRepository activationTokenRepository;
 
+    @Autowired
+    private PersistentIdentifierService pidService;
+    
     @Override
     @Transactional
     public AccountDto updateRegistration(ProviderProfessionalCommandDto command) throws IllegalArgumentException {
@@ -86,7 +90,13 @@ public class DefaultProviderRegistrationService extends AbstractCustomerRegistra
     @Override
     @Transactional
     public AccountDto completeRegistration(UUID userKey) throws IllegalArgumentException {
-        final AccountDto account = this.accountRepository.completeProviderRegistration(userKey);
+        final AccountEntity entity = this.accountRepository.findOneByKey(userKey).orElse(null);
+        
+        // The PID service user id will be set only during the first provider
+        // registration
+        final Integer pidServiceUserId = this.pidService.registerUser(entity.getProfile().getProviderRegistration().getName());
+        
+        final AccountDto account = this.accountRepository.completeProviderRegistration(userKey, pidServiceUserId);
 
         // Check if provider email requires validation
         final CustomerProfessionalDto provider = account.getProfile().getProvider().getCurrent();

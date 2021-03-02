@@ -119,6 +119,11 @@ public class CustomerProfessionalEntity extends CustomerEntity {
     @Getter
     @Setter
     private String name;
+    
+    @Column(name = "`pid_service_user_id`")
+    @Getter
+    @Setter
+    private Integer pidServiceUserId;
 
     @Embedded
     @AttributeOverrides({
@@ -323,6 +328,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         p.setPaymentProviderUser(this.paymentProviderUser);
         p.setPaymentProviderWallet(this.paymentProviderWallet);
         p.setPhone(this.phone);
+        p.setPidServiceUserId(this.pidServiceUserId);
         p.setRating(this.getRating());
         p.setRepresentative(this.legalRepresentative.toDto());
         p.setSiteUrl(this.siteUrl);

@@ -275,7 +275,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
 
         final AccountProfileEntity profile = account.getProfile();
 
-        // Create/Update consumer draft
+        // Create/Update provider draft
         CustomerDraftProfessionalEntity registration = profile.getProviderRegistration();
 
         if (registration == null || registration.isProcessed()) {
@@ -325,7 +325,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     }
 
     @Transactional(readOnly = false)
-    default AccountDto completeProviderRegistration(UUID userKey) throws IllegalArgumentException {
+    default AccountDto completeProviderRegistration(UUID userKey, Integer pidServiceUserId) throws IllegalArgumentException {
         final AccountEntity                   account      = this.findOneByKey(userKey).orElse(null);
         final AccountProfileEntity            profile      = account.getProfile();
         final CustomerDraftProfessionalEntity registration = profile.getProviderRegistration();
@@ -336,13 +336,14 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
             throw new IllegalArgumentException("Expected a non-null registration with status [SUBMITTED]");
         }
 
-        // Create/Update consumer
+        // Create/Update provider
         if (profile.getProvider() == null) {
             final CustomerProfessionalEntity provider = CustomerProfessionalEntity.from(registration);
 
             provider.setAccount(account);
             provider.setCreatedAt(now);
             provider.setModifiedAt(now);
+            provider.setPidServiceUserId(pidServiceUserId);
             provider.setTermsAccepted(true);
             provider.setTermsAcceptedAt(now);
 
@@ -356,7 +357,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
 
         // Update registration
         registration.setStatus(EnumCustomerRegistrationStatus.COMPLETED);
-        profile.setConsumerRegistration(null);
+        profile.setProviderRegistration(null);
 
         this.save(account);
 

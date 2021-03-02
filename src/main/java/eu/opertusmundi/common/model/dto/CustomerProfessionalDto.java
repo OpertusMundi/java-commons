@@ -2,6 +2,8 @@ package eu.opertusmundi.common.model.dto;
 
 import java.io.Serializable;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,4 +27,7 @@ public class CustomerProfessionalDto extends CustomerDto implements Serializable
     private CustomerRepresentativeDto representative;
     private String                    siteUrl;
 
+    @JsonIgnore
+    private Integer pidServiceUserId;
+    
 }
