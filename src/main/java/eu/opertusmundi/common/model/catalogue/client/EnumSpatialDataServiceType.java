@@ -29,9 +29,7 @@ public enum EnumSpatialDataServiceType {
         return Arrays.stream(EnumSpatialDataServiceType.values())
             .filter(r -> r.value.equalsIgnoreCase(value))
             .findFirst()
-            .orElseThrow(
-                () -> new IllegalArgumentException(String.format("Value [%s] is not a member of enum EnumSpatialDataServiceType", value))
-            );
+            .orElse(null);
     }
 
 }

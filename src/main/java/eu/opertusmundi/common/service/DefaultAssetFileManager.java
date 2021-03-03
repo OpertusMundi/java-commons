@@ -27,12 +27,19 @@ public class DefaultAssetFileManager implements AssetFileManager {
     
     private static final Logger assetRepositoryLogger = LoggerFactory.getLogger("ASSET_REPOSITORY");
    
+    private static final String RESOURCE_PATH = "/resources";
+    
     private static final String ADDITIONAL_RESOURCE_PATH = "/additional-resources";
     
     private static final String METADATA_PATH = "/metadata";
     
     @Autowired
     private DefaultAssetFileNamingStrategy fileNamingStrategy;
+    
+    @Override
+    public Path resolveResourcePath(String pid, String fileName) throws FileSystemException, AssetRepositoryException {
+        return this.resolveResourcePath(pid, RESOURCE_PATH, fileName);
+    }
     
     @Override
     public List<FileDto> getAdditionalResources(String pid) throws FileSystemException, AssetRepositoryException {

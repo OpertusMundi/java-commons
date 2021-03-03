@@ -18,6 +18,7 @@ import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftSortField;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.asset.MetadataProperty;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.dto.EnumSortingOrder;
 import eu.opertusmundi.common.model.file.FileSystemException;
 
@@ -55,6 +56,15 @@ public interface ProviderAssetService {
      * @return
      */
     AssetDraftDto findOneDraft(UUID publisherKey, UUID draftKey);
+
+    /**
+     * Create API draft
+     * 
+     * @param command
+     * @return
+     * @throws AssetDraftException
+     */
+    AssetDraftDto createApiDraft(DraftApiCommandDto command) throws AssetDraftException;
 
     /**
      * Update a draft

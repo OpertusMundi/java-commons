@@ -1,10 +1,9 @@
 package eu.opertusmundi.common.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor
 public class Message {
 
     public enum EnumLevel {
@@ -35,13 +34,13 @@ public class Message {
     }
 
     @Getter
-    private final String code;
+    private String code;
 
     @Getter
-    private final EnumLevel level;
+    private EnumLevel level;
 
     @Getter
-    private final String description;
+    private String description;
 
     public Message(MessageCode code, String description) {
         this.code        = code.key();
@@ -49,12 +48,7 @@ public class Message {
         this.level       = EnumLevel.ERROR;
     }
 
-    @JsonCreator
-    public Message(
-        @JsonProperty MessageCode code,
-        @JsonProperty String description,
-        @JsonProperty EnumLevel level
-    ) {
+    public Message(MessageCode code, String description, EnumLevel level) {
         this.code        = code.key();
         this.description = description;
         this.level       = level;

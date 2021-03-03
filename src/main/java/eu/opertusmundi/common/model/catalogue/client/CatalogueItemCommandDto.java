@@ -1,7 +1,7 @@
 package eu.opertusmundi.common.model.catalogue.client;
 
 import java.io.Serializable;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,9 +30,17 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
     private static final long serialVersionUID = 1L;
 
     public CatalogueItemCommandDto() {
-        this.additionalResources = Collections.emptyList();
-        this.pricingModels       = Collections.emptyList();
-        this.resources           = Collections.emptyList();
+        this.additionalResources = new ArrayList<>();
+        this.pricingModels       = new ArrayList<>();
+        this.resources           = new ArrayList<>();
+    }
+
+    public CatalogueItemCommandDto(CatalogueFeature feature) {
+        super(feature);
+
+        this.additionalResources = new ArrayList<>();
+        this.pricingModels       = new ArrayList<>();
+        this.resources           = new ArrayList<>();
     }
 
     /**
