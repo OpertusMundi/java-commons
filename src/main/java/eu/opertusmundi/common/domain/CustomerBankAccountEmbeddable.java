@@ -2,8 +2,6 @@ package eu.opertusmundi.common.domain;
 
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
-import javax.persistence.Embedded;
-import javax.persistence.MappedSuperclass;
 
 import eu.opertusmundi.common.model.dto.BankAccountCommandDto;
 import eu.opertusmundi.common.model.dto.BankAccountDto;
@@ -12,73 +10,58 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Embeddable
-@MappedSuperclass
 @Getter
 @Setter
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class BankAccountEmbeddable {
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
+public class CustomerBankAccountEmbeddable extends BankAccountEmbeddable {
+
+    @Column
+    private String id;
 
     @Column
     @EqualsAndHashCode.Include
-    protected String ownerName;
-
-    @Embedded
-    @EqualsAndHashCode.Include
-    protected AddressEmbeddable ownerAddress;
-
-    @Column
-    @EqualsAndHashCode.Include
-    protected String iban;
-
-    @Column
-    @EqualsAndHashCode.Include
-    protected String bic;
+    private String tag;
 
     public BankAccountDto toDto() {
         final BankAccountDto a = new BankAccountDto();
 
         a.setBic(this.bic);
         a.setIban(this.iban);
+        a.setId(this.id);
         if (this.ownerAddress != null) {
             a.setOwnerAddress(this.ownerAddress.toDto());
         }
         a.setOwnerName(this.ownerName);
+        a.setTag(this.tag);
 
         return a;
     }
 
     @Override
-    public BankAccountEmbeddable clone() {
-        final BankAccountEmbeddable c = new BankAccountEmbeddable();
+    public CustomerBankAccountEmbeddable clone() {
+        final CustomerBankAccountEmbeddable c = new CustomerBankAccountEmbeddable();
 
         c.bic          = this.bic;
         c.iban         = this.iban;
+        c.id           = this.id;
         c.ownerAddress = this.ownerAddress.clone();
         c.ownerName    = this.ownerName;
+        c.tag          = this.tag;
 
         return c;
     }
 
-    public static BankAccountEmbeddable from(BankAccountCommandDto b) {
-        final BankAccountEmbeddable e = new BankAccountEmbeddable();
+    public static CustomerBankAccountEmbeddable from(BankAccountCommandDto b) {
+        final CustomerBankAccountEmbeddable e = new CustomerBankAccountEmbeddable();
 
         e.bic          = b.getBic();
         e.iban         = b.getIban();
+        e.id           = b.getId();
         e.ownerAddress = AddressEmbeddable.from(b.getOwnerAddress());
         e.ownerName    = b.getOwnerName();
+        e.tag          = b.getTag();
 
         return e;
     }
 
-    public static BankAccountEmbeddable from(BankAccountDto b) {
-        final BankAccountEmbeddable e = new BankAccountEmbeddable();
-
-        e.bic          = b.getBic();
-        e.iban         = b.getIban();
-        e.ownerAddress = AddressEmbeddable.from(b.getOwnerAddress());
-        e.ownerName    = b.getOwnerName();
-
-        return e;
-    }
-    
 }

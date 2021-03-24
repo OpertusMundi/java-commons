@@ -39,7 +39,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         super(EnumCustomerType.PROFESSIONAL);
 
         this.additionalInfo        = c.getAdditionalInfo();
-        this.bankAccount           = BankAccountEmbeddable.from(c.getBankAccount());
+        this.bankAccount           = CustomerBankAccountEmbeddable.from(c.getBankAccount());
         this.companyNumber         = c.getCompanyNumber();
         this.companyType           = c.getCompanyType();
         this.contract              = c.getContract();
@@ -167,7 +167,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
     })
     @Getter
     @Setter
-    private BankAccountEmbeddable bankAccount;
+    private CustomerBankAccountEmbeddable bankAccount;
 
     @Column(name = "`additional_info`")
     @Getter
@@ -280,7 +280,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         this.siteUrl             = c.getSiteUrl();
 
         if (c.getBankAccount() != null) {
-            this.bankAccount = BankAccountEmbeddable.from(c.getBankAccount());
+            this.bankAccount = CustomerBankAccountEmbeddable.from(c.getBankAccount());
         }
 
         if (c.getHeadquartersAddress() != null) {
