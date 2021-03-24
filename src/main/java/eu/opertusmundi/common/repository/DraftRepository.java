@@ -1,6 +1,8 @@
 package eu.opertusmundi.common.repository;
 
 import java.time.ZonedDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -21,7 +23,9 @@ import eu.opertusmundi.common.domain.ProviderAssetDraftEntity;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
+import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
+import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
 import eu.opertusmundi.common.service.AssetDraftException;
 
 @Repository
@@ -107,8 +111,12 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         draft.setCommand(command);
         draft.setIngested(command.isIngested());
         draft.setModifiedOn(now);
-        draft.setProcessDefinition(processDefinition);
-        draft.setProcessInstance(processInstance);
+        if (processDefinition != null) {
+            draft.setProcessDefinition(processDefinition);
+        }
+        if (processInstance != null) {
+            draft.setProcessInstance(processInstance);
+        }
         draft.setStatus(status);
         draft.setTitle(command.getTitle());
         draft.setVersion(command.getVersion());
@@ -142,6 +150,70 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
 		draft.setModifiedOn(ZonedDateTime.now());
 
         this.saveAndFlush(draft);
+    }
+
+    @Transactional(readOnly = false)
+    default void updateResourceIngestionData(
+        UUID publisherKey, UUID draftKey, UUID resourceKey, ResourceIngestionDataDto data
+    ) throws AssetDraftException {
+        final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
+
+        if (draft == null) {
+            throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
+        }
+
+        if (draft.getStatus() != EnumProviderAssetDraftStatus.POST_PROCESSING) {
+            throw new AssetDraftException(
+                AssetMessageCode.INVALID_STATE,
+                String.format("Expected status is [%s]. Found [%s]", EnumProviderAssetDraftStatus.POST_PROCESSING, draft.getStatus())
+            );
+        }
+        
+        // Initialize ingestion data if needed 
+        Map<String, ResourceIngestionDataDto> assetIngestionData = draft.getCommand().getIngestionInfo();
+        if (assetIngestionData == null) {
+            assetIngestionData = new HashMap<String, ResourceIngestionDataDto>();
+            draft.getCommand().setIngestionInfo(assetIngestionData);
+        }
+
+        assetIngestionData.put(resourceKey.toString(), data);
+        // NOTE: Workaround for updating ingestion data. Property command of entity
+        // ProviderAssetDraftEntity is annotated with @Convert for serializing a
+        // CatalogueItemCommandDto instance to JSON; Hence updating only the metadata
+        // nested property wont trigger an update and convertToDatabaseColumn will not be
+        // invoked.
+        draft.setModifiedOn(ZonedDateTime.now());
+
+        this.saveAndFlush(draft);
+    }
+
+    @Transactional(readOnly = false)
+    default AssetDraftDto addServiceResource(
+        UUID publisherKey, UUID draftKey, ServiceResourceDto resource
+    ) throws AssetDraftException {
+        final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
+
+        if (draft == null) {
+            throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
+        }
+
+        if (draft.getStatus() != EnumProviderAssetDraftStatus.POST_PROCESSING) {
+            throw new AssetDraftException(
+                AssetMessageCode.INVALID_STATE,
+                String.format("Expected status is [%s]. Found [%s]", EnumProviderAssetDraftStatus.POST_PROCESSING, draft.getStatus())
+            );
+        }
+        
+        // Initialize ingestion data if needed 
+        draft.getCommand().addServiceResource(resource);
+        // NOTE: Workaround for updating ingestion data. Property command of entity
+        // ProviderAssetDraftEntity is annotated with @Convert for serializing a
+        // CatalogueItemCommandDto instance to JSON; Hence updating only the metadata
+        // nested property wont trigger an update and convertToDatabaseColumn will not be
+        // invoked.
+        draft.setModifiedOn(ZonedDateTime.now());
+
+        return this.saveAndFlush(draft).toDto();
     }
 
     @Transactional(readOnly = false)

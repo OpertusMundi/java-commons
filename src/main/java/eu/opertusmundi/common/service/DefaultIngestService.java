@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 import org.apache.commons.io.FilenameUtils;
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +29,7 @@ import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestResultResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestStatusResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestTicketResponseDto;
+import feign.FeignException;
 
 @Service
 public class DefaultIngestService implements IngestService {
@@ -135,6 +138,15 @@ public class DefaultIngestService implements IngestService {
             final ServerIngestStatusResponseDto serviceResponse = e.getBody();
 
             return serviceResponse;
+        } catch (final FeignException fex) {
+            // Convert 404 errors to empty results
+            if (fex.status() == HttpStatus.NOT_FOUND.value()) {
+                return null;
+            }
+
+            logger.error("[Feign Client][Ingest Service] Operation has failed", fex);
+
+            throw new IngestServiceException(IngestServiceMessageCode.SERVICE_ERROR, fex.getMessage());
         } catch (final Exception ex) {
             logger.error("[Ingest Service] Operation has failed", ex);
 
@@ -160,12 +172,20 @@ public class DefaultIngestService implements IngestService {
     @Override
     public ServerIngestTicketResponseDto getTicket(UUID idempotentKey) throws IngestServiceException {
         try {
-            final ResponseEntity<ServerIngestTicketResponseDto> e = this.ingestClient.getObject()
-                .getTicketFromIdempotentKey(idempotentKey);
+            final ResponseEntity<ServerIngestTicketResponseDto> e = this.ingestClient.getObject() .getTicketFromIdempotentKey(idempotentKey);
 
             final ServerIngestTicketResponseDto serviceResponse = e.getBody();
 
             return serviceResponse;
+        } catch (final FeignException fex) {
+            // Convert 404 errors to empty results
+            if (fex.status() == HttpStatus.NOT_FOUND.value()) {
+                return null;
+            }
+
+            logger.error("[Feign Client][Ingest Service] Operation has failed", fex);
+
+            throw new IngestServiceException(IngestServiceMessageCode.SERVICE_ERROR, fex.getMessage());
         } catch (final Exception ex) {
             logger.error("[Ingest Service] Operation has failed", ex);
 
@@ -178,7 +198,7 @@ public class DefaultIngestService implements IngestService {
         final Path   absoluteSourcePath = Paths.get(this.sourceDir, relativePath, fileName);
 
         Files.createDirectories(Paths.get(this.sourceDir, relativePath));
-        Files.copy(Paths.get(path), absoluteSourcePath);
+        Files.copy(Paths.get(path), absoluteSourcePath, StandardCopyOption.REPLACE_EXISTING);
 
         return Paths.get(this.targetDir, relativePath, fileName);
     }

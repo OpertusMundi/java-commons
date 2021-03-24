@@ -13,7 +13,7 @@ import lombok.ToString;
 public class ServerIngestResultResponseDto {
 
     @Schema(description = "The number of features stored in the table.")
-    private int length;
+    private long length;
 
     @Schema(description = "The schema of the created table.")
     private String schema;
