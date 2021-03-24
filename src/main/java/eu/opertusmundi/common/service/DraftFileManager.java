@@ -7,7 +7,7 @@ import java.util.UUID;
 
 import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceCommandDto;
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
-import eu.opertusmundi.common.model.asset.AssetResourceCommandDto;
+import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.file.FileDto;
 import eu.opertusmundi.common.model.file.FileSystemException;
 
@@ -18,7 +18,7 @@ public interface DraftFileManager {
     List<FileDto> getAdditionalResources(UUID publisherKey, UUID draftKey) throws FileSystemException, AssetRepositoryException;
 
     void uploadResource(
-        AssetResourceCommandDto command, InputStream input
+        FileResourceCommandDto command, InputStream input
     ) throws FileSystemException, AssetRepositoryException;
 
     void uploadAdditionalResource(

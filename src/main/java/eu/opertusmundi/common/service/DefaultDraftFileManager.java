@@ -30,7 +30,7 @@ import eu.opertusmundi.common.model.FileSystemMessageCode;
 import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceCommandDto;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
-import eu.opertusmundi.common.model.asset.AssetResourceCommandDto;
+import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.file.FileDto;
 import eu.opertusmundi.common.model.file.FileSystemException;
 
@@ -102,7 +102,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
 
     @Override
     public void uploadResource(
-        AssetResourceCommandDto command, InputStream input
+        FileResourceCommandDto command, InputStream input
     ) throws AssetRepositoryException, FileSystemException {
         Assert.notNull(command, "Expected a non-null command");
         Assert.isTrue(command.getSize() > 0, "Expected file size to be greater than 0");
