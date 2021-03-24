@@ -81,7 +81,7 @@ public interface CatalogueFeignClient {
      */
     @GetMapping(value = "/api/draft/search")
     ResponseEntity<CatalogueResponse<CatalogueCollection>> findAllDraft(
-        @RequestParam(name = "publisher_id", required = false) UUID publisher,
+        @RequestParam(name = "publisher_id", required = false) String publisher,
         @RequestParam(name = "status", required = false) String status,
         @RequestParam(name = "page", defaultValue = "1") int pageIndex,
         @RequestParam(name = "per_page", defaultValue = "10") int pageSize
@@ -194,13 +194,15 @@ public interface CatalogueFeignClient {
      * Search harvested items
      *
      * @param url Catalogue URL
+     * @param query Search query
      * @param pageIndex The page index. Page index is 1-based
      * @param pageSize The page size
      * @return An instance of {@link CatalogCollection}
      */
     @GetMapping(value = "/api/harvest/search", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<CatalogueResponse<CatalogueCollection>> findAllHarvest(
-        @RequestParam("harvest_url") String url, 
+        @RequestParam("harvest_url") String url,
+        @RequestParam("q") String query,
         @RequestParam("page") int pageIndex, 
         @RequestParam("per_page") int pageSize
     );
