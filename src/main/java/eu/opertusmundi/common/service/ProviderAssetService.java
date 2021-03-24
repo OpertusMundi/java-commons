@@ -13,14 +13,16 @@ import eu.opertusmundi.common.model.asset.AssetDraftReviewCommandDto;
 import eu.opertusmundi.common.model.asset.AssetDraftSetStatusCommandDto;
 import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceCommandDto;
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
-import eu.opertusmundi.common.model.asset.AssetResourceCommandDto;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftSortField;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
+import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.MetadataProperty;
+import eu.opertusmundi.common.model.asset.ServiceResourceCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.dto.EnumSortingOrder;
 import eu.opertusmundi.common.model.file.FileSystemException;
+import eu.opertusmundi.common.model.ingest.ServerIngestResultResponseDto;
 
 public interface ProviderAssetService {
 
@@ -162,9 +164,23 @@ public interface ProviderAssetService {
      * @throws AssetDraftException 
      */
     void updateMetadata(UUID publisherKey, UUID draftKey, UUID resourceKey, JsonNode metadata) throws FileSystemException, AssetDraftException;
-    
+
     /**
-     * Uploads a resource file for the selected asset
+     * Update draft ingestion information
+     * 
+     * @param publisherKey
+     * @param draftKey
+     * @param resourceKey
+     * @param data
+     * @throws FileSystemException
+     * @throws AssetDraftException 
+     */
+    void updateResourceIngestionData(
+        UUID publisherKey, UUID draftKey, UUID resourceKey, ServerIngestResultResponseDto data
+    ) throws FileSystemException, AssetDraftException;
+
+    /**
+     * Uploads a file resource to the selected asset
      *
      * @param command Resource metadata. If a file with the same name already already exists for the asset, it is overwritten
      * @param input An input stream of the uploaded file. The caller should close the stream.
@@ -175,9 +191,21 @@ public interface ProviderAssetService {
      * @throws AssetRepositoryException
      * @throws AssetDraftException
      */
-    AssetDraftDto addResource(
-        AssetResourceCommandDto command, InputStream input
+    AssetDraftDto addFileResource(
+        FileResourceCommandDto command, InputStream input
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
+
+    /**
+     * Adds a service resource to the specified asset
+     *
+     * @param command Resource metadata
+     *
+     * @return The updated draft
+     * 
+     * @throws AssetRepositoryException
+     * @throws AssetDraftException
+     */
+    AssetDraftDto addServiceResource(ServiceResourceCommandDto command) throws AssetRepositoryException, AssetDraftException;
     
     /**
      * Uploads an additional resource file for the selected asset
