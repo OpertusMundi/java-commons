@@ -2,10 +2,12 @@ package eu.opertusmundi.common.feign.client;
 
 import java.util.List;
 
+import org.camunda.bpm.engine.rest.dto.CountResultDto;
 import org.camunda.bpm.engine.rest.dto.message.CorrelationMessageDto;
 import org.camunda.bpm.engine.rest.dto.message.MessageCorrelationResultWithVariableDto;
 import org.camunda.bpm.engine.rest.dto.repository.ProcessDefinitionDto;
 import org.camunda.bpm.engine.rest.dto.repository.ProcessDefinitionQueryDto;
+import org.camunda.bpm.engine.rest.dto.runtime.IncidentDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceWithVariablesDto;
 import org.camunda.bpm.engine.rest.dto.runtime.StartProcessInstanceDto;
@@ -97,4 +99,27 @@ public interface BpmServerFeignClient {
     @PostMapping(value = "/message", consumes = "application/json")
     List<MessageCorrelationResultWithVariableDto> correlateMessage(CorrelationMessageDto correlationMessage);
 
+    /**
+     * Count incidents
+     *
+     * @see https://docs.camunda.org/manual/latest/reference/rest/incident/get-incident/
+     */
+    @GetMapping(value = "/incident/count", consumes = "application/json")
+    CountResultDto countIncidents();
+    
+    /**
+     * Get incidents
+     *
+     * @see https://docs.camunda.org/manual/latest/reference/rest/incident/get-query/
+     */
+    @GetMapping(value = "/incident", consumes = "application/json")
+	List<IncidentDto> getIncidents(
+        @RequestParam(required = false) String incidentId,
+        @RequestParam(required = false) String processDefinitionId,
+        @RequestParam(required = false) String processInstanceId,
+        @RequestParam(required = false) String executionId,
+        @RequestParam(required = false) String sortBy,
+        @RequestParam(required = false) String sortOrder
+    );
+    
 }
