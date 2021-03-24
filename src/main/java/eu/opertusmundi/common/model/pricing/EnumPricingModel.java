@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(enumAsRef = true)
 public enum EnumPricingModel {
-
     /**
      * Invalid pricing model
      */
@@ -21,13 +20,33 @@ public enum EnumPricingModel {
      */
     FREE(1),
     /**
-     * Fixed payment model
+     * Fixed payment model with or without updates
      */
     FIXED(2),
     /**
-     * Subscription based payment model
+     * Buy once, pay per row with optional reverse block rate 
      */
-    SUBSCRIPTION(3),
+    FIXED_PER_ROWS(3),
+    /**
+     * Buy once, pay based on population selection with optional reverse block rate
+     */
+    FIXED_FOR_POPULATION(4),
+    /**
+     * Pay per call, optional buy prepaid SKUs with reverse block rate
+     */
+    PER_CALL_WITH_PREPAID(5),
+    /**
+     * Pay per call, optional define reverse block rate pricing
+     */
+    PER_CALL_WITH_BLOCK_RATE(6),
+    /**
+     * Pay per row, optional buy prepaid SKUs with reverse block rate
+     */
+    PER_ROW_WITH_PREPAID(5),
+    /**
+     * Pay per row, optional define reverse block rate pricing
+     */
+    PER_ROW_WITH_BLOCK_RATE(6),
     ;
 
     private final int value;
