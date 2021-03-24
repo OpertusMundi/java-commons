@@ -11,8 +11,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
 import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceDto;
-import eu.opertusmundi.common.model.asset.AssetResourceDto;
 import eu.opertusmundi.common.model.asset.EnumAssetAdditionalResource;
+import eu.opertusmundi.common.model.asset.EnumResourceType;
+import eu.opertusmundi.common.model.asset.FileResourceDto;
+import eu.opertusmundi.common.model.asset.ResourceDto;
+import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.openapi.schema.AssetEndpointTypes;
 import eu.opertusmundi.common.model.openapi.schema.PricingModelCommandAsJson;
@@ -44,11 +47,21 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
     }
 
     /**
+     * Publisher unique key.
+     *
+     * This value is ignored during serialization/deserialization. Instead, it
+     * is injected by the controller. The value is equal to the unique key of
+     * the authenticated user.
+     */
+    @JsonIgnore
+    private UUID publisherKey;
+
+    /**
      * Asset unique key. This value is injected by the controller.
      */
     @JsonIgnore
     private UUID assetKey;
-    
+
     @ArraySchema(
         arraySchema = @Schema(
             description = "Auxiliary files or additional resources to the dataset"
@@ -70,7 +83,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
         )
     )
     private boolean ingested = false;
-   
+
     @ArraySchema(
         arraySchema = @Schema(
             description = "Supported pricing models"
@@ -98,27 +111,32 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
         ),
         minItems = 0,
         uniqueItems = true,
-        schema = @Schema(implementation = AssetResourceDto.class)
+            schema = @Schema(oneOf = {FileResourceDto.class, ServiceResourceDto.class})
     )
-    private List<AssetResourceDto> resources;
-    
-    /**
-     * Publisher unique key.
-     *
-     * This value is ignored during serialization/deserialization. Instead, it
-     * is injected by the controller. The value is equal to the unique key of
-     * the authenticated user.
-     */
-    @JsonIgnore
-    private UUID publisherKey;
-   
+    private List<ResourceDto> resources;
+      
     public CatalogueFeature toFeature() {
         return new CatalogueFeature(this);
     }
     
-    public void addResource(AssetResourceDto resource) {
-        final AssetResourceDto existing = this.resources.stream()
+    public void addFileResource(FileResourceDto resource) {
+        final ResourceDto existing = this.resources.stream()
             .filter(r -> r.getId().equals(resource.getId()))
+            .findFirst()
+            .orElse(null);
+        
+        if (existing == null) {
+            this.resources.add(resource);
+        } else {
+            existing.patch(resource);
+        }
+    }
+    
+    public void addServiceResource(ServiceResourceDto resource) {
+        final ResourceDto existing = this.resources.stream()
+            .filter(r -> r.getType() == EnumResourceType.SERVICE)
+            .map(r -> (ServiceResourceDto) r)
+            .filter(r -> r.getEndpoint().equals(resource.getEndpoint()))
             .findFirst()
             .orElse(null);
         

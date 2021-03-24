@@ -4,24 +4,25 @@ import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
+import org.locationtech.jts.util.Assert;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import eu.opertusmundi.common.model.catalogue.server.CatalogueResource;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
 @Getter
-public class AssetResourceDto implements Serializable {
+public class FileResourceDto extends ResourceDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
-    @Schema(description = "File unique identifier")
-    private final UUID id;
 
     @Schema(description = "File size")
     private Long size;
 
+    @Schema(description = "Asset category computed from the file format")
+    private EnumAssetSourceType category;
+    
     @Schema(description = "File name")
     private final String fileName;
 
@@ -32,29 +33,32 @@ public class AssetResourceDto implements Serializable {
     private String format;
 
     @JsonCreator
-    public AssetResourceDto(
+    public FileResourceDto(
         @JsonProperty("id") UUID id, 
         @JsonProperty("fileName") String fileName, 
         @JsonProperty("size") long size,
-        @JsonProperty("modifiedOn") ZonedDateTime modifiedOn, 
+        @JsonProperty("modifiedOn") ZonedDateTime modifiedOn,
+        @JsonProperty("category") EnumAssetSourceType category,
         @JsonProperty("format") String format
     ) {
         this.id         = id;
+        this.type       = EnumResourceType.FILE;
         this.fileName   = fileName;
         this.size       = size;
         this.modifiedOn = modifiedOn;
+        this.category   = category;
         this.format     = format;
     }
 
-    public CatalogueResource toCatalogueResource() {
-        return new CatalogueResource(id.toString(), "", fileName, format);
-    }
+    public void patch(ResourceDto r) {
+        Assert.isTrue(r.getType() == EnumResourceType.FILE);
 
-    public void patch(AssetResourceDto r) {
-        // Id and file name are immutable
-        this.size       = r.size;
-        this.modifiedOn = r.modifiedOn;
-        this.format     = r.format;
+        final FileResourceDto resource = (FileResourceDto) r;
+        // Id, type and file name are immutable
+        this.size       = resource.size;
+        this.modifiedOn = resource.modifiedOn;
+        this.category   = resource.category;
+        this.format     = resource.format;
     }
 
 }

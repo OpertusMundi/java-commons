@@ -20,5 +20,5 @@ public class CatalogueCollection {
     private int per_page;
 
     private int total;
-
+    
 }

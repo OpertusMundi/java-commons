@@ -20,8 +20,8 @@ import lombok.Setter;
 @NoArgsConstructor
 public class CatalogueClientCollectionResponse<T> extends RestResponse<PageResultDto<T>> {
 
-    public CatalogueClientCollectionResponse(PageResultDto<T> result, List<PublisherDto> publishers) {
-        super(result);
+    private CatalogueClientCollectionResponse(PageResultDto<T> page, List<PublisherDto> publishers) {
+        super(page);
 
         this.publishers = new HashMap<UUID, PublisherDto>();
 
@@ -30,6 +30,10 @@ public class CatalogueClientCollectionResponse<T> extends RestResponse<PageResul
                 this.publishers.put(p.getKey(), p);
             }
         });
+    }
+
+    public static <T> CatalogueClientCollectionResponse<T> of(PageResultDto<T> page, List<PublisherDto> publishers) {
+        return new CatalogueClientCollectionResponse<>(page, publishers);
     }
 
     @Schema(description = "Map with all publishers for all catalogue items in the response. The key is the publisher id.")

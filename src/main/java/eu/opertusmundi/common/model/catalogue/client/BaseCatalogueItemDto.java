@@ -2,6 +2,7 @@ package eu.opertusmundi.common.model.catalogue.client;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.locationtech.jts.geom.Geometry;
@@ -13,6 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
+import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
 import eu.opertusmundi.common.model.openapi.schema.GeometryAsJson;
 import eu.opertusmundi.common.util.StreamUtils;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
@@ -44,6 +46,7 @@ public abstract class BaseCatalogueItemDto {
         this.dateStart                   = props.getDateStart();
         this.deliveryMethod              = EnumDeliveryMethod.fromString(props.getDeliveryMethod());
         this.format                      = props.getFormat();
+        this.ingestionInfo               = props.getIngestionInfo();
         this.language                    = props.getLanguage();
         this.license                     = props.getLicense();
         this.lineage                     = props.getLineage();
@@ -62,6 +65,7 @@ public abstract class BaseCatalogueItemDto {
         this.spatialDataServiceType      = EnumSpatialDataServiceType.fromString(props.getSpatialDataServiceType());
         this.spatialResolution           = props.getSpatialResolution();
         this.suitableFor                 = props.getSuitableFor();
+        this.userOnlyForVas              = props.isUseOnlyForVas();
 
         this.geometry = feature.getGeometry();
 
@@ -109,6 +113,10 @@ public abstract class BaseCatalogueItemDto {
 
     @Schema(implementation = GeometryAsJson.class, description = "Geometry as GeoJSON")
     private Geometry geometry;
+    
+    @Schema(description = "Ingestion information")
+    @JsonInclude(Include.NON_NULL)
+    private Map<String, ResourceIngestionDataDto> ingestionInfo;
     
     @Schema(description = "The topic of the resource")
     @ArraySchema(
@@ -219,6 +227,9 @@ public abstract class BaseCatalogueItemDto {
     )
     private List<EnumTopicCategory> topicCategory;
 
+    @Schema(description = "True if the asset must be only used for Value-Added-Services (VAS)")
+    private boolean userOnlyForVas;
+    
     @NoArgsConstructor
     @Getter
     @Setter

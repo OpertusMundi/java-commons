@@ -5,7 +5,7 @@ import java.util.Arrays;
 import lombok.Getter;
 
 public enum EnumDeliveryMethod {
-
+    NONE("none"),
     DIGITAL_PLATFORM("digital_platform"), 
     DIGITAL_PROVIDER("digital_provider"),
     PHYSICAL_PROVIDER("physical_provider"),

@@ -2,6 +2,7 @@ package eu.opertusmundi.common.model.catalogue.server;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -11,11 +12,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
+import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.BaseCatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemStatistics;
 import eu.opertusmundi.common.model.catalogue.client.EnumConformity;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
+import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.util.StreamUtils;
 import lombok.Getter;
@@ -40,6 +43,7 @@ public class CatalogueFeatureProperties {
             ? command.getDeliveryMethod().getValue().toString() 
             : null;
         this.format                      = command.getFormat();
+        this.ingestionInfo               = command.getIngestionInfo();
         this.language                    = command.getLanguage();
         this.license                     = command.getLicense();
         this.lineage                     = command.getLineage();
@@ -65,6 +69,7 @@ public class CatalogueFeatureProperties {
         this.suitableFor                 = StreamUtils.from(command.getSuitableFor()).collect(Collectors.toList());
         this.title                       = command.getTitle();
         this.type                        = command.getType() != null ? command.getType().getValue() : null;
+        this.useOnlyForVas               = command.isUserOnlyForVas();
         this.version                     = command.getVersion();
         this.versions                    = Collections.emptyList();
 
@@ -77,11 +82,9 @@ public class CatalogueFeatureProperties {
             .collect(Collectors.toList());
         
         // Resources are stored by the asset data repository
-        final List<CatalogueResource> feeatureResources = StreamUtils.from(command.getResources())
-            .map(r -> r.toCatalogueResource())
-            .collect(Collectors.toList());
+        final List<ResourceDto> featureResources = StreamUtils.from(command.getResources()).collect(Collectors.toList());
         
-        this.resources = feeatureResources;  
+        this.resources = featureResources;  
 
         // Store only pricing model parameters. The effective price will be
         // computed by the user of the object
@@ -111,9 +114,11 @@ public class CatalogueFeatureProperties {
     private String creationDate;
 
     @JsonProperty("date_end")
+    @JsonInclude(Include.NON_EMPTY)
     private String dateEnd;
 
     @JsonProperty("date_start")
+    @JsonInclude(Include.NON_EMPTY)
     private String dateStart;
 
     @JsonProperty("delivery_method")
@@ -121,7 +126,11 @@ public class CatalogueFeatureProperties {
     private String deliveryMethod;
     
     private String format;
-
+    
+    @JsonProperty("ingestion_info")
+    @JsonInclude(Include.NON_NULL)
+    private Map<String, ResourceIngestionDataDto> ingestionInfo;
+    
     private List<Keyword> keywords;
 
     private String language;
@@ -166,7 +175,7 @@ public class CatalogueFeatureProperties {
     @JsonProperty("reference_system")
     private String referenceSystem;
 
-    private List<CatalogueResource> resources;
+    private List<ResourceDto> resources;
 
     @JsonProperty("resource_locator")
     private String resourceLocator;
@@ -198,6 +207,9 @@ public class CatalogueFeatureProperties {
 
     private String type;
 
+    @JsonProperty("use_only_for_vas")
+    private boolean useOnlyForVas;
+    
     private String version;
     
     private List<String> versions;

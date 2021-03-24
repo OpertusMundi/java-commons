@@ -14,15 +14,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class AssetResourceCommandDto extends BaseAssetResourceCommandDto implements Serializable {
+public class FileResourceCommandDto extends BaseResourceCommandDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
-    /**
-     * Computed from the format value
-     */
-    @JsonIgnore
-    private EnumAssetSourceType category;
     
     @Schema(description = "File format")
     @NotBlank
@@ -31,4 +25,16 @@ public class AssetResourceCommandDto extends BaseAssetResourceCommandDto impleme
     @Schema(description = "File name. If not set, the name of uploaded file is used.")
     private String fileName;
 
+    /**
+     * Computed from the format value
+     */
+    @JsonIgnore
+    private EnumAssetSourceType category;
+    
+    /**
+     * File size is set at the server
+     */
+    @JsonIgnore
+    private Long size;
+    
 }

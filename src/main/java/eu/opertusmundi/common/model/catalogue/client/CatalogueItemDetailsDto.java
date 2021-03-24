@@ -11,7 +11,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
-import eu.opertusmundi.common.model.asset.AssetResourceDto;
+import eu.opertusmundi.common.model.asset.FileResourceDto;
+import eu.opertusmundi.common.model.asset.ResourceDto;
+import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
 import eu.opertusmundi.common.model.dto.PublisherDto;
@@ -37,7 +39,7 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
         
         this.statistics = props.getStatistics();
         this.versions   = props.getVersions();
-        this.resources  = new ArrayList<AssetResourceDto>();
+        this.resources  = new ArrayList<ResourceDto>();
         
         this.additionalResources = StreamUtils.from(props.getAdditionalResources())
             .map(AssetAdditionalResourceDto::fromCatalogueResource)
@@ -72,10 +74,10 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
         ),
         minItems = 0,
         uniqueItems = true,
-        schema = @Schema(implementation = AssetResourceDto.class)
+        schema = @Schema(oneOf = {FileResourceDto.class, ServiceResourceDto.class})
     )
     @Getter
-    private List<AssetResourceDto> resources;
+    private List<ResourceDto> resources;
     
     @Schema(description = "Asset statistics")
     @Getter

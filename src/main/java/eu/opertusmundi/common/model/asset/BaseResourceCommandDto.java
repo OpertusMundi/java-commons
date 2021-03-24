@@ -9,7 +9,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class BaseAssetResourceCommandDto {
+public class BaseResourceCommandDto {
 
     /**
      * Publisher key is set by the calling service
@@ -22,11 +22,5 @@ public class BaseAssetResourceCommandDto {
      */
     @JsonIgnore
     private UUID draftKey;
-
-    /**
-     * File size is set at the server
-     */
-    @JsonIgnore
-    private Long size;
 
 }
