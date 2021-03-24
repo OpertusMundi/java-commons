@@ -17,9 +17,9 @@ import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.AssetResourceEntity;
 import eu.opertusmundi.common.domain.ProviderAssetDraftEntity;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
-import eu.opertusmundi.common.model.asset.AssetResourceCommandDto;
-import eu.opertusmundi.common.model.asset.AssetResourceDto;
+import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
+import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.service.AssetDraftException;
 
 @Repository
@@ -56,7 +56,7 @@ public interface AssetResourceRepository extends JpaRepository<AssetResourceEnti
     List<AssetResourceEntity> findAllResourcesByAssetPid(@Param("pid") String pid);
     
     @Transactional(readOnly = false)
-    default AssetResourceDto update(AssetResourceCommandDto command) throws AssetDraftException {
+    default FileResourceDto update(FileResourceCommandDto command) throws AssetDraftException {
         Assert.notNull(command, "Expected a non-null command");
         Assert.notNull(command.getDraftKey(), "Expected a non-null draft key");
         Assert.notNull(command.getPublisherKey(), "Expected a non-null publisher key");
@@ -120,7 +120,7 @@ public interface AssetResourceRepository extends JpaRepository<AssetResourceEnti
     }
     
     @Transactional(readOnly = false)
-    default AssetResourceDto delete(UUID draftKey, UUID resourceKey) {
+    default FileResourceDto delete(UUID draftKey, UUID resourceKey) {
         Assert.notNull(draftKey, "Expected a non-null draft key");
         Assert.notNull(resourceKey, "Expected a non-null resource key");
         
@@ -133,7 +133,7 @@ public interface AssetResourceRepository extends JpaRepository<AssetResourceEnti
             );
         }
         
-        final AssetResourceDto resource = entity.toDto();
+        final FileResourceDto resource = entity.toDto();
         
         this.delete(entity);
         
