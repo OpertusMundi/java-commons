@@ -10,7 +10,8 @@ public enum PaymentMessageCode implements MessageCode {
     ASSET_NOT_FOUND,
     PRICING_MODEL_NOT_FOUND,
     ORDER_NOT_FOUND,
-    CUSTOMER_NOT_FOUND,
+    PLATFORM_CUSTOMER_NOT_FOUND,
+    PROVIDER_USER_NOT_FOUND,
     ENUM_MEMBER_NOT_SUPPORTED,
     ;
 

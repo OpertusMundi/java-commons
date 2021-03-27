@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.annotation.PostConstruct;
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
-import com.mangopay.MangoPayApi;
 import com.mangopay.core.Address;
 import com.mangopay.core.Money;
 import com.mangopay.core.Pagination;
@@ -31,7 +28,6 @@ import com.mangopay.core.enumerations.BankAccountType;
 import com.mangopay.core.enumerations.CardType;
 import com.mangopay.core.enumerations.CountryIso;
 import com.mangopay.core.enumerations.CurrencyIso;
-import com.mangopay.core.enumerations.EventType;
 import com.mangopay.core.enumerations.FundsType;
 import com.mangopay.core.enumerations.KycLevel;
 import com.mangopay.core.enumerations.LegalPersonType;
@@ -74,8 +70,8 @@ import eu.opertusmundi.common.model.EnumCustomerRegistrationStatus;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.dto.AccountDto;
 import eu.opertusmundi.common.model.dto.BankAccountDto;
-import eu.opertusmundi.common.model.dto.EnumCustomerType;
 import eu.opertusmundi.common.model.dto.EnumLegalPersonType;
+import eu.opertusmundi.common.model.dto.EnumMangopayUserType;
 import eu.opertusmundi.common.model.order.CartDto;
 import eu.opertusmundi.common.model.order.CartItemDto;
 import eu.opertusmundi.common.model.order.OrderCommandDto;
@@ -108,19 +104,10 @@ import eu.opertusmundi.common.repository.PayInRepository;
 
 @Service
 @Transactional
-public class MangoPayPaymentService implements PaymentService {
+public class MangoPayPaymentService extends BaseMangoPayService implements PaymentService {
 
     private static final Logger logger = LoggerFactory.getLogger(MangoPayPaymentService.class);
-
-    @Value("${opertusmundi.payments.mangopay.base-url:}")
-    private String baseUrl;
-
-    @Value("${opertusmundi.payments.mangopay.client-id:}")
-    private String clientId;
-
-    @Value("${opertusmundi.payments.mangopay.client-password:}")
-    private String clientPassword;
-   
+  
     /**
      * This is the URL where users are automatically redirected after 3D secure
      * validation (if activated)
@@ -129,12 +116,10 @@ public class MangoPayPaymentService implements PaymentService {
      */
     @Value("${opertusmundi.payments.mangopay.secure-mode-return-url:}")
     private String secureModeReturnUrl;
-    
-    private MangoPayApi api;
-    
+       
     @Autowired
     private AccountRepository accountRepository;
-    
+        
     @Autowired
     private OrderRepository orderRepository;
     
@@ -146,15 +131,6 @@ public class MangoPayPaymentService implements PaymentService {
     
     @Autowired
     private QuotationService quotationService;
-
-    @PostConstruct
-    private void init() {
-        this.api = new MangoPayApi();
-
-        this.api.getConfig().setBaseUrl(this.baseUrl);
-        this.api.getConfig().setClientId(this.clientId);
-        this.api.getConfig().setClientPassword(this.clientPassword);
-    }
 
     @Override
     public ClientDto getClient() throws PaymentException {
@@ -177,7 +153,7 @@ public class MangoPayPaymentService implements PaymentService {
 
             // Resolve registration
             final CustomerDraftEntity registration   = this.resolveRegistration(account, command.getRegistrationKey());
-            final EnumCustomerType    type           = registration.getType();
+            final EnumMangopayUserType    type           = registration.getType();
             final String              idempotencyKey = registration.getUserIdempotentKey().toString();
 
             // Check if this is a retry
@@ -238,7 +214,7 @@ public class MangoPayPaymentService implements PaymentService {
 
             // Resolve registration
             final CustomerDraftEntity registration = this.resolveRegistration(account, command.getRegistrationKey());
-            final EnumCustomerType    type         = registration.getType();
+            final EnumMangopayUserType    type         = registration.getType();
 
             // A linked account must already exist
             user = this.api.getUserApi().get(registration.getPaymentProviderUser());
@@ -351,7 +327,7 @@ public class MangoPayPaymentService implements PaymentService {
             }
 
             // Registration must be of type PROFESSIONAL
-            if (registration.getType() != EnumCustomerType.PROFESSIONAL) {
+            if (registration.getType() != EnumMangopayUserType.PROFESSIONAL) {
                 throw new PaymentException(
                     String.format("[MANGOPAY] Cannot create bank account for user [%s] of type [%s]", registration.getType(), command.getUserKey())
                 );
@@ -887,18 +863,6 @@ public class MangoPayPaymentService implements PaymentService {
             throw this.wrapException("Create PayOut", ex, command);
         }
     }
-    
-    @Override
-    public void handleWebHook(String eventType, String resourceId, ZonedDateTime date) throws PaymentException {
-        switch (EventType.valueOf(eventType)) {
-            case PAYIN_NORMAL_SUCCEEDED :
-            case PAYIN_NORMAL_FAILED :
-                this.updatePayIn(resourceId);
-                
-            default :
-                // No operation
-        }
-    }
 
     private PayOut createPayOut(CustomerProfessionalEntity customer, PayOutCommandDto command) {
         final String userId        = customer.getPaymentProviderUser();
@@ -1285,7 +1249,7 @@ public class MangoPayPaymentService implements PaymentService {
     private void ensureConsumer(CustomerEntity consumer, UUID key) throws PaymentException {
         if (consumer == null) {
             throw new PaymentException(
-                PaymentMessageCode.CUSTOMER_NOT_FOUND,
+                PaymentMessageCode.PLATFORM_CUSTOMER_NOT_FOUND,
                 String.format("[MANGOPAY] Consumer registration was not found for account with key [%s]", key)
             );
         }

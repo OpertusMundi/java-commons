@@ -20,6 +20,7 @@ import eu.opertusmundi.common.domain.ActivationTokenEntity;
 import eu.opertusmundi.common.domain.CustomerDraftEntity;
 import eu.opertusmundi.common.domain.CustomerDraftProfessionalEntity;
 import eu.opertusmundi.common.domain.CustomerEntity;
+import eu.opertusmundi.common.domain.CustomerKycLevelEntity;
 import eu.opertusmundi.common.domain.CustomerProfessionalEntity;
 import eu.opertusmundi.common.model.EnumActivationStatus;
 import eu.opertusmundi.common.model.EnumAuthProvider;
@@ -39,13 +40,13 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     List<AccountEntity> findAllByKey(@Param("keys") UUID[] keys);
 
     @Query("SELECT a FROM Account a "
-            + "LEFT OUTER JOIN FETCH a.profile p "
-            + "WHERE a.key = :key")
+         + "LEFT OUTER JOIN FETCH a.profile p "
+         + "WHERE a.key = :key")
     Optional<AccountEntity> findOneByKey(@Param("key") UUID key);
 
     @Query("SELECT a FROM Account a "
-            + "LEFT OUTER JOIN FETCH a.profile p "
-            + "WHERE a.email = :email")
+         + "LEFT OUTER JOIN FETCH a.profile p "
+         + "WHERE a.email = :email")
     Optional<AccountEntity> findOneByEmail(@Param("email") String email);
 
     default Optional<AccountEntity> findOneByUsername(String username) {
@@ -53,8 +54,8 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     }
 
     @Query("SELECT a FROM Account a "
-            + "LEFT OUTER JOIN FETCH a.profile p "
-            + "WHERE a.email = :email and a.idpName = :provider")
+         + "LEFT OUTER JOIN FETCH a.profile p "
+         + "WHERE a.email = :email and a.idpName = :provider")
     Optional<AccountEntity> findOneByEmailAndProvider(@Param("email") String email, @Param("provider") EnumAuthProvider provider);
 
     @Query("SELECT t FROM ActivationToken t WHERE t.redeemedAt IS NULL AND t.email = :email")
@@ -234,8 +235,15 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
             consumer.setTermsAccepted(true);
             consumer.setTermsAcceptedAt(consumer.getCreatedAt());
 
+            // Initialize KYC level history
+            final CustomerKycLevelEntity level = new CustomerKycLevelEntity();
+            level.setCustomer(consumer);
+            level.setLevel(consumer.getKycLevel());
+            level.setUpdatedOn(consumer.getCreatedAt());
+            consumer.getLevelHistory().add(level);
+            
             profile.setConsumer(consumer);
-
+            
             // Add ROLE_CONSUMER to the account
             account.grant(EnumRole.ROLE_CONSUMER, null);
         } else {
@@ -347,6 +355,13 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
             provider.setTermsAccepted(true);
             provider.setTermsAcceptedAt(now);
 
+            // Initialize KYC level history
+            final CustomerKycLevelEntity level = new CustomerKycLevelEntity();
+            level.setCustomer(provider);
+            level.setLevel(provider.getKycLevel());
+            level.setUpdatedOn(provider.getCreatedAt());
+            provider.getLevelHistory().add(level);
+            
             profile.setProvider(provider);
 
             // Add ROLE_PROVIDER to the account

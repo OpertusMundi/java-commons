@@ -14,6 +14,12 @@ import lombok.Getter;
 @Getter
 public class PageResultDto<Item> {
 
+    protected PageResultDto() {
+        this.count       = 0;
+        this.items       = new ArrayList<>();
+        this.pageRequest = PageRequestDto.of(0, 10);
+    }
+    
     protected PageResultDto(PageRequestDto pageRequest) {
         this.count       = 0;
         this.items       = new ArrayList<>();

@@ -7,6 +7,9 @@ public class ServiceException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
     @Getter
+    protected boolean logEntryRequired = true;
+    
+    @Getter
     private final MessageCode code;
 
     public ServiceException(MessageCode code) {

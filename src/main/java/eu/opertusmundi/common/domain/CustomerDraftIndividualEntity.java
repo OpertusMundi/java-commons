@@ -14,7 +14,7 @@ import eu.opertusmundi.common.model.dto.CustomerCommandDto;
 import eu.opertusmundi.common.model.dto.CustomerDraftDto;
 import eu.opertusmundi.common.model.dto.CustomerDraftIndividualDto;
 import eu.opertusmundi.common.model.dto.ConsumerIndividualCommandDto;
-import eu.opertusmundi.common.model.dto.EnumCustomerType;
+import eu.opertusmundi.common.model.dto.EnumMangopayUserType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -24,11 +24,11 @@ import lombok.Setter;
 public class CustomerDraftIndividualEntity extends CustomerDraftEntity {
 
     protected CustomerDraftIndividualEntity() {
-        super(EnumCustomerType.INDIVIDUAL);
+        super(EnumMangopayUserType.INDIVIDUAL);
     }
 
     protected CustomerDraftIndividualEntity(CustomerIndividualEntity e, ConsumerIndividualCommandDto c) {
-        super(EnumCustomerType.INDIVIDUAL);
+        super(EnumMangopayUserType.INDIVIDUAL);
 
         this.address            = AddressEmbeddable.from(c.getAddress());
         this.birthdate          = c.getBirthdate();

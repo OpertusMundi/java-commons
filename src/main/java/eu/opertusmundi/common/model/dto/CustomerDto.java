@@ -41,6 +41,6 @@ public abstract class CustomerDto {
     @JsonIgnore
     protected ZonedDateTime termsAcceptedAt;
 
-    protected EnumCustomerType type;
+    protected EnumMangopayUserType type;
 
 }

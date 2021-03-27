@@ -19,7 +19,7 @@ public final class ConsumerIndividualCommandDto extends CustomerCommandDto imple
     private static final long serialVersionUID = 1L;
 
     protected ConsumerIndividualCommandDto() {
-        super(EnumCustomerType.INDIVIDUAL);
+        super(EnumMangopayUserType.INDIVIDUAL);
     }
 
     @NotEmpty

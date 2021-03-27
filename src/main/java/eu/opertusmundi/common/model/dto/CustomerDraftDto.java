@@ -30,7 +30,7 @@ public abstract class CustomerDraftDto {
 
     protected EnumCustomerRegistrationStatus status;
 
-    protected EnumCustomerType type;
+    protected EnumMangopayUserType type;
 
     @JsonIgnore
     protected UUID userIdempotentKey;

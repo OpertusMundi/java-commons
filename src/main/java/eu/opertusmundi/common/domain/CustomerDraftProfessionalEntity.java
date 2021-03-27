@@ -17,22 +17,22 @@ import org.hibernate.annotations.Type;
 import eu.opertusmundi.common.model.dto.CustomerCommandDto;
 import eu.opertusmundi.common.model.dto.CustomerDraftProfessionalDto;
 import eu.opertusmundi.common.model.dto.ProviderProfessionalCommandDto;
-import eu.opertusmundi.common.model.dto.EnumCustomerType;
+import eu.opertusmundi.common.model.dto.EnumMangopayUserType;
 import eu.opertusmundi.common.model.dto.EnumLegalPersonType;
 import lombok.Getter;
 import lombok.Setter;
 
-@Entity(name = "CustomerDraftProfesional")
+@Entity(name = "CustomerDraftProfessional")
 @Table(schema = "web", name = "`customer_draft_professional`")
 @DiscriminatorValue(value = "2")
 public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
 
     protected CustomerDraftProfessionalEntity() {
-        super(EnumCustomerType.PROFESSIONAL);
+        super(EnumMangopayUserType.PROFESSIONAL);
     }
 
     protected CustomerDraftProfessionalEntity(CustomerProfessionalEntity e, ProviderProfessionalCommandDto c) {
-        super(EnumCustomerType.PROFESSIONAL);
+        super(EnumMangopayUserType.PROFESSIONAL);
 
         this.additionalInfo        = c.getAdditionalInfo();
         this.bankAccount           = CustomerBankAccountEmbeddable.from(c.getBankAccount());

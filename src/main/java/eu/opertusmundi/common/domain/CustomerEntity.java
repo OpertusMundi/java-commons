@@ -1,8 +1,11 @@
 package eu.opertusmundi.common.domain;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.DiscriminatorColumn;
@@ -18,6 +21,7 @@ import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
@@ -27,12 +31,12 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.converter.EnumCustomerTypeAttributeConverter;
+import eu.opertusmundi.common.model.dto.ConsumerIndividualCommandDto;
 import eu.opertusmundi.common.model.dto.CustomerCommandDto;
 import eu.opertusmundi.common.model.dto.CustomerDto;
-import eu.opertusmundi.common.model.dto.ConsumerIndividualCommandDto;
-import eu.opertusmundi.common.model.dto.ProviderProfessionalCommandDto;
-import eu.opertusmundi.common.model.dto.EnumCustomerType;
+import eu.opertusmundi.common.model.dto.EnumMangopayUserType;
 import eu.opertusmundi.common.model.dto.EnumKycLevel;
+import eu.opertusmundi.common.model.dto.ProviderProfessionalCommandDto;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -45,7 +49,7 @@ public abstract class CustomerEntity {
     protected CustomerEntity() {
     }
 
-    protected CustomerEntity(EnumCustomerType type) {
+    protected CustomerEntity(EnumMangopayUserType type) {
         this.type = type;
     }
 
@@ -72,11 +76,21 @@ public abstract class CustomerEntity {
     @Setter
     protected AccountEntity account;
 
+    @OneToMany(
+        mappedBy = "customer",
+        fetch = FetchType.LAZY,
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    @Getter
+    @Setter
+    private List<CustomerKycLevelEntity> levelHistory = new ArrayList<>();
+    
     @NotNull
     @Column(name = "`type`", nullable = false, insertable = false, updatable = false)
     @Convert(converter = EnumCustomerTypeAttributeConverter.class)
     @Getter
-    protected EnumCustomerType type;
+    protected EnumMangopayUserType type;
 
     @NotNull
     @Column(name = "`payment_provider_user`")

@@ -20,23 +20,23 @@ import org.hibernate.annotations.Type;
 import eu.opertusmundi.common.model.dto.CustomerCommandDto;
 import eu.opertusmundi.common.model.dto.ProviderProfessionalCommandDto;
 import eu.opertusmundi.common.model.dto.CustomerProfessionalDto;
-import eu.opertusmundi.common.model.dto.EnumCustomerType;
+import eu.opertusmundi.common.model.dto.EnumMangopayUserType;
 import eu.opertusmundi.common.model.dto.EnumKycLevel;
 import eu.opertusmundi.common.model.dto.EnumLegalPersonType;
 import lombok.Getter;
 import lombok.Setter;
 
-@Entity(name = "CustomerProfesionalEntity")
+@Entity(name = "CustomerProfessionalEntity")
 @Table(schema = "web", name = "`customer_professional`")
 @DiscriminatorValue(value = "2")
 public class CustomerProfessionalEntity extends CustomerEntity {
 
     protected CustomerProfessionalEntity() {
-        super(EnumCustomerType.PROFESSIONAL);
+        super(EnumMangopayUserType.PROFESSIONAL);
     }
 
     protected CustomerProfessionalEntity(ProviderProfessionalCommandDto c) {
-        super(EnumCustomerType.PROFESSIONAL);
+        super(EnumMangopayUserType.PROFESSIONAL);
 
         this.additionalInfo        = c.getAdditionalInfo();
         this.bankAccount           = CustomerBankAccountEmbeddable.from(c.getBankAccount());
@@ -66,7 +66,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
     }
 
     protected CustomerProfessionalEntity(CustomerDraftProfessionalEntity e) {
-        super(EnumCustomerType.PROFESSIONAL);
+        super(EnumMangopayUserType.PROFESSIONAL);
 
         this.additionalInfo        = e.getAdditionalInfo();
         this.bankAccount           = e.getBankAccount().clone();

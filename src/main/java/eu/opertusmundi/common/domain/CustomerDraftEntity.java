@@ -33,7 +33,7 @@ import eu.opertusmundi.common.model.dto.CustomerCommandDto;
 import eu.opertusmundi.common.model.dto.CustomerDraftDto;
 import eu.opertusmundi.common.model.dto.ConsumerIndividualCommandDto;
 import eu.opertusmundi.common.model.dto.ProviderProfessionalCommandDto;
-import eu.opertusmundi.common.model.dto.EnumCustomerType;
+import eu.opertusmundi.common.model.dto.EnumMangopayUserType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -46,7 +46,7 @@ public abstract class CustomerDraftEntity {
     protected CustomerDraftEntity() {
     }
 
-    protected CustomerDraftEntity(EnumCustomerType type) {
+    protected CustomerDraftEntity(EnumMangopayUserType type) {
         this.type = type;
     }
 
@@ -95,7 +95,7 @@ public abstract class CustomerDraftEntity {
     @Column(name = "`type`", nullable = false, insertable = false, updatable = false)
     @Convert(converter = EnumCustomerTypeAttributeConverter.class)
     @Getter
-    protected EnumCustomerType type;
+    protected EnumMangopayUserType type;
 
     @Column(name = "`payment_provider_user`")
     @Getter

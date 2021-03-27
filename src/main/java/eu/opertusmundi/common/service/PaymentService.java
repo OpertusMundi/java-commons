@@ -1,6 +1,5 @@
 package eu.opertusmundi.common.service;
 
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -224,14 +223,4 @@ public interface  PaymentService {
      */
     PayOutDto createPayOut(PayOutCommandDto command) throws PaymentException;
 
-    /**
-     * Handles payment provider webhook event
-     * 
-     * @param eventType
-     * @param resourceId
-     * @param date
-     * @throws PaymentException
-     */
-    void handleWebHook(String eventType, String resourceId, ZonedDateTime date) throws PaymentException;
-    
 }

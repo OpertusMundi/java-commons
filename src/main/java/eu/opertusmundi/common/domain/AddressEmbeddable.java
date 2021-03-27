@@ -3,7 +3,7 @@ package eu.opertusmundi.common.domain;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 
-import eu.opertusmundi.common.model.dto.AddressBaseDto;
+import eu.opertusmundi.common.model.dto.AddressCommandDto;
 import eu.opertusmundi.common.model.dto.AddressDto;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -66,7 +66,21 @@ public class AddressEmbeddable {
         return a;
     }
 
-    public static AddressEmbeddable from(AddressBaseDto c) {
+    public static AddressEmbeddable from(AddressCommandDto c) {
+        final AddressEmbeddable a = new AddressEmbeddable();
+
+        a.setCity(c.getCity());
+        a.setCountry(c.getCountry());
+        a.setLine1(c.getLine1());
+        a.setLine2(c.getLine2());
+        a.setPostalCode(c.getPostalCode());
+        a.setRegion(c.getRegion());
+
+        return a;
+    }
+
+
+    public static AddressEmbeddable from(AddressDto c) {
         final AddressEmbeddable a = new AddressEmbeddable();
 
         a.setCity(c.getCity());

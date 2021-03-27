@@ -26,10 +26,10 @@ import lombok.Setter;
 public abstract class CustomerCommandDto {
 
     protected CustomerCommandDto() {
-        this.type = EnumCustomerType.UNDEFINED;
+        this.type = EnumMangopayUserType.UNDEFINED;
     }
 
-    protected CustomerCommandDto(EnumCustomerType type) {
+    protected CustomerCommandDto(EnumMangopayUserType type) {
         this.type = type;
     }
 
@@ -51,6 +51,6 @@ public abstract class CustomerCommandDto {
 
     @Schema(description = "Customer type")
     @NotNull
-    protected EnumCustomerType type;
+    protected EnumMangopayUserType type;
 
 }

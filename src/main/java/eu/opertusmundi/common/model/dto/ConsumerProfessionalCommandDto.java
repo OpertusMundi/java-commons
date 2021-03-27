@@ -16,7 +16,7 @@ public class ConsumerProfessionalCommandDto extends CustomerCommandDto implement
     private static final long serialVersionUID = 1L;
 
     protected ConsumerProfessionalCommandDto() {
-        super(EnumCustomerType.PROFESSIONAL);
+        super(EnumMangopayUserType.PROFESSIONAL);
     }
 
     private String additionalInfo;

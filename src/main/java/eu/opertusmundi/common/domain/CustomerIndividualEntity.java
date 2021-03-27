@@ -17,7 +17,7 @@ import eu.opertusmundi.common.model.dto.ConsumerIndividualCommandDto;
 import eu.opertusmundi.common.model.dto.CustomerCommandDto;
 import eu.opertusmundi.common.model.dto.CustomerDto;
 import eu.opertusmundi.common.model.dto.CustomerIndividualDto;
-import eu.opertusmundi.common.model.dto.EnumCustomerType;
+import eu.opertusmundi.common.model.dto.EnumMangopayUserType;
 import eu.opertusmundi.common.model.dto.EnumKycLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,11 +28,11 @@ import lombok.Setter;
 public class CustomerIndividualEntity extends CustomerEntity {
 
     protected CustomerIndividualEntity() {
-        super(EnumCustomerType.INDIVIDUAL);
+        super(EnumMangopayUserType.INDIVIDUAL);
     }
 
     protected CustomerIndividualEntity(ConsumerIndividualCommandDto c) {
-        super(EnumCustomerType.INDIVIDUAL);
+        super(EnumMangopayUserType.INDIVIDUAL);
 
         this.address               = AddressEmbeddable.from(c.getAddress());
         this.birthdate             = c.getBirthdate();
@@ -55,7 +55,7 @@ public class CustomerIndividualEntity extends CustomerEntity {
     }
 
     protected CustomerIndividualEntity(CustomerDraftIndividualEntity e) {
-        super(EnumCustomerType.INDIVIDUAL);
+        super(EnumMangopayUserType.INDIVIDUAL);
 
         this.address               = e.getAddress().clone();
         this.birthdate             = e.getBirthdate();
