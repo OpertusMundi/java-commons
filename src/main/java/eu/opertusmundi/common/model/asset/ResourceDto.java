@@ -3,6 +3,8 @@ package eu.opertusmundi.common.model.asset;
 import java.io.Serializable;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -26,6 +28,12 @@ public abstract class ResourceDto implements Serializable {
     @Getter
     @Setter
     protected UUID id;
+
+    @Schema(description = "Parent resource unique identifier")
+    @JsonInclude(Include.NON_NULL)
+    @Getter
+    @Setter
+    protected UUID parentId;
 
     @Schema(description = "Discriminator field used for deserializing the model to the appropriate data type", example = "FILE")
     @Getter

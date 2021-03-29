@@ -33,6 +33,7 @@ import eu.opertusmundi.common.model.EnumAuthProvider;
 import eu.opertusmundi.common.model.EnumRole;
 import eu.opertusmundi.common.model.dto.AccountDto;
 import eu.opertusmundi.common.model.dto.AccountProfileCommandDto;
+import eu.opertusmundi.common.model.dto.EnumCustomerType;
 import eu.opertusmundi.common.model.dto.PublisherDto;
 import eu.opertusmundi.common.model.dto.SimplAccountDto;
 import lombok.Getter;
@@ -320,6 +321,25 @@ public class AccountEntity {
         if (!StringUtils.isBlank(command.getLocale())) {
             this.locale = command.getLocale();
         }
+    }
+
+    public CustomerEntity getCustomer(EnumCustomerType type) {
+        switch (type) {
+            case CONSUMER :
+                return this.getConsumer();
+            case PROVIDER :
+                return this.getProvider();
+            default :
+                return null;
+        }
+    }
+
+    public CustomerEntity getConsumer() {
+        return this.profile != null ? this.profile.getConsumer() : null;
+    }
+
+    public CustomerEntity getProvider() {
+        return this.profile != null ? this.profile.getProvider() : null;
     }
 
 }

@@ -219,6 +219,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             draftCommand.setAutomatedMetadata(null);
             draftCommand.setIngested(true);
+            draftCommand.setIngestionInfo(null);
             draftCommand.setParentId(command.getPid());
             draftCommand.setPublisherKey(command.getPublisherKey());
             draftCommand.setSpatialDataServiceType(EnumSpatialDataServiceType.fromString(command.getServiceType()));
@@ -277,8 +278,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             draftCommand.setPublisherKey(command.getPublisherKey());
             draftCommand.setSpatialDataServiceType(EnumSpatialDataServiceType.fromString(command.getServiceType()));
             draftCommand.setTitle(command.getTitle());
-            draftCommand.setVersion(command.getServiceType());
-            
+            draftCommand.setVersion(command.getVersion());
 
             AssetDraftDto draft = this.updateDraft(draftCommand);
             

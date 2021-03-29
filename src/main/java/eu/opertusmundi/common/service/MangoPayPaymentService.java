@@ -362,6 +362,8 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
             // Update registration
             profRegistration.getBankAccount().setId(bankAccount.getId());
+            profRegistration.getBankAccount().setTag(bankAccount.getTag());
+            
 
             this.accountRepository.saveAndFlush(account);
 

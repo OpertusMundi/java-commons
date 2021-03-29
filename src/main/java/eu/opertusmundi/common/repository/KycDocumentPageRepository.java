@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import eu.opertusmundi.common.domain.AccountEntity;
-import eu.opertusmundi.common.domain.CustomerProfessionalEntity;
+import eu.opertusmundi.common.domain.CustomerEntity;
 import eu.opertusmundi.common.domain.KycDocumentPageEntity;
 import eu.opertusmundi.common.model.kyc.KycDocumentPageCommandDto;
 
@@ -26,9 +26,9 @@ public interface KycDocumentPageRepository extends JpaRepository<KycDocumentPage
     
     @Transactional(readOnly = false)
     default void create(KycDocumentPageCommandDto command) {
-        final AccountEntity              account  = this.findAccountByKey(command.getUserKey()).orElse(null);
-        final CustomerProfessionalEntity customer = account.getProfile().getProvider();
-        final KycDocumentPageEntity      document = new KycDocumentPageEntity();
+        final AccountEntity         account  = this.findAccountByKey(command.getUserKey()).orElse(null);
+        final CustomerEntity        customer = account.getCustomer(command.getCustomerType());
+        final KycDocumentPageEntity document = new KycDocumentPageEntity();
 
         document.setComment(command.getComment());
         document.setCustomer(customer);

@@ -28,11 +28,13 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
 
     @JsonCreator
     public ServiceResourceDto(
-        @JsonProperty("id") UUID id, 
+        @JsonProperty("id") UUID id,
+        @JsonProperty("parent_id") UUID parentId,
         @JsonProperty("serviceType") EnumServiceResourceType serviceType,
         @JsonProperty("endpoint") String endpoint
     ) {
         this.id          = id;
+        this.parentId    = parentId;
         this.type        = EnumResourceType.SERVICE;
         this.serviceType = serviceType;
         this.endpoint    = endpoint;

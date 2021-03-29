@@ -16,6 +16,7 @@ import lombok.Setter;
 public class CustomerBankAccountEmbeddable extends BankAccountEmbeddable {
 
     @Column
+    @EqualsAndHashCode.Include
     private String id;
 
     @Column

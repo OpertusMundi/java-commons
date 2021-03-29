@@ -2,7 +2,9 @@ package eu.opertusmundi.common.model.catalogue.client;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -34,7 +36,7 @@ public class CatalogueItemDto extends BaseCatalogueItemDto implements Serializab
         
         this.id = feature.getId();
 
-        this.pricingModels = props.getPricingModels();
+        this.pricingModels = Optional.ofNullable(props.getPricingModels()).orElse(Collections.emptyList());
         this.publisherId   = props.getPublisherId();
         this.title         = props.getTitle();
         this.type          = EnumType.fromString(props.getType());
