@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.model.order;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreType;
+
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumDeliveryMethod;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
@@ -15,7 +17,8 @@ import lombok.Setter;
 @Setter
 @Getter
 @Builder
-public class OrderCommandDto {
+@JsonIgnoreType
+public class OrderCommand {
 
     private Integer userId;
 

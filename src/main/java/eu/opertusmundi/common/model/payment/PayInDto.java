@@ -38,7 +38,7 @@ public abstract class PayInDto {
     protected UUID key;
 
     @ArraySchema(arraySchema = @Schema(
-        description = "PayIn payments. A PayIn may include a single order or multiple subsription billing records"), 
+        description = "PayIn payments. A PayIn may include a single order or multiple subscription billing records"), 
         minItems = 1, 
         uniqueItems = true, 
         schema = @Schema(oneOf = {OrderPayInItemDto.class, SubscriptionBillingPayInItemDto.class})

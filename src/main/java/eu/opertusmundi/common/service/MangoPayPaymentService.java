@@ -74,7 +74,7 @@ import eu.opertusmundi.common.model.dto.EnumLegalPersonType;
 import eu.opertusmundi.common.model.dto.EnumMangopayUserType;
 import eu.opertusmundi.common.model.order.CartDto;
 import eu.opertusmundi.common.model.order.CartItemDto;
-import eu.opertusmundi.common.model.order.OrderCommandDto;
+import eu.opertusmundi.common.model.order.OrderCommand;
 import eu.opertusmundi.common.model.order.OrderDto;
 import eu.opertusmundi.common.model.payment.BankwirePayInCommand;
 import eu.opertusmundi.common.model.payment.CardDirectPayInCommand;
@@ -85,17 +85,17 @@ import eu.opertusmundi.common.model.payment.CardRegistrationDto;
 import eu.opertusmundi.common.model.payment.ClientDto;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PayInDto;
-import eu.opertusmundi.common.model.payment.PayInStatusUpdateCommandDto;
+import eu.opertusmundi.common.model.payment.PayInStatusUpdateCommand;
 import eu.opertusmundi.common.model.payment.PayOutCommandDto;
 import eu.opertusmundi.common.model.payment.PayOutDto;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.PaymentMessageCode;
 import eu.opertusmundi.common.model.payment.TransferCommandDto;
 import eu.opertusmundi.common.model.payment.TransferDto;
-import eu.opertusmundi.common.model.payment.UserCardCommandDto;
-import eu.opertusmundi.common.model.payment.UserCommandDto;
-import eu.opertusmundi.common.model.payment.UserPaginationCommandDto;
-import eu.opertusmundi.common.model.payment.UserRegistrationCommandDto;
+import eu.opertusmundi.common.model.payment.UserCardCommand;
+import eu.opertusmundi.common.model.payment.UserCommand;
+import eu.opertusmundi.common.model.payment.UserPaginationCommand;
+import eu.opertusmundi.common.model.payment.UserRegistrationCommand;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.repository.AccountRepository;
@@ -144,7 +144,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
     
     @Override
-    public AccountDto createUser(UserRegistrationCommandDto command) {
+    public AccountDto createUser(UserRegistrationCommand command) {
         try {
             User user;
 
@@ -205,7 +205,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     @Override
-    public AccountDto updateUser(UserRegistrationCommandDto command) {
+    public AccountDto updateUser(UserRegistrationCommand command) {
         try {
             User user;
 
@@ -252,7 +252,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     @Override
-    public AccountDto createWallet(UserRegistrationCommandDto command) {
+    public AccountDto createWallet(UserRegistrationCommand command) {
         try {
             Wallet wallet;
 
@@ -310,7 +310,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     @Override
-    public AccountDto createBankAccount(UserRegistrationCommandDto command) {
+    public AccountDto createBankAccount(UserRegistrationCommand command) {
         try {
             BankAccount bankAccount;
 
@@ -384,7 +384,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
      * @return
      */
     @Override
-    public AccountDto updateBankAccount(UserRegistrationCommandDto command) {
+    public AccountDto updateBankAccount(UserRegistrationCommand command) {
         try {
             final AccountEntity                   account               = this.getAccount(command.getUserKey());
             final CustomerProfessionalEntity      customer              = account.getProfile().getProvider();
@@ -431,7 +431,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     @Override
-    public List<BankAccountDto> getBankAccounts(UserPaginationCommandDto command) throws PaymentException {
+    public List<BankAccountDto> getBankAccounts(UserPaginationCommand command) throws PaymentException {
         try {
             final AccountEntity              account  = this.getAccount(command.getUserKey());
             final CustomerProfessionalEntity customer = account.getProfile().getProvider();
@@ -454,7 +454,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
     
     @Override
-    public List<CardDto> getRegisteredCards(UserPaginationCommandDto command) {
+    public List<CardDto> getRegisteredCards(UserPaginationCommand command) {
         try {
             final AccountEntity  account  = this.getAccount(command.getUserKey());
             final CustomerEntity customer = account.getProfile().getConsumer();
@@ -477,7 +477,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
     
     @Override
-    public CardDto getRegisteredCard(UserCardCommandDto command) {
+    public CardDto getRegisteredCard(UserCardCommand command) {
         try {
             final AccountEntity  account  = this.getAccount(command.getUserKey());
             final CustomerEntity customer = account.getProfile().getConsumer();
@@ -503,7 +503,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     @Override
-    public void deactivateCard(UserCardCommandDto command) {
+    public void deactivateCard(UserCardCommand command) {
         try {
             final AccountEntity  account  = this.getAccount(command.getUserKey());
             final CustomerEntity customer = account.getProfile().getConsumer();
@@ -523,7 +523,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     // TODO: Consider using idempotency key for this method ...
     
     @Override
-    public CardRegistrationDto createCardRegistration(UserCommandDto command) {
+    public CardRegistrationDto createCardRegistration(UserCommand command) {
         try {
             final AccountEntity  account  = this.getAccount(command.getUserKey());
             final CustomerEntity customer = account.getProfile().getConsumer();
@@ -602,7 +602,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             );
     
             // Create command
-            final OrderCommandDto orderCommand = OrderCommandDto.builder()
+            final OrderCommand orderCommand = OrderCommand.builder()
                 .asset(asset)
                 .cartId(cart.getId())
                 .deliveryMethod(asset.getDeliveryMethod())
@@ -702,7 +702,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final String idempotencyKey = order.getKey().toString();
 
             // Get card
-            final CardDto card = this.getRegisteredCard(UserCardCommandDto.of(command.getUserKey(), command.getCardId()));
+            final CardDto card = this.getRegisteredCard(UserCardCommand.of(command.getUserKey(), command.getCardId()));
             
             // Check payment
             final PayInEntity payIn = order.getPayin();
@@ -775,7 +775,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 return payInEntity.toDto();
             }
 
-            final PayInStatusUpdateCommandDto command = PayInStatusUpdateCommandDto.builder()
+            final PayInStatusUpdateCommand command = PayInStatusUpdateCommand.builder()
                 .providerPayInId(providerPayInId)
                 .executedOn(payInObject.getExecutionDate())
                 .status(EnumTransactionStatus.from(payInObject.getStatus()))

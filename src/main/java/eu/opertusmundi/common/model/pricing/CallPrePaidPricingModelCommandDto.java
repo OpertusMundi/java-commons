@@ -33,7 +33,7 @@ public class CallPrePaidPricingModelCommandDto extends BasePricingModelCommandDt
     
     @ArraySchema(
         arraySchema = @Schema(
-            description = "Prepaid tiers using sevice calls as units. Each element (except for the first one) "
+            description = "Prepaid tiers using service calls as units. Each element (except for the first one) "
                         + "must have a `count` property with a value greater than the previous one"
         ),
         minItems = 0,

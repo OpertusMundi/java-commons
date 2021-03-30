@@ -35,20 +35,20 @@ public class CardRegistrationDto {
     private String registrationId;
 
     @Schema(
-        description = "Value required for property `accessKeyRef` of tokenization server request.",
+        description = "Value required for property `accessKeyRef` of tokenization server request",
         externalDocs = @ExternalDocumentation(url = "https://docs.mangopay.com/endpoints/v2.01/cards#e1042_post-card-info")
     )
     private String accessKey;
     
    
     @Schema(
-        description = "Card tokenization server URL. Client must submit the card details to this URL.",
+        description = "Card tokenization server URL. Client must submit the card details to this URL",
         externalDocs = @ExternalDocumentation(url = "https://docs.mangopay.com/endpoints/v2.01/cards#e1042_post-card-info")
     )
     private String cardRegistrationUrl;
     
     @Schema(
-        description = "Value required for property `data` of tokenization server request.",
+        description = "Value required for property `data` of tokenization server request",
         externalDocs = @ExternalDocumentation(url = "https://docs.mangopay.com/endpoints/v2.01/cards#e1042_post-card-info")
     )
     private String preRegistrationData;

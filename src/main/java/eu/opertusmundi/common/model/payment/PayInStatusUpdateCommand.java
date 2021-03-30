@@ -12,7 +12,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @JsonIgnoreType
-public class PayInStatusUpdateCommandDto {
+public class PayInStatusUpdateCommand {
 
     private String providerPayInId;
 

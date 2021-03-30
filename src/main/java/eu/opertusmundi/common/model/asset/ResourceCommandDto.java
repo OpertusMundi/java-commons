@@ -9,7 +9,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class BaseResourceCommandDto {
+public abstract class ResourceCommandDto {
 
     /**
      * Publisher key is set by the calling service

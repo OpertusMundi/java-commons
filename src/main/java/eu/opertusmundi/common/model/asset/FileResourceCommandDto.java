@@ -14,7 +14,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class FileResourceCommandDto extends BaseResourceCommandDto implements Serializable {
+public class FileResourceCommandDto extends ResourceCommandDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
     

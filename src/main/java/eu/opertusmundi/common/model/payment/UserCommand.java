@@ -2,6 +2,8 @@ package eu.opertusmundi.common.model.payment;
 
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreType;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,16 +13,17 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class UserCommandDto {
+@JsonIgnoreType
+public class UserCommand {
 
     private UUID userKey;
 
-    public UserCommandDto(UUID userKey) {
+    public UserCommand(UUID userKey) {
         this.userKey = userKey;
     }
 
-    public static UserCommandDto of(UUID userKey) {
-        final UserCommandDto c = new UserCommandDto();
+    public static UserCommand of(UUID userKey) {
+        final UserCommand c = new UserCommand();
         c.setUserKey(userKey);
         return c;
     }

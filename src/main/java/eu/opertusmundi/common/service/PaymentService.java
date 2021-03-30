@@ -19,10 +19,10 @@ import eu.opertusmundi.common.model.payment.PayOutDto;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.TransferCommandDto;
 import eu.opertusmundi.common.model.payment.TransferDto;
-import eu.opertusmundi.common.model.payment.UserCardCommandDto;
-import eu.opertusmundi.common.model.payment.UserCommandDto;
-import eu.opertusmundi.common.model.payment.UserPaginationCommandDto;
-import eu.opertusmundi.common.model.payment.UserRegistrationCommandDto;
+import eu.opertusmundi.common.model.payment.UserCardCommand;
+import eu.opertusmundi.common.model.payment.UserCommand;
+import eu.opertusmundi.common.model.payment.UserPaginationCommand;
+import eu.opertusmundi.common.model.payment.UserRegistrationCommand;
 
 public interface  PaymentService {
 
@@ -51,7 +51,7 @@ public interface  PaymentService {
      * @return
      * @throws PaymentException
      */
-    AccountDto createUser(UserRegistrationCommandDto command) throws PaymentException;
+    AccountDto createUser(UserRegistrationCommand command) throws PaymentException;
 
     /**
      * Update an existing user in the external payment service. The account must
@@ -61,7 +61,7 @@ public interface  PaymentService {
      * @return
      * @throws PaymentException
      */
-    AccountDto updateUser(UserRegistrationCommandDto command) throws PaymentException;
+    AccountDto updateUser(UserRegistrationCommand command) throws PaymentException;
 
     /**
      * Creates a new waller in the external payment service and links it to a
@@ -71,7 +71,7 @@ public interface  PaymentService {
      * @return
      * @throws PaymentException
      */
-    AccountDto createWallet(UserRegistrationCommandDto command) throws PaymentException;
+    AccountDto createWallet(UserRegistrationCommand command) throws PaymentException;
 
     /**
      * Create a new bank account in the external payment service and links it to
@@ -81,7 +81,7 @@ public interface  PaymentService {
      * @return
      * @throws PaymentException
      */
-    AccountDto createBankAccount(UserRegistrationCommandDto command) throws PaymentException;
+    AccountDto createBankAccount(UserRegistrationCommand command) throws PaymentException;
 
     /**
      * Update an existing bank account in the external payment service.
@@ -90,7 +90,7 @@ public interface  PaymentService {
      * @return
      * @throws PaymentException
      */
-    AccountDto updateBankAccount(UserRegistrationCommandDto command) throws PaymentException;
+    AccountDto updateBankAccount(UserRegistrationCommand command) throws PaymentException;
 
     /**
      * Get user bank accounts.
@@ -101,7 +101,7 @@ public interface  PaymentService {
      * @return
      * @throws PaymentException
      */
-    List<BankAccountDto> getBankAccounts(UserPaginationCommandDto command) throws PaymentException;
+    List<BankAccountDto> getBankAccounts(UserPaginationCommand command) throws PaymentException;
     
     /**
      * Get user registered cards
@@ -112,7 +112,7 @@ public interface  PaymentService {
      * @return
      * @throws PaymentException
      */
-    List<CardDto> getRegisteredCards(UserPaginationCommandDto command) throws PaymentException;
+    List<CardDto> getRegisteredCards(UserPaginationCommand command) throws PaymentException;
     
     /**
      * Get user registered card
@@ -121,7 +121,7 @@ public interface  PaymentService {
      * @return
      * @throws PaymentException
      */
-    CardDto getRegisteredCard(UserCardCommandDto command) throws PaymentException;
+    CardDto getRegisteredCard(UserCardCommand command) throws PaymentException;
     
     /**
      * Deactivate card
@@ -129,7 +129,7 @@ public interface  PaymentService {
      * @param command
      * @throws PaymentException
      */
-    void deactivateCard(UserCardCommandDto command) throws PaymentException;
+    void deactivateCard(UserCardCommand command) throws PaymentException;
     
     /**
      * Create card registration
@@ -138,7 +138,7 @@ public interface  PaymentService {
      * @return
      * @throws PaymentException
      */
-    CardRegistrationDto createCardRegistration(UserCommandDto command) throws PaymentException;
+    CardRegistrationDto createCardRegistration(UserCommand command) throws PaymentException;
     
     /**
      * Register card to user account

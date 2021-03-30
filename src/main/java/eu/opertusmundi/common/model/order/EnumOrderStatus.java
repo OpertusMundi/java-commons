@@ -24,6 +24,6 @@ public enum EnumOrderStatus {
     /**
      * Order has been completed
      */
-    SUCCEDEED,
+    SUCCEEDED,
     ;
 }

@@ -18,6 +18,7 @@ public enum AssetMessageCode implements MessageCode {
     API_COMMAND_ASSET_NOT_FOUND,
     API_COMMAND_ASSET_ACCESS_DENIED,
     API_COMMAND_RESOURCE_COPY,
+    HARVEST_ITEM_NOT_FOUND,
     ;
 
     @Override

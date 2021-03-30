@@ -57,7 +57,7 @@ public class PayInStatusEntity {
         s.setId(id);
         s.setPayin(payin.getId());
         s.setStatus(status);
-        s.setStatusUpdatedOn(statusUpdatedOn);
+        s.setUpdatedOn(statusUpdatedOn);
 
         return s;
     }

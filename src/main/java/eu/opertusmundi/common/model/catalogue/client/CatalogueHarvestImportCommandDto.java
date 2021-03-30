@@ -1,7 +1,11 @@
 package eu.opertusmundi.common.model.catalogue.client;
 
+import java.util.UUID;
+
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -14,6 +18,9 @@ import lombok.Setter;
 @Setter
 public class CatalogueHarvestImportCommandDto {
 
+    @JsonIgnore
+    private UUID publisherKey;
+    
     @Schema(description = "Catalogue URL")
     @NotBlank
     private String url;

@@ -17,7 +17,7 @@ import eu.opertusmundi.common.domain.OrderItemEntity;
 import eu.opertusmundi.common.domain.OrderStatusEntity;
 import eu.opertusmundi.common.model.order.EnumOrderItemType;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
-import eu.opertusmundi.common.model.order.OrderCommandDto;
+import eu.opertusmundi.common.model.order.OrderCommand;
 import eu.opertusmundi.common.model.order.OrderDto;
 
 @Repository
@@ -33,7 +33,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     @Query("SELECT o FROM Order o WHERE o.key = :key")
     Optional<OrderEntity> findOneByKey(@Param("key") UUID key);
 
-    default OrderDto create(OrderCommandDto command) throws Exception {
+    default OrderDto create(OrderCommand command) throws Exception {
         final AccountEntity account = this.findAccountById(command.getUserId()).orElse(null);
         final OrderEntity   order   = new OrderEntity();
 

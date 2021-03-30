@@ -27,7 +27,7 @@ import eu.opertusmundi.common.model.payment.CardDirectPayInCommand;
 import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PayInDto;
-import eu.opertusmundi.common.model.payment.PayInStatusUpdateCommandDto;
+import eu.opertusmundi.common.model.payment.PayInStatusUpdateCommand;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import io.jsonwebtoken.lang.Assert;
 
@@ -148,7 +148,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         return payin.toDto();
     }
 
-    default PayInDto updatePayInStatus(PayInStatusUpdateCommandDto command) throws PaymentException {
+    default PayInDto updatePayInStatus(PayInStatusUpdateCommand command) throws PaymentException {
         final PayInEntity payIn = this.findOneByPayInId(command.getProviderPayInId()).orElse(null);
 
         if (command.getExecutedOn() != null) {

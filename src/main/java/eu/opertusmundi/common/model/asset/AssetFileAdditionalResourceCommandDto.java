@@ -12,7 +12,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class AssetFileAdditionalResourceCommandDto extends BaseResourceCommandDto implements Serializable {
+public class AssetFileAdditionalResourceCommandDto extends ResourceCommandDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

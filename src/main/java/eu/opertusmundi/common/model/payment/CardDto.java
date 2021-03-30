@@ -33,7 +33,7 @@ public class CardDto {
     @Schema(description = "A partially obfuscated version of the credit card number")
     private String alias;
 
-    @Schema(description = "The type of card. Currenlty only a single card type is supported, `CB_VISA_MASTERCARD`.")
+    @Schema(description = "The type of card. Currently only a single card type is supported, `CB_VISA_MASTERCARD`")
     private EnumCardType cardType;
 
     @Schema(
@@ -48,7 +48,7 @@ public class CardDto {
     @Schema(description = "Card unique identifier. This identifier is required for creating a card direct PayIn")
     private String id;
     
-    @Schema(description = "Card validity. A successful transaction (PreAuthorization or Payin) is required to validate a card id")
+    @Schema(description = "Card validity. A successful transaction (PreAuthorization or PayIn) is required to validate a card id")
     private Validity validity;
     
     @Schema(description = "The expiry month of the card")

@@ -2,6 +2,8 @@ package eu.opertusmundi.common.model.payment;
 
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreType;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,7 +17,8 @@ import lombok.ToString;
 @Setter
 @ToString
 @Builder
-public class UserPaginationCommandDto {
+@JsonIgnoreType
+public class UserPaginationCommand {
 
     private UUID userKey;
 

@@ -27,7 +27,7 @@ public class CardRegistrationCommandDto {
     @JsonIgnore
     private UUID userKey;
 
-    @Schema(description = "Registration identifier created when initializaed the card registration.")
+    @Schema(description = "Registration identifier created when initialized the card registration")
     @NotEmpty
     private String registrationId;
     

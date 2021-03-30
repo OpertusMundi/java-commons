@@ -24,6 +24,6 @@ public class PayInStatusDto {
     private EnumTransactionStatus status;
 
     @Schema(description = "Date of update")
-    private ZonedDateTime statusUpdatedOn;
+    private ZonedDateTime updatedOn;
 
 }

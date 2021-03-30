@@ -17,12 +17,12 @@ public class SubscriptionBillingDto {
     @JsonIgnore
     private Integer id;
 
-    @Schema(description = "Service unique PID")
-    private String subscriptionId;
-
     @JsonIgnore
+    private Integer subscriptionId;
+
+    @Schema(description = "Service unique PID")
     private String service;
-    
+
     @Schema(description = "Service description")
     private String subscriptionDescription;
 
@@ -41,7 +41,7 @@ public class SubscriptionBillingDto {
     @Schema(description = "Total rows used by purchased SKUs. This field is exclusive with field `skuTotalCalls`")
     private Integer skuTotalRows;
 
-    @Schema(description = "Total calls used by pruchased SKUs. This field is exclusive with field `skuTotalRows`")
+    @Schema(description = "Total calls used by purchased SKUs. This field is exclusive with field `skuTotalRows`")
     private Integer skuTotalCalls;
 
 }
