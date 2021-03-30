@@ -38,7 +38,6 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueAssetQuery;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueClientSetStatusCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueDraftQuery;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestCommandDto;
-import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDraftDto;
@@ -344,11 +343,6 @@ public class DefaultCatalogueService implements CatalogueService {
 
             throw CatalogueServiceException.wrap(ex);
         }
-    }
-    
-    @Override
-    public void importFromCatalogue(CatalogueHarvestImportCommandDto command) throws CatalogueServiceException {
-
     }
     
     @Override

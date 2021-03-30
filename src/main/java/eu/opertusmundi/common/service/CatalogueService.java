@@ -10,7 +10,6 @@ import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueAssetQuery;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueDraftQuery;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestCommandDto;
-import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDraftDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
@@ -73,14 +72,6 @@ public interface CatalogueService {
      * @throws CatalogueServiceException
      */
     void harvestCatalogue(CatalogueHarvestCommandDto command) throws CatalogueServiceException;
-
-    /**
-     * Create new draft by importing records from a harvested catalogue
-     * 
-     * @param command
-     * @throws CatalogueServiceException
-     */
-    void importFromCatalogue(CatalogueHarvestImportCommandDto command) throws CatalogueServiceException;
 
     /**
      * Delete published asset with the given PID

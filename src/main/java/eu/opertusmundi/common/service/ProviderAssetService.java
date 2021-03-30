@@ -2,6 +2,7 @@ package eu.opertusmundi.common.service;
 
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -18,6 +19,7 @@ import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.MetadataProperty;
 import eu.opertusmundi.common.model.asset.ServiceResourceCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.dto.EnumSortingOrder;
@@ -68,6 +70,14 @@ public interface ProviderAssetService {
      */
     AssetDraftDto createApiDraft(DraftApiCommandDto command) throws AssetDraftException;
 
+    /**
+     * Create one or more drafts by importing records from a harvested catalogue
+     * 
+     * @param command
+     * @throws AssetDraftException
+     */
+    Map<String, AssetDraftDto> importFromCatalogue(CatalogueHarvestImportCommandDto command) throws AssetDraftException;
+    
     /**
      * Update a draft
      *

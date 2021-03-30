@@ -66,6 +66,7 @@ import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.model.asset.MetadataProperty;
 import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.asset.ServiceResourceCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromAssetCommandDto;
@@ -188,6 +189,55 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             AssetMessageCode.API_COMMAND_NOT_SUPPORTED,
             String.format("API command type [%s] is not supported", command.getType())
         );
+    }
+
+    /**
+     * Create one or more drafts by importing records from a harvested catalogue
+     * 
+     * @param command
+     * @throws AssetDraftException
+     */
+    @Override
+    @Transactional
+    public Map<String, AssetDraftDto> importFromCatalogue(CatalogueHarvestImportCommandDto command) throws AssetDraftException{
+        final Map<String, AssetDraftDto> result = new HashMap<>();
+        
+        try {
+            for (String id : command.getIds()) {
+                // Get harvested item
+                ResponseEntity<CatalogueResponse<CatalogueFeature>> e;
+                try {
+                    e = this.catalogueClient.getObject().findOneHarvestedItemById(id);
+                } catch(Exception ex) {
+                    throw new AssetDraftException(
+                        AssetMessageCode.HARVEST_ITEM_NOT_FOUND,
+                        String.format("Cannot find harvested item with id [%s]", id)
+                    );
+                }
+
+                final CatalogueResponse<CatalogueFeature> catalogueResponse = e.getBody();
+                final CatalogueFeature                    feature           = catalogueResponse.getResult();
+                final CatalogueItemCommandDto             draftCommand      = new CatalogueItemCommandDto(feature);
+             
+                draftCommand.setAutomatedMetadata(null);
+                draftCommand.setIngested(false);
+                draftCommand.setIngestionInfo(null);
+                draftCommand.setPublisherKey(command.getPublisherKey());
+                draftCommand.setTitle(feature.getProperties().getTitle());
+                // TODO: Set default version number
+                draftCommand.setVersion(Optional.ofNullable(feature.getProperties().getVersion()).orElse("1"));
+    
+                AssetDraftDto draft = this.updateDraft(draftCommand);              
+                
+                result.put(id, draft);
+            }
+            
+            return result;
+        } catch (AssetDraftException ex) {
+            throw ex;
+        } catch(Exception ex) {
+            throw new AssetDraftException(AssetMessageCode.ERROR, "Failed to create draft from harvested asset", ex);
+        }
     }
 
     AssetDraftDto createApiDraftFromAsset(DraftApiFromAssetCommandDto command) throws AssetDraftException {
