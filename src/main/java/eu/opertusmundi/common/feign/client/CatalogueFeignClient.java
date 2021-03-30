@@ -207,4 +207,15 @@ public interface CatalogueFeignClient {
         @RequestParam("per_page") int pageSize
     );
 
+    // TODO: Add URL parameter. Identifiers may not be unique
+    
+    /**
+     * Get a harvested item by id
+     *
+     * @param id The item unique identifier.
+     * @return An instance of {@link CatalogueFeature}
+     */
+    @GetMapping(value = "/api/harvest/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<CatalogueResponse<CatalogueFeature>> findOneHarvestedItemById(@PathVariable("id") String id);
+    
 }
