@@ -31,47 +31,50 @@ import lombok.Setter;
 public class CatalogueFeatureProperties {
 
     public CatalogueFeatureProperties(CatalogueItemCommandDto command) {
-        this.abstractText                = command.getAbstractText();
-        this.automatedMetadata           = command.getAutomatedMetadata().deepCopy();
-        this.conformity                  = command.getConformity() != null 
+        this.abstractText                 = command.getAbstractText();
+        this.automatedMetadata            = command.getAutomatedMetadata().deepCopy();
+        this.conformity                   = command.getConformity() != null
             ? command.getConformity().getValue()
             : EnumConformity.NOT_EVALUATED.getValue();
-        this.creationDate                = command.getCreationDate();
-        this.dateEnd                     = command.getDateEnd();
-        this.dateStart                   = command.getDateStart();
-        this.deliveryMethod              = command.getDeliveryMethod() != null 
+        this.creationDate                 = command.getCreationDate();
+        this.dateEnd                      = command.getDateEnd();
+        this.dateStart                    = command.getDateStart();
+        this.deliveryMethod               = command.getDeliveryMethod() != null 
             ? command.getDeliveryMethod().getValue().toString() 
             : null;
-        this.format                      = command.getFormat();
-        this.ingestionInfo               = command.getIngestionInfo();
-        this.language                    = command.getLanguage();
-        this.license                     = command.getLicense();
-        this.lineage                     = command.getLineage();
-        this.metadataDate                = command.getMetadataDate();
-        this.metadataLanguage            = command.getMetadataLanguage();
-        this.metadataPointOfContactEmail = command.getMetadataPointOfContactEmail();
-        this.metadataPointOfContactName  = command.getMetadataPointOfContactName();
-        this.parentId                    = command.getParentId();
-        this.publicAccessLimitations     = command.getPublicAccessLimitations();
-        this.publicationDate             = command.getPublicationDate();
-        this.publisherEmail              = command.getPublisherEmail();
-        this.publisherId                 = command.getPublisherKey();
-        this.publisherName               = command.getPublisherName();
-        this.referenceSystem             = command.getReferenceSystem();
-        this.resourceLocator             = command.getResourceLocator();
-        this.revisionDate                = command.getRevisionDate();
-        this.spatialDataServiceType      = command.getSpatialDataServiceType() != null
+        this.format                       = command.getFormat();
+        this.ingestionInfo                = command.getIngestionInfo();
+        this.language                     = command.getLanguage();
+        this.license                      = command.getLicense();
+        this.lineage                      = command.getLineage();
+        this.metadataDate                 = command.getMetadataDate();
+        this.metadataLanguage             = command.getMetadataLanguage();
+        this.metadataPointOfContactEmail  = command.getMetadataPointOfContactEmail();
+        this.metadataPointOfContactName   = command.getMetadataPointOfContactName();
+        this.parentId                     = command.getParentId();
+        this.publicAccessLimitations      = command.getPublicAccessLimitations();
+        this.publicationDate              = command.getPublicationDate();
+        this.publisherEmail               = command.getPublisherEmail();
+        this.publisherId                  = command.getPublisherKey();
+        this.publisherName                = command.getPublisherName();
+        this.referenceSystem              = command.getReferenceSystem();
+        this.resourceLocator              = command.getResourceLocator();
+        this.revisionDate                 = command.getRevisionDate();
+        this.spatialDataServiceType       = command.getSpatialDataServiceType() != null
             ? command.getSpatialDataServiceType().getValue()
             : null;
-        this.spatialResolution           = command.getSpatialResolution();
-        this.statistics                  = new CatalogueItemStatistics();
-        this.status                      = EnumProviderAssetDraftStatus.DRAFT.name().toLowerCase();
-        this.suitableFor                 = StreamUtils.from(command.getSuitableFor()).collect(Collectors.toList());
-        this.title                       = command.getTitle();
-        this.type                        = command.getType() != null ? command.getType().getValue() : null;
-        this.useOnlyForVas               = command.isUserOnlyForVas();
-        this.version                     = command.getVersion();
-        this.versions                    = Collections.emptyList();
+        this.spatialDataServiceOperations = command.getSpatialDataServiceOperations();
+        this.spatialDataServiceQueryables = command.getSpatialDataServiceQueryables();
+        this.spatialDataServiceVersion    = command.getSpatialDataServiceVersion();
+        this.spatialResolution            = command.getSpatialResolution();
+        this.statistics                   = new CatalogueItemStatistics();
+        this.status                       = EnumProviderAssetDraftStatus.DRAFT.name().toLowerCase();
+        this.suitableFor                  = StreamUtils.from(command.getSuitableFor()).collect(Collectors.toList());
+        this.title                        = command.getTitle();
+        this.type                         = command.getType() != null ? command.getType().getValue() : null;
+        this.useOnlyForVas                = command.isUserOnlyForVas();
+        this.version                      = command.getVersion();
+        this.versions                     = Collections.emptyList();
 
         this.additionalResources = StreamUtils.from(command.getAdditionalResources())
             .map(r -> r.toCatalogueResource())
@@ -80,7 +83,11 @@ public class CatalogueFeatureProperties {
         this.keywords = StreamUtils.from(command.getKeywords())
             .map(Keyword::new)
             .collect(Collectors.toList());
-        
+
+        this.responsibleParty = StreamUtils.from(command.getResponsibleParty())
+            .map(ResponsibleParty::from)
+            .collect(Collectors.toList());
+
         // Resources are stored by the asset data repository
         final List<ResourceDto> featureResources = StreamUtils.from(command.getResources()).collect(Collectors.toList());
         
@@ -180,6 +187,10 @@ public class CatalogueFeatureProperties {
     @JsonProperty("resource_locator")
     private String resourceLocator;
 
+    @JsonProperty("responsible_party")
+    @JsonInclude(Include.NON_EMPTY)
+    private List<ResponsibleParty> responsibleParty;
+    
     @JsonProperty("revision_date")
     private String revisionDate;
 
@@ -190,6 +201,18 @@ public class CatalogueFeatureProperties {
     @JsonProperty("spatial_data_service_type")
     @JsonInclude(Include.NON_NULL)
     private String spatialDataServiceType;
+    
+    @JsonProperty("spatial_data_service_version")
+    @JsonInclude(Include.NON_NULL)
+    private String spatialDataServiceVersion;
+    
+    @JsonProperty("spatial_data_service_operations")
+    @JsonInclude(Include.NON_NULL)
+    private List<String> spatialDataServiceOperations;
+    
+    @JsonProperty("spatial_data_service_queryables")
+    @JsonInclude(Include.NON_NULL)
+    private List<String> spatialDataServiceQueryables;
 
     @JsonProperty("spatial_resolution")
     private Integer spatialResolution;
@@ -243,6 +266,49 @@ public class CatalogueFeatureProperties {
         private Integer scale;
 
         private String theme;
+
+    }
+    
+    @NoArgsConstructor
+    @Getter
+    @Setter
+    public static class ResponsibleParty {
+
+        private String name;
+
+        @JsonProperty("organization_name")
+        @JsonInclude(Include.NON_EMPTY)
+        private String organizationName;
+
+        @JsonInclude(Include.NON_EMPTY)
+        private String email;
+
+        @JsonInclude(Include.NON_EMPTY)
+        private String phone;
+
+        @JsonInclude(Include.NON_EMPTY)
+        private String address;
+
+        @JsonProperty("service_hours")
+        @JsonInclude(Include.NON_EMPTY)
+        private String serviceHours;
+
+        @JsonInclude(Include.NON_EMPTY)
+        private String role;
+
+        private ResponsibleParty(BaseCatalogueItemDto.ResponsibleParty r) {
+            this.address          = r.getAddress();
+            this.email            = r.getEmail();
+            this.name             = r.getName();
+            this.organizationName = r.getOrganizationName();
+            this.phone            = r.getPhone();
+            this.role             = r.getRole() != null ? r.getRole().getValue() : null;
+            this.serviceHours     = r.getServiceHours();
+        }
+
+        public static ResponsibleParty from(BaseCatalogueItemDto.ResponsibleParty r) {
+            return r == null ? null : new ResponsibleParty(r);
+        }
 
     }
 

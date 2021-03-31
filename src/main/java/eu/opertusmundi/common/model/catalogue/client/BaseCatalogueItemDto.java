@@ -38,34 +38,37 @@ public abstract class BaseCatalogueItemDto {
     protected BaseCatalogueItemDto(CatalogueFeature feature) {
         final CatalogueFeatureProperties props = feature.getProperties();
 
-        this.abstractText                = props.getAbstractText();
-        this.automatedMetadata           = props.getAutomatedMetadata();
-        this.conformity                  = EnumConformity.fromString(props.getConformity());
-        this.creationDate                = props.getCreationDate();
-        this.dateEnd                     = props.getDateEnd();
-        this.dateStart                   = props.getDateStart();
-        this.deliveryMethod              = EnumDeliveryMethod.fromString(props.getDeliveryMethod());
-        this.format                      = props.getFormat();
-        this.ingestionInfo               = props.getIngestionInfo();
-        this.language                    = props.getLanguage();
-        this.license                     = props.getLicense();
-        this.lineage                     = props.getLineage();
-        this.metadataDate                = props.getMetadataDate();
-        this.metadataLanguage            = props.getMetadataLanguage();
-        this.metadataPointOfContactEmail = props.getMetadataPointOfContactEmail();
-        this.metadataPointOfContactName  = props.getMetadataPointOfContactName();
-        this.parentId                    = props.getParentId();
-        this.publicAccessLimitations     = props.getPublicAccessLimitations();
-        this.publicationDate             = props.getPublicationDate();
-        this.publisherEmail              = props.getPublisherEmail();
-        this.publisherName               = props.getPublisherName();
-        this.referenceSystem             = props.getReferenceSystem();
-        this.resourceLocator             = props.getResourceLocator();
-        this.revisionDate                = props.getRevisionDate();
-        this.spatialDataServiceType      = EnumSpatialDataServiceType.fromString(props.getSpatialDataServiceType());
-        this.spatialResolution           = props.getSpatialResolution();
-        this.suitableFor                 = props.getSuitableFor();
-        this.userOnlyForVas              = props.isUseOnlyForVas();
+        this.abstractText                 = props.getAbstractText();
+        this.automatedMetadata            = props.getAutomatedMetadata();
+        this.conformity                   = EnumConformity.fromString(props.getConformity());
+        this.creationDate                 = props.getCreationDate();
+        this.dateEnd                      = props.getDateEnd();
+        this.dateStart                    = props.getDateStart();
+        this.deliveryMethod               = EnumDeliveryMethod.fromString(props.getDeliveryMethod());
+        this.format                       = props.getFormat();
+        this.ingestionInfo                = props.getIngestionInfo();
+        this.language                     = props.getLanguage();
+        this.license                      = props.getLicense();
+        this.lineage                      = props.getLineage();
+        this.metadataDate                 = props.getMetadataDate();
+        this.metadataLanguage             = props.getMetadataLanguage();
+        this.metadataPointOfContactEmail  = props.getMetadataPointOfContactEmail();
+        this.metadataPointOfContactName   = props.getMetadataPointOfContactName();
+        this.parentId                     = props.getParentId();
+        this.publicAccessLimitations      = props.getPublicAccessLimitations();
+        this.publicationDate              = props.getPublicationDate();
+        this.publisherEmail               = props.getPublisherEmail();
+        this.publisherName                = props.getPublisherName();
+        this.referenceSystem              = props.getReferenceSystem();
+        this.resourceLocator              = props.getResourceLocator();
+        this.revisionDate                 = props.getRevisionDate();
+        this.spatialDataServiceType       = EnumSpatialDataServiceType.fromString(props.getSpatialDataServiceType());
+        this.spatialDataServiceOperations = props.getSpatialDataServiceOperations();
+        this.spatialDataServiceQueryables = props.getSpatialDataServiceQueryables();
+        this.spatialDataServiceVersion    = props.getSpatialDataServiceVersion();
+        this.spatialResolution            = props.getSpatialResolution();
+        this.suitableFor                  = props.getSuitableFor();
+        this.userOnlyForVas               = props.isUseOnlyForVas();
 
         this.geometry = feature.getGeometry();
 
@@ -73,6 +76,10 @@ public abstract class BaseCatalogueItemDto {
             .map(Keyword::new)
             .collect(Collectors.toList());
                
+        this.responsibleParty = StreamUtils.from(props.getResponsibleParty())
+            .map(ResponsibleParty::from)
+            .collect(Collectors.toList());
+
         this.scales = StreamUtils.from(props.getScales())
             .map(Scale::new)
             .collect(Collectors.toList());
@@ -188,6 +195,9 @@ public abstract class BaseCatalogueItemDto {
     )
     private String resourceLocator;    
     
+    @Schema(description = "The responsible party (including contact information) of the resource")
+    private List<ResponsibleParty> responsibleParty;
+    
     @Schema(
         description = "A point or period of time associated with the revision event in the "
                     + "lifecycle of the resource",
@@ -206,6 +216,15 @@ public abstract class BaseCatalogueItemDto {
     @Schema(description = "The nature or genre of the service", example = "TMS")
     private EnumSpatialDataServiceType spatialDataServiceType;
 
+    @Schema(description = "The version of the implemented service specification")
+    private String spatialDataServiceVersion;
+
+    @Schema(description = "The operations supported by the service")
+    private List<String> spatialDataServiceOperations;
+
+    @Schema(description = "The queryables supported by the service")
+    private List<String> spatialDataServiceQueryables;
+    
     @Schema(description = "Spatial resolution refers to the level of detail of the data set", example = "1000")
     private Integer spatialResolution;
 
@@ -264,6 +283,48 @@ public abstract class BaseCatalogueItemDto {
             this.theme = s.getTheme();
         }
 
+    }
+
+    @NoArgsConstructor
+    @Getter
+    @Setter
+    public static class ResponsibleParty {
+
+        @Schema(description = "Name of person responsible for making the resource available", required = true)
+        private String name;
+
+        @Schema(description = "Name of entity responsible for making the resource available")
+        private String organizationName;
+
+        @Schema(description = "Email of entity responsible for making the resource available")
+        private String email;
+
+        @Schema(description = "Phone of entity responsible for making the resource available")
+        private String phone;
+
+        @Schema(description = "Address of entity responsible for making the resource available")
+        private String address;
+
+        @Schema(description = "Contact hours of entity responsible for making the resource available")
+        private String serviceHours;
+
+        @Schema(description = "Role of entity responsible for making the resource available")
+        private EnumResponsiblePartyRole role;
+
+        private ResponsibleParty(CatalogueFeatureProperties.ResponsibleParty r) {
+            this.address          = r.getAddress();
+            this.email            = r.getEmail();
+            this.name             = r.getName();
+            this.organizationName = r.getOrganizationName();
+            this.phone            = r.getPhone();
+            this.role             = EnumResponsiblePartyRole.fromString(r.getRole());
+            this.serviceHours     = r.getServiceHours();
+        }
+        
+        public static ResponsibleParty from(CatalogueFeatureProperties.ResponsibleParty r) {
+            return r == null ? null : new ResponsibleParty(r);
+        }
+        
     }
     
 }
