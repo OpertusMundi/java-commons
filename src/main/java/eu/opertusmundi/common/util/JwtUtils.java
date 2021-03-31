@@ -37,10 +37,10 @@ public class JwtUtils {
     private static final String TOKEN_ISSUER        = "opertus-mundi";
     private static final String TOKEN_AUDIENCE      = "api-gateway";
 
-    @Value("${opertusmundi.feign.key-store.path}")
+    @Value("${opertusmundi.feign.key-store.path:}")
     private String keyStorePath;
 
-    @Value("${opertusmundi.feign.key-store.password}")
+    @Value("${opertusmundi.feign.key-store.password:}")
     private String keyStorePassword;
 
     @Value("${opertusmundi.feign.jwt.secret}")
