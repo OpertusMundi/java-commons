@@ -1,14 +1,11 @@
 package eu.opertusmundi.common.model.pricing;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import io.swagger.v3.oas.annotations.ExternalDocumentation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,34 +13,16 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Schema(description = "Quotation parameters bag with all user and system defined parameters")
-@NoArgsConstructor
 @Getter
 @Setter
 @ToString
-public class QuotationParametersDto {
-
+public class QuotationParametersDto extends QuotationParametersCommandDto {
+    
     /**
      * Tax percent set automatically by the platform
      */
     @JsonIgnore
-    private BigDecimal taxPercent;
-    
-    @ArraySchema(
-        arraySchema = @Schema(
-            description = "User-defined parameter of array of NUTS codes. The codes are used for computing asset coverage and population"
-        ),
-        minItems = 0,
-        uniqueItems = true,
-        schema = @Schema(
-            description = "NUTS codes",
-            externalDocs = @ExternalDocumentation(url = "https://ec.europa.eu/eurostat/web/regions-and-cities/overview")
-        )
-    )
-    private List<String> nuts;
-    
-    @Schema(description = "Selected prepaid tier index if feature is supported. If a tier is selected and the pricing "
-                        + "model does not support prepaid tiers, quotation service will return a validation error")
-    private Integer prePaidTier;
+    protected BigDecimal taxPercent;
     
     @Schema(description = "System parameters")
     @JsonInclude(Include.NON_NULL)
@@ -83,6 +62,13 @@ public class QuotationParametersDto {
             p.setPopulationPercent(populationPercent);
             return p;
         }
+    }
+    
+    public static QuotationParametersDto from(QuotationParametersCommandDto command) {
+        final QuotationParametersDto p = new QuotationParametersDto();
+        p.nuts        = command.getNuts();
+        p.prePaidTier = command.getPrePaidTier();
+        return p;
     }
     
 }

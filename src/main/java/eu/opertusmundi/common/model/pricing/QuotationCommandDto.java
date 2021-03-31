@@ -21,6 +21,6 @@ public class QuotationCommandDto {
     private UUID pricingModelKey;
 
     @Schema(description = "Quotation parameters")
-    private QuotationParametersDto parameters;
+    private QuotationParametersCommandDto parameters;
 
 }

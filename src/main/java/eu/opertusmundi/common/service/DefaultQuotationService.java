@@ -12,6 +12,7 @@ import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.pricing.QuotationException;
 import eu.opertusmundi.common.model.pricing.QuotationMessageCode;
+import eu.opertusmundi.common.model.pricing.QuotationParametersCommandDto;
 import eu.opertusmundi.common.model.pricing.QuotationParametersDto;
 import eu.opertusmundi.common.model.pricing.QuotationParametersDto.SystemParameters;
 
@@ -33,7 +34,7 @@ public class DefaultQuotationService implements QuotationService {
 
     @Override
     public EffectivePricingModelDto createQuotation(
-        CatalogueItemDto asset, UUID pricingModelKey, QuotationParametersDto params
+        CatalogueItemDto asset, UUID pricingModelKey, QuotationParametersCommandDto command
     ) throws QuotationException {
         try {
             final BasePricingModelCommandDto pricingModel = asset.getPricingModels().stream()
@@ -47,6 +48,7 @@ public class DefaultQuotationService implements QuotationService {
                     String.format("Pricing model [%s] not found", pricingModelKey)
                 );
             }
+            final QuotationParametersDto params = QuotationParametersDto.from(command);
             
             // Inject required parameters
             this.injectParameters(pricingModel, params);

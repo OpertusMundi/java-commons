@@ -7,6 +7,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.pricing.QuotationException;
+import eu.opertusmundi.common.model.pricing.QuotationParametersCommandDto;
 import eu.opertusmundi.common.model.pricing.QuotationParametersDto;
 
 public interface QuotationService {
@@ -42,7 +43,7 @@ public interface QuotationService {
      * @throws QuotationException
      */
     EffectivePricingModelDto createQuotation(
-        CatalogueItemDto asset, UUID pricingModelKey, QuotationParametersDto params
+        CatalogueItemDto asset, UUID pricingModelKey, QuotationParametersCommandDto params
     ) throws QuotationException;
     
     /**
