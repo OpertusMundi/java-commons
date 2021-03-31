@@ -78,7 +78,9 @@ public class FixedPopulationPricingModelCommandDto extends BasePricingModelComma
     }
 
     public void validate(QuotationParametersDto params) throws QuotationException {
-        // No validation is required
+        if (params.getNuts() == null || params.getNuts().isEmpty()) {
+            throw new QuotationException(QuotationMessageCode.NO_NUTS_SELECTED, "At least a region must be selected");
+        }
     }
 
     public  EffectivePricingModelDto compute(QuotationParametersDto params) {
