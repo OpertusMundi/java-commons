@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
-import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -40,12 +39,11 @@ public abstract class BasePricingModelCommandDto implements Serializable {
         this.type = type;
     }
 
-    /**
-     * Pricing model unique key. The value is always generated at the server and
-     * any value specified by the API gateway client is ignored.
-     */
-    @Schema(description = "Model unique identifier", example = "a1c04890-9bb9-49f7-a880-6a75e3a561ad")
-    @Hidden
+    @Schema(
+        description = "Model unique identifier. This value is always generated at the server. "
+                    + "Any value specified during an update request is ignored.", 
+        example = "a1c04890-9bb9-49f7-a880-6a75e3a561ad"
+    )
     @Getter
     @Setter
     protected UUID key;
