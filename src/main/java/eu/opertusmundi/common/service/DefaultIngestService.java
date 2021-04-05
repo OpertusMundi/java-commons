@@ -36,12 +36,9 @@ public class DefaultIngestService implements IngestService {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultIngestService.class);
 
-    @Value("${opertusmundi.feign.ingest.url.volume-source}")
-    private String sourceDir;
-    
-    @Value("${opertusmundi.feign.ingest.url.volume-target}")
-    private String targetDir;
-    
+    @Value("${opertusmundi.feign.ingest.input}")
+    private String inputDir;
+
     @Autowired
     private ObjectProvider<IngestServiceFeignClient> ingestClient;
 
@@ -195,12 +192,12 @@ public class DefaultIngestService implements IngestService {
     
     private Path copyResource(String relativePath, String path) throws IOException {
         final String fileName           = FilenameUtils.getName(path);
-        final Path   absoluteSourcePath = Paths.get(this.sourceDir, relativePath, fileName);
+        final Path   absoluteSourcePath = Paths.get(this.inputDir, relativePath, fileName);
 
-        Files.createDirectories(Paths.get(this.sourceDir, relativePath));
+        Files.createDirectories(Paths.get(this.inputDir, relativePath));
         Files.copy(Paths.get(path), absoluteSourcePath, StandardCopyOption.REPLACE_EXISTING);
 
-        return Paths.get(this.targetDir, relativePath, fileName);
+        return Paths.get(relativePath, fileName);
     }
     
 }
