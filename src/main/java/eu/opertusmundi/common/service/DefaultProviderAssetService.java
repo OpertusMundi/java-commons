@@ -634,11 +634,19 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             if (r.getType() != EnumResourceType.FILE) {
                 continue;
             }
-            final FileResourceDto                   fr         = (FileResourceDto) r;
-            final EnumAssetSourceType               source     = mapFormatToSourceType(fr.getFormat());
-            final List<AssetMetadataPropertyEntity> properties = this.assetMetadataPropertyRepository.findAllByAssetType(source);
-            final ObjectNode                        metadata   = (ObjectNode) feature.getProperties().getAutomatedMetadata().get(r.getId().toString());
-            
+            final FileResourceDto                   fr            = (FileResourceDto) r;
+            final EnumAssetSourceType               source        = mapFormatToSourceType(fr.getFormat());
+            final List<AssetMetadataPropertyEntity> properties    = this.assetMetadataPropertyRepository.findAllByAssetType(source);
+            final ArrayNode                         metadataArray = (ArrayNode) feature.getProperties().getAutomatedMetadata();
+            ObjectNode                              metadata      = null;
+
+            for (int i = 0; i < metadataArray.size(); i++) {
+                if (metadataArray.get(i).get("key").asText().equals(r.getId().toString())) {
+                    metadata = (ObjectNode) metadataArray.get(i);
+                    break;
+                }
+            }
+
             if (metadata == null || metadata.isNull()) {
                 continue;
             }
