@@ -2,7 +2,6 @@ package eu.opertusmundi.common.model.catalogue.server;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -136,7 +135,7 @@ public class CatalogueFeatureProperties {
     
     @JsonProperty("ingestion_info")
     @JsonInclude(Include.NON_NULL)
-    private Map<String, ResourceIngestionDataDto> ingestionInfo;
+    private List<ResourceIngestionDataDto> ingestionInfo;
     
     private List<Keyword> keywords;
 

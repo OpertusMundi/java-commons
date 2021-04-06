@@ -2,7 +2,6 @@ package eu.opertusmundi.common.model.catalogue.client;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.locationtech.jts.geom.Geometry;
@@ -122,8 +121,14 @@ public abstract class BaseCatalogueItemDto {
     private Geometry geometry;
     
     @Schema(description = "Ingestion information")
+    @ArraySchema(
+        arraySchema = @Schema(
+            description = "Resource ingestion information"
+        ),
+        minItems = 0
+    )
     @JsonInclude(Include.NON_NULL)
-    private Map<String, ResourceIngestionDataDto> ingestionInfo;
+    private List<ResourceIngestionDataDto> ingestionInfo;
     
     @Schema(description = "The topic of the resource")
     @ArraySchema(

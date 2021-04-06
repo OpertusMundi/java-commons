@@ -1,8 +1,8 @@
 package eu.opertusmundi.common.repository;
 
 import java.time.ZonedDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -170,13 +170,13 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         }
         
         // Initialize ingestion data if needed 
-        Map<String, ResourceIngestionDataDto> assetIngestionData = draft.getCommand().getIngestionInfo();
+        List<ResourceIngestionDataDto> assetIngestionData = draft.getCommand().getIngestionInfo();
         if (assetIngestionData == null) {
-            assetIngestionData = new HashMap<String, ResourceIngestionDataDto>();
+            assetIngestionData = new ArrayList<ResourceIngestionDataDto>();
             draft.getCommand().setIngestionInfo(assetIngestionData);
         }
 
-        assetIngestionData.put(resourceKey.toString(), data);
+        assetIngestionData.add(data);
         // NOTE: Workaround for updating ingestion data. Property command of entity
         // ProviderAssetDraftEntity is annotated with @Convert for serializing a
         // CatalogueItemCommandDto instance to JSON; Hence updating only the metadata

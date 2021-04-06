@@ -35,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import eu.opertusmundi.common.domain.AccountEntity;
@@ -676,9 +677,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             // Get existing metadata. Create JsonNode object if no metadata
             // already exists
             if (draft.getCommand().getAutomatedMetadata() == null) {
-                draft.getCommand().setAutomatedMetadata(objectMapper.createObjectNode());
+                draft.getCommand().setAutomatedMetadata(objectMapper.createArrayNode());
             }
-            final ObjectNode metadata = (ObjectNode) draft.getCommand().getAutomatedMetadata();
+            final ArrayNode metadata = (ArrayNode) draft.getCommand().getAutomatedMetadata();
       
             // Store all metadata in asset repository
             final String content = objectMapper.writeValueAsString(value);
@@ -723,8 +724,11 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             this.draftFileManager.saveMetadataAsText(publisherKey, draftKey, resourceKey + ".automated-metadata-minified.json", filteredContent);
 
+            // Set resource key in metadata
+            ((ObjectNode) value).put("key", resourceKey.toString());
+
             // Update metadata
-            metadata.set(resourceKey.toString(), value);
+            metadata.add(value);
             
             this.draftRepository.updateMetadata(publisherKey, draftKey, metadata);
         } catch (AssetDraftException ex) {
@@ -754,7 +758,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             // draft must be already accepted by the provider
             this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.POST_PROCESSING);           
            
-            this.draftRepository.updateResourceIngestionData(publisherKey, draftKey, resourceKey, ResourceIngestionDataDto.from(data));
+            this.draftRepository.updateResourceIngestionData(publisherKey, draftKey, resourceKey, ResourceIngestionDataDto.from(resourceKey, data));
         } catch (AssetDraftException ex) {
             throw ex;
         } catch (final FeignException fex) {
