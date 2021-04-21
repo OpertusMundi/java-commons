@@ -32,7 +32,6 @@
 		<org.locationtech.jts.spatial4j.version>0.7</org.locationtech.jts.spatial4j.version>
 		<springdoc.version>1.5.4</springdoc.version>
         <postgresql.version>42.2.19</postgresql.version>
-        <guava.version>29.0-jre</guava.version>
 	</properties>
 
 	<dependencyManagement>
@@ -89,6 +88,12 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-openfeign</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>io.github.openfeign</groupId>
+        			<artifactId>feign-hystrix</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<!-- Feign client encoders -->
@@ -199,13 +204,7 @@
 			<groupId>org.apache.tomcat</groupId>
 			<artifactId>tomcat-jdbc</artifactId>
 		</dependency>
-        
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
-        </dependency>
-        
+
 		<!-- MangoPay dependencies -->
 		<dependency>
 			<groupId>com.mangopay</groupId>
