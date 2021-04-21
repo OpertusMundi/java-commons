@@ -1,7 +1,6 @@
 package eu.opertusmundi.common.model.catalogue.client;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,8 +38,9 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
         
         this.statistics = props.getStatistics();
         this.versions   = props.getVersions();
-        this.resources  = new ArrayList<ResourceDto>();
-        
+        this.resources  = StreamUtils.from(props.getResources())
+            .collect(Collectors.toList());
+
         this.additionalResources = StreamUtils.from(props.getAdditionalResources())
             .map(AssetAdditionalResourceDto::fromCatalogueResource)
             .collect(Collectors.toList());

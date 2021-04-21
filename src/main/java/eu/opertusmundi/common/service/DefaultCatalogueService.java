@@ -31,6 +31,7 @@ import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.RestResponse;
 import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceDto;
 import eu.opertusmundi.common.model.asset.EnumAssetAdditionalResource;
+import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.catalogue.CatalogueResult;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceMessageCode;
@@ -227,8 +228,17 @@ public class DefaultCatalogueService implements CatalogueService {
                 .findAllResourcesByAssetPid(item.getId());
 
             resources.stream()
-                .map(AssetResourceEntity::toDto)
-                .forEach(item.getResources()::add);
+                .forEach(r -> {
+                    final ResourceDto resource = item.getResources().stream()
+                        .filter(r1 -> r1.getId().equals(r.getKey()))
+                        .findFirst()
+                        .orElse(null);
+    
+                    if (resource != null) {
+                        // TODO: Check that resource file exists ...
+                    }
+                });
+
             
             List<AssetAdditionalResourceEntity> additionalResources = this.assetAdditionalResourceRepository
                 .findAllResourcesByAssetPid(item.getId());
@@ -242,11 +252,11 @@ public class DefaultCatalogueService implements CatalogueService {
                         .findFirst()
                         .orElse(null);
 
-                        if (resourceEntity != null) {
-                            fileResource.setModifiedOn(resourceEntity.getCreatedOn());
-                            fileResource.setSize(resourceEntity.getSize());
-                        }
-                    });
+                    if (resourceEntity != null) {
+                        fileResource.setModifiedOn(resourceEntity.getCreatedOn());
+                        fileResource.setSize(resourceEntity.getSize());
+                    }
+                });
 
             // Compute effective pricing models
             this.refreshPricingModels(item);
