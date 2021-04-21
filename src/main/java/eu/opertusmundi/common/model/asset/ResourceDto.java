@@ -39,7 +39,7 @@ public abstract class ResourceDto implements Serializable {
     @Getter
     @Setter
     protected EnumResourceType type;
-    
+
     public abstract void patch(ResourceDto r);
 
 }
