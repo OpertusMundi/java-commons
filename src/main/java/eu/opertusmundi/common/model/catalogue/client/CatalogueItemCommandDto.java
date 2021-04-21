@@ -18,8 +18,15 @@ import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.openapi.schema.AssetEndpointTypes;
-import eu.opertusmundi.common.model.openapi.schema.PricingModelCommandAsJson;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.CallBlockRatePricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.CallPrePaidPricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.FixedPopulationPricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.FixedPricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.FixedRowPricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.FreePricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.RowBlockRatePricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.RowPrePaidPricingModelCommandDto;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -90,7 +97,16 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
         ),
         minItems = 1,
         uniqueItems = true,
-        schema = @Schema(implementation = PricingModelCommandAsJson.class)
+        schema = @Schema(oneOf = {
+            FreePricingModelCommandDto.class,
+            FixedPricingModelCommandDto.class,
+            FixedRowPricingModelCommandDto.class,
+            FixedPopulationPricingModelCommandDto.class,
+            CallPrePaidPricingModelCommandDto.class,
+            CallBlockRatePricingModelCommandDto.class,
+            RowPrePaidPricingModelCommandDto.class,
+            RowBlockRatePricingModelCommandDto.class,
+        })
     )
     private List<BasePricingModelCommandDto> pricingModels;
 
