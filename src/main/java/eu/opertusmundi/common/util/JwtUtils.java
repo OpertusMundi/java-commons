@@ -142,7 +142,9 @@ public class JwtUtils {
         final char[]   password = this.keyStorePassword.toCharArray();
 
         final KeyStore keyStore = KeyStore.getInstance("PKCS12");
-        keyStore.load(new FileInputStream(resource.getFile()), password);
+        try (FileInputStream in = new FileInputStream(resource.getFile())) {
+            keyStore.load(in, password);
+        }
 
         final Key emailKey = keyStore.getKey(alias, password);
 
