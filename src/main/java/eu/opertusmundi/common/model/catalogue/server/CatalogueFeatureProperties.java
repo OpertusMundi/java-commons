@@ -75,6 +75,9 @@ public class CatalogueFeatureProperties {
         this.version                      = command.getVersion();
         this.versions                     = Collections.emptyList();
 
+        this.resources = StreamUtils.from(command.getResources())
+            .collect(Collectors.toList());  
+
         this.additionalResources = StreamUtils.from(command.getAdditionalResources())
             .map(r -> r.toCatalogueResource())
             .collect(Collectors.toList());
@@ -87,14 +90,10 @@ public class CatalogueFeatureProperties {
             .map(ResponsibleParty::from)
             .collect(Collectors.toList());
 
-        // Resources are stored by the asset data repository
-        final List<ResourceDto> featureResources = StreamUtils.from(command.getResources()).collect(Collectors.toList());
-        
-        this.resources = featureResources;  
-
         // Store only pricing model parameters. The effective price will be
         // computed by the user of the object
-        this.pricingModels = StreamUtils.from(command.getPricingModels()).collect(Collectors.toList());
+        this.pricingModels = StreamUtils.from(command.getPricingModels())
+            .collect(Collectors.toList());
                
         this.scales= StreamUtils.from(command.getScales())
             .map(Scale::new)

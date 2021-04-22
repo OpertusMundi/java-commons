@@ -10,7 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class CatalogueFeature {
+public final class CatalogueFeature {
 
     public CatalogueFeature(CatalogueItemCommandDto command) {
         this.id       = command.getAssetKey() == null ? "" : command.getAssetKey().toString();
