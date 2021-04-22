@@ -7,7 +7,6 @@ import javax.persistence.Table;
 
 import org.locationtech.jts.geom.Geometry;
 
-import eu.opertusmundi.common.model.spatial.NutsRegionDto;
 import eu.opertusmundi.common.model.spatial.NutsRegionFeatureDto;
 import eu.opertusmundi.common.model.spatial.NutsRegionPropertiesDto;
 import lombok.Getter;
@@ -65,17 +64,6 @@ public class NutsRegionEntity {
         p.setNameLatin(nameLatin);
         p.setPopulation(population);
         return p;
-    }
-    
-    public NutsRegionDto toDto() {
-        final NutsRegionDto r = new NutsRegionDto();
-        r.setCode(code);
-        r.setGeometry(simplifiedGeometry);
-        r.setLevel(level);
-        r.setName(name);
-        r.setNameLatin(nameLatin);
-        r.setPopulation(population);
-        return r;
     }
 
     public NutsRegionFeatureDto toFeature() {
