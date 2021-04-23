@@ -70,7 +70,7 @@ public class DefaultCartService implements CartService {
         } catch (CatalogueServiceException ex) {
             throw new CartException(CartMessageCode.CATALOGUE, "Failed to load asset");
         } catch (QuotationException ex) {
-            throw new CartException(CartMessageCode.QUOTATION, "Failed to create quotation");
+            throw ex;
         } catch (Exception ex) {
             logger.error("Failed to create cart item", ex);
 
