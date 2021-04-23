@@ -87,7 +87,7 @@ public abstract class CustomerEntity {
     private List<CustomerKycLevelEntity> levelHistory = new ArrayList<>();
     
     @NotNull
-    @Column(name = "`type`", nullable = false, insertable = false, updatable = false)
+    @Column(name = "`type`", nullable = false, updatable = false)
     @Convert(converter = EnumCustomerTypeAttributeConverter.class)
     @Getter
     protected EnumMangopayUserType type;

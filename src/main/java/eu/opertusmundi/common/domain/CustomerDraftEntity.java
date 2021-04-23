@@ -92,7 +92,7 @@ public abstract class CustomerDraftEntity {
     protected AccountEntity account;
 
     @NotNull
-    @Column(name = "`type`", nullable = false, insertable = false, updatable = false)
+    @Column(name = "`type`", nullable = false, updatable = false)
     @Convert(converter = EnumCustomerTypeAttributeConverter.class)
     @Getter
     protected EnumMangopayUserType type;

@@ -149,7 +149,7 @@ public abstract class PayInEntity {
     protected ZonedDateTime statusUpdatedOn;
 
     @NotNull
-    @Column(name = "`payment_method`", nullable = false, insertable = false, updatable = false)
+    @Column(name = "`payment_method`", nullable = false, updatable = false)
     @Enumerated(EnumType.STRING)
     @Getter
     protected EnumPaymentMethod paymentMethod;
