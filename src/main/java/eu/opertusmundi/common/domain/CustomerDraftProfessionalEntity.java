@@ -34,19 +34,19 @@ public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
     protected CustomerDraftProfessionalEntity(CustomerProfessionalEntity e, ProviderProfessionalCommandDto c) {
         super(EnumMangopayUserType.PROFESSIONAL);
 
-        this.additionalInfo        = c.getAdditionalInfo();
-        this.bankAccount           = CustomerBankAccountEmbeddable.from(c.getBankAccount());
-        this.companyNumber         = c.getCompanyNumber();
-        this.companyType           = c.getCompanyType();
-        this.email                 = c.getEmail();
-        this.headquartersAddress   = AddressEmbeddable.from(c.getHeadquartersAddress());
-        this.legalPersonType       = c.getLegalPersonType();
-        this.legalRepresentative   = CustomerRrepresentativeEmbeddable.from(c.getLegalRepresentative());
-        this.logoImage             = c.getLogoImage();
-        this.logoImageMimeType     = c.getLogoImageMimeType();
-        this.name                  = c.getName();
-        this.phone                 = c.getPhone();
-        this.siteUrl               = c.getSiteUrl();
+        this.additionalInfo      = c.getAdditionalInfo();
+        this.bankAccount         = CustomerBankAccountEmbeddable.from(c.getBankAccount());
+        this.companyNumber       = c.getCompanyNumber();
+        this.companyType         = c.getCompanyType();
+        this.email               = c.getEmail();
+        this.headquartersAddress = AddressEmbeddable.from(c.getHeadquartersAddress());
+        this.legalPersonType     = c.getLegalPersonType();
+        this.representative      = CustomerRrepresentativeEmbeddable.from(c.getRepresentative());
+        this.logoImage           = c.getLogoImage();
+        this.logoImageMimeType   = c.getLogoImageMimeType();
+        this.name                = c.getName();
+        this.phone               = c.getPhone();
+        this.siteUrl             = c.getSiteUrl();
 
         this.createdAt       = ZonedDateTime.now();
         this.modifiedAt      = this.createdAt;
@@ -102,7 +102,7 @@ public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
     })
     @Getter
     @Setter
-    private CustomerRrepresentativeEmbeddable legalRepresentative;
+    private CustomerRrepresentativeEmbeddable representative;
 
     @Column(name = "`company_number`")
     @Getter
@@ -182,8 +182,8 @@ public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
             this.headquartersAddress = AddressEmbeddable.from(p.getHeadquartersAddress());
         }
 
-        if (p.getLegalRepresentative() != null) {
-            this.legalRepresentative = CustomerRrepresentativeEmbeddable.from(p.getLegalRepresentative());
+        if (p.getRepresentative() != null) {
+            this.representative = CustomerRrepresentativeEmbeddable.from(p.getRepresentative());
         }
     }
 
@@ -211,7 +211,7 @@ public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
         p.setModifiedAt(this.modifiedAt);
         p.setName(this.name);
         p.setPhone(this.phone);
-        p.setRepresentative(this.legalRepresentative.toDto());
+        p.setRepresentative(this.representative.toDto());
         p.setSiteUrl(this.siteUrl);
         p.setStatus(this.status);
         p.setType(this.type);

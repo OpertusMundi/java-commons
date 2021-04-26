@@ -48,7 +48,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         this.headquartersAddress   = AddressEmbeddable.from(c.getHeadquartersAddress());
         this.kycLevel              = EnumKycLevel.LIGHT;
         this.legalPersonType       = c.getLegalPersonType();
-        this.legalRepresentative   = CustomerRrepresentativeEmbeddable.from(c.getLegalRepresentative());
+        this.representative        = CustomerRrepresentativeEmbeddable.from(c.getRepresentative());
         this.logoImage             = c.getLogoImage();
         this.logoImageMimeType     = c.getLogoImageMimeType();
         this.name                  = c.getName();
@@ -78,7 +78,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         this.headquartersAddress   = e.getHeadquartersAddress().clone();
         this.kycLevel              = EnumKycLevel.LIGHT;
         this.legalPersonType       = e.getLegalPersonType();
-        this.legalRepresentative   = e.getLegalRepresentative().clone();
+        this.representative        = e.getRepresentative().clone();
         this.logoImage             = e.getLogoImage();
         this.logoImageMimeType     = e.getLogoImageMimeType();
         this.name                  = e.getName();
@@ -142,7 +142,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
     })
     @Getter
     @Setter
-    private CustomerRrepresentativeEmbeddable legalRepresentative;
+    private CustomerRrepresentativeEmbeddable representative;
 
     @NotNull
     @Column(name = "`company_number`")
@@ -226,18 +226,18 @@ public class CustomerProfessionalEntity extends CustomerEntity {
     public void update(CustomerDraftEntity e) {
         final CustomerDraftProfessionalEntity p = (CustomerDraftProfessionalEntity) e;
 
-        this.additionalInfo      = p.getAdditionalInfo();
-        this.companyNumber       = p.getCompanyNumber();
-        this.companyType         = p.getCompanyType();
-        this.contract            = null;
-        this.legalPersonType     = p.getLegalPersonType();
-        this.logoImage           = p.getLogoImage();
-        this.logoImageMimeType   = p.getLogoImageMimeType();
-        this.modifiedAt          = ZonedDateTime.now();
-        this.name                = p.getName();
-        this.phone               = p.getPhone();
-        this.legalRepresentative = p.getLegalRepresentative().clone();
-        this.siteUrl             = p.getSiteUrl();
+        this.additionalInfo    = p.getAdditionalInfo();
+        this.companyNumber     = p.getCompanyNumber();
+        this.companyType       = p.getCompanyType();
+        this.contract          = null;
+        this.legalPersonType   = p.getLegalPersonType();
+        this.logoImage         = p.getLogoImage();
+        this.logoImageMimeType = p.getLogoImageMimeType();
+        this.modifiedAt        = ZonedDateTime.now();
+        this.name              = p.getName();
+        this.phone             = p.getPhone();
+        this.representative    = p.getRepresentative().clone();
+        this.siteUrl           = p.getSiteUrl();
 
         if (p.getBankAccount() != null) {
             this.bankAccount = p.getBankAccount().clone();
@@ -266,18 +266,18 @@ public class CustomerProfessionalEntity extends CustomerEntity {
     public void update(CustomerCommandDto command) {
         final ProviderProfessionalCommandDto c = (ProviderProfessionalCommandDto) command;
 
-        this.additionalInfo      = c.getAdditionalInfo();
-        this.companyNumber       = c.getCompanyNumber();
-        this.companyType         = c.getCompanyType();
-        this.contract            = c.getContract();
-        this.legalPersonType     = c.getLegalPersonType();
-        this.logoImage           = c.getLogoImage();
-        this.logoImageMimeType   = c.getLogoImageMimeType();
-        this.modifiedAt          = ZonedDateTime.now();
-        this.name                = c.getName();
-        this.phone               = c.getPhone();
-        this.legalRepresentative = CustomerRrepresentativeEmbeddable.from(c.getLegalRepresentative());
-        this.siteUrl             = c.getSiteUrl();
+        this.additionalInfo    = c.getAdditionalInfo();
+        this.companyNumber     = c.getCompanyNumber();
+        this.companyType       = c.getCompanyType();
+        this.contract          = c.getContract();
+        this.legalPersonType   = c.getLegalPersonType();
+        this.logoImage         = c.getLogoImage();
+        this.logoImageMimeType = c.getLogoImageMimeType();
+        this.modifiedAt        = ZonedDateTime.now();
+        this.name              = c.getName();
+        this.phone             = c.getPhone();
+        this.representative    = CustomerRrepresentativeEmbeddable.from(c.getRepresentative());
+        this.siteUrl           = c.getSiteUrl();
 
         if (c.getBankAccount() != null) {
             this.bankAccount = CustomerBankAccountEmbeddable.from(c.getBankAccount());
@@ -330,7 +330,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         p.setPhone(this.phone);
         p.setPidServiceUserId(this.pidServiceUserId);
         p.setRating(this.getRating());
-        p.setRepresentative(this.legalRepresentative.toDto());
+        p.setRepresentative(this.representative.toDto());
         p.setSiteUrl(this.siteUrl);
         p.setTermsAccepted(this.termsAccepted);
         p.setTermsAcceptedAt(this.termsAcceptedAt);
@@ -353,7 +353,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         p.draftKey              = r.getKey();
         p.kycLevel              = EnumKycLevel.LIGHT;
         p.legalPersonType       = r.getLegalPersonType();
-        p.legalRepresentative   = r.getLegalRepresentative().clone();
+        p.representative        = r.getRepresentative().clone();
         p.logoImage             = r.getLogoImage();
         p.logoImageMimeType     = r.getLogoImageMimeType();
         p.name                  = r.getName();

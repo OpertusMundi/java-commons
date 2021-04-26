@@ -1032,7 +1032,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     private UserLegal createUserLegal(AccountEntity a, CustomerDraftProfessionalEntity r, String id) {
         final UserLegal u = new UserLegal();
 
-        final CustomerRrepresentativeEmbeddable lr = r.getLegalRepresentative();
+        final CustomerRrepresentativeEmbeddable lr = r.getRepresentative();
 
         u.setCompanyNumber(r.getCompanyNumber());
         u.setEmail(r.getEmail());

@@ -35,7 +35,7 @@ public class ConsumerProfessionalCommandDto extends CustomerCommandDto implement
 
     @Valid
     @NotNull
-    private CustomerRepresentativeCommandDto legalRepresentative;
+    private CustomerRepresentativeCommandDto representative;
 
     private byte[] logoImage;
     private String logoImageMimeType;
