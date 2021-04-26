@@ -33,14 +33,14 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity(name = "Order")
-@Table(schema = "order", name = "`order`", uniqueConstraints = {
+@Table(schema = "`order`", name = "`order`", uniqueConstraints = {
     @UniqueConstraint(name = "uq_order_key", columnNames = {"`key`"}),
 })
 public class OrderEntity {
 
     @Id
     @Column(name = "`id`", updatable = false)
-    @SequenceGenerator(sequenceName = "order.order_id_seq", name = "order_id_seq", allocationSize = 1)
+    @SequenceGenerator(sequenceName = "`order.order_id_seq`", name = "order_id_seq", allocationSize = 1)
     @GeneratedValue(generator = "order_id_seq", strategy = GenerationType.SEQUENCE)
     @Getter
     private Integer id;

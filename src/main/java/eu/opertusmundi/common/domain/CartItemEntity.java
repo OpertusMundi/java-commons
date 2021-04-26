@@ -25,7 +25,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity(name = "CartItem")
-@Table(name = "`cart_item`", schema = "order")
+@Table(name = "`cart_item`", schema = "`order`")
 @TypeDef(
     typeClass      = JsonBinaryType.class,
     defaultForType = EffectivePricingModelDto.class
@@ -33,7 +33,7 @@ import lombok.Setter;
 public class CartItemEntity {
 
     @Id
-    @SequenceGenerator(sequenceName = "order.cart_item_id_seq", name = "cart_item_id_seq", allocationSize = 1)
+    @SequenceGenerator(sequenceName = "`order.cart_item_id_seq`", name = "cart_item_id_seq", allocationSize = 1)
     @GeneratedValue(generator = "cart_item_id_seq", strategy = GenerationType.SEQUENCE)
     @Column(name = "`id`")
     @Getter

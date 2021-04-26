@@ -22,12 +22,12 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity(name = "OrderStatus")
-@Table(schema = "order", name = "`order_status_hist`")
+@Table(schema = "`order`", name = "`order_status_hist`")
 public class OrderStatusEntity {
 
     @Id
     @Column(name = "`id`", updatable = false)
-    @SequenceGenerator(sequenceName = "order.order_status_hist_id_seq", name = "order_status_hist_id_seq", allocationSize = 1)
+    @SequenceGenerator(sequenceName = "`order.order_status_hist_id_seq`", name = "order_status_hist_id_seq", allocationSize = 1)
     @GeneratedValue(generator = "order_status_hist_id_seq", strategy = GenerationType.SEQUENCE)
     @Getter
     private Integer id;

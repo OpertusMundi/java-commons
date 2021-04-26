@@ -28,7 +28,7 @@ public class AccountSubscriptionSkuEntity {
 
     @NotNull
     @ManyToOne(targetEntity = OrderEntity.class)
-    @JoinColumn(name = "order", nullable = false)
+    @JoinColumn(name = "`order`", nullable = false)
     @Getter
     @Setter
     private OrderEntity order;
