@@ -23,7 +23,7 @@ public interface NutsRegionRepository extends JpaRepository<NutsRegionEntity, In
     @Query("SELECT r FROM NutsRegion r WHERE (r.level = :level) and ((r.name like %:name%) or (r.nameLatin like %:name%))")
     List<NutsRegionEntity> findAllByNameContainsAndLevel(String name,  Long level);
 
-    @Query("SELECT r FROM NutsRegion r WHERE (r.code <> :value) and (r.code like :prefix%)")
-    List<NutsRegionEntity> findAllByCodeStartsWith(String value, String prefix);
+    @Query("SELECT r FROM NutsRegion r WHERE (r.code <> :value) and (r.code like :prefix%) and (:maxLevel is null or r.level <= :maxLevel)")
+    List<NutsRegionEntity> findAllByCodeStartsWith(String value, String prefix, Long maxLevel);
 
 }
