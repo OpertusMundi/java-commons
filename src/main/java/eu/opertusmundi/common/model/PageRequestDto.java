@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.model;
 
+import javax.validation.constraints.NotNull;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,7 +16,7 @@ public class PageRequestDto {
         this.page = page;
         this.size = size;
     }
-    
+
     public static PageRequestDto of(int page, int size) {
         return new PageRequestDto(page, size);
     }
@@ -24,13 +26,15 @@ public class PageRequestDto {
         example = "0",
         required = true
     )
-    protected int page;
+    @NotNull
+    protected Integer page;
 
     @Schema(
         description = "Page size. Page size must be greater than zero.",
         example = "10",
         required = true
     )
-    protected int size;
+    @NotNull
+    protected Integer size;
 
 }

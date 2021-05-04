@@ -8,6 +8,8 @@ public enum CatalogueServiceMessageCode implements MessageCode {
     PUBLISHER_NOT_FOUND,
     PRICING_MODEL,
     ITEM_NOT_FOUND,
+    HARVEST_ITEM_NOT_FOUND,
+    ELASTIC_SERVICE,
     ;
 
     @Override

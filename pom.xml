@@ -7,7 +7,7 @@
 
     <groupId>eu.opertusmundi</groupId>
     <artifactId>opertus-mundi-common</artifactId>
-    <version>1.0.27</version>
+    <version>1.0.28</version>
     <name>[opertus-mundi] Common</name>
 
     <packaging>jar</packaging>
@@ -82,6 +82,12 @@
 		<dependency>
 			<groupId>org.springframework.security.oauth.boot</groupId>
 			<artifactId>spring-security-oauth2-autoconfigure</artifactId>
+		</dependency>
+
+		<!-- Spring -->
+		<dependency>
+			<groupId>org.springframework.retry</groupId>
+			<artifactId>spring-retry</artifactId>
 		</dependency>
 
 		<!-- Spring Cloud -->
@@ -168,6 +174,12 @@
 			<version>${io.jsonwebtoken.version}</version>
 			<scope>runtime</scope>
 		</dependency>
+
+		<!-- Elastic search -->
+		<dependency>
+		    <groupId>org.elasticsearch.client</groupId>
+		    <artifactId>elasticsearch-rest-high-level-client</artifactId>
+	    </dependency>
 
 		<!-- Utilities -->
         

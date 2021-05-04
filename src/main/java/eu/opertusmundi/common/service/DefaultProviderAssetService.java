@@ -28,7 +28,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,7 +44,6 @@ import eu.opertusmundi.common.domain.AssetMetadataPropertyEntity;
 import eu.opertusmundi.common.domain.AssetResourceEntity;
 import eu.opertusmundi.common.domain.ProviderAssetDraftEntity;
 import eu.opertusmundi.common.feign.client.BpmServerFeignClient;
-import eu.opertusmundi.common.feign.client.CatalogueFeignClient;
 import eu.opertusmundi.common.model.FileSystemMessageCode;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
@@ -67,6 +65,7 @@ import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.model.asset.MetadataProperty;
 import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.asset.ServiceResourceCommandDto;
+import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
@@ -74,7 +73,6 @@ import eu.opertusmundi.common.model.catalogue.client.DraftApiFromAssetCommandDto
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromFileCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
-import eu.opertusmundi.common.model.catalogue.server.CatalogueResponse;
 import eu.opertusmundi.common.model.dto.EnumSortingOrder;
 import eu.opertusmundi.common.model.file.FilePathCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
@@ -94,8 +92,6 @@ import feign.FeignException;
 public class DefaultProviderAssetService implements ProviderAssetService {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultProviderAssetService.class);
-
-    private static final String DRAFT_PUBLISHED_STATUS = "published";
 
     private static final String WORKFLOW_SELL_ASSET = "workflow-provider-publish-asset";
 
@@ -117,31 +113,31 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Autowired
     private AccountRepository accountRepository;
-    
+
     @Autowired
     private AssetResourceRepository assetResourceRepository;
-   
+
     @Autowired
     private AssetAdditionalResourceRepository assetAdditionalResourceRepository;
 
     @Autowired
     private UserFileManager userFileManager;
-    
-    @Autowired
-    private DraftFileManager draftFileManager;
-    
-    @Autowired
-    private AssetFileManager assetFileManager;
 
     @Autowired
-    private ObjectProvider<CatalogueFeignClient> catalogueClient;
+    private DraftFileManager draftFileManager;
+
+    @Autowired
+    private AssetFileManager assetFileManager;
 
     @Autowired
     private ObjectProvider<BpmServerFeignClient> bpmClient;
 
     @Autowired
+    private CatalogueService catalogueService;
+
+    @Autowired
     private PersistentIdentifierService pidService;
-    
+
     @Override
     public PageResultDto<AssetDraftDto> findAllDraft(UUID publisherKey, Set<EnumProviderAssetDraftStatus> status, int pageIndex,
             int pageSize, EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order) {
@@ -185,7 +181,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             case FILE :
                 return createApiDraftFromFile((DraftApiFromFileCommandDto) command);
         }
-        
+
         throw new AssetDraftException(
             AssetMessageCode.API_COMMAND_NOT_SUPPORTED,
             String.format("API command type [%s] is not supported", command.getType())
@@ -194,7 +190,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     /**
      * Create one or more drafts by importing records from a harvested catalogue
-     * 
+     *
      * @param command
      * @throws AssetDraftException
      */
@@ -202,24 +198,20 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Transactional
     public Map<String, AssetDraftDto> importFromCatalogue(CatalogueHarvestImportCommandDto command) throws AssetDraftException{
         final Map<String, AssetDraftDto> result = new HashMap<>();
-        
+
         try {
-            for (String id : command.getIds()) {
-                // Get harvested item
-                ResponseEntity<CatalogueResponse<CatalogueFeature>> e;
-                try {
-                    e = this.catalogueClient.getObject().findOneHarvestedItemById(id);
-                } catch(Exception ex) {
+            for (final String id : command.getIds()) {
+                final CatalogueFeature        feature      = this.catalogueService.findOneHarvested(id);
+
+                if(feature == null) {
                     throw new AssetDraftException(
                         AssetMessageCode.HARVEST_ITEM_NOT_FOUND,
                         String.format("Cannot find harvested item with id [%s]", id)
                     );
                 }
 
-                final CatalogueResponse<CatalogueFeature> catalogueResponse = e.getBody();
-                final CatalogueFeature                    feature           = catalogueResponse.getResult();
-                final CatalogueItemCommandDto             draftCommand      = new CatalogueItemCommandDto(feature);
-             
+                final CatalogueItemCommandDto draftCommand = new CatalogueItemCommandDto(feature);
+
                 draftCommand.setAutomatedMetadata(null);
                 draftCommand.setIngested(false);
                 draftCommand.setIngestionInfo(null);
@@ -227,36 +219,32 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 draftCommand.setTitle(feature.getProperties().getTitle());
                 // TODO: Set default version number
                 draftCommand.setVersion(Optional.ofNullable(feature.getProperties().getVersion()).orElse("1"));
-    
-                AssetDraftDto draft = this.updateDraft(draftCommand);              
-                
+
+                final AssetDraftDto draft = this.updateDraft(draftCommand);
+
                 result.put(id, draft);
             }
-            
+
             return result;
-        } catch (AssetDraftException ex) {
+        } catch (final AssetDraftException ex) {
             throw ex;
-        } catch(Exception ex) {
+        } catch(final Exception ex) {
             throw new AssetDraftException(AssetMessageCode.ERROR, "Failed to create draft from harvested asset", ex);
         }
     }
 
     AssetDraftDto createApiDraftFromAsset(DraftApiFromAssetCommandDto command) throws AssetDraftException {
         try {
-            // Get existing asset
-            ResponseEntity<CatalogueResponse<CatalogueFeature>> e;
-            try {
-                e = this.catalogueClient.getObject().findOneById(command.getPid());
-            } catch(Exception ex) {
+            final CatalogueFeature feature = this.catalogueService.findOneFeature(command.getPid());
+
+            // Feature must exist
+            if(feature == null) {
                 throw new AssetDraftException(
                     AssetMessageCode.API_COMMAND_ASSET_NOT_FOUND,
                     String.format("Cannot find asset with PID [%s]", command.getPid())
                 );
             }
-            
-            final CatalogueResponse<CatalogueFeature> catalogueResponse = e.getBody();
-            final CatalogueFeature                    feature           = catalogueResponse.getResult();
-            
+
             // Publisher must own the asset
             if (!command.getPublisherKey().equals(feature.getProperties().getPublisherId())) {
                 throw new AssetDraftException(
@@ -264,7 +252,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                     String.format("Provider does not own asset with PID [%s]", command.getPid())
                 );
             }
-            
+
             // Create draft
             final CatalogueItemCommandDto draftCommand = new CatalogueItemCommandDto(feature);
 
@@ -278,36 +266,38 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             draftCommand.setVersion(command.getVersion());
 
             AssetDraftDto draft = this.updateDraft(draftCommand);
-            
+
             // Copy resources for new draft
-            List<AssetResourceEntity> resources = this.assetResourceRepository
+            final List<AssetResourceEntity> resources = this.assetResourceRepository
                 .findAllResourcesByAssetPid(feature.getId());
-            
-            for (AssetResourceEntity r : resources) {
+
+            for (final AssetResourceEntity r : resources) {
                 final FileResourceCommandDto resourceCommand = new FileResourceCommandDto();
-                
+
                 resourceCommand.setCategory(r.getCategory());
                 resourceCommand.setDraftKey(draft.getKey());
                 resourceCommand.setFileName(r.getFileName());
                 resourceCommand.setFormat(r.getFormat());
                 resourceCommand.setPublisherKey(command.getPublisherKey());
                 resourceCommand.setSize(r.getSize());
-                
+
                 final Path resourcePath = this.assetFileManager.resolveResourcePath(command.getPid(), r.getFileName());
                 try (final InputStream input = Files.newInputStream(resourcePath)) {
                     draft = this.addFileResource(resourceCommand, input);
-                } catch(Exception ex) {
+                } catch(final Exception ex) {
                     throw new AssetDraftException(
                         AssetMessageCode.API_COMMAND_RESOURCE_COPY,
                         String.format("Failed to copy resource file [%s]", r.getFileName())
                     );
                 }
             }
-            
+
             return draft;
-        } catch (AssetDraftException ex) {
+        } catch (final CatalogueServiceException ex) {
+            throw new AssetDraftException(AssetMessageCode.CATALOGUE_SERVICE, "Failed to create API draft from asset", ex);
+        } catch (final AssetDraftException ex) {
             throw ex;
-        } catch(Exception ex) {
+        } catch(final Exception ex) {
             throw new AssetDraftException(AssetMessageCode.ERROR, "Failed to create API draft from asset", ex);
         }
     }
@@ -321,10 +311,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 .build();
 
             final Path resourcePath = this.userFileManager.resolveFilePath(fileCommand);
-            
+
             // Create draft
             final CatalogueItemCommandDto draftCommand = new CatalogueItemCommandDto();
-            
+
             draftCommand.setIngested(true);
             draftCommand.setPublisherKey(command.getPublisherKey());
             draftCommand.setSpatialDataServiceType(EnumSpatialDataServiceType.fromString(command.getServiceType()));
@@ -332,34 +322,36 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             draftCommand.setVersion(command.getVersion());
 
             AssetDraftDto draft = this.updateDraft(draftCommand);
-            
+
             // Get file format and category
             final AssetFileTypeEntity format = this.assetFileTypeRepository
                 .findOneByFormat(command.getFormat()).get();
-               
+
             // Add resource
             final FileResourceCommandDto resourceCommand = new FileResourceCommandDto();
-            
+
             resourceCommand.setCategory(format.getCategory());
             resourceCommand.setDraftKey(draft.getKey());
             resourceCommand.setFileName(FilenameUtils.getName(command.getPath()));
             resourceCommand.setFormat(format.getFormat());
             resourceCommand.setPublisherKey(command.getPublisherKey());
             resourceCommand.setSize(resourcePath.toFile().length());
-                
+
             try (final InputStream input = Files.newInputStream(resourcePath)) {
                 draft = this.addFileResource(resourceCommand, input);
-            } catch(Exception ex) {
+            } catch(final Exception ex) {
                 throw new AssetDraftException(
                     AssetMessageCode.API_COMMAND_RESOURCE_COPY,
                     String.format("Failed to copy resource file [%s]", command.getPath())
                 );
             }
-            
+
             return draft;
-        } catch (AssetDraftException ex) {
+        } catch (final CatalogueServiceException ex) {
+            throw new AssetDraftException(AssetMessageCode.CATALOGUE_SERVICE, "Failed to create API draft from asset", ex);
+        } catch (final AssetDraftException ex) {
             throw ex;
-        } catch(Exception ex) {
+        } catch(final Exception ex) {
             throw new AssetDraftException(AssetMessageCode.ERROR, "Failed to create API draft from asset", ex);
         }
     }
@@ -572,7 +564,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                     String.format("Expected status to be [POST_PROCESSING]. Found [%s]", draft.getStatus())
                 );
             }
-            
+
             // Get PID service user id for publisher
             final AccountEntity publisher            = this.accountRepository.findOneByKey(publisherKey).orElse(null);
             final Integer       ownerId              = publisher.getProfile().getProvider().getPidServiceUserId();
@@ -582,55 +574,49 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             // Register asset type
             pidService.registerAssetType(assetType, assetTypeDescription);
-            
+
             // Register asset
             final String pid = pidService.registerAsset(
                 draftKey.toString(), ownerId, assetType, assetDescription
             );
-            
+
             // Create feature
-            final CatalogueFeature feature = this.convertDraftToFeature(pid, publisherKey, draft);           
+            final CatalogueFeature feature = this.convertDraftToFeature(pid, publisherKey, draft);
 
             // Link draft file-system to asset file-system by creating a
             // symbolic link
             this.draftFileManager.linkDraftFilesToAsset(publisherKey, draftKey, pid);
 
-            // Publish asset. Create a draft record first and then set its
-            // status to published.
-            
-            // TODO: Check if asset already exists (draft key can be used as the
-            // idempotent key)
-            this.catalogueClient.getObject().createDraft(feature);
-            this.catalogueClient.getObject().setDraftStatus(pid, DRAFT_PUBLISHED_STATUS);
-            
+            // Publish asset
+            this.catalogueService.publish(feature);
+
+            // Get
             // Link resource files to the new PID value
             this.assetResourceRepository.linkDraftResourcesToAsset(draftKey, pid);
             this.assetAdditionalResourceRepository.linkDraftResourcesToAsset(draftKey, pid);
-            
+
             // Update draft status
             this.draftRepository.publish(publisherKey, draftKey, pid);
+        } catch (final CatalogueServiceException ex) {
+            throw new AssetDraftException(AssetMessageCode.CATALOGUE_SERVICE, "Failed to publish asset", ex);
         } catch (final AssetDraftException ex) {
             throw ex;
-        } catch (final FeignException fex) {
-            logger.error("[Feign Client][Catalogue] Operation has failed", fex);
-
-            throw new AssetDraftException(AssetMessageCode.CATALOGUE_SERVICE, "Failed to publish asset", fex);
         } catch (final Exception ex) {
             logger.error("[Catalogue] Operation has failed", ex);
 
             throw new AssetDraftException(AssetMessageCode.ERROR, "Failed to publish asset", ex);
         }
     }
-    
+
     private CatalogueFeature convertDraftToFeature(String pid, UUID publisherKey, AssetDraftDto draft) {
         final CatalogueFeature feature = draft.getCommand().toFeature();
-        
+
         feature.setId(pid);
         feature.getProperties().setPublisherId(publisherKey);
-        
+
         // Redirect draft metadata property links to asset ones before
         // publishing the asset to the catalogue
-        for (ResourceDto r : draft.getCommand().getResources()) {
+        for (final ResourceDto r : draft.getCommand().getResources()) {
             if (r.getType() != EnumResourceType.FILE) {
                 continue;
             }
@@ -650,11 +636,11 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             if (metadata == null || metadata.isNull()) {
                 continue;
             }
-            
-            for(AssetMetadataPropertyEntity p: properties) {
+
+            for(final AssetMetadataPropertyEntity p: properties) {
                 final String   propertyName = p.getName();
                 final JsonNode propertyNode = metadata.get(propertyName);
-    
+
                 // Ignore undefined or null nodes
                 if (propertyNode == null || propertyNode.isNull()) {
                     continue;
@@ -664,11 +650,11 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                     "/action/assets/%s/resources/%s/metadata/%s",
                     pid, r.getId(), propertyName
                 );
-    
+
                 metadata.put(propertyName, uri);
             }
         }
-        
+
         return feature;
     }
 
@@ -680,15 +666,15 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         try {
             // The provider must have access to the selected draft and also the
             // draft must be already accepted by the HelpDesk
-            final AssetDraftDto draft = this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.SUBMITTED);           
-            
+            final AssetDraftDto draft = this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.SUBMITTED);
+
             // Get existing metadata. Create JsonNode object if no metadata
             // already exists
             if (draft.getCommand().getAutomatedMetadata() == null) {
                 draft.getCommand().setAutomatedMetadata(objectMapper.createArrayNode());
             }
             final ArrayNode metadata = (ArrayNode) draft.getCommand().getAutomatedMetadata();
-      
+
             // Store all metadata in asset repository
             final String content = objectMapper.writeValueAsString(value);
 
@@ -698,8 +684,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             final FileResourceDto                   resource   = (FileResourceDto) draft.getResourceByKey(resourceKey);
             final EnumAssetSourceType               source     = mapFormatToSourceType(resource.getFormat());
             final List<AssetMetadataPropertyEntity> properties = this.assetMetadataPropertyRepository.findAllByAssetType(source);
-            
-            for(AssetMetadataPropertyEntity p: properties) {
+
+            for(final AssetMetadataPropertyEntity p: properties) {
                 final String   propertyName = p.getName();
                 final JsonNode propertyNode = value.get(propertyName);
 
@@ -707,9 +693,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 if (propertyNode == null || propertyNode.isNull()) {
                     continue;
                 }
-                
+
                 final String fileName = this.getMetadataPropertyFileName(resourceKey, propertyName, p.getType());
-                
+
                 switch (p.getType()) {
                     case PNG :
                         this.draftFileManager.saveMetadataPropertyAsImage(publisherKey, draftKey, fileName, propertyNode.asText());
@@ -718,7 +704,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                         this.draftFileManager.saveMetadataPropertyAsJson(publisherKey, draftKey, fileName, objectMapper.writeValueAsString(propertyNode));
                         break;
                 }
-                
+
                 final String uri = String.format(
                     "/action/drafts/%s/resources/%s/metadata/%s",
                     draftKey, resourceKey, propertyName
@@ -737,11 +723,11 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             // Update metadata
             metadata.add(value);
-            
+
             this.draftRepository.updateMetadata(publisherKey, draftKey, metadata);
-        } catch (AssetDraftException ex) {
+        } catch (final AssetDraftException ex) {
             throw ex;
-        } catch (JsonProcessingException ex) {
+        } catch (final JsonProcessingException ex) {
             throw new AssetDraftException(
                 AssetMessageCode.METADATA_SERIALIZATION,
                 String.format("Failed to serialize automated metadata for asset [%s]", draftKey)
@@ -755,7 +741,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             throw new AssetDraftException(AssetMessageCode.ERROR, "Failed to publish asset", ex);
         }
-    } 
+    }
 
     @Override
     public void updateResourceIngestionData(
@@ -764,10 +750,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         try {
             // The provider must have access to the selected draft and also the
             // draft must be already accepted by the provider
-            this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.POST_PROCESSING);           
-           
+            this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.POST_PROCESSING);
+
             this.draftRepository.updateResourceIngestionData(publisherKey, draftKey, resourceKey, ResourceIngestionDataDto.from(resourceKey, data));
-        } catch (AssetDraftException ex) {
+        } catch (final AssetDraftException ex) {
             throw ex;
         } catch (final FeignException fex) {
             logger.error(String.format("[Catalogue] Operation has failed for asset [%s]", draftKey), fex);
@@ -779,7 +765,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             throw new AssetDraftException(AssetMessageCode.ERROR, "Failed to publish asset", ex);
         }
     }
-    
+
     @Override
     @Transactional
     public AssetDraftDto addFileResource(
@@ -790,7 +776,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         final AssetDraftDto draft = this.ensureDraftAndStatus(
             command.getPublisherKey(), command.getDraftKey(), EnumProviderAssetDraftStatus.DRAFT
         );
-        
+
         // Set category
         command.setCategory(this.mapFormatToSourceType(command.getFormat()));
 
@@ -807,7 +793,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         return this.draftRepository.update(draft.getCommand());
     }
-    
+
     @Override
     @Transactional
     public AssetDraftDto addServiceResource(ServiceResourceCommandDto command) throws AssetRepositoryException, AssetDraftException {
@@ -855,7 +841,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         return path;
     }
-    
+
     @Override
     public Path resolveDraftAdditionalResource(
         UUID publisherKey, UUID draftKey, UUID resourceKey
@@ -894,7 +880,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         return MetadataProperty.of(property.getType(), path);
     }
-    
+
     @Override
     public MetadataProperty resolveDraftMetadataProperty(
         UUID publisherKey, UUID draftKey, UUID resourceKey, String propertyName

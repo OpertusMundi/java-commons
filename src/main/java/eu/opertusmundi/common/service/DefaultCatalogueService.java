@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.service;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +45,9 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDraftDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumCatalogueType;
+import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQuery;
+import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQueryResult;
+import eu.opertusmundi.common.model.catalogue.elastic.ElasticServiceException;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueCollection;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueResponse;
@@ -59,18 +63,20 @@ import feign.FeignException;
 public class DefaultCatalogueService implements CatalogueService {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultCatalogueService.class);
-    
+
     private static final String WORKFLOW_CATALOGUE_HARVEST = "workflow-catalogue-harvest";
+
+    private static final String DRAFT_PUBLISHED_STATUS = "published";
 
     @Autowired
     private Tracer tracer;
 
     @Autowired
     private ProviderRepository providerRepository;
-    
+
     @Autowired
     private AssetResourceRepository assetResourceRepository;
-    
+
     @Autowired
     private AssetAdditionalResourceRepository assetAdditionalResourceRepository;
 
@@ -79,14 +85,17 @@ public class DefaultCatalogueService implements CatalogueService {
 
     @Autowired
     private ObjectProvider<CatalogueFeignClient> catalogueClient;
-    
+
+    @Autowired(required = false)
+    private ElasticSearchService elasticSearchService;
+
     @Autowired
     private QuotationService quotationService;
 
     @Override
     public CatalogueResult<CatalogueItemDto> findAll(CatalogueAssetQuery request) throws CatalogueServiceException {
         Assert.notNull(request, "Expected a non-null request");
-        
+
         try {
             // Catalogue service data page index is 1-based
             final ResponseEntity<CatalogueResponse<CatalogueCollection>> e = this.catalogueClient.getObject().findAll(
@@ -101,7 +110,10 @@ public class DefaultCatalogueService implements CatalogueService {
 
             // Process response
             final CatalogueResult<CatalogueItemDto> response = this.createSearchResult(
-                catalogueResponse, (item) -> new CatalogueItemDto(item), request.getPage(), request.getSize(), true
+                request.getPage(), request.getSize(),
+                catalogueResponse.getResult().getItems(), catalogueResponse.getResult().getTotal(),
+                (item) -> new CatalogueItemDto(item),
+                true
             );
 
             return response;
@@ -120,12 +132,43 @@ public class DefaultCatalogueService implements CatalogueService {
             throw CatalogueServiceException.wrap(ex);
         }
     }
-    
+
+    @Override
+    public CatalogueResult<CatalogueItemDto> findAllAdvanced(ElasticAssetQuery request) throws CatalogueServiceException {
+        Assert.notNull(request, "Expected a non-null request");
+
+        try {
+            if (this.elasticSearchService == null) {
+                return this.createSearchResult(
+                    request.getPage().orElse(0), request.getSize().orElse(10),
+                    Collections.emptyList(), 0,
+                    (item) -> new CatalogueItemDto(item),
+                    true
+                );
+            }
+
+            final ElasticAssetQueryResult result = elasticSearchService.searchAssets(request);
+
+            // Process response
+            final CatalogueResult<CatalogueItemDto> response = this.createSearchResult(
+                request.getPage().orElse(0), request.getSize().orElse(10),
+                result.getAssets(), result.getTotal(),
+                (item) -> new CatalogueItemDto(item),
+                true
+            );
+
+            return response;
+        } catch (final Exception ex) {
+            logger.error("[Catalogue] Operation has failed", ex);
+
+            throw CatalogueServiceException.wrap(ex);
+        }
+    }
 
     @Override
     public List<CatalogueItemDto> findAllById(String[] id) throws CatalogueServiceException {
         Assert.notEmpty(id, "Expected a non-empty array of identifers");
-        
+
         try {
             // Catalogue service data page index is 1-based
             final ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> e = this.catalogueClient.getObject().findAllById(id);
@@ -135,10 +178,10 @@ public class DefaultCatalogueService implements CatalogueService {
             if (!catalogueResponse.isSuccess()) {
                 throw CatalogueServiceException.fromService(catalogueResponse.getMessage());
             }
-            
+
             if (catalogueResponse.getResult().size() != id.length) {
                 throw new CatalogueServiceException(
-                    CatalogueServiceMessageCode.ITEM_NOT_FOUND, 
+                    CatalogueServiceMessageCode.ITEM_NOT_FOUND,
                     String.format("Expected [%d] items. Found [%s]", id.length, catalogueResponse.getResult().size())
                 );
             }
@@ -156,11 +199,11 @@ public class DefaultCatalogueService implements CatalogueService {
             throw CatalogueServiceException.wrap(ex);
         }
     }
-    
-    
+
+    @Override
     public CatalogueResult<CatalogueItemDraftDto> findAllDraft(CatalogueDraftQuery request) throws CatalogueServiceException {
         Assert.notNull(request, "Expected a non-null request");
-        
+
         try {
             // Catalogue service data page index is 1-based
             final ResponseEntity<CatalogueResponse<CatalogueCollection>> e = this.catalogueClient.getObject().findAllDraft(
@@ -175,7 +218,10 @@ public class DefaultCatalogueService implements CatalogueService {
 
             // Process response
             final CatalogueResult<CatalogueItemDraftDto> response = this.createSearchResult(
-                catalogueResponse, (item) -> new CatalogueItemDraftDto(item), request.getPage(), request.getSize(), true
+                request.getPage(), request.getSize(),
+                catalogueResponse.getResult().getItems(), catalogueResponse.getResult().getTotal(),
+                (item) -> new CatalogueItemDraftDto(item),
+                true
             );
 
             return response;
@@ -196,7 +242,7 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     @Override
-    public CatalogueItemDetailsDto findOne(String id, UUID userKey, boolean includeAutomatedMetadata) throws CatalogueServiceException {
+    public CatalogueItemDetailsDto findOne(String id, UUID publisherKey, boolean includeAutomatedMetadata) throws CatalogueServiceException {
         try {
             final ResponseEntity<CatalogueResponse<CatalogueFeature>> e = this.catalogueClient.getObject().findOneById(id);
 
@@ -214,7 +260,7 @@ public class DefaultCatalogueService implements CatalogueService {
                 item.setAutomatedMetadata(null);
             }
             // Filter ingestion information
-            if (!item.getPublisherId().equals(userKey)) {
+            if (!item.getPublisherId().equals(publisherKey)) {
                 item.setIngestionInfo(null);
             }
 
@@ -222,9 +268,9 @@ public class DefaultCatalogueService implements CatalogueService {
             final PublisherDto publisher = this.providerRepository.findOneByKey(item.getPublisherId()).toPublisherDto();
 
             item.setPublisher(publisher);
-            
+
             // Consolidate data from asset repository
-            List<AssetResourceEntity> resources = this.assetResourceRepository
+            final List<AssetResourceEntity> resources = this.assetResourceRepository
                 .findAllResourcesByAssetPid(item.getId());
 
             resources.stream()
@@ -233,16 +279,15 @@ public class DefaultCatalogueService implements CatalogueService {
                         .filter(r1 -> r1.getId().equals(r.getKey()))
                         .findFirst()
                         .orElse(null);
-    
+
                     if (resource != null) {
                         // TODO: Check that resource file exists ...
                     }
                 });
 
-            
-            List<AssetAdditionalResourceEntity> additionalResources = this.assetAdditionalResourceRepository
+            final List<AssetAdditionalResourceEntity> additionalResources = this.assetAdditionalResourceRepository
                 .findAllResourcesByAssetPid(item.getId());
-           
+
             item.getAdditionalResources().stream()
                 .filter(r -> r.getType() == EnumAssetAdditionalResource.FILE)
                 .forEach(r -> {
@@ -279,12 +324,72 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     @Override
+    public CatalogueFeature findOneFeature(String id) throws CatalogueServiceException {
+        try {
+            final ResponseEntity<CatalogueResponse<CatalogueFeature>> e = this.catalogueClient.getObject().findOneById(id);
+            final CatalogueResponse<CatalogueFeature> catalogueResponse = e.getBody();
+
+            if (!catalogueResponse.isSuccess()) {
+                throw new CatalogueServiceException(
+                    CatalogueServiceMessageCode.CATALOGUE_SERVICE,
+                    catalogueResponse.getMessage().toString()
+                );
+            }
+
+            return catalogueResponse.getResult();
+        } catch (final FeignException fex) {
+            // Convert 404 errors to empty results
+            if (fex.status() == HttpStatus.NOT_FOUND.value()) {
+                return null;
+            }
+
+            logger.error("[Feign Client][Catalogue] Operation has failed", fex);
+
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
+        } catch (final Exception ex) {
+            logger.error("[Catalogue] Operation has failed", ex);
+
+            throw CatalogueServiceException.wrap(ex);
+        }
+    }
+
+    @Override
+    public CatalogueFeature findOneHarvested(String id) {
+        try {
+            final ResponseEntity<CatalogueResponse<CatalogueFeature>> e = this.catalogueClient.getObject().findOneHarvestedItemById(id);
+            final CatalogueResponse<CatalogueFeature> catalogueResponse = e.getBody();
+
+            if (!catalogueResponse.isSuccess()) {
+                throw new CatalogueServiceException(
+                    CatalogueServiceMessageCode.CATALOGUE_SERVICE,
+                    catalogueResponse.getMessage().toString()
+                );
+            }
+
+            return catalogueResponse.getResult();
+        } catch (final FeignException fex) {
+            // Convert 404 errors to empty results
+            if (fex.status() == HttpStatus.NOT_FOUND.value()) {
+                return null;
+            }
+
+            logger.error("[Feign Client][Catalogue] Operation has failed", fex);
+
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
+        } catch (final Exception ex) {
+            logger.error("[Catalogue] Operation has failed", ex);
+
+            throw CatalogueServiceException.wrap(ex);
+        }
+    }
+
+    @Override
     public void harvestCatalogue(CatalogueHarvestCommandDto command) throws CatalogueServiceException {
         try {
             // Check if workflow exists
             final String businessKey = String.format("%s-%s", command.getUserKey(), command.getUrl());
-            
-            ProcessInstanceDto instance = this.findRunningInstance(businessKey);
+
+            final ProcessInstanceDto instance = this.findRunningInstance(businessKey);
 
             if (instance == null) {
                 final StartProcessInstanceDto options = new StartProcessInstanceDto();
@@ -335,7 +440,10 @@ public class DefaultCatalogueService implements CatalogueService {
 
             // Process response
             final CatalogueResult<CatalogueItemDto> response = this.createSearchResult(
-                catalogueResponse, (item) -> new CatalogueItemDto(item), pageIndex, pageSize, false
+                pageIndex, pageSize,
+                catalogueResponse.getResult().getItems(), catalogueResponse.getResult().getTotal(),
+                (item) -> new CatalogueItemDto(item),
+                false
             );
 
             return response;
@@ -354,7 +462,7 @@ public class DefaultCatalogueService implements CatalogueService {
             throw CatalogueServiceException.wrap(ex);
         }
     }
-    
+
     @Override
     public void deleteAsset(String pid) {
         try {
@@ -368,7 +476,7 @@ public class DefaultCatalogueService implements CatalogueService {
 
     /**
      * Set workflow instance variable of type String
-     * 
+     *
      * @param variables
      * @param name
      * @param value
@@ -379,7 +487,7 @@ public class DefaultCatalogueService implements CatalogueService {
 
     /**
      * Set workflow instance variable
-     * 
+     *
      * @param variables
      * @param type
      * @param name
@@ -396,7 +504,7 @@ public class DefaultCatalogueService implements CatalogueService {
 
     /**
      * Find running workflow instance by business key
-     * 
+     *
      * @param businessKey
      * @return
      */
@@ -420,21 +528,19 @@ public class DefaultCatalogueService implements CatalogueService {
      * @return
      */
     private <T extends CatalogueItemDto> CatalogueResult<T> createSearchResult(
-        CatalogueResponse<CatalogueCollection> catalogueResponse,
-        Function<CatalogueFeature, T> converter,
         int pageIndex, int pageSize,
+        List<CatalogueFeature> features, long total,
+        Function<CatalogueFeature, T> converter,
         boolean includeProviders
     ) {
         // Convert features to items
-        final CatalogueCollection features = catalogueResponse.getResult();
-
-        final List<T> items = features.getItems().stream()
+        final List<T> items = features.stream()
             .map(item -> {
                 final T dto = converter.apply(item);
 
                 // Compute effective pricing models
                 this.refreshPricingModels(dto);
-                
+
                 // Filter properties
                 dto.setAutomatedMetadata(null);
                 dto.setIngestionInfo(null);
@@ -448,7 +554,7 @@ public class DefaultCatalogueService implements CatalogueService {
             pageIndex,
             pageSize,
             items,
-            features.getTotal()
+            total
         );
 
         // Get all publishers in the result
@@ -456,15 +562,15 @@ public class DefaultCatalogueService implements CatalogueService {
 
         if (includeProviders) {
             final Span span = this.tracer.nextSpan().name("database-publisher").start();
-    
+
             try {
                 final UUID[] publisherKeys = items.stream().map(i -> i.getPublisherId()).distinct().toArray(UUID[]::new);
-    
+
                 publishers = this.providerRepository.findAllByKey(publisherKeys).stream()
                     .map(AccountEntity::toPublisherDto)
                     .filter(p -> p != null)
                     .collect(Collectors.toList());
-    
+
                 if (publisherKeys.length != publishers.size()) {
                     throw new CatalogueServiceException(
                         CatalogueServiceMessageCode.PUBLISHER_NOT_FOUND,
@@ -495,7 +601,7 @@ public class DefaultCatalogueService implements CatalogueService {
 
         item.setEffectivePricingModels(quotations);
     }
-    
+
     /**
      * TODO: Implement draft using catalogue
      */
@@ -527,7 +633,6 @@ public class DefaultCatalogueService implements CatalogueService {
 
         return RestResponse.failure();
     }
-    
 
     public CatalogueItemDraftDto findOneDraftTemp(UUID draftKey) {
         try {
@@ -605,5 +710,36 @@ public class DefaultCatalogueService implements CatalogueService {
             throw CatalogueServiceException.wrap(ex);
         }
     }
-    
+
+    @Override
+    public void publish(CatalogueFeature feature) throws CatalogueServiceException {
+        // TODO: Check if asset already exists (draft key can be used as the
+        // idempotent key)
+
+        try {
+            // Create a draft record first and then set its status to published.
+            this.catalogueClient.getObject().createDraft(feature);
+            this.catalogueClient.getObject().setDraftStatus(feature.getId(), DRAFT_PUBLISHED_STATUS);
+
+            // Query new published item from the catalogue. Catalogue may inject
+            // additional information such as versions
+            final CatalogueFeature published = this.catalogueClient.getObject()
+                .findOneById(feature.getId())
+                .getBody()
+                .getResult();
+
+            if (this.elasticSearchService != null) {
+                this.elasticSearchService.addAsset(published);
+            }
+        } catch (final ElasticServiceException ex) {
+            logger.error("Failed to publish asset to elastic", ex);
+
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.ELASTIC_SERVICE, "Failed to publish asset to elastic", ex);
+        } catch (final FeignException fex) {
+            logger.error("[Feign Client][Catalogue] Operation has failed", fex);
+
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, "Failed to publish asset", fex);
+        }
+    }
+
 }

@@ -3,6 +3,7 @@ package eu.opertusmundi.common.model.catalogue.client;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import eu.opertusmundi.common.model.PageRequestDto;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,6 +25,7 @@ public class CatalogueAssetQuery extends PageRequestDto {
     }
 
     @JsonIgnore
+    @Hidden
     private String publisherKey;
 
     @Schema(description = "Query string used for full text search operation")
