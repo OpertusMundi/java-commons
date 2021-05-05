@@ -83,7 +83,7 @@ public class ElasticAssetQuery {
     @Schema(description = "Sorting field", defaultValue = "SCORE")
     private EnumElasticSearchSortField orderBy;
 
-    @Schema(description = "Sorting direaction", defaultValue = "DESC")
+    @Schema(description = "Sorting direction", defaultValue = "DESC")
     private EnumSortingOrder order;
 
     @Schema(description = "Pagination page index", defaultValue = "0")

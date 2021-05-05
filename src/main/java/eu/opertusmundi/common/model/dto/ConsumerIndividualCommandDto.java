@@ -36,14 +36,14 @@ public final class ConsumerIndividualCommandDto extends CustomerCommandDto imple
     private ZonedDateTime birthdate;
 
     @Schema(
-        description = "The user’s nationality. ISO 3166-1 alpha-2 format is expected",
+        description = "The user's nationality. ISO 3166-1 alpha-2 format is expected",
         externalDocs = @ExternalDocumentation(url = "https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2")
     )
     @NotEmpty
     private String nationality;
 
     @Schema(
-        description = "The user’s country of residence. ISO 3166-1 alpha-2 format is expected",
+        description = "The user's country of residence. ISO 3166-1 alpha-2 format is expected",
         externalDocs = @ExternalDocumentation(url = "https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2")
     )
     @NotEmpty

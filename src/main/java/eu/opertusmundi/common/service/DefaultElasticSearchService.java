@@ -169,6 +169,8 @@ public class DefaultElasticSearchService implements ElasticSearchService {
 
             return createIndexResponse.isAcknowledged();
         } catch (final Exception ex) {
+            logger.error("Failed to create index", ex);
+
             throw new ElasticServiceException("Failed to create index", ex);
         }
 	}

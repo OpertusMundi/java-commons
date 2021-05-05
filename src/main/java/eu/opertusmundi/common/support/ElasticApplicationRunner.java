@@ -5,11 +5,13 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticServiceException;
 import eu.opertusmundi.common.service.ElasticSearchService;
 
+@ConditionalOnProperty(name = "opertusmundi.elastic.migrate-on-startup")
 @Component
 public class ElasticApplicationRunner implements ApplicationRunner {
 
