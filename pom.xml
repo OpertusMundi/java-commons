@@ -25,6 +25,8 @@
 		<commons-collections4.version>4.4</commons-collections4.version>
 		<commons-io.version>2.8.0</commons-io.version>
 		<feign-form.version>3.8.0</feign-form.version>
+		<geotools-wfs.version>16.5</geotools-wfs.version>
+		<geotools-wms.version>24.0</geotools-wms.version>
 		<io.jsonwebtoken.version>0.11.2</io.jsonwebtoken.version>
 		<jackson-datatype-jts.version>2.4</jackson-datatype-jts.version>
 		<org.camunda.bpm.version>7.13.0</org.camunda.bpm.version>
@@ -33,6 +35,22 @@
 		<springdoc.version>1.5.4</springdoc.version>
         <postgresql.version>42.2.19</postgresql.version>
 	</properties>
+
+	<repositories>
+
+		<repository>
+			<id>osgeo</id>
+			<name>OSGeo Release Repository</name>
+			<url>https://repo.osgeo.org/repository/release/</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
+
+	</repositories>
 
 	<dependencyManagement>
 		<dependencies>
@@ -215,6 +233,19 @@
 		<dependency>
 			<groupId>org.apache.tomcat</groupId>
 			<artifactId>tomcat-jdbc</artifactId>
+		</dependency>
+
+		<!-- Utilities for spatial data & services -->
+		<dependency>
+			<groupId>org.geotools</groupId>
+			<artifactId>gt-wms</artifactId>
+			<version>${geotools-wms.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.geotools</groupId>
+			<artifactId>gt-wfs</artifactId>
+			<version>${geotools-wfs.version}</version>
 		</dependency>
 
 		<!-- MangoPay dependencies -->
