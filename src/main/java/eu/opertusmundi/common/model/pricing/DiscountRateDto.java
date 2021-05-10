@@ -9,6 +9,9 @@ import javax.validation.constraints.Digits;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import eu.opertusmundi.common.support.BigDecimalSerializer;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -34,6 +37,7 @@ public class DiscountRateDto implements Serializable {
     @DecimalMin("1.00")
     @DecimalMax("100.00")
     @NotNull
+    @JsonSerialize(using = BigDecimalSerializer.class)
     private BigDecimal discount;
 
 }

@@ -7,7 +7,9 @@ import java.util.Currency;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import eu.opertusmundi.common.support.BigDecimalSerializer;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -18,7 +20,7 @@ import lombok.Setter;
 public class QuotationDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    
+
     @Schema(description = "Tax percent", minimum = "0", maximum = "100")
     @Getter
     @Setter
@@ -27,16 +29,19 @@ public class QuotationDto implements Serializable {
     @Schema(description = "Price excluding tax")
     @Getter
     @Setter
+    @JsonSerialize(using = BigDecimalSerializer.class)
     private BigDecimal totalPriceExcludingTax;
 
     @Schema(description = "Price tax")
     @Getter
     @Setter
+    @JsonSerialize(using = BigDecimalSerializer.class)
     private BigDecimal tax;
-   
+
     @Setter(AccessLevel.PROTECTED)
+    @JsonSerialize(using = BigDecimalSerializer.class)
     private BigDecimal totalPrice;
-    
+
     @Schema(description = "Price total including tax")
     @JsonProperty("totalPrice")
     public BigDecimal getTotalPrice() {
