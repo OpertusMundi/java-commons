@@ -33,12 +33,13 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
 
     public CatalogueItemDetailsDto(CatalogueFeature feature) {
         super(feature);
-        
+
         final CatalogueFeatureProperties props = feature.getProperties();
-        
+
         this.statistics = props.getStatistics();
         this.versions   = props.getVersions();
         this.resources  = StreamUtils.from(props.getResources())
+            .map(ResourceDto::fromCatalogueResource)
             .collect(Collectors.toList());
 
         this.additionalResources = StreamUtils.from(props.getAdditionalResources())
@@ -56,7 +57,7 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
     )
     @Getter
     private List<AssetAdditionalResourceDto> additionalResources;
-    
+
     @Schema(description = "Publisher details")
     @JsonProperty(access = Access.READ_ONLY)
     @Getter
@@ -78,12 +79,12 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
     )
     @Getter
     private List<ResourceDto> resources;
-    
+
     @Schema(description = "Asset statistics")
     @Getter
     @Setter
     private CatalogueItemStatistics statistics;
-    
+
     @Schema(description = "A list of all item versions")
     @Getter
     @Setter

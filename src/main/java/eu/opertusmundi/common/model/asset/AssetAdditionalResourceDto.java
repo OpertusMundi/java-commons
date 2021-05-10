@@ -8,6 +8,8 @@ import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import eu.opertusmundi.common.model.ApplicationException;
+import eu.opertusmundi.common.model.BasicMessageCode;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueAdditionalResource;
 import eu.opertusmundi.common.model.pricing.EnumPricingModel;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -41,21 +43,23 @@ public abstract class AssetAdditionalResourceDto implements Serializable {
     protected AssetAdditionalResourceDto(EnumAssetAdditionalResource type) {
         this.type = type;
     }
-    
-    public static AssetAdditionalResourceDto fromCatalogueResource(CatalogueAdditionalResource r) {
-        final EnumAssetAdditionalResource type = EnumAssetAdditionalResource.fromString(r.getType());
 
-        // Load only URI resources from the catalogue
-        switch (type) {
+    public static AssetAdditionalResourceDto fromCatalogueResource(CatalogueAdditionalResource r) {
+        switch (r.getType()) {
             case URI:
                 return new AssetUriAdditionalResourceDto(r.getValue(), r.getName());
-            default :
+            case FILE:
                 return new AssetFileAdditionalResourceDto(
-                    UUID.fromString(r.getId()), r.getValue(), null, r.getName(), null
+                    UUID.fromString(r.getId()), r.getValue(), r.getSize(), r.getName(), r.getModifiedOn()
+                );
+            default:
+                throw ApplicationException.fromMessage(
+                    BasicMessageCode.NotImplemented,
+                    String.format("Additional resource type [%s] is not supported", r.getType())
                 );
         }
     }
-    
+
     public abstract CatalogueAdditionalResource toCatalogueResource();
-    
+
 }

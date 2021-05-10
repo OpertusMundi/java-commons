@@ -48,8 +48,16 @@ public class AssetFileAdditionalResourceDto extends AssetAdditionalResourceDto {
     @Setter
     private ZonedDateTime modifiedOn;
 
+    @Override
     public CatalogueAdditionalResource toCatalogueResource() {
-        return new CatalogueAdditionalResource(id.toString(), this.description, type.toString(), this.fileName);
+        return CatalogueAdditionalResource.builder()
+            .id(id.toString())
+            .name(description)
+            .value(fileName)
+            .type(type)
+            .modifiedOn(modifiedOn)
+            .size(size)
+            .build();
     }
 
     public void patch(AssetFileAdditionalResourceDto r) {

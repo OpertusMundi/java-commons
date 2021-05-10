@@ -53,6 +53,7 @@ public abstract class BaseCatalogueItemDto {
         this.metadataLanguage             = props.getMetadataLanguage();
         this.metadataPointOfContactEmail  = props.getMetadataPointOfContactEmail();
         this.metadataPointOfContactName   = props.getMetadataPointOfContactName();
+        this.openDataset                  = props.isOpenDataset();
         this.parentId                     = props.getParentId();
         this.publicAccessLimitations      = props.getPublicAccessLimitations();
         this.publicationDate              = props.getPublicationDate();
@@ -74,7 +75,7 @@ public abstract class BaseCatalogueItemDto {
         this.keywords = StreamUtils.from(props.getKeywords())
             .map(Keyword::new)
             .collect(Collectors.toList());
-               
+
         this.responsibleParty = StreamUtils.from(props.getResponsibleParty())
             .map(ResponsibleParty::from)
             .collect(Collectors.toList());
@@ -91,11 +92,11 @@ public abstract class BaseCatalogueItemDto {
     @Schema(description = "An abstract of the resource")
     @JsonProperty("abstract")
     private String abstractText;
-    
+
 	@Schema(description = "Automated metadata")
 	@JsonInclude(Include.NON_NULL)
 	private JsonNode automatedMetadata;
-    
+
     @Schema(description = "Degree of conformity with the implementing rules/standard of the metadata followed")
     private EnumConformity conformity;
 
@@ -113,13 +114,13 @@ public abstract class BaseCatalogueItemDto {
 
     @Schema(description = "Channel of asset distribution")
     private EnumDeliveryMethod deliveryMethod;
-    
+
     @Schema(description = "The file format, physical medium, or dimensions of the resource", example = "ESRI Shapefile")
     private String format;
 
     @Schema(implementation = GeometryAsJson.class, description = "Geometry as GeoJSON")
     private Geometry geometry;
-    
+
     @Schema(description = "Ingestion information")
     @ArraySchema(
         arraySchema = @Schema(
@@ -129,7 +130,7 @@ public abstract class BaseCatalogueItemDto {
     )
     @JsonInclude(Include.NON_NULL)
     private List<ResourceIngestionDataDto> ingestionInfo;
-    
+
     @Schema(description = "The topic of the resource")
     @ArraySchema(
         arraySchema = @Schema(
@@ -155,7 +156,7 @@ public abstract class BaseCatalogueItemDto {
     private String metadataDate;
 
     @Schema(
-        description = "The language in which the metadata elements are expressed as a ISO 639-1 two-letter code", 
+        description = "The language in which the metadata elements are expressed as a ISO 639-1 two-letter code",
         externalDocs = @ExternalDocumentation(url = "https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes")
     )
     private String metadataLanguage;
@@ -170,6 +171,9 @@ public abstract class BaseCatalogueItemDto {
     )
     private String metadataPointOfContactName;
 
+    @Schema(description = "Used for declaring open datasets")
+    private boolean openDataset;
+    
     @Schema(description = "Provides the ID of a parent dataset")
     private String parentId;
 
@@ -198,11 +202,11 @@ public abstract class BaseCatalogueItemDto {
                     + "may be provided",
         example = ""
     )
-    private String resourceLocator;    
-    
+    private String resourceLocator;
+
     @Schema(description = "The responsible party (including contact information) of the resource")
     private List<ResponsibleParty> responsibleParty;
-    
+
     @Schema(
         description = "A point or period of time associated with the revision event in the "
                     + "lifecycle of the resource",
@@ -229,7 +233,7 @@ public abstract class BaseCatalogueItemDto {
 
     @Schema(description = "The queryables supported by the service")
     private List<String> spatialDataServiceQueryables;
-    
+
     @Schema(description = "Spatial resolution refers to the level of detail of the data set", example = "1000")
     private Integer spatialResolution;
 
@@ -240,7 +244,7 @@ public abstract class BaseCatalogueItemDto {
         minItems = 0
     )
     private List<String> suitableFor;
-       
+
     @ArraySchema(
         arraySchema = @Schema(
             description = "A high-level classification scheme to assist in the grouping and topic-based "
@@ -253,7 +257,7 @@ public abstract class BaseCatalogueItemDto {
 
     @Schema(description = "True if the asset must be only used for Value-Added-Services (VAS)")
     private boolean userOnlyForVas;
-    
+
     @NoArgsConstructor
     @Getter
     @Setter
@@ -271,7 +275,7 @@ public abstract class BaseCatalogueItemDto {
         }
 
     }
-    
+
     @NoArgsConstructor
     @Getter
     @Setter
@@ -325,11 +329,10 @@ public abstract class BaseCatalogueItemDto {
             this.role             = EnumResponsiblePartyRole.fromString(r.getRole());
             this.serviceHours     = r.getServiceHours();
         }
-        
+
         public static ResponsibleParty from(CatalogueFeatureProperties.ResponsibleParty r) {
             return r == null ? null : new ResponsibleParty(r);
         }
-        
     }
-    
+
 }

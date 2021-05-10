@@ -64,7 +64,7 @@ import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.model.asset.MetadataProperty;
 import eu.opertusmundi.common.model.asset.ResourceDto;
-import eu.opertusmundi.common.model.asset.ServiceResourceCommandDto;
+import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
@@ -72,11 +72,13 @@ import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromAssetCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromFileCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
+import eu.opertusmundi.common.model.catalogue.client.EnumType;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.dto.EnumSortingOrder;
 import eu.opertusmundi.common.model.file.FilePathCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
+import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestResultResponseDto;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.AssetAdditionalResourceRepository;
@@ -263,6 +265,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             draftCommand.setPublisherKey(command.getPublisherKey());
             draftCommand.setSpatialDataServiceType(EnumSpatialDataServiceType.fromString(command.getServiceType()));
             draftCommand.setTitle(command.getTitle());
+            draftCommand.setType(EnumType.SERVICE);
             draftCommand.setVersion(command.getVersion());
 
             AssetDraftDto draft = this.updateDraft(draftCommand);
@@ -319,6 +322,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             draftCommand.setPublisherKey(command.getPublisherKey());
             draftCommand.setSpatialDataServiceType(EnumSpatialDataServiceType.fromString(command.getServiceType()));
             draftCommand.setTitle(command.getTitle());
+            draftCommand.setType(EnumType.SERVICE);
             draftCommand.setVersion(command.getVersion());
 
             AssetDraftDto draft = this.updateDraft(draftCommand);
@@ -414,6 +418,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 // Set variables
                 this.setStringVariable(variables, "draftKey", command.getAssetKey());
                 this.setStringVariable(variables, "publisherKey", command.getPublisherKey());
+                this.setStringVariable(variables, "type", command.getType().toString());
                 this.setBooleanVariable(variables, "ingested", command.isIngested());
 
                 options.setBusinessKey(command.getAssetKey().toString());
@@ -746,13 +751,38 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Override
     public void updateResourceIngestionData(
         UUID publisherKey, UUID draftKey, UUID resourceKey, ServerIngestResultResponseDto data
-    ) throws FileSystemException, AssetDraftException {
+    ) throws AssetDraftException {
         try {
             // The provider must have access to the selected draft and also the
             // draft must be already accepted by the provider
-            this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.POST_PROCESSING);
+            this.ensureDraftAndStatus(publisherKey, draftKey, null);
 
-            this.draftRepository.updateResourceIngestionData(publisherKey, draftKey, resourceKey, ResourceIngestionDataDto.from(resourceKey, data));
+            this.draftRepository.updateResourceIngestionData(
+                publisherKey, draftKey, resourceKey, ResourceIngestionDataDto.from(resourceKey, data)
+            );
+        } catch (final AssetDraftException ex) {
+            throw ex;
+        } catch (final FeignException fex) {
+            logger.error(String.format("[Catalogue] Operation has failed for asset [%s]", draftKey), fex);
+
+            throw new AssetDraftException(AssetMessageCode.CATALOGUE_SERVICE, "Failed to update metadata", fex);
+        } catch (final Exception ex) {
+            logger.error("Failed to update metadata", ex);
+
+            throw new AssetDraftException(AssetMessageCode.ERROR, "Failed to publish asset", ex);
+        }
+    }
+
+    @Override
+    public void updateResourceIngestionData(
+        UUID publisherKey, UUID draftKey, UUID resourceKey, ServerIngestPublishResponseDto data
+    ) throws AssetDraftException {
+        try {
+            // The provider must have access to the selected draft and also the
+            // draft must be already accepted by the provider
+            this.ensureDraftAndStatus(publisherKey, draftKey, null);
+
+            this.draftRepository.updateResourceIngestionData(publisherKey, draftKey, resourceKey, data);
         } catch (final AssetDraftException ex) {
             throw ex;
         } catch (final FeignException fex) {
@@ -796,8 +826,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     @Transactional
-    public AssetDraftDto addServiceResource(ServiceResourceCommandDto command) throws AssetRepositoryException, AssetDraftException {
-        return this.draftRepository.addServiceResource(command.getPublisherKey(), command.getDraftKey(), command.toResource());
+    public AssetDraftDto addServiceResource(
+        UUID publisherKey, UUID draftKey, ServiceResourceDto resource
+    ) throws AssetRepositoryException, AssetDraftException {
+        return this.draftRepository.addServiceResource(publisherKey, draftKey, resource);
     }
 
     @Override
@@ -949,14 +981,16 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Transactional
-    private AssetDraftDto ensureDraftAndStatus(UUID publisherKey, UUID assetKey, EnumProviderAssetDraftStatus status) throws AssetDraftException {
+    private AssetDraftDto ensureDraftAndStatus(
+        UUID publisherKey, UUID assetKey, EnumProviderAssetDraftStatus status
+    ) throws AssetDraftException {
         final AssetDraftDto draft = this.findOneDraft(publisherKey, assetKey);
 
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
 
-        if (draft.getStatus() != status) {
+        if (status != null && draft.getStatus() != status) {
             throw new AssetDraftException(AssetMessageCode.INVALID_STATE,
                     String.format("Expected status is [%s]. Found [%s]", status, draft.getStatus()));
         }

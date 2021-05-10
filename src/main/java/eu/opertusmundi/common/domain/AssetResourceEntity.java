@@ -35,7 +35,7 @@ public class AssetResourceEntity {
     public AssetResourceEntity(UUID draftKey) {
         this.draftKey = draftKey;
     }
-    
+
     @Id
     @SequenceGenerator(sequenceName = "`file.asset_resource_id_seq`", name = "asset_resource_id_seq", allocationSize = 1)
     @GeneratedValue(generator = "asset_resource_id_seq", strategy = GenerationType.SEQUENCE)
@@ -96,7 +96,7 @@ public class AssetResourceEntity {
     private String format;
 
     public FileResourceDto toDto() {
-        return new FileResourceDto(this.key, this.fileName, this.size, this.createdOn, this.category, this.format);
+        return new FileResourceDto(key, null, size, category, fileName, createdOn, format);
     }
 
 }

@@ -10,7 +10,8 @@ public enum EnumProviderAssetDraftStatus {
      */
     SUBMITTED,
     /**
-     * Automated metadata is completed and HelpDesk review is required
+     * Automated metadata has been computed and optionally file assets have been
+     * imported to PostGIS for service assets. HelpDesk review is required
      */
     PENDING_HELPDESK_REVIEW,
     /**

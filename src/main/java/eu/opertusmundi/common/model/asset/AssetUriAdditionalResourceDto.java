@@ -28,8 +28,14 @@ public class AssetUriAdditionalResourceDto extends AssetAdditionalResourceDto {
     @Schema(description = "The URI value")
     private String uri;
 
+    @Override
     public CatalogueAdditionalResource toCatalogueResource() {
-        return new CatalogueAdditionalResource("", this.text, type.toString(), this.uri);
+        return CatalogueAdditionalResource.builder()
+            .id("")
+            .name(this.text)
+            .value(this.uri)
+            .type(this.type)
+            .build();
     }
 
 }

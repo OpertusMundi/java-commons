@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.BaseCatalogueItemDto;
@@ -38,8 +39,8 @@ public class CatalogueFeatureProperties {
         this.creationDate                 = command.getCreationDate();
         this.dateEnd                      = command.getDateEnd();
         this.dateStart                    = command.getDateStart();
-        this.deliveryMethod               = command.getDeliveryMethod() != null 
-            ? command.getDeliveryMethod().getValue().toString() 
+        this.deliveryMethod               = command.getDeliveryMethod() != null
+            ? command.getDeliveryMethod().getValue().toString()
             : null;
         this.format                       = command.getFormat();
         this.ingestionInfo                = command.getIngestionInfo();
@@ -50,6 +51,7 @@ public class CatalogueFeatureProperties {
         this.metadataLanguage             = command.getMetadataLanguage();
         this.metadataPointOfContactEmail  = command.getMetadataPointOfContactEmail();
         this.metadataPointOfContactName   = command.getMetadataPointOfContactName();
+        this.openDataset                  = command.isOpenDataset();
         this.parentId                     = command.getParentId();
         this.publicAccessLimitations      = command.getPublicAccessLimitations();
         this.publicationDate              = command.getPublicationDate();
@@ -76,12 +78,13 @@ public class CatalogueFeatureProperties {
         this.versions                     = Collections.emptyList();
 
         this.resources = StreamUtils.from(command.getResources())
-            .collect(Collectors.toList());  
+            .map(ResourceDto::toCatalogueResource)
+            .collect(Collectors.toList());
 
         this.additionalResources = StreamUtils.from(command.getAdditionalResources())
-            .map(r -> r.toCatalogueResource())
+            .map(AssetAdditionalResourceDto::toCatalogueResource)
             .collect(Collectors.toList());
-      
+
         this.keywords = StreamUtils.from(command.getKeywords())
             .map(Keyword::new)
             .collect(Collectors.toList());
@@ -94,11 +97,11 @@ public class CatalogueFeatureProperties {
         // computed by the user of the object
         this.pricingModels = StreamUtils.from(command.getPricingModels())
             .collect(Collectors.toList());
-               
+
         this.scales= StreamUtils.from(command.getScales())
             .map(Scale::new)
             .collect(Collectors.toList());
-       
+
         this.topicCategory = StreamUtils.from(command.getTopicCategory())
             .map(EnumTopicCategory::getValue)
             .collect(Collectors.toList());
@@ -129,13 +132,13 @@ public class CatalogueFeatureProperties {
     @JsonProperty("delivery_method")
     @JsonInclude(Include.NON_NULL)
     private String deliveryMethod;
-    
+
     private String format;
-    
+
     @JsonProperty("ingestion_info")
     @JsonInclude(Include.NON_NULL)
     private List<ResourceIngestionDataDto> ingestionInfo;
-    
+
     private List<Keyword> keywords;
 
     private String language;
@@ -155,6 +158,9 @@ public class CatalogueFeatureProperties {
 
     @JsonProperty("metadata_point_of_contact_name")
     private String metadataPointOfContactName;
+
+    @JsonProperty("open_dataset")
+    private boolean openDataset;
 
     @JsonProperty("parent_id")
     private String parentId;
@@ -180,7 +186,7 @@ public class CatalogueFeatureProperties {
     @JsonProperty("reference_system")
     private String referenceSystem;
 
-    private List<ResourceDto> resources;
+    private List<CatalogueResource> resources;
 
     @JsonProperty("resource_locator")
     private String resourceLocator;
@@ -188,7 +194,7 @@ public class CatalogueFeatureProperties {
     @JsonProperty("responsible_party")
     @JsonInclude(Include.NON_EMPTY)
     private List<ResponsibleParty> responsibleParty;
-    
+
     @JsonProperty("revision_date")
     private String revisionDate;
 
@@ -199,15 +205,15 @@ public class CatalogueFeatureProperties {
     @JsonProperty("spatial_data_service_type")
     @JsonInclude(Include.NON_NULL)
     private String spatialDataServiceType;
-    
+
     @JsonProperty("spatial_data_service_version")
     @JsonInclude(Include.NON_NULL)
     private String spatialDataServiceVersion;
-    
+
     @JsonProperty("spatial_data_service_operations")
     @JsonInclude(Include.NON_NULL)
     private List<String> spatialDataServiceOperations;
-    
+
     @JsonProperty("spatial_data_service_queryables")
     @JsonInclude(Include.NON_NULL)
     private List<String> spatialDataServiceQueryables;
@@ -230,16 +236,16 @@ public class CatalogueFeatureProperties {
 
     @JsonProperty("use_only_for_vas")
     private boolean useOnlyForVas;
-    
+
     private String version;
-    
+
     private List<String> versions;
 
     @NoArgsConstructor
     @Getter
     @Setter
     public static class Keyword {
-               
+
         public Keyword(BaseCatalogueItemDto.Keyword k) {
             this.keyword = k.getKeyword();
             this.theme   = k.getTheme();
@@ -247,6 +253,7 @@ public class CatalogueFeatureProperties {
 
         private String keyword;
 
+        @JsonInclude(Include.NON_NULL)
         private String theme;
 
     }
@@ -260,13 +267,14 @@ public class CatalogueFeatureProperties {
             this.scale = s.getScale();
             this.theme = s.getTheme();
         }
-        
+
         private Integer scale;
 
+        @JsonInclude(Include.NON_NULL)
         private String theme;
 
     }
-    
+
     @NoArgsConstructor
     @Getter
     @Setter

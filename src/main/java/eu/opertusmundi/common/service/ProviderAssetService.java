@@ -18,12 +18,13 @@ import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftSortField;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.MetadataProperty;
-import eu.opertusmundi.common.model.asset.ServiceResourceCommandDto;
+import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.dto.EnumSortingOrder;
 import eu.opertusmundi.common.model.file.FileSystemException;
+import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestResultResponseDto;
 
 public interface ProviderAssetService {
@@ -63,7 +64,7 @@ public interface ProviderAssetService {
 
     /**
      * Create API draft
-     * 
+     *
      * @param command
      * @return
      * @throws AssetDraftException
@@ -72,12 +73,12 @@ public interface ProviderAssetService {
 
     /**
      * Create one or more drafts by importing records from a harvested catalogue
-     * 
+     *
      * @param command
      * @throws AssetDraftException
      */
     Map<String, AssetDraftDto> importFromCatalogue(CatalogueHarvestImportCommandDto command) throws AssetDraftException;
-    
+
     /**
      * Update a draft
      *
@@ -165,29 +166,41 @@ public interface ProviderAssetService {
 
     /**
      * Update draft metadata
-     * 
+     *
      * @param publisherKey
      * @param draftKey
      * @param resourceKey
      * @param metadata
      * @throws FileSystemException
-     * @throws AssetDraftException 
+     * @throws AssetDraftException
      */
     void updateMetadata(UUID publisherKey, UUID draftKey, UUID resourceKey, JsonNode metadata) throws FileSystemException, AssetDraftException;
 
     /**
      * Update draft ingestion information
-     * 
+     *
      * @param publisherKey
      * @param draftKey
      * @param resourceKey
      * @param data
-     * @throws FileSystemException
-     * @throws AssetDraftException 
+     * @throws AssetDraftException
      */
     void updateResourceIngestionData(
         UUID publisherKey, UUID draftKey, UUID resourceKey, ServerIngestResultResponseDto data
-    ) throws FileSystemException, AssetDraftException;
+    ) throws AssetDraftException;
+
+    /**
+     * Update draft WMS/WFS publication information
+     *
+     * @param publisherKey
+     * @param draftKey
+     * @param resourceKey
+     * @param data
+     * @throws AssetDraftException
+     */
+    void updateResourceIngestionData(
+        UUID publisherKey, UUID draftKey, UUID resourceKey, ServerIngestPublishResponseDto data
+    ) throws AssetDraftException;
 
     /**
      * Uploads a file resource to the selected asset
@@ -196,7 +209,7 @@ public interface ProviderAssetService {
      * @param input An input stream of the uploaded file. The caller should close the stream.
      *
      * @return The updated draft
-     * 
+     *
      * @throws FileSystemException
      * @throws AssetRepositoryException
      * @throws AssetDraftException
@@ -207,16 +220,15 @@ public interface ProviderAssetService {
 
     /**
      * Adds a service resource to the specified asset
-     *
-     * @param command Resource metadata
-     *
-     * @return The updated draft
      * 
-     * @throws AssetRepositoryException
+     * @param publisherKey
+     * @param draftKey
+     * @param resource
+     * @return
      * @throws AssetDraftException
      */
-    AssetDraftDto addServiceResource(ServiceResourceCommandDto command) throws AssetRepositoryException, AssetDraftException;
-    
+    AssetDraftDto addServiceResource(UUID publisherKey, UUID draftKey, ServiceResourceDto resource) throws AssetDraftException;
+
     /**
      * Uploads an additional resource file for the selected asset
      *
@@ -224,7 +236,7 @@ public interface ProviderAssetService {
      * @param input An input stream of the uploaded file. The caller should close the stream.
      *
      * @return The updated draft
-     * 
+     *
      * @throws FileSystemException
      * @throws AssetRepositoryException
      * @throws AssetDraftException
@@ -232,61 +244,61 @@ public interface ProviderAssetService {
     AssetDraftDto addAdditionalResource(
         AssetFileAdditionalResourceCommandDto command, InputStream input
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
-    
+
     /**
      * Resolve the path of an additional file resource of an asset
-     * 
+     *
      * @param pid
      * @param resourceKey
      * @return
-     * 
-     * @throws FileSystemException If an I/O error occurs 
+     *
+     * @throws FileSystemException If an I/O error occurs
      * @throws AssetRepositoryException If resolve operation fails
      */
     Path resolveAssetAdditionalResource(String pid, UUID resourceKey) throws FileSystemException, AssetRepositoryException;
-    
+
     /**
      * Resolve the path of an additional file resource of a draft asset
-     * 
+     *
      * @param publisherKey
      * @param draftKey
      * @param resourceKey
      * @return
-     * 
-     * @throws FileSystemException If an I/O error occurs 
+     *
+     * @throws FileSystemException If an I/O error occurs
      * @throws AssetRepositoryException If resolve operation fails
      */
     Path resolveDraftAdditionalResource(UUID publisherKey, UUID draftKey, UUID resourceKey) throws FileSystemException, AssetRepositoryException;
 
     /**
      * Resolve path to metadata property file for a specific resource of a draft asset
-     * 
+     *
      * @param pid
      * @param resourceKey
      * @param propertyName
      * @return
-     * 
-     * @throws FileSystemException If an I/O error occurs 
+     *
+     * @throws FileSystemException If an I/O error occurs
      * @throws AssetRepositoryException If resolve operation fails
      */
     MetadataProperty resolveAssetMetadataProperty(
         String pid, UUID resourceKey, String propertyName
     ) throws FileSystemException, AssetRepositoryException;
-    
+
     /**
      * Resolve path to metadata property file for a specific resource of a draft asset
-     * 
+     *
      * @param publisherKey
      * @param draftKey
      * @param resourceKey
      * @param propertyName
      * @return
-     * 
-     * @throws FileSystemException If an I/O error occurs 
+     *
+     * @throws FileSystemException If an I/O error occurs
      * @throws AssetRepositoryException If resolve operation fails
      */
     MetadataProperty resolveDraftMetadataProperty(
         UUID publisherKey, UUID draftKey, UUID resourceKey, String propertyName
     ) throws FileSystemException, AssetRepositoryException;
-    
+
 }

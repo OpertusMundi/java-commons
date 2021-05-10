@@ -6,6 +6,7 @@ import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,14 +24,16 @@ public class ServiceResourceCommandDto extends ResourceCommandDto implements Ser
     @Getter
     @Setter
     protected UUID parentId;
-    
+
     @Schema(description = "Service type")
-    private EnumServiceResourceType serviceType;
+    private EnumSpatialDataServiceType serviceType;
 
     @Schema(description = "Service endpoint")
     private String endpoint;
 
-    public static ServiceResourceCommandDto of(UUID publisherKey, UUID draftKey, UUID parentId, EnumServiceResourceType serviceType, String endpoint) {
+    public static ServiceResourceCommandDto of(
+        UUID publisherKey, UUID draftKey, UUID parentId, EnumSpatialDataServiceType serviceType, String endpoint
+    ) {
         final ServiceResourceCommandDto c = new ServiceResourceCommandDto();
         c.setDraftKey(draftKey);
         c.setParentId(parentId);
@@ -38,10 +41,6 @@ public class ServiceResourceCommandDto extends ResourceCommandDto implements Ser
         c.setEndpoint(endpoint);
         c.setServiceType(serviceType);
         return c;
-    }
-
-    public ServiceResourceDto toResource() {
-        return new ServiceResourceDto(UUID.randomUUID(), parentId, serviceType, endpoint);
     }
 
 }

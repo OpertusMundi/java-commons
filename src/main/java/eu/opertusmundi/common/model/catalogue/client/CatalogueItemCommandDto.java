@@ -78,7 +78,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
         schema = @Schema(implementation = AssetEndpointTypes.AssetAdditionalResource.class)
     )
     private List<AssetAdditionalResourceDto> additionalResources;
-    
+
     @Schema(
         description = "True if the resource files should be imported into PostGIS database and published using WMS/WFS "
                     + "endpoints. Ingest operation is only supported for formats of category <b>VECTOR</b>",
@@ -86,7 +86,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
         defaultValue = "false",
         externalDocs = @ExternalDocumentation(
             description = "See configuration endpoint for asset file types details",
-            url   = "#operation/configuration-01" 
+            url   = "#operation/configuration-01"
         )
     )
     private boolean ingested = false;
@@ -116,7 +116,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
 
     @Schema(description = "The nature or genre of the resource", required = true)
     private EnumType type;
-    
+
     @Schema(description = "Version of the resource", required = true)
     @NotEmpty
     private String version;
@@ -130,24 +130,24 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
             schema = @Schema(oneOf = {FileResourceDto.class, ServiceResourceDto.class})
     )
     private List<ResourceDto> resources;
-      
+
     public CatalogueFeature toFeature() {
         return new CatalogueFeature(this);
     }
-    
+
     public void addFileResource(FileResourceDto resource) {
         final ResourceDto existing = this.resources.stream()
             .filter(r -> r.getId().equals(resource.getId()))
             .findFirst()
             .orElse(null);
-        
+
         if (existing == null) {
             this.resources.add(resource);
         } else {
             existing.patch(resource);
         }
     }
-    
+
     public void addServiceResource(ServiceResourceDto resource) {
         final ResourceDto existing = this.resources.stream()
             .filter(r -> r.getType() == EnumResourceType.SERVICE)
@@ -162,7 +162,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
             existing.patch(resource);
         }
     }
-    
+
     public void addAdditionalResource(AssetFileAdditionalResourceDto resource) {
         final AssetFileAdditionalResourceDto existing = this.additionalResources.stream()
                 .filter(r -> r.getType() == EnumAssetAdditionalResource.FILE)
@@ -170,7 +170,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
                 .filter(r -> r.getId().equals(resource.getId()))
                 .findFirst()
                 .orElse(null);
-            
+
             if (existing == null) {
                 this.additionalResources.add(resource);
             } else {

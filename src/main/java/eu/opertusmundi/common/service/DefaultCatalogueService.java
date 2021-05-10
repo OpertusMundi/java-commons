@@ -30,8 +30,6 @@ import eu.opertusmundi.common.feign.client.CatalogueFeignClient;
 import eu.opertusmundi.common.model.PageRequestDto;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.RestResponse;
-import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceDto;
-import eu.opertusmundi.common.model.asset.EnumAssetAdditionalResource;
 import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.catalogue.CatalogueResult;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
@@ -288,18 +286,15 @@ public class DefaultCatalogueService implements CatalogueService {
             final List<AssetAdditionalResourceEntity> additionalResources = this.assetAdditionalResourceRepository
                 .findAllResourcesByAssetPid(item.getId());
 
-            item.getAdditionalResources().stream()
-                .filter(r -> r.getType() == EnumAssetAdditionalResource.FILE)
+            additionalResources.stream()
                 .forEach(r -> {
-                    final AssetFileAdditionalResourceDto fileResource  = (AssetFileAdditionalResourceDto) r;
-                    final AssetAdditionalResourceEntity resourceEntity = additionalResources.stream()
-                        .filter(r1 -> r1.getKey().equals(fileResource.getId()))
+                    final ResourceDto resource = item.getResources().stream()
+                        .filter(r1 -> r1.getId().equals(r.getKey()))
                         .findFirst()
                         .orElse(null);
 
-                    if (resourceEntity != null) {
-                        fileResource.setModifiedOn(resourceEntity.getCreatedOn());
-                        fileResource.setSize(resourceEntity.getSize());
+                    if (resource != null) {
+                        // TODO: Check that resource file exists ...
                     }
                 });
 

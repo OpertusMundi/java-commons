@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -25,7 +26,10 @@ import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
+import eu.opertusmundi.common.model.catalogue.client.EnumType;
 import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
+import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
 import eu.opertusmundi.common.service.AssetDraftException;
 
 @Repository
@@ -162,14 +166,18 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
 
-        if (draft.getStatus() != EnumProviderAssetDraftStatus.POST_PROCESSING) {
+        final EnumProviderAssetDraftStatus expectedStatus = draft.getCommand().getType() == EnumType.SERVICE
+            ? EnumProviderAssetDraftStatus.SUBMITTED
+            : EnumProviderAssetDraftStatus.POST_PROCESSING;
+
+        if (draft.getStatus() != expectedStatus) {
             throw new AssetDraftException(
                 AssetMessageCode.INVALID_STATE,
-                String.format("Expected status is [%s]. Found [%s]", EnumProviderAssetDraftStatus.POST_PROCESSING, draft.getStatus())
+                String.format("Expected status is [%s]. Found [%s]", expectedStatus, draft.getStatus())
             );
         }
-        
-        // Initialize ingestion data if needed 
+
+        // Initialize ingestion data if needed
         List<ResourceIngestionDataDto> assetIngestionData = draft.getCommand().getIngestionInfo();
         if (assetIngestionData == null) {
             assetIngestionData = new ArrayList<ResourceIngestionDataDto>();
@@ -177,6 +185,50 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         }
 
         assetIngestionData.add(data);
+        // NOTE: Workaround for updating ingestion data. Property command of entity
+        // ProviderAssetDraftEntity is annotated with @Convert for serializing a
+        // CatalogueItemCommandDto instance to JSON; Hence updating only the metadata
+        // nested property wont trigger an update and convertToDatabaseColumn will not be
+        // invoked.
+        draft.setModifiedOn(ZonedDateTime.now());
+
+        this.saveAndFlush(draft);
+    }
+
+    @Transactional(readOnly = false)
+    default void updateResourceIngestionData(
+        UUID publisherKey, UUID draftKey, UUID resourceKey, ServerIngestPublishResponseDto data
+    ) throws AssetDraftException {
+        final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
+
+        if (draft == null) {
+            throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
+        }
+
+        final EnumProviderAssetDraftStatus expectedStatus = draft.getCommand().getType() == EnumType.SERVICE
+            ? EnumProviderAssetDraftStatus.SUBMITTED
+            : EnumProviderAssetDraftStatus.POST_PROCESSING;
+
+        if (draft.getStatus() != expectedStatus) {
+            throw new AssetDraftException(
+                AssetMessageCode.INVALID_STATE,
+                String.format("Expected status is [%s]. Found [%s]", expectedStatus, draft.getStatus())
+            );
+        }
+
+        // Initialize ingestion data if needed
+        final ResourceIngestionDataDto ingestionData = draft.getCommand().getIngestionInfo().stream()
+            .filter(i -> i.getKey().equals(resourceKey))
+            .findFirst()
+            .get();
+
+        if (!StringUtils.isBlank(data.getWms())) {
+            ingestionData.addEndpoint(EnumSpatialDataServiceType.WMS, data.getWms());
+        }
+        if (!StringUtils.isBlank(data.getWfs())) {
+            ingestionData.addEndpoint(EnumSpatialDataServiceType.WFS, data.getWfs());
+        }
+
         // NOTE: Workaround for updating ingestion data. Property command of entity
         // ProviderAssetDraftEntity is annotated with @Convert for serializing a
         // CatalogueItemCommandDto instance to JSON; Hence updating only the metadata
@@ -197,7 +249,11 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
 
-        if (draft.getStatus() != EnumProviderAssetDraftStatus.POST_PROCESSING) {
+        final EnumProviderAssetDraftStatus expectedStatus = draft.getCommand().getType() == EnumType.SERVICE
+            ? EnumProviderAssetDraftStatus.SUBMITTED
+            : EnumProviderAssetDraftStatus.POST_PROCESSING;
+
+        if (draft.getStatus() != expectedStatus) {
             throw new AssetDraftException(
                 AssetMessageCode.INVALID_STATE,
                 String.format("Expected status is [%s]. Found [%s]", EnumProviderAssetDraftStatus.POST_PROCESSING, draft.getStatus())
@@ -247,7 +303,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
 
         draft.setStatus(EnumProviderAssetDraftStatus.POST_PROCESSING);
     }
-    
+
     @Transactional(readOnly = false)
     default void rejectHelpDesk(UUID publisherKey, UUID draftKey, String reason) throws AssetDraftException {
         final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
@@ -260,11 +316,11 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         if (draft.getStatus() != EnumProviderAssetDraftStatus.HELPDESK_REJECTED) {
             draft.setModifiedOn(ZonedDateTime.now());
         }
-        
+
         draft.setStatus(EnumProviderAssetDraftStatus.HELPDESK_REJECTED);
         draft.setHelpdeskRejectionReason(reason);
     }
-    
+
     @Transactional(readOnly = false)
     default void rejectProvider(UUID publisherKey, UUID draftKey, String reason) throws AssetDraftException {
         final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
@@ -277,7 +333,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         if (draft.getStatus() != EnumProviderAssetDraftStatus.PROVIDER_REJECTED) {
             draft.setModifiedOn(ZonedDateTime.now());
         }
-        
+
         draft.setStatus(EnumProviderAssetDraftStatus.PROVIDER_REJECTED);
         draft.setProviderRejectionReason(reason);
     }
@@ -298,7 +354,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         draft.setAssetPublished(pid);
         draft.setStatus(EnumProviderAssetDraftStatus.PUBLISHED);
     }
-    
+
     @Transactional(readOnly = false)
     default void updateStatus(UUID publisherKey, UUID draftKey, EnumProviderAssetDraftStatus status) throws AssetDraftException {
         final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
@@ -306,7 +362,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
-        
+
         // Set modified on only the first time the status changes
         if (draft.getStatus() != status) {
             draft.setModifiedOn(ZonedDateTime.now());
@@ -314,7 +370,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
 
         draft.setStatus(status);
     }
-    
+
     @Transactional(readOnly = false)
     default void delete(UUID publisherKey, UUID assetKey) {
         Assert.notNull(publisherKey, "Expected a non-null publisher key");
