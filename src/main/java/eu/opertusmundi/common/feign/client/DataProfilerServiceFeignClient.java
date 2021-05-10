@@ -1,7 +1,7 @@
 package eu.opertusmundi.common.feign.client;
 
-import java.io.File;
 import java.math.BigDecimal;
+import java.util.UUID;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestPart;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -43,12 +44,13 @@ public interface DataProfilerServiceFeignClient {
      * @return
      */
     @PostMapping(
-        value   = "/profile/file/netcdf",
-        consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+        value   = "/profile/path/netcdf",
+        consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE
     )
-    @Headers("Content-Type: multipart/form-data")
+    @Headers("Content-Type: application/x-www-form-urlencoded")
     ResponseEntity<DataProfilerDeferredResponseDto> profileNetCdf(
-        @RequestPart(name = "resource",         required = true)  File       resource,
+        @RequestHeader("X-Idempotency-Key") UUID idempotencyKey,
+        @RequestPart(name = "resource",         required = true)  String     resource,
         @RequestPart(name = "response",         required = true)  String     response,
         @RequestPart(name = "basemap_provider", required = false) String     baseMapProvider,
         @RequestPart(name = "basemap_name ",    required = false) String     baseMapName ,
@@ -70,12 +72,13 @@ public interface DataProfilerServiceFeignClient {
      * @return
      */
     @PostMapping(
-        value   = "/profile/file/raster",
-        consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+        value   = "/profile/path/raster",
+        consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE
     )
-    @Headers("Content-Type: multipart/form-data")
+    @Headers("Content-Type: application/x-www-form-urlencoded")
     ResponseEntity<DataProfilerDeferredResponseDto> profileRaster(
-        @RequestPart(name = "resource", required = true) File resource,
+        @RequestHeader("X-Idempotency-Key") UUID idempotencyKey,
+        @RequestPart(name = "resource", required = true) String resource,
         @RequestPart(name = "response", required = true) String response
     );
 
@@ -97,12 +100,13 @@ public interface DataProfilerServiceFeignClient {
      * @return
      */
     @PostMapping(
-        value   = "/profile/file/vector",
-        consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+        value   = "/profile/path/vector",
+        consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE
     )
-    @Headers("Content-Type: multipart/form-data")
+    @Headers("Content-Type: application/x-www-form-urlencoded")
     ResponseEntity<DataProfilerDeferredResponseDto> profileVector(
-        @RequestPart(name = "resource",         required = true)  File       resource,
+        @RequestHeader("X-Idempotency-Key") UUID idempotencyKey,
+        @RequestPart(name = "resource",         required = true) String      resource,
         @RequestPart(name = "response",         required = true)  String     response,
         @RequestPart(name = "basemap_provider", required = false) String     baseMapProvider,
         @RequestPart(name = "basemap_name ",    required = false) String     baseMapName ,

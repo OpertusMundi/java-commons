@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.service;
 
+import java.util.UUID;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.model.asset.EnumAssetSourceType;
@@ -11,7 +13,7 @@ import eu.opertusmundi.common.model.profiler.DataProfilerStatusResponseDto;
 public interface DataProfilerService {
 
     DataProfilerDeferredResponseDto profile(
-        EnumAssetSourceType type, String resource, DataProfilerOptions options
+        UUID idempotencyKey, EnumAssetSourceType type, String resource, DataProfilerOptions options
     ) throws DataProfilerServiceException;
 
     DataProfilerStatusResponseDto getStatus(String ticket) throws DataProfilerServiceException;
