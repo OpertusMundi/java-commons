@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -41,6 +44,7 @@ public class ResourceIngestionDataDto implements Serializable {
         minItems = 0,
         uniqueItems = true
     )
+    @JsonInclude(Include.NON_EMPTY)
     private List<ServiceEndpoint> endpoints = new ArrayList<>();
 
     public static ResourceIngestionDataDto from(UUID key, ServerIngestResultResponseDto s) {
@@ -61,7 +65,7 @@ public class ResourceIngestionDataDto implements Serializable {
             current.setUri(uri);
         }
     }
-    
+
     public ServiceEndpoint getEndpointByServiceType(EnumSpatialDataServiceType type) {
         return endpoints.stream().filter(e -> e.type == type).findFirst().orElse(null);
     }

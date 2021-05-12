@@ -79,13 +79,15 @@ public class CatalogueResource implements Serializable {
     private List<String> crs;
 
     @JsonInclude(Include.NON_NULL)
-    private List<String> style;
+    @JsonProperty("style")
+    private List<String> styles;
 
     @JsonInclude(Include.NON_NULL)
     private Geometry bbox;
 
+    @JsonProperty("dimension")
     @JsonInclude(Include.NON_NULL)
-    private List<Dimension> dimension;
+    private List<Dimension> dimensions;
 
     @JsonProperty("output_formats")
     @JsonInclude(Include.NON_NULL)
@@ -108,7 +110,7 @@ public class CatalogueResource implements Serializable {
 
     @JsonProperty("tile_sets")
     @JsonInclude(Include.NON_NULL)
-    private List<Object> tileSets;
+    private List<TileSet> tileSets;
 
     @NoArgsConstructor
     @Getter
@@ -160,6 +162,43 @@ public class CatalogueResource implements Serializable {
         private String defaultValue;
 
         private List<String> values;
+    }
+
+    @NoArgsConstructor
+    @Getter
+    @Setter
+    public static class TileSet {
+
+        public TileSet(ServiceResourceDto.TileSet t) {
+            this.identifier = t.getIdentifier();
+            this.maxTileCol = t.getMaxTileCol();
+            this.maxTileRow = t.getMaxTileRow();
+            this.minTileCol = t.getMinTileCol();
+            this.minTileRow = t.getMinTileRow();
+            this.tileHeight = t.getTileHeight();
+            this.tileWidth  = t.getTileWidth();
+        }
+
+        private String identifier;
+
+        @JsonProperty("min_tile_row")
+        private Integer minTileRow;
+
+        @JsonProperty("max_tile_row")
+        private Integer maxTileRow;
+
+        @JsonProperty("min_tile_col")
+        private Integer minTileCol;
+
+        @JsonProperty("max_tile_col")
+        private Integer maxTileCol;
+
+        @JsonProperty("tile_height")
+        private Integer tileHeight;
+
+        @JsonProperty("tile_width")
+        private Integer tileWidth;
+
     }
 
 }

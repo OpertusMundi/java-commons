@@ -18,7 +18,7 @@ public enum EnumAssetAdditionalResource {
      */
     URI,
     ;
-    
+
     public static EnumAssetAdditionalResource fromString(String value) {
         for (final EnumAssetAdditionalResource item : EnumAssetAdditionalResource.values()) {
             if (item.name().equalsIgnoreCase(value)) {

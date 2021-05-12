@@ -44,7 +44,7 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
         @JsonProperty("attribution") String attribution,
         @JsonProperty("minScale") Integer minScale,
         @JsonProperty("maxScale") Integer maxScale,
-        @JsonProperty("tileSets") List<Object> tileSets
+        @JsonProperty("tileSets") List<TileSet> tileSets
     ) {
         super(id, parentId, EnumResourceType.SERVICE);
 
@@ -69,7 +69,7 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
         this.attribution        = r.getAttribution();
         this.bbox               = r.getBbox();
         this.crs                = r.getCrs();
-        this.dimensions         = StreamUtils.from(r.getDimension())
+        this.dimensions         = StreamUtils.from(r.getDimensions())
             .map(ServiceResourceDto.Dimension::new)
             .collect(Collectors.toList());
         this.endpoint           = r.getEndpoint();
@@ -80,8 +80,10 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
         this.outputFormats      = r.getOutputFormats();
         this.parentId           = r.getParentId();
         this.serviceType        = r.getServiceType();
-        this.styles             = r.getStyle();
-        this.tileSets           = r.getTileSets();
+        this.styles             = r.getStyles();
+        this.tileSets           = StreamUtils.from(r.getTileSets())
+            .map(ServiceResourceDto.TileSet::new)
+            .collect(Collectors.toList());
         this.type               = r.getType();
     }
 
@@ -91,27 +93,38 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
     @Schema(description = "Service endpoint")
     private String endpoint;
 
+    @Schema(description = "Resource attributes")
     private Attributes attributes;
 
+    @Schema(description = "The supported CRS of the resource")
     private List<String> crs;
 
+    @Schema(description = "A list of URLs pointing to the available styles of the resource")
     private List<String> styles;
 
+    @Schema(description = "The bounding box of the resource")
     private Geometry bbox;
 
+    @Schema(description = "The dimensions of the resource (derived from WMS)")
     private List<Dimension> dimensions;
 
+    @Schema(description = "The output formats of the resource (derived from WMS/WFS/WCS)")
     private List<String> outputFormats;
 
+    @Schema(description = "The filter capabilities of the resource")
     private List<String> filterCapabilities;
 
+    @Schema(description = "The attribution of the resource")
     private String attribution;
 
+    @Schema(description = "Resource minimum scale denominator")
     private Integer minScale;
 
+    @Schema(description = "Resource maximum scale denominator")
     private Integer maxScale;
 
-    private List<Object> tileSets;
+    @Schema(description = "Resource tile sets")
+    private List<TileSet> tileSets;
 
     @Override
     public void patch(ResourceDto r) {
@@ -133,7 +146,7 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
             .attribution(attribution)
             .bbox(bbox)
             .crs(crs)
-            .dimension(StreamUtils.from(dimensions).map(CatalogueResource.Dimension::new).collect(Collectors.toList()))
+            .dimensions(StreamUtils.from(dimensions).map(CatalogueResource.Dimension::new).collect(Collectors.toList()))
             .endpoint(endpoint)
             .filterCapabilities(filterCapabilities)
             .id(id)
@@ -142,9 +155,40 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
             .outputFormats(outputFormats)
             .parentId(parentId)
             .serviceType(serviceType)
-            .style(styles)
-            .tileSets(tileSets)
+            .styles(styles)
+            .tileSets(StreamUtils.from(tileSets).map(CatalogueResource.TileSet::new).collect(Collectors.toList()))
             .build();
+    }
+
+    @NoArgsConstructor
+    @Getter
+    @Setter
+    public static class TileSet {
+
+        public TileSet(CatalogueResource.TileSet t) {
+            this.identifier = t.getIdentifier();
+            this.maxTileCol = t.getMaxTileCol();
+            this.maxTileRow = t.getMaxTileRow();
+            this.minTileCol = t.getMinTileCol();
+            this.minTileRow = t.getMinTileRow();
+            this.tileHeight = t.getTileHeight();
+            this.tileWidth  = t.getTileWidth();
+        }
+
+        private String identifier;
+
+        private Integer minTileRow;
+
+        private Integer maxTileRow;
+
+        private Integer minTileCol;
+
+        private Integer maxTileCol;
+
+        private Integer tileHeight;
+
+        private Integer tileWidth;
+
     }
 
     @NoArgsConstructor

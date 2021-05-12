@@ -173,7 +173,7 @@ public abstract class BaseCatalogueItemDto {
 
     @Schema(description = "Used for declaring open datasets")
     private boolean openDataset;
-    
+
     @Schema(description = "Provides the ID of a parent dataset")
     private String parentId;
 
@@ -285,11 +285,11 @@ public abstract class BaseCatalogueItemDto {
         private Integer scale;
 
         @Schema(description = "A short description")
-        private String theme;
+        private String description;
 
         public Scale(CatalogueFeatureProperties.Scale s) {
-            this.scale = s.getScale();
-            this.theme = s.getTheme();
+            this.scale       = s.getScale();
+            this.description = s.getDescription();
         }
 
     }

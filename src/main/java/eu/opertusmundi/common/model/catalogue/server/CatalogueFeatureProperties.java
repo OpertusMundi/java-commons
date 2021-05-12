@@ -264,14 +264,14 @@ public class CatalogueFeatureProperties {
     public static class Scale {
 
         public Scale(BaseCatalogueItemDto.Scale s) {
-            this.scale = s.getScale();
-            this.theme = s.getTheme();
+            this.scale       = s.getScale();
+            this.description = s.getDescription();
         }
 
         private Integer scale;
 
         @JsonInclude(Include.NON_NULL)
-        private String theme;
+        private String description;
 
     }
 
