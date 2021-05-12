@@ -41,8 +41,8 @@ public class CatalogueItemCommandAttributeConverter implements AttributeConverte
     public String convertToDatabaseColumn(CatalogueItemCommandDto attribute) {
         try {
             return objectMapper.writeValueAsString(attribute);
-        } catch (final JsonProcessingException e) {
-            logger.error("Failed to write process configuration", e);
+        } catch (final JsonProcessingException ex) {
+            logger.error("Failed to serialize object. [type={}, exception={}]", CatalogueItemCommandDto.class, ex);
         }
         return null;
     }
@@ -52,8 +52,8 @@ public class CatalogueItemCommandAttributeConverter implements AttributeConverte
         try {
             return objectMapper.readValue(dbData, new TypeReference<CatalogueItemCommandDto>() {
             });
-        } catch (final IOException e) {
-            logger.error("Failed to read process configuration", e);
+        } catch (final IOException ex) {
+            logger.error("Failed to deserialize string. [data={}, type={}, exception={}]", dbData, CatalogueItemCommandDto.class, ex);
         }
         return null;
     }

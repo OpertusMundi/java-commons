@@ -17,10 +17,10 @@ public class MangoPayWebhookHandler {
 
     @Autowired
     private PaymentService paymentService;
-    
+
     @Autowired
     private CustomerVerificationService customerVerificationService;
-    
+
     public void handleWebHook(String eventType, String resourceId, ZonedDateTime date) throws PaymentException {
         switch (EventType.valueOf(eventType)) {
             case PAYIN_NORMAL_SUCCEEDED :
@@ -51,5 +51,5 @@ public class MangoPayWebhookHandler {
         }
     }
 
-    
+
 }

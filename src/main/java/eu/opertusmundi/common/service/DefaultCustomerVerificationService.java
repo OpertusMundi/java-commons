@@ -52,13 +52,13 @@ import io.jsonwebtoken.lang.Assert;
 public class DefaultCustomerVerificationService extends BaseMangoPayService implements CustomerVerificationService {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultCustomerVerificationService.class);
-    
+
     @Autowired
     private AccountRepository accountRepository;
-    
+
     @Autowired
     private CustomerRepository customerRepository;
-    
+
     @Autowired
     private KycDocumentPageRepository kycDocumentPageRepository;
 
@@ -70,8 +70,8 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
         try {
             final int     page           = command.getPageIndex() < 0 ? 0 : command.getPageIndex();
             final int     size           = command.getPageSize() < 1 ? 10 : command.getPageSize();
-            final String  mangoPayUserId = this.resolveMangopayUserId(command.getCustomerKey(), command.getCustomerType());            
-            
+            final String  mangoPayUserId = this.resolveMangopayUserId(command.getCustomerKey(), command.getCustomerType());
+
             final Sorting sorting = new Sorting();
             sorting.addField("CreationDate", SortDirection.desc);
 
@@ -85,13 +85,13 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
             final List<KycDocumentDto> items = kycDocuments.stream()
                 .map(KycDocumentDto::from)
                 .collect(Collectors.toList());
-            
+
             return PageResultDto.of(page, size, items);
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             throw this.wrapException("List UBO Declarations", ex, command);
         }
     }
-    
+
     @Override
     public KycDocumentDto findOneKycDocument(KycDocumentCommand command) throws CustomerVerificationException {
         Assert.notNull(command, "Expected a non-null command");
@@ -104,7 +104,7 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
             final KycDocument kycDocument    = this.api.getUserApi().getKycDocument(mangoPayUserId, command.getKycDocumentId());
 
             return KycDocumentDto.from(kycDocument);
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             throw this.wrapException("Find KYC Document", ex, command);
         }
     }
@@ -113,7 +113,7 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
     public KycDocumentDto createKycDocument(KycDocumentCommandDto command) throws CustomerVerificationException {
         Assert.notNull(command, "Expected a non-null command");
         Assert.notNull(command.getUserKey(), "Expected a non-null user key");
-        
+
         try {
             final String      mangoPayUserId = this.resolveMangopayUserId(command.getUserKey(), command.getCustomerType());
             final KycDocument kycDocument    = this.api.getUserApi().createKycDocument(
@@ -121,11 +121,11 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
             );
 
             return KycDocumentDto.from(kycDocument);
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             throw this.wrapException("Create KYC Document", ex, command);
         }
     }
-    
+
     @Override
     public void addPage(KycDocumentPageCommandDto command, byte[] data) throws CustomerVerificationException {
         Assert.notNull(command, "Expected a non-null command");
@@ -135,12 +135,12 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
 
         try {
             final String mangoPayUserId = this.resolveMangopayUserId(command.getUserKey(), command.getCustomerType());
-            
+
             // Store page metadata
             kycDocumentPageRepository.create(command);
             // Submit page
             this.api.getUserApi().createKycPage(mangoPayUserId, command.getKycDocumentId(), data);
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             throw this.wrapException("Create KYC Document Page", ex, command);
         }
     }
@@ -161,11 +161,11 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
             kycDocument = this.api.getUserApi().updateKycDocument(mangoPayUserId, kycDocument);
 
             return KycDocumentDto.from(kycDocument);
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             throw this.wrapException("Submit UBO Declaration", ex, command);
         }
     }
-    
+
     @Override
     public PageResultDto<UboDeclarationDto> findAllUboDeclarations(UboQueryCommand command) throws CustomerVerificationException {
         Assert.notNull(command, "Expected a non-null command");
@@ -174,8 +174,8 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
         try {
             final int     page           = command.getPageIndex() < 0 ? 0 : command.getPageIndex();
             final int     size           = command.getPageSize() < 1 ? 10 : command.getPageSize();
-            final String  mangoPayUserId = this.resolveMangopayUserId(command.getProviderKey(), EnumCustomerType.PROVIDER);            
-            
+            final String  mangoPayUserId = this.resolveMangopayUserId(command.getProviderKey(), EnumCustomerType.PROVIDER);
+
             final Sorting sorting = new Sorting();
             sorting.addField("CreationDate", SortDirection.desc);
 
@@ -189,9 +189,9 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
             final List<UboDeclarationDto> items = uboDeclarations.stream()
                 .map(u -> UboDeclarationDto.from(u, false))
                 .collect(Collectors.toList());
-            
+
             return PageResultDto.of(page, size, items);
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             throw this.wrapException("List UBO Declarations", ex, command);
         }
     }
@@ -207,7 +207,7 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
             final UboDeclaration uboDeclaration = this.api.getUboDeclarationApi().get(mangoPayUserId, command.getUboDeclarationId());
 
             return UboDeclarationDto.from(uboDeclaration, true);
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             throw this.wrapException("Find UBO Declaration", ex, command);
         }
     }
@@ -216,13 +216,13 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
     public UboDeclarationDto createUboDeclaration(UboDeclarationCommand command) throws CustomerVerificationException {
         Assert.notNull(command, "Expected a non-null command");
         Assert.notNull(command.getProviderKey(), "Expected a non-null provider key");
-        
+
         try {
             final String         mangoPayUserId = this.resolveMangopayUserId(command.getProviderKey(), EnumCustomerType.PROVIDER);
             final UboDeclaration uboDeclaration = this.api.getUboDeclarationApi().create(mangoPayUserId);
 
             return UboDeclarationDto.from(uboDeclaration, true);
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             throw this.wrapException("Create UBO Declaration", ex, command);
         }
     }
@@ -232,7 +232,7 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
         Assert.notNull(command, "Expected a non-null command");
         Assert.notNull(command.getProviderKey(), "Expected a non-null provider key");
         Assert.hasText(command.getUboDeclarationId(), "Expected a non-blank UBO declaration id");
-        
+
         try {
             final String mangoPayUserId = this.resolveMangopayUserId(command.getProviderKey(), EnumCustomerType.PROVIDER);
             final Ubo    ubo            = this.api.getUboDeclarationApi().createUbo(
@@ -240,7 +240,7 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
             );
 
             return UboDto.from(ubo);
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             throw this.wrapException("Add UBO", ex, command);
         }
     }
@@ -257,7 +257,7 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
 
         return this.updateUboImpl(command);
     }
-    
+
     private UboDto updateUboImpl(UboCommandDto command) throws CustomerVerificationException {
         Assert.notNull(command, "Expected a non-null command");
         Assert.notNull(command.getProviderKey(), "Expected a non-null provider key");
@@ -271,17 +271,17 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
             );
 
             return UboDto.from(ubo);
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             throw this.wrapException("Remove UBO", ex, command);
         }
     }
-    
+
     @Override
     public UboDeclarationDto submitUboDeclaration(UboDeclarationCommand command) throws CustomerVerificationException {
         Assert.notNull(command, "Expected a non-null command");
         Assert.notNull(command.getProviderKey(), "Expected a non-null provider key");
         Assert.hasText(command.getUboDeclarationId(), "Expected a non-blank UBO declaration id");
-        
+
         try {
             final String         mangoPayUserId = this.resolveMangopayUserId(command.getProviderKey(), EnumCustomerType.PROVIDER);
             final UboDeclaration uboDeclaration = this.api.getUboDeclarationApi().submitForValidation(
@@ -289,12 +289,12 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
             );
 
             return UboDeclarationDto.from(uboDeclaration, true);
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             throw this.wrapException("Submit UBO Declaration", ex, command);
         }
     }
-    
-    
+
+
     @Override
     public CustomerDto updateCustomerKycLevel(UpdateKycLevelCommand command) throws CustomerVerificationException {
         try {
@@ -302,22 +302,22 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
             final CustomerEntity customerEntity = this.customerRepository
                 .findCustomerByProviderUserId(command.getProviderUserId())
                 .orElse(null);
-            
+
             if(customerEntity == null) {
                 throw new CustomerVerificationException(
                     CustomerVerificationMessageCode.PLATFORM_CUSTOMER_NOT_FOUND,
                     String.format("[OpertusMundi] Customer for provider user [%s] was not found", command.getProviderUserId())
-                );  
+                );
             }
 
             // Fetch payment provider user
             final User userObject = this.api.getUserApi().get(command.getProviderUserId());
-            
+
             if(userObject == null) {
                 throw new CustomerVerificationException(
                     CustomerVerificationMessageCode.PROVIDER_USER_NOT_FOUND,
                     String.format("[OpertusMundi] Provider user [%s] was not found", command.getProviderUserId())
-                );  
+                );
             }
 
             final EnumKycLevel kycLevel = EnumKycLevel.from(userObject.getKycLevel());
@@ -328,13 +328,13 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
             }
 
             customerEntity.setKycLevel(kycLevel);
-            
+
             final CustomerKycLevelEntity level = new CustomerKycLevelEntity();
             level.setCustomer(customerEntity);
             level.setLevel(customerEntity.getKycLevel());
             level.setUpdatedOn(command.getUpdatedOn());
             customerEntity.getLevelHistory().add(level);
-            
+
             this.customerRepository.saveAndFlush(customerEntity);
 
             return customerEntity.toDto();
@@ -380,7 +380,7 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
                 throw new CustomerVerificationException(
                     CustomerVerificationMessageCode.CUSTOMER_TYPE_NOT_SUPPORTED,
                     String.format("[Customer Verification] Customer type %s for customer %s is not supported", userType, customerKey)
-                ); 
+                );
         }
 
         this.ensureCustomer(customer, customerKey, userType);
@@ -390,14 +390,14 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
 
     /**
      * Wraps an exception with {@link CustomerVerificationException}
-     * 
+     *
      * @param operation
      * @param ex
      * @return
      */
     private CustomerVerificationException wrapException(String operation, Exception ex, Object command) {
         final String commandText = command == null ? "-" : command.toString();
-        
+
         // Ignore service exceptions
         if (ex instanceof CustomerVerificationException) {
             return (CustomerVerificationException) ex;
@@ -406,7 +406,8 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
         // MANGOPAY exceptions
         if (ex instanceof ResponseException) {
             final String message = String.format(
-                "[MANGOPAY] %s : %s [%s]", operation, ((ResponseException) ex).getApiMessage(),commandText
+                "MANGOPAY operation has failed. [operation=%s, apiMessage=%s, command=[%s]]",
+                operation, ((ResponseException) ex).getApiMessage(), commandText
             );
 
             logger.error(message, ex);
@@ -415,7 +416,10 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
         }
 
         // Global exception handler
-        final String message = String.format("[MANGOPAY] %s [%s]", operation, commandText);
+        final String message = String.format(
+                "MANGOPAY operation has failed. [operation=%s, command=[%s]]",
+                operation, commandText
+            );
 
         logger.error(message, ex);
 

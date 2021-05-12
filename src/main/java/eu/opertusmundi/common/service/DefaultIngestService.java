@@ -55,9 +55,9 @@ public class DefaultIngestService implements IngestService {
                     String.format("Resource file [%s] was not found", resource)
                 );
             }
-            
+
             final Path resolvedResourcePath = this.copyResource(idempotencyKey.toString(), resource);
-            
+
             final ResponseEntity<ServerIngestPromptResponseDto> e = this.ingestClient.getObject().ingestSync(
                 idempotencyKey, resolvedResourcePath.toString(), EnumIngestResponse.PROMPT.getValue(), schema, tablename
             );
@@ -66,7 +66,7 @@ public class DefaultIngestService implements IngestService {
 
             return serviceResponse;
         } catch (final Exception ex) {
-            logger.error("[Ingest Service] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw new IngestServiceException(IngestServiceMessageCode.UNKNOWN);
         }
@@ -85,9 +85,9 @@ public class DefaultIngestService implements IngestService {
                     String.format("Resource file [%s] was not found", resource)
                 );
             }
-            
+
             final Path resolvedResourcePath = this.copyResource(idempotencyKey.toString(), resource);
-            
+
             final ResponseEntity<ServerIngestDeferredResponseDto> e = this.ingestClient.getObject().ingestAsync(
                 idempotencyKey, resolvedResourcePath.toString(), EnumIngestResponse.DEFERRED.getValue(), schema, tablename
             );
@@ -96,7 +96,7 @@ public class DefaultIngestService implements IngestService {
 
             return serviceResponse;
         } catch (final Exception ex) {
-            logger.error("[Ingest Service] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw new IngestServiceException(IngestServiceMessageCode.UNKNOWN);
         }
@@ -112,7 +112,7 @@ public class DefaultIngestService implements IngestService {
                 .table(table)
                 .workspace(workspace)
                 .build();
-            
+
             final ResponseEntity<ServerIngestPublishResponseDto> e = this.ingestClient.getObject().publish(
                 idempotencyKey, command
             );
@@ -121,12 +121,12 @@ public class DefaultIngestService implements IngestService {
 
             return serviceResponse;
         } catch (final Exception ex) {
-            logger.error("[Ingest Service] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw new IngestServiceException(IngestServiceMessageCode.UNKNOWN);
         }
     }
-    
+
     @Override
     public ServerIngestStatusResponseDto getStatus(String ticket) throws IngestServiceException {
         try {
@@ -141,11 +141,11 @@ public class DefaultIngestService implements IngestService {
                 return null;
             }
 
-            logger.error("[Feign Client][Ingest Service] Operation has failed", fex);
+            logger.error("Operation has failed", fex);
 
             throw new IngestServiceException(IngestServiceMessageCode.SERVICE_ERROR, fex.getMessage());
         } catch (final Exception ex) {
-            logger.error("[Ingest Service] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw new IngestServiceException(IngestServiceMessageCode.UNKNOWN);
         }
@@ -160,7 +160,7 @@ public class DefaultIngestService implements IngestService {
 
             return serviceResponse;
         } catch (final Exception ex) {
-            logger.error("[Ingest Service] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw new IngestServiceException(IngestServiceMessageCode.UNKNOWN);
         }
@@ -180,16 +180,16 @@ public class DefaultIngestService implements IngestService {
                 return null;
             }
 
-            logger.error("[Feign Client][Ingest Service] Operation has failed", fex);
+            logger.error("Operation has failed", fex);
 
             throw new IngestServiceException(IngestServiceMessageCode.SERVICE_ERROR, fex.getMessage());
         } catch (final Exception ex) {
-            logger.error("[Ingest Service] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw new IngestServiceException(IngestServiceMessageCode.UNKNOWN);
         }
     }
-    
+
     private Path copyResource(String relativePath, String path) throws IOException {
         final String fileName           = FilenameUtils.getName(path);
         final Path   absoluteSourcePath = Paths.get(this.inputDir, relativePath, fileName);
@@ -199,5 +199,5 @@ public class DefaultIngestService implements IngestService {
 
         return Paths.get(relativePath, fileName);
     }
-    
+
 }

@@ -480,7 +480,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 this.draftRepository.acceptHelpDesk(publisherKey, draftKey);
             }
         } catch (final FeignException fex) {
-            logger.error("[Feign Client][Provider Asset] Operation has failed", fex);
+            logger.error("Operation has failed", fex);
 
             throw new AssetDraftException(AssetMessageCode.BPM_SERVICE, "Operation on BPM server failed", fex);
         }
@@ -546,7 +546,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             this.bpmClient.getObject().correlateMessage(message);
         } catch (final FeignException fex) {
-            logger.error("[Feign Client][Provider Asset] Operation has failed", fex);
+            logger.error("Operation has failed", fex);
 
             throw new AssetDraftException(AssetMessageCode.BPM_SERVICE, "Operation on BPM server failed", fex);
         }
@@ -607,7 +607,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         } catch (final AssetDraftException ex) {
             throw ex;
         } catch (final Exception ex) {
-            logger.error("[Catalogue] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw new AssetDraftException(AssetMessageCode.ERROR, "Failed to publish asset", ex);
         }
@@ -738,7 +738,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 String.format("Failed to serialize automated metadata for asset [%s]", draftKey)
             );
         } catch (final FeignException fex) {
-            logger.error(String.format("[Catalogue] Operation has failed for asset [%s]", draftKey), fex);
+            logger.error(String.format("Operation has failed for asset. [draftKey=%s]", draftKey), fex);
 
             throw new AssetDraftException(AssetMessageCode.CATALOGUE_SERVICE, "Failed to update metadata", fex);
         } catch (final Exception ex) {
@@ -763,7 +763,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         } catch (final AssetDraftException ex) {
             throw ex;
         } catch (final FeignException fex) {
-            logger.error(String.format("[Catalogue] Operation has failed for asset [%s]", draftKey), fex);
+            logger.error(String.format("Operation has failed for asset. [draftKey=%s]", draftKey), fex);
 
             throw new AssetDraftException(AssetMessageCode.CATALOGUE_SERVICE, "Failed to update metadata", fex);
         } catch (final Exception ex) {
@@ -786,7 +786,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         } catch (final AssetDraftException ex) {
             throw ex;
         } catch (final FeignException fex) {
-            logger.error(String.format("[Catalogue] Operation has failed for asset [%s]", draftKey), fex);
+            logger.error(String.format("Operation has failed for asset. [draftKey=%s]", draftKey), fex);
 
             throw new AssetDraftException(AssetMessageCode.CATALOGUE_SERVICE, "Failed to update metadata", fex);
         } catch (final Exception ex) {
@@ -941,7 +941,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             return instances.stream().findFirst().orElse(null);
         } catch (final FeignException fex) {
-            logger.error("[Feign Client][Provider Asset] Operation has failed", fex);
+            logger.error("Operation has failed", fex);
 
             // Handle 404 errors as valid responses
             if (fex.status() == HttpStatus.NOT_FOUND.value()) {

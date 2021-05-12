@@ -24,23 +24,23 @@ import eu.opertusmundi.common.model.file.FileSystemException;
 public class DefaultAssetFileManager implements AssetFileManager {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultAssetFileManager.class);
-    
+
     private static final Logger assetRepositoryLogger = LoggerFactory.getLogger("ASSET_REPOSITORY");
-   
+
     private static final String RESOURCE_PATH = "/resources";
-    
+
     private static final String ADDITIONAL_RESOURCE_PATH = "/additional-resources";
-    
+
     private static final String METADATA_PATH = "/metadata";
-    
+
     @Autowired
     private DefaultAssetFileNamingStrategy fileNamingStrategy;
-    
+
     @Override
     public Path resolveResourcePath(String pid, String fileName) throws FileSystemException, AssetRepositoryException {
         return this.resolveResourcePath(pid, RESOURCE_PATH, fileName);
     }
-    
+
     @Override
     public List<FileDto> getAdditionalResources(String pid) throws FileSystemException, AssetRepositoryException {
         return this.getResources(pid, ADDITIONAL_RESOURCE_PATH);
@@ -73,25 +73,24 @@ public class DefaultAssetFileManager implements AssetFileManager {
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
-            logger.error(
-                String.format("[FileSystem] Failed to load files from path [%s]/[%s]", pid, relativePath), ex
-            );
+            logger.error("Failed to load resource files. [pid={}, relativePath={}, ex={}]", pid, relativePath, ex);
 
             throw new AssetRepositoryException("An unknown error has occurred");
         }
     }
-   
+
+    @Override
     public Path resolveMetadataPropertyPath(
         String pid, String fileName
     ) throws FileSystemException, AssetRepositoryException {
         Assert.isTrue(!StringUtils.isBlank(pid), "Expected a non-empty pid");
         Assert.isTrue(!StringUtils.isBlank(fileName), "Expected a non-empty file name");
-        
+
         try {
         final AssetFileNamingStrategyContext ctx          = AssetFileNamingStrategyContext.of(pid);
         final Path                           relativePath = Paths.get(METADATA_PATH,  fileName);
         final Path                           absolutePath = this.fileNamingStrategy.resolvePath(ctx, relativePath);
-        
+
         return absolutePath;
         } catch (final FileSystemException ex) {
             throw ex;
@@ -103,14 +102,14 @@ public class DefaultAssetFileManager implements AssetFileManager {
     }
 
     @Override
-    public Path resolveAdditionalResourcePath(String pid, String fileName) throws FileSystemException, AssetRepositoryException {       
+    public Path resolveAdditionalResourcePath(String pid, String fileName) throws FileSystemException, AssetRepositoryException {
         return this.resolveResourcePath(pid, ADDITIONAL_RESOURCE_PATH, fileName);
     }
 
     private Path resolveResourcePath(String pid, String path, String fileName) throws FileSystemException, AssetRepositoryException {
         Assert.isTrue(!StringUtils.isBlank(pid), "Expected a non-empty pid");
         Assert.isTrue(!StringUtils.isBlank(fileName), "Expected a non-empty file name");
-        
+
         try {
             final AssetFileNamingStrategyContext ctx          = AssetFileNamingStrategyContext.of(pid);
             final Path                           relativePath = Paths.get(path, fileName);
@@ -130,5 +129,5 @@ public class DefaultAssetFileManager implements AssetFileManager {
             throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred");
         }
     }
-    
+
 }

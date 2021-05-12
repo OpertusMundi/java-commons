@@ -50,7 +50,7 @@ public class GeoServerUtils {
                     return null;
             }
         } catch (final Exception ex) {
-            logger.error(String.format("Failed to execute GetCapabilities for [%s]", serviceEndpoint), ex);
+            logger.error(String.format("Failed to execute GetCapabilities. [url=%s]", serviceEndpoint), ex);
         }
         return null;
     }

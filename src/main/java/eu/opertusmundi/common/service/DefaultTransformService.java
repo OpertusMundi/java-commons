@@ -65,7 +65,7 @@ public class DefaultTransformService implements TransformService {
                     details = "<Could not parse error details>";
                 }
                 logger.error(
-                    "[Transform Service] Operation has failed with code [{}] and reason [{}]. Additional information: {}",
+                    "Operation has failed. [statusCode={}, reason={}, details={}]",
                     e.status(), e.reason(), details
                 );
 
@@ -78,7 +78,7 @@ public class DefaultTransformService implements TransformService {
         } catch(final TransformServiceException ex) {
             throw ex;
         } catch (final Exception ex) {
-            logger.error("[Transform Service] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw new TransformServiceException(TransformServiceMessageCode.UNKNOWN);
         }
@@ -109,7 +109,7 @@ public class DefaultTransformService implements TransformService {
         } catch(final TransformServiceException ex) {
             throw ex;
         } catch (final Exception ex) {
-            logger.error("[Transform Service] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw new TransformServiceException(TransformServiceMessageCode.UNKNOWN);
         }
@@ -124,7 +124,7 @@ public class DefaultTransformService implements TransformService {
 
             return serviceResponse;
         } catch (final Exception ex) {
-            logger.error("[Transform Service] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw new TransformServiceException(TransformServiceMessageCode.UNKNOWN);
         }
@@ -156,7 +156,7 @@ public class DefaultTransformService implements TransformService {
                 }
 
                 logger.error(
-                    "[Transform Service] Operation has failed with code [{}] and reason [{}]. Additional information: {}",
+                    "Operation has failed. [statusCode={}, reason={}, details={}]",
                     e.status(), e.reason(), details
                 );
 
@@ -173,7 +173,7 @@ public class DefaultTransformService implements TransformService {
         } catch(final TransformServiceException ex) {
             throw ex;
         } catch (final Exception ex) {
-            logger.error("[Transform Service] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw new TransformServiceException(TransformServiceMessageCode.UNKNOWN);
         }

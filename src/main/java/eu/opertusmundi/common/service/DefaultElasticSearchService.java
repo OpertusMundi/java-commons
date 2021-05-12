@@ -88,8 +88,6 @@ public class DefaultElasticSearchService implements ElasticSearchService {
 
 	@PostConstruct
 	private void init() {
-        this.log("Starting client initialization");
-
 		try {
 		    final HttpHost[] hosts = Arrays.asList(configuration.getHosts()).stream()
 	            .map(c -> new HttpHost(c.getHostName(), c.getPort(), c.getScheme()))
@@ -99,7 +97,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
 
             client = new RestHighLevelClient(builder);
 
-            this.log("Client initialization completed");
+            logger.debug("Client initialization completed");
         } catch (final Exception ex) {
             logger.error("Failed to initialize client", ex);
         }
@@ -506,10 +504,6 @@ public class DefaultElasticSearchService implements ElasticSearchService {
 		} catch(final Exception ex) {
 		    throw new ElasticServiceException("Search operation has failed", ex);
 		}
-    }
-
-    private void log(String message) {
-        logger.info("ElasticService: {}", message);
     }
 
 }

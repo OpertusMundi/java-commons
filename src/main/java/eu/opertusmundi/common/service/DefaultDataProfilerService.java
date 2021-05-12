@@ -32,7 +32,7 @@ import eu.opertusmundi.common.model.profiler.EnumDataProfilerResponse;
 public class DefaultDataProfilerService implements DataProfilerService{
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultDataProfilerService.class);
-   
+
     @Value("${opertusmundi.feign.data-profiler.input}")
     private String inputDir;
 
@@ -54,13 +54,13 @@ public class DefaultDataProfilerService implements DataProfilerService{
             }
 
             final Path resolvedResourcePath = this.copyResource(idempotencyKey.toString(), resource);
-            
+
             ResponseEntity<DataProfilerDeferredResponseDto> e = null;
 
             switch (type) {
                 case NETCDF :
                     e = this.profilerClient.getObject().profileNetCdf(
-                        idempotencyKey, 
+                        idempotencyKey,
                         resolvedResourcePath.toString(),                // The file path
                         EnumDataProfilerResponse.DEFERRED.getValue(),   // Deferred processing mode
                         options.getBaseMapProvider(),                   // The basemap provider. Default: OpenStreetMap
@@ -77,14 +77,14 @@ public class DefaultDataProfilerService implements DataProfilerService{
                     break;
                 case RASTER :
                     e = this.profilerClient.getObject().profileRaster(
-                        idempotencyKey, 
-                        resolvedResourcePath.toString(), 
+                        idempotencyKey,
+                        resolvedResourcePath.toString(),
                         EnumDataProfilerResponse.DEFERRED.getValue()
                     );
                     break;
                 case VECTOR :
                     e = this.profilerClient.getObject().profileVector(
-                        idempotencyKey, 
+                        idempotencyKey,
                         resolvedResourcePath.toString(),
                         EnumDataProfilerResponse.DEFERRED.getValue(),   // Deferred processing mode
                         options.getBaseMapProvider(),                   // The basemap provider. Default: OpenStreetMap
@@ -109,7 +109,7 @@ public class DefaultDataProfilerService implements DataProfilerService{
         } catch(final DataProfilerServiceException ex) {
             throw ex;
         } catch (final Exception ex) {
-            logger.error("[Data Profiler Service] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw new DataProfilerServiceException(DataProfilerServiceMessageCode.UNKNOWN);
         }
@@ -124,7 +124,7 @@ public class DefaultDataProfilerService implements DataProfilerService{
 
             return serviceResponse;
         } catch (final Exception ex) {
-            logger.error("[Data Profiler Service] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw new DataProfilerServiceException(DataProfilerServiceMessageCode.UNKNOWN);
         }
@@ -139,13 +139,13 @@ public class DefaultDataProfilerService implements DataProfilerService{
 
             return serviceResponse;
         } catch (final Exception ex) {
-            logger.error("[Data Profiler Service] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw new DataProfilerServiceException(DataProfilerServiceMessageCode.UNKNOWN);
         }
     }
 
-    
+
     private Path copyResource(String relativePath, String path) throws IOException {
         final String fileName           = FilenameUtils.getName(path);
         final Path   absoluteSourcePath = Paths.get(this.inputDir, relativePath, fileName);
@@ -155,5 +155,5 @@ public class DefaultDataProfilerService implements DataProfilerService{
 
         return Paths.get(relativePath, fileName);
     }
-    
+
 }

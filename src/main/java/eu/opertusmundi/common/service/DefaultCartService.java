@@ -21,7 +21,7 @@ import eu.opertusmundi.common.model.pricing.QuotationException;
 public class DefaultCartService implements CartService {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultCartService.class);
-    
+
     @Autowired
     private CatalogueService catalogueService;
 
@@ -52,26 +52,26 @@ public class DefaultCartService implements CartService {
                 .filter(p -> p.getKey().equals(command.getPricingModelKey()))
                 .findFirst()
                 .orElse(null);
-            
+
             if (pricingModel == null) {
                 throw new CartException(CartMessageCode.PRICING_MODEL, "Pricing model not found");
             }
-            
+
             // Compute quotation
             final EffectivePricingModelDto quotation = quotationService.createQuotation(
                 asset, command.getPricingModelKey(), command.getParameters()
             );
-            
+
             command.setQuotation(quotation);
 
             return this.cartStore.addItem(command);
-        } catch (CartException ex) {
+        } catch (final CartException ex) {
             throw ex;
-        } catch (CatalogueServiceException ex) {
+        } catch (final CatalogueServiceException ex) {
             throw new CartException(CartMessageCode.CATALOGUE, "Failed to load asset");
-        } catch (QuotationException ex) {
+        } catch (final QuotationException ex) {
             throw ex;
-        } catch (Exception ex) {
+        } catch (final Exception ex) {
             logger.error("Failed to create cart item", ex);
 
             throw new CartException(CartMessageCode.ERROR, "Failed to create cart item");
@@ -98,7 +98,7 @@ public class DefaultCartService implements CartService {
 
         return this.cartStore.clear(effectiveCartKey);
     }
-    
+
     @Override
     public void setAccount(final UUID cartKey, Integer accountId) {
         final UUID effectiveCartKey = this.ensureCart(cartKey);

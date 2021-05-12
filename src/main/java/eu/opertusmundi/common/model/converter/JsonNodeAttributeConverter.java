@@ -50,8 +50,8 @@ public class JsonNodeAttributeConverter implements AttributeConverter<JsonNode, 
         }
         try {
             return objectMapper.readTree(dbData);
-        } catch (final IOException e) {
-            logger.error("Failed to read JSON data", e);
+        } catch (final IOException ex) {
+            logger.error("Failed to deserialize string. [data={}, type={}, exception={}]", dbData, JsonNode.class, ex);
         }
         return null;
     }

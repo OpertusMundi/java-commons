@@ -26,28 +26,29 @@ import feign.FeignException;
 public class DefaultPersistentIdentifierService implements PersistentIdentifierService {
 
     private static final Logger logger = LoggerFactory.getLogger(PersistentIdentifierService.class);
-    
+
     @Autowired
     private ObjectProvider<PersistentIdentifierServiceFeignClient> pidClient;
-    
+
+    @Override
     public Integer registerUser(String name) throws PersistentIdentifierServiceException {
         try {
             final Slugify s = new Slugify()
                 .withTransliterator(true)
                 .withLowerCase(true);
-                
+
             final String userNamespace = s.slugify(name);
-            
+
             final RegisterUserCommandDto command = RegisterUserCommandDto.builder()
                 .name(name)
                 .userNamespace(userNamespace)
                 .build();
-                
+
             final ResponseEntity<UserRegistrationDto> e = pidClient.getObject().registerUser(command);
 
-            return e.getBody().getId();           
+            return e.getBody().getId();
         } catch (final Exception ex) {
-            logger.error("[Persistent Identifier Service] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw new PersistentIdentifierServiceException(
                 PersistentIdentifierServiceMessageCode.USER_REGISTRATION,
@@ -56,8 +57,9 @@ public class DefaultPersistentIdentifierService implements PersistentIdentifierS
         }
     }
 
+    @Override
     public void registerAssetType(String id, String description) {
-        try {               
+        try {
             final ResponseEntity<AssetTypeRegistrationDto> e = pidClient.getObject().findAssetTypeById(id);
 
             if (e.getBody() != null) {
@@ -65,24 +67,24 @@ public class DefaultPersistentIdentifierService implements PersistentIdentifierS
                 return;
             }
         } catch (final Exception ex) {
-            // Failed to query service for asset type 
-            logger.error("[Persistent Identifier Service] Operation has failed", ex);
+            // Failed to query service for asset type
+            logger.error("Operation has failed", ex);
 
             throw new PersistentIdentifierServiceException(
                 PersistentIdentifierServiceMessageCode.ASSET_TYPE_QUERY,
                 "Failed to query asset type", ex
             );
         }
-        
+
         try {
             final RegisterAssetTypeCommandDto command = RegisterAssetTypeCommandDto.builder()
                 .id(id)
                 .description(description)
                 .build();
-                
-            pidClient.getObject().registerAssetType(command);         
+
+            pidClient.getObject().registerAssetType(command);
         } catch (final Exception ex) {
-            logger.error("[Persistent Identifier Service] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw new PersistentIdentifierServiceException(
                 PersistentIdentifierServiceMessageCode.ASSET_TYPE_REGISTRATION,
@@ -91,16 +93,17 @@ public class DefaultPersistentIdentifierService implements PersistentIdentifierS
         }
     }
 
+    @Override
     public String registerAsset(String localId, Integer ownerId, String assetType, String description) {
-        try {           
+        try {
             final ResponseEntity<JsonNode> e = pidClient.getObject().resolveLocalId(localId, ownerId, assetType);
 
             // Asset is already registered
             return e.getBody().asText();
         } catch (final FeignException fex) {
             if (fex.status() != HttpStatus.NOT_FOUND.value()) {
-                // Failed to query service for asset registration 
-                logger.error("[Persistent Identifier Service] Operation has failed", fex);
+                // Failed to query service for asset registration
+                logger.error("Operation has failed", fex);
 
                 throw new PersistentIdentifierServiceException(
                     PersistentIdentifierServiceMessageCode.ASSET_QUERY,
@@ -108,15 +111,15 @@ public class DefaultPersistentIdentifierService implements PersistentIdentifierS
                 );
             }
         } catch (final Exception ex) {
-            // Failed to query service for asset registration 
-            logger.error("[Persistent Identifier Service] Operation has failed", ex);
+            // Failed to query service for asset registration
+            logger.error("Operation has failed", ex);
 
             throw new PersistentIdentifierServiceException(
                 PersistentIdentifierServiceMessageCode.ASSET_QUERY,
                 "Failed to query asset registration", ex
             );
         }
-        
+
         try {
             final RegisterAssetCommandDto command = RegisterAssetCommandDto.builder()
                 .localId(localId)
@@ -124,12 +127,12 @@ public class DefaultPersistentIdentifierService implements PersistentIdentifierS
                 .assetType(assetType)
                 .description(description)
                 .build();
-                
+
             final ResponseEntity<AssetRegistrationDto> e = pidClient.getObject().registerAsset(command);
-            
+
             return e.getBody().getTopioId();
         } catch (final Exception ex) {
-            logger.error("[Persistent Identifier Service] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw new PersistentIdentifierServiceException(
                 PersistentIdentifierServiceMessageCode.ASSET_REGISTRATION,
@@ -137,5 +140,5 @@ public class DefaultPersistentIdentifierService implements PersistentIdentifierS
             );
         }
     }
-    
+
 }
