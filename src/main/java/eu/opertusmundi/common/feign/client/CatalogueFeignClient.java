@@ -53,6 +53,15 @@ public interface CatalogueFeignClient {
     ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> findAllById(@RequestParam("id") String[] id);
 
     /**
+     * Find related assets given an asset's identifier
+     *
+     * @param id The asset identifier whose related assets are requested
+     * @return An instance of {@link CatalogueResponse}
+     */
+    @GetMapping(value = "/api/published/related_items/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> findAllRelated(@RequestParam("id") String id);
+
+    /**
      * Get an item by id
      *
      * @param id The item unique identifier.
@@ -119,7 +128,7 @@ public interface CatalogueFeignClient {
      */
     @PostMapping(value = "/api/draft/create_from_harvest/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<Void> createDraftFromHarvester(@PathVariable("id") String id);
-    
+
     /**
      * Create a new draft item from an ISO (XML) document
      *
@@ -179,7 +188,7 @@ public interface CatalogueFeignClient {
 
     /**
      * Harvest catalogue metadata
-     * 
+     *
      * @param url
      * @param harvester
      * @return
@@ -189,7 +198,7 @@ public interface CatalogueFeignClient {
         @RequestParam("url") String url,
         @RequestParam("harvester") String harvester
     );
-    
+
     /**
      * Search harvested items
      *
@@ -203,12 +212,12 @@ public interface CatalogueFeignClient {
     ResponseEntity<CatalogueResponse<CatalogueCollection>> findAllHarvest(
         @RequestParam("harvest_url") String url,
         @RequestParam("q") String query,
-        @RequestParam("page") int pageIndex, 
+        @RequestParam("page") int pageIndex,
         @RequestParam("per_page") int pageSize
     );
 
     // TODO: Add URL parameter. Identifiers may not be unique
-    
+
     /**
      * Get a harvested item by id
      *
@@ -217,5 +226,5 @@ public interface CatalogueFeignClient {
      */
     @GetMapping(value = "/api/harvest/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<CatalogueResponse<CatalogueFeature>> findOneHarvestedItemById(@PathVariable("id") String id);
-    
+
 }
