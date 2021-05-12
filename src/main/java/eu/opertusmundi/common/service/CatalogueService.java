@@ -28,6 +28,15 @@ public interface CatalogueService {
     CatalogueResult<CatalogueItemDto> findAll(CatalogueAssetQuery request) throws CatalogueServiceException;
 
     /**
+     * Find all related assets
+     *
+     * @param id
+     * @return
+     * @throws CatalogueServiceException
+     */
+    CatalogueResult<CatalogueItemDto> findAllRelated(String id) throws CatalogueServiceException;
+
+    /**
      * Search for published items using Elasticsearch
      *
      * @param request

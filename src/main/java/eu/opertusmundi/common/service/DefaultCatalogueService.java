@@ -8,6 +8,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
 import org.camunda.bpm.engine.rest.dto.runtime.StartProcessInstanceDto;
@@ -121,11 +122,54 @@ public class DefaultCatalogueService implements CatalogueService {
                 return CatalogueResult.empty(request.toPageRequest());
             }
 
-            logger.error("[Feign Client][Catalogue] Operation has failed", fex);
+            logger.error("Operation has failed", fex);
 
             throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
         } catch (final Exception ex) {
-            logger.error("[Catalogue] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
+
+            throw CatalogueServiceException.wrap(ex);
+        }
+    }
+
+    @Override
+    public CatalogueResult<CatalogueItemDto> findAllRelated(String id) throws CatalogueServiceException {
+        Assert.isTrue(!StringUtils.isBlank(id), "Expected a non-null identifier");
+
+        try {
+            // Catalogue service data page index is 1-based
+            final ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> e = this.catalogueClient.getObject().findAllRelated(id);
+
+            final CatalogueResponse<List<CatalogueFeature>> catalogueResponse = e.getBody();
+
+            if (!catalogueResponse.isSuccess()) {
+                throw CatalogueServiceException.fromService(catalogueResponse.getMessage());
+            }
+
+            // Process response
+            final List<CatalogueFeature> features = catalogueResponse.getResult().stream()
+                .filter(f -> !f.getId().equals(id))
+                .collect(Collectors.toList());
+
+            final CatalogueResult<CatalogueItemDto> response = this.createSearchResult(
+                0, features.size(),
+                features, features.size(),
+                (item) -> new CatalogueItemDto(item),
+                true
+            );
+
+            return response;
+        } catch (final FeignException fex) {
+            // Convert 404 errors to empty results
+            if (fex.status() == HttpStatus.NOT_FOUND.value()) {
+                return CatalogueResult.empty(PageRequestDto.defaultValue());
+            }
+
+            logger.error("Operation has failed", fex);
+
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
+        } catch (final Exception ex) {
+            logger.error("Operation has failed", ex);
 
             throw CatalogueServiceException.wrap(ex);
         }
@@ -157,7 +201,7 @@ public class DefaultCatalogueService implements CatalogueService {
 
             return response;
         } catch (final Exception ex) {
-            logger.error("[Catalogue] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw CatalogueServiceException.wrap(ex);
         }
@@ -192,7 +236,7 @@ public class DefaultCatalogueService implements CatalogueService {
 
             throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
         } catch (final Exception ex) {
-            logger.error("[Catalogue] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw CatalogueServiceException.wrap(ex);
         }
@@ -229,11 +273,11 @@ public class DefaultCatalogueService implements CatalogueService {
                 return CatalogueResult.empty(request.toPageRequest());
             }
 
-            logger.error("[Feign Client][Catalogue] Operation has failed", fex);
+            logger.error("Operation has failed", fex);
 
             throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
         } catch (final Exception ex) {
-            logger.error("[Catalogue] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw CatalogueServiceException.wrap(ex);
         }
@@ -308,11 +352,11 @@ public class DefaultCatalogueService implements CatalogueService {
                 return null;
             }
 
-            logger.error("[Feign Client][Catalogue] Operation has failed", fex);
+            logger.error("Operation has failed", fex);
 
             throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
         } catch (final Exception ex) {
-            logger.error("[Catalogue] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw CatalogueServiceException.wrap(ex);
         }
@@ -338,11 +382,11 @@ public class DefaultCatalogueService implements CatalogueService {
                 return null;
             }
 
-            logger.error("[Feign Client][Catalogue] Operation has failed", fex);
+            logger.error("Operation has failed", fex);
 
             throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
         } catch (final Exception ex) {
-            logger.error("[Catalogue] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw CatalogueServiceException.wrap(ex);
         }
@@ -368,11 +412,11 @@ public class DefaultCatalogueService implements CatalogueService {
                 return null;
             }
 
-            logger.error("[Feign Client][Catalogue] Operation has failed", fex);
+            logger.error("Operation has failed", fex);
 
             throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
         } catch (final Exception ex) {
-            logger.error("[Catalogue] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw CatalogueServiceException.wrap(ex);
         }
@@ -407,11 +451,11 @@ public class DefaultCatalogueService implements CatalogueService {
                 this.bpmClient.getObject().startProcessByKey(WORKFLOW_CATALOGUE_HARVEST, options);
             }
         } catch (final FeignException fex) {
-            logger.error("[Feign Client][BPM Server] Operation has failed", fex);
+            logger.error("Operation has failed", fex);
 
             throw CatalogueServiceException.wrap(fex);
         } catch (final Exception ex) {
-            logger.error("[Catalogue] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw CatalogueServiceException.wrap(ex);
         }
@@ -448,11 +492,11 @@ public class DefaultCatalogueService implements CatalogueService {
                 return CatalogueResult.empty(PageRequestDto.of(pageIndex, pageSize));
             }
 
-            logger.error("[Feign Client][Catalogue] Operation has failed", fex);
+            logger.error("Operation has failed", fex);
 
             throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
         } catch (final Exception ex) {
-            logger.error("[Catalogue] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw CatalogueServiceException.wrap(ex);
         }
@@ -463,7 +507,7 @@ public class DefaultCatalogueService implements CatalogueService {
         try {
             this.catalogueClient.getObject().deletePublished(pid);
         } catch (final Exception ex) {
-            logger.error("[Catalogue] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw CatalogueServiceException.wrap(ex);
         }
@@ -621,9 +665,9 @@ public class DefaultCatalogueService implements CatalogueService {
 
             return RestResponse.success();
         } catch (final FeignException fex) {
-            logger.error("[Feign Client][Catalogue] Operation has failed", fex);
+            logger.error("Operation has failed", fex);
         } catch (final Exception ex) {
-            logger.error("[Catalogue] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
         }
 
         return RestResponse.failure();
@@ -658,11 +702,11 @@ public class DefaultCatalogueService implements CatalogueService {
                 return null;
             }
 
-            logger.error("[Feign Client][Catalogue] Operation has failed", fex);
+            logger.error("Operation has failed", fex);
 
             throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
         } catch (final Exception ex) {
-            logger.error("[Catalogue] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw CatalogueServiceException.wrap(ex);
         }
@@ -680,7 +724,7 @@ public class DefaultCatalogueService implements CatalogueService {
             // Update draft
             this.catalogueClient.getObject().updateDraft(draftKey.toString(), feature);
         } catch (final Exception ex) {
-            logger.error("[Catalogue] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw CatalogueServiceException.wrap(ex);
         }
@@ -690,7 +734,7 @@ public class DefaultCatalogueService implements CatalogueService {
         try {
             this.catalogueClient.getObject().setDraftStatus(draftKey.toString(), command.getStatus().getValue());
         } catch (final Exception ex) {
-            logger.error("[Catalogue] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw CatalogueServiceException.wrap(ex);
         }
@@ -700,7 +744,7 @@ public class DefaultCatalogueService implements CatalogueService {
         try {
             this.catalogueClient.getObject().deleteDraft(draftKey.toString());
         } catch (final Exception ex) {
-            logger.error("[Catalogue] Operation has failed", ex);
+            logger.error("Operation has failed", ex);
 
             throw CatalogueServiceException.wrap(ex);
         }
@@ -731,7 +775,7 @@ public class DefaultCatalogueService implements CatalogueService {
 
             throw new CatalogueServiceException(CatalogueServiceMessageCode.ELASTIC_SERVICE, "Failed to publish asset to elastic", ex);
         } catch (final FeignException fex) {
-            logger.error("[Feign Client][Catalogue] Operation has failed", fex);
+            logger.error("Operation has failed", fex);
 
             throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, "Failed to publish asset", fex);
         }

@@ -21,6 +21,10 @@ public class PageRequestDto {
         return new PageRequestDto(page, size);
     }
 
+    public static PageRequestDto defaultValue() {
+        return new PageRequestDto(0, 10);
+    }
+
     @Schema(
         description = "Page index. Page index is 0-based and cannot be a negative number.",
         example = "0",
