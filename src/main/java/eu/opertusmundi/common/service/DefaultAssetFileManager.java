@@ -73,7 +73,7 @@ public class DefaultAssetFileManager implements AssetFileManager {
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
-            logger.error("Failed to load resource files. [pid={}, relativePath={}, ex={}]", pid, relativePath, ex);
+            logger.error("Failed to load resource files. [pid={}, relativePath={}, message={}]", pid, relativePath, ex.getMessage());
 
             throw new AssetRepositoryException("An unknown error has occurred");
         }
