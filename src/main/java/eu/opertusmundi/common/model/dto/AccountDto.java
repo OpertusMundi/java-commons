@@ -2,8 +2,11 @@ package eu.opertusmundi.common.model.dto;
 
 import java.io.Serializable;
 import java.time.ZonedDateTime;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -80,6 +83,28 @@ public class AccountDto extends AccountBaseDto implements Serializable {
             return false;
         }
         return this.roles.contains(role);
+    }
+
+    @JsonIgnore
+    public String getCountry() {
+        final CustomerDto customer = Optional.ofNullable(this.profile).map(p -> p.getConsumer()).map(c -> c.getCurrent()).orElse(null);
+        if (customer == null) {
+            return null;
+        }
+
+        switch (customer.getType()) {
+            case INDIVIDUAL :
+                return ((CustomerIndividualDto) customer).getCountryOfResidence();
+
+            case PROFESSIONAL :
+                final String c1 = ((CustomerProfessionalDto) customer).getHeadquartersAddress().getCountry();
+                final String c2 = ((CustomerProfessionalDto) customer).getRepresentative().getCountryOfResidence();
+
+                return StringUtils.isBlank(c1) ? c2 : c1;
+
+            default :
+                return null;
+        }
     }
 
 }

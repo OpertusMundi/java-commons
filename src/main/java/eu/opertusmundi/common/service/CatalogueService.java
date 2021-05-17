@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.lang.Nullable;
 
+import eu.opertusmundi.common.model.RequestContext;
 import eu.opertusmundi.common.model.catalogue.CatalogueResult;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueAssetQuery;
@@ -21,29 +22,32 @@ public interface CatalogueService {
     /**
      * Search for published items
      *
+     * @param ctx
      * @param request
      * @return
      * @throws CatalogueServiceException
      */
-    CatalogueResult<CatalogueItemDto> findAll(CatalogueAssetQuery request) throws CatalogueServiceException;
+    CatalogueResult<CatalogueItemDto> findAll(RequestContext ctx, CatalogueAssetQuery request) throws CatalogueServiceException;
 
     /**
      * Find all related assets
      *
+     * @param ctx
      * @param id
      * @return
      * @throws CatalogueServiceException
      */
-    CatalogueResult<CatalogueItemDto> findAllRelated(String id) throws CatalogueServiceException;
+    CatalogueResult<CatalogueItemDto> findAllRelated(RequestContext ctx, String id) throws CatalogueServiceException;
 
     /**
      * Search for published items using Elasticsearch
      *
+     * @param ctx
      * @param request
      * @return
      * @throws CatalogueServiceException
      */
-    CatalogueResult<CatalogueItemDto> findAllAdvanced(ElasticAssetQuery request) throws CatalogueServiceException;
+    CatalogueResult<CatalogueItemDto> findAllAdvanced(RequestContext ctx, ElasticAssetQuery request) throws CatalogueServiceException;
 
     /**
      * Find all items with the specified identifiers
@@ -77,13 +81,16 @@ public interface CatalogueService {
     /**
      * Find one published item by its unique PID
      *
+     * @param ctx
      * @param id
      * @param publisherKey
      * @param includeAutomatedMetadata
      * @return
      * @throws CatalogueServiceException
      */
-    CatalogueItemDetailsDto findOne(String id, @Nullable UUID publisherKey, boolean includeAutomatedMetadata) throws CatalogueServiceException;
+    CatalogueItemDetailsDto findOne(
+        RequestContext ctx, String id, @Nullable UUID publisherKey, boolean includeAutomatedMetadata
+    ) throws CatalogueServiceException;
 
     /**
      * Find one catalogue feature item by its unique PID

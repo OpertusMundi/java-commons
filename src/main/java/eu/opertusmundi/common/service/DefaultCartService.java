@@ -46,7 +46,7 @@ public class DefaultCartService implements CartService {
             command.setCartKey(effectiveCartKey);
 
             // Check asset and pricing model
-            final CatalogueItemDetailsDto asset = catalogueService.findOne(command.getAssetId(), null, false);
+            final CatalogueItemDetailsDto asset = catalogueService.findOne(null, command.getAssetId(), null, false);
 
             final BasePricingModelCommandDto pricingModel = asset.getPricingModels().stream()
                 .filter(p -> p.getKey().equals(command.getPricingModelKey()))

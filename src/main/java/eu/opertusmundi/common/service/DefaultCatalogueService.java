@@ -21,6 +21,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import brave.Span;
 import brave.Tracer;
 import eu.opertusmundi.common.domain.AccountEntity;
@@ -30,7 +33,9 @@ import eu.opertusmundi.common.feign.client.BpmServerFeignClient;
 import eu.opertusmundi.common.feign.client.CatalogueFeignClient;
 import eu.opertusmundi.common.model.PageRequestDto;
 import eu.opertusmundi.common.model.PageResultDto;
+import eu.opertusmundi.common.model.RequestContext;
 import eu.opertusmundi.common.model.RestResponse;
+import eu.opertusmundi.common.model.analytics.AssetViewRecord;
 import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.catalogue.CatalogueResult;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
@@ -63,12 +68,17 @@ public class DefaultCatalogueService implements CatalogueService {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultCatalogueService.class);
 
+    private static final Logger assetViewLogger = LoggerFactory.getLogger("ASSET_VIEWS");
+
     private static final String WORKFLOW_CATALOGUE_HARVEST = "workflow-catalogue-harvest";
 
     private static final String DRAFT_PUBLISHED_STATUS = "published";
 
     @Autowired
     private Tracer tracer;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     private ProviderRepository providerRepository;
@@ -92,7 +102,7 @@ public class DefaultCatalogueService implements CatalogueService {
     private QuotationService quotationService;
 
     @Override
-    public CatalogueResult<CatalogueItemDto> findAll(CatalogueAssetQuery request) throws CatalogueServiceException {
+    public CatalogueResult<CatalogueItemDto> findAll(RequestContext ctx, CatalogueAssetQuery request) throws CatalogueServiceException {
         Assert.notNull(request, "Expected a non-null request");
 
         try {
@@ -115,6 +125,9 @@ public class DefaultCatalogueService implements CatalogueService {
                 true
             );
 
+            // Log asset views
+            this.logViews(ctx, response.getResult().getItems(), request.getQuery(), AssetViewRecord.EnumSource.SEARCH);
+
             return response;
         } catch (final FeignException fex) {
             // Convert 404 errors to empty results
@@ -133,7 +146,7 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     @Override
-    public CatalogueResult<CatalogueItemDto> findAllRelated(String id) throws CatalogueServiceException {
+    public CatalogueResult<CatalogueItemDto> findAllRelated(RequestContext ctx, String id) throws CatalogueServiceException {
         Assert.isTrue(!StringUtils.isBlank(id), "Expected a non-null identifier");
 
         try {
@@ -158,6 +171,9 @@ public class DefaultCatalogueService implements CatalogueService {
                 true
             );
 
+            // Log asset views
+            this.logViews(ctx, response.getResult().getItems(), null, AssetViewRecord.EnumSource.REFERENCE);
+
             return response;
         } catch (final FeignException fex) {
             // Convert 404 errors to empty results
@@ -176,7 +192,9 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     @Override
-    public CatalogueResult<CatalogueItemDto> findAllAdvanced(ElasticAssetQuery request) throws CatalogueServiceException {
+    public CatalogueResult<CatalogueItemDto> findAllAdvanced(
+        RequestContext ctx, ElasticAssetQuery request
+    ) throws CatalogueServiceException {
         Assert.notNull(request, "Expected a non-null request");
 
         try {
@@ -198,6 +216,9 @@ public class DefaultCatalogueService implements CatalogueService {
                 (item) -> new CatalogueItemDto(item),
                 true
             );
+
+            // Log asset views
+            this.logViews(ctx, response.getResult().getItems(), request.getText(), AssetViewRecord.EnumSource.SEARCH);
 
             return response;
         } catch (final Exception ex) {
@@ -284,7 +305,9 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     @Override
-    public CatalogueItemDetailsDto findOne(String id, UUID publisherKey, boolean includeAutomatedMetadata) throws CatalogueServiceException {
+    public CatalogueItemDetailsDto findOne(
+        RequestContext ctx, String id, UUID publisherKey, boolean includeAutomatedMetadata
+    ) throws CatalogueServiceException {
         try {
             final ResponseEntity<CatalogueResponse<CatalogueFeature>> e = this.catalogueClient.getObject().findOneById(id);
 
@@ -344,6 +367,9 @@ public class DefaultCatalogueService implements CatalogueService {
 
             // Compute effective pricing models
             this.refreshPricingModels(item);
+
+            // Log asset views
+            this.logView(ctx,  item, null, AssetViewRecord.EnumSource.VIEW);
 
             return item;
         } catch (final FeignException fex) {
@@ -780,5 +806,28 @@ public class DefaultCatalogueService implements CatalogueService {
             throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, "Failed to publish asset", fex);
         }
     }
+
+    private void logView(RequestContext ctx, CatalogueItemDetailsDto item, String query, AssetViewRecord.EnumSource source) {
+        final AssetViewRecord r = AssetViewRecord.from(ctx, item, query, source);
+
+        try {
+            assetViewLogger.info(objectMapper.writeValueAsString(r));
+        } catch (final JsonProcessingException e) {
+            logger.error("Failed to serialize object. [type={}]", AssetViewRecord.class);
+        }
+    }
+
+    private void logViews(RequestContext ctx, List<CatalogueItemDto> items, String query, AssetViewRecord.EnumSource source) {
+        items.stream().forEach(item -> {
+            final AssetViewRecord r = AssetViewRecord.from(ctx, item, query, source);
+
+            try {
+                assetViewLogger.info(objectMapper.writeValueAsString(r));
+            } catch (final JsonProcessingException e) {
+                logger.error("Failed to serialize object. [type={}]", AssetViewRecord.class);
+            }
+        });
+    }
+
 
 }

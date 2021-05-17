@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.model.dto;
 
+import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
@@ -10,7 +11,9 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public abstract class CustomerDto {
+public abstract class CustomerDto implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     protected UUID contract;
 
