@@ -115,37 +115,47 @@ public class CatalogueResource implements Serializable {
     @NoArgsConstructor
     @Getter
     @Setter
-    public static class Attributes {
+    public static class Attributes implements Serializable {
+
+        private static final long serialVersionUID = 1L;
 
         public Attributes(ServiceResourceDto.Attributes a) {
-            this.cascaded    = a.isCascaded();
+            this.cascaded    = a.getCascaded();
             this.fixedHeight = a.getFixedHeight();
             this.fixedWidth  = a.getFixedWidth();
-            this.noSubsets   = a.isNoSubsets();
-            this.opaque      = a.isOpaque();
-            this.queryable   = a.isQueryable();
+            this.noSubsets   = a.getNoSubsets();
+            this.opaque      = a.getOpaque();
+            this.queryable   = a.getQueryable();
         }
 
-        private boolean queryable;
+        @JsonInclude(Include.NON_NULL)
+        private Boolean queryable;
 
-        private boolean cascaded;
+        @JsonInclude(Include.NON_NULL)
+        private Boolean cascaded;
 
-        private boolean opaque;
+        @JsonInclude(Include.NON_NULL)
+        private Boolean opaque;
 
         @JsonProperty("no_subsets")
-        private boolean noSubsets;
+        @JsonInclude(Include.NON_NULL)
+        private Boolean noSubsets;
 
         @JsonProperty("fixed_width")
+        @JsonInclude(Include.NON_NULL)
         private Integer fixedWidth;
 
         @JsonProperty("fixed_height")
+        @JsonInclude(Include.NON_NULL)
         private Integer fixedHeight;
     }
 
     @NoArgsConstructor
     @Getter
     @Setter
-    public static class Dimension {
+    public static class Dimension implements Serializable {
+
+        private static final long serialVersionUID = 1L;
 
         public Dimension(ServiceResourceDto.Dimension d) {
             this.name         = d.getName();
@@ -167,7 +177,9 @@ public class CatalogueResource implements Serializable {
     @NoArgsConstructor
     @Getter
     @Setter
-    public static class TileSet {
+    public static class TileSet implements Serializable {
+
+        private static final long serialVersionUID = 1L;
 
         public TileSet(ServiceResourceDto.TileSet t) {
             this.identifier = t.getIdentifier();

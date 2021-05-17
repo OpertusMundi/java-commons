@@ -1,15 +1,11 @@
-package eu.opertusmundi.common.util;
+package eu.opertusmundi.common.service.ogc;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.Arrays;
 
-import org.geotools.ows.wms.WMSCapabilities;
-import org.geotools.ows.wms.WMSUtils;
-import org.geotools.ows.wms.WebMapServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -23,28 +19,26 @@ public class GeoServerUtils {
 
     @Value("${opertusmundi.geoserver.endpoint:}")
     private String geoServerEndpoint;
+    
+    @Value("${opertusmundi.geoserver.workspace:opertusmundi}")
+    private String workspace;
+    
+    @Autowired
+    private WmsClient wmsClient;
+    
+    @Autowired
+    private WfsClient wfsClient;
 
     public ServiceResourceDto getCapabilities(EnumSpatialDataServiceType type, String serviceEndpoint, String layerName) {
         try {
             final String endpoint = this.appendRelativePath(this.geoServerEndpoint, serviceEndpoint);
-            final URL    url      = new URL(endpoint);
+            final URI    uri      = new URI(endpoint);
 
             switch (type) {
                 case WMS :
-                    final WebMapServer wms = new WebMapServer(url);
-
-                    final WMSCapabilities capabilities = wms.getCapabilities();
-
-                    return Arrays.asList(WMSUtils.getNamedLayers(capabilities)).stream()
-                        .filter(l -> l.getName().equals(layerName))
-                        .map(l -> {
-                            return ServiceResourceDto.builder()
-                                .serviceType(EnumSpatialDataServiceType.WMS)
-                                .build();
-                        })
-                        .findFirst()
-                        .orElse(null);
-
+                    return this.wmsClient.GetMetadata(uri.toURL(), workspace, layerName);
+                case WFS:
+                    return this.wfsClient.GetMetadata(uri.toString(), workspace, layerName);
 
                 default :
                     return null;

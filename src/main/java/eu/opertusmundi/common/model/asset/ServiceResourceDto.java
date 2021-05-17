@@ -16,6 +16,7 @@ import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueResource;
 import eu.opertusmundi.common.util.StreamUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,34 +32,36 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
     @JsonCreator
     @Builder
     public ServiceResourceDto(
+        @JsonProperty("attributes") ServiceResourceDto.Attributes attributes,
+        @JsonProperty("attribution") String attribution,
+        @JsonProperty("bbox") Geometry bbox,
+        @JsonProperty("crs") List<String> crs,
+        @JsonProperty("dimensions") List<Dimension> dimensions,
+        @JsonProperty("endpoint") String endpoint,
+        @JsonProperty("filterCapabilities") List<String> filterCapabilities,
         @JsonProperty("id") UUID id,
+        @JsonProperty("maxScale") Integer maxScale,
+        @JsonProperty("minScale") Integer minScale,
+        @JsonProperty("outputFormats") List<String> outputFormats,
         @JsonProperty("parentId") UUID parentId,
         @JsonProperty("serviceType") EnumSpatialDataServiceType serviceType,
-        @JsonProperty("endpoint") String endpoint,
-        @JsonProperty("crs") List<String> crs,
         @JsonProperty("styles") List<String> styles,
-        @JsonProperty("bbox") Geometry bbox,
-        @JsonProperty("dimensions") List<Dimension> dimensions,
-        @JsonProperty("outputFormats") List<String> outputFormats,
-        @JsonProperty("filterCapabilities") List<String> filterCapabilities,
-        @JsonProperty("attribution") String attribution,
-        @JsonProperty("minScale") Integer minScale,
-        @JsonProperty("maxScale") Integer maxScale,
         @JsonProperty("tileSets") List<TileSet> tileSets
     ) {
         super(id, parentId, EnumResourceType.SERVICE);
 
-        this.serviceType        = serviceType;
-        this.endpoint           = endpoint;
-        this.crs                = crs;
-        this.styles             = styles;
-        this.bbox               = bbox;
-        this.dimensions         = dimensions;
-        this.outputFormats      = outputFormats;
-        this.filterCapabilities = filterCapabilities;
+        this.attributes         = attributes;
         this.attribution        = attribution;
-        this.minScale           = minScale;
+        this.bbox               = bbox;
+        this.crs                = crs;
+        this.dimensions         = dimensions;
+        this.endpoint           = endpoint;
+        this.filterCapabilities = filterCapabilities;
         this.maxScale           = maxScale;
+        this.minScale           = minScale;
+        this.outputFormats      = outputFormats;
+        this.serviceType        = serviceType;
+        this.styles             = styles;
         this.tileSets           = tileSets;
     }
 
@@ -163,7 +166,9 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
     @NoArgsConstructor
     @Getter
     @Setter
-    public static class TileSet {
+    public static class TileSet implements Serializable {
+
+        private static final long serialVersionUID = 1L;
 
         public TileSet(CatalogueResource.TileSet t) {
             this.identifier = t.getIdentifier();
@@ -191,33 +196,34 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
 
     }
 
+    @AllArgsConstructor
     @NoArgsConstructor
     @Getter
     @Setter
-    public static class Attributes {
+    @Builder
+    public static class Attributes implements Serializable {
+
+        private static final long serialVersionUID = 1L;
 
         public Attributes(CatalogueResource.Attributes a) {
-            this.cascaded    = a.isCascaded();
+            this.cascaded    = a.getCascaded();
             this.fixedHeight = a.getFixedHeight();
             this.fixedWidth  = a.getFixedWidth();
-            this.noSubsets   = a.isNoSubsets();
-            this.opaque      = a.isOpaque();
-            this.queryable   = a.isQueryable();
+            this.noSubsets   = a.getNoSubsets();
+            this.opaque      = a.getOpaque();
+            this.queryable   = a.getQueryable();
         }
 
-        private boolean queryable;
+        private Boolean queryable;
 
-        private boolean cascaded;
+        private Boolean cascaded;
 
-        private boolean opaque;
+        private Boolean opaque;
 
-        @JsonProperty("no_subsets")
-        private boolean noSubsets;
+        private Boolean noSubsets;
 
-        @JsonProperty("fixed_width")
         private Integer fixedWidth;
 
-        @JsonProperty("fixed_height")
         private Integer fixedHeight;
     }
 
@@ -225,7 +231,9 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
     @Getter
     @Setter
     @Schema(description = "The dimensions of the resource (derived from WMS)")
-    public static class Dimension {
+    public static class Dimension implements Serializable {
+
+        private static final long serialVersionUID = 1L;
 
         public Dimension(CatalogueResource.Dimension d) {
             this.name         = d.getName();
