@@ -66,7 +66,7 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
     }
 
     public ServiceResourceDto(CatalogueResource r) {
-        this.attributes         = Optional.of(r.getAttributes())
+        this.attributes         = Optional.ofNullable(r.getAttributes())
             .map(ServiceResourceDto.Attributes::new)
             .orElse(null);
         this.attribution        = r.getAttribution();
