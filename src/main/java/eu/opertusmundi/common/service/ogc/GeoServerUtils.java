@@ -19,13 +19,13 @@ public class GeoServerUtils {
 
     @Value("${opertusmundi.geoserver.endpoint:}")
     private String geoServerEndpoint;
-    
+
     @Value("${opertusmundi.geoserver.workspace:opertusmundi}")
     private String workspace;
-    
+
     @Autowired
     private WmsClient wmsClient;
-    
+
     @Autowired
     private WfsClient wfsClient;
 
@@ -36,7 +36,7 @@ public class GeoServerUtils {
 
             switch (type) {
                 case WMS :
-                    return this.wmsClient.GetMetadata(uri.toURL(), workspace, layerName);
+                    return this.wmsClient.GetMetadata(uri.toURL(), layerName);
                 case WFS:
                     return this.wfsClient.GetMetadata(uri.toString(), workspace, layerName);
 

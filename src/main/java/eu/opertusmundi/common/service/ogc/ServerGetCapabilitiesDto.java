@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.service.ogc;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -67,8 +68,33 @@ public class ServerGetCapabilitiesDto {
     @Setter
     public static class FilterCapabilities {
 
+        @JacksonXmlProperty(namespace = "fes", localName = "Scalar_Capabilities")
+        private ScalarCapabilities scalarCapabilities;
+
         @JacksonXmlProperty(namespace = "fes", localName = "Spatial_Capabilities")
         private SpatialCapabilities spatialCapabilities;
+
+        @JacksonXmlProperty(namespace = "fes", localName = "Temporal_Capabilities")
+        private TemporalCapabilities temporalCapabilities;
+    }
+
+    @Getter
+    @Setter
+    public static class ScalarCapabilities {
+
+        @JacksonXmlProperty(namespace = "fes", localName = "ComparisonOperators")
+        @JacksonXmlElementWrapper(useWrapping = true)
+        private List<ComparisonOperator> comparisonOperators;
+
+    }
+
+    @Getter
+    @Setter
+    public static class ComparisonOperator {
+
+        @JacksonXmlProperty(isAttribute = true)
+        private String name;
+
     }
 
     @Getter
@@ -89,7 +115,26 @@ public class ServerGetCapabilitiesDto {
         private String name;
 
     }
-    
+
+    @Getter
+    @Setter
+    public static class TemporalCapabilities {
+
+        @JacksonXmlProperty(namespace = "fes", localName = "TemporalOperators")
+        @JacksonXmlElementWrapper(useWrapping = true)
+        private List<TemporalOperator> temporalOperators;
+
+    }
+
+    @Getter
+    @Setter
+    public static class TemporalOperator  {
+
+        @JacksonXmlProperty(isAttribute = true)
+        private String name;
+
+    }
+
     @Getter
     @Setter
     public static class FeatureTypeList {
@@ -107,6 +152,13 @@ public class ServerGetCapabilitiesDto {
         @JacksonXmlProperty(localName = "Name")
         private FeatureTypeName name;
 
+        @JacksonXmlProperty(localName = "DefaultCRS")
+        private DefaultCrs defaultCrs;
+
+        @JacksonXmlProperty(localName = "OtherCRS")
+        @JacksonXmlElementWrapper(useWrapping = false)
+        private List<OtherCrs> otherCrs;
+
         @JacksonXmlProperty(namespace = "ows", localName = "WGS84BoundingBox")
         private WGS84BoundingBox bbox;
 
@@ -123,16 +175,34 @@ public class ServerGetCapabilitiesDto {
 
     @Getter
     @Setter
+    public static class DefaultCrs {
+
+        @JacksonXmlText
+        private String value;
+
+    }
+
+    @Getter
+    @Setter
+    public static class OtherCrs {
+
+        @JacksonXmlText
+        private String value;
+
+    }
+
+    @Getter
+    @Setter
     public static class WGS84BoundingBox {
 
         @JacksonXmlProperty(namespace = "ows", localName = "LowerCorner")
         private Coordinate lowerCorner;
-        
+
         @JacksonXmlProperty(namespace = "ows", localName = "UpperCorner")
         private Coordinate upperCorner;
 
     }
-    
+
     @Getter
     @Setter
     public static class Coordinate {
@@ -142,19 +212,19 @@ public class ServerGetCapabilitiesDto {
         }
 
         private String value;
-        
+
         public List<Double> getCoordinates() {
             return Arrays.asList(value.split(" ")).stream().map(Double::parseDouble).collect(Collectors.toList());
         }
-        
+
     }
-    
+
     @JacksonXmlProperty(namespace = "ows", localName = "OperationsMetadata")
     private OperationsMetadata operationsMetadata;
 
     @JacksonXmlProperty(namespace = "fes", localName = "Filter_Capabilities")
     private FilterCapabilities filterCapabilities;
-    
+
     @JacksonXmlProperty(localName = "FeatureTypeList")
     private FeatureTypeList featureTypeList;
 
@@ -173,16 +243,54 @@ public class ServerGetCapabilitiesDto {
         }
         return type.getBbox();
     }
-    
-    public List<String> getFilterCapabilities() {
-        if (this.filterCapabilities == null || this.filterCapabilities.spatialCapabilities == null) {
+
+    public List<String> getCrs(String workspace, String typeName) {
+        if (this.featureTypeList == null) {
+            return null;
+        }
+        final String name = workspace + ":" + typeName;
+
+        final FeatureType type = this.featureTypeList.featureTypes.stream()
+            .filter(f -> f.name.getValue().equals(name))
+            .findFirst()
+            .orElse(null);
+        if (type == null) {
+            return null;
+        }
+        if (type.getDefaultCrs() == null) {
             return Collections.emptyList();
         }
-        return StreamUtils.from(this.filterCapabilities.spatialCapabilities.spatialOperators)            
-            .map(o -> o.name)
-            .collect(Collectors.toList());
+        final List<String> result = new ArrayList<String>();
+
+        result.add(type.getDefaultCrs().getValue());
+
+        if (type.getOtherCrs() != null) {
+            type.getOtherCrs().stream().forEach(c -> result.add(c.value));
+        }
+        return result;
     }
-    
+
+    public List<String> getFilterCapabilities() {
+        final List<String> result = new ArrayList<>();
+
+        if (this.filterCapabilities != null && this.filterCapabilities.scalarCapabilities != null) {
+            StreamUtils.from(this.filterCapabilities.scalarCapabilities.comparisonOperators)
+                .forEach(o -> result.add("comparison:" + o.name));
+        }
+
+        if (this.filterCapabilities != null && this.filterCapabilities.spatialCapabilities != null) {
+            StreamUtils.from(this.filterCapabilities.spatialCapabilities.spatialOperators)
+                .forEach(o -> result.add("spatial:" + o.name));
+        }
+
+        if (this.filterCapabilities != null && this.filterCapabilities.temporalCapabilities != null) {
+            StreamUtils.from(this.filterCapabilities.temporalCapabilities.temporalOperators)
+                .forEach(o -> result.add("temporal:" + o.name));
+        }
+
+        return result;
+    }
+
     public List<String> getOutputFormats() {
         if (this.operationsMetadata == null || this.operationsMetadata.operations == null) {
             return Collections.emptyList();
@@ -203,5 +311,5 @@ public class ServerGetCapabilitiesDto {
         }
         return StreamUtils.from(outputFormat.allowedValues).map(v -> v.value).collect(Collectors.toList());
     }
-    
+
 }

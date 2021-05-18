@@ -44,17 +44,18 @@ public class DefaultWfsClient implements WfsClient {
 
     @Autowired
     private HttpClient httpClient;
-    
+
     @Autowired
     private XmlMapper xmlMapper;
 
+    @Override
     public ServiceResourceDto GetMetadata(String endpoint, String workspace, String typeName, String userName, String password) throws OgcServiceClientException {
         try {
             final ServiceResourceDto resource = new ServiceResourceDto();
-            
-            this.getServiceMetdata(endpoint, workspace, typeName, userName, password, resource);
-            this.getFeatureTypeMetadata(endpoint, workspace, typeName, userName, password, resource);
-            
+
+            this.getServiceMetadata(endpoint, workspace, typeName, userName, password, resource);
+            // this.getFeatureTypeMetadata(endpoint, workspace, typeName, userName, password, resource);
+
             return resource;
         } catch (final OgcServiceClientException ex) {
             throw ex;
@@ -63,8 +64,8 @@ public class DefaultWfsClient implements WfsClient {
         }
         return null;
     }
-    
-    private void getServiceMetdata(String endpoint, String workspace, String typeName, String userName, String password, ServiceResourceDto resource) throws Exception {
+
+    private void getServiceMetadata(String endpoint, String workspace, String typeName, String userName, String password, ServiceResourceDto resource) throws Exception {
         final URI uri = new URIBuilder(endpoint)
                 .clearParameters()
                 .addParameter("SERVICE", "WFS")
@@ -81,21 +82,22 @@ public class DefaultWfsClient implements WfsClient {
             if (status >= 200 && status < 300) {
                 try (InputStream contentStream = response.getEntity().getContent()) {
                     final ServerGetCapabilitiesDto result = this.xmlMapper.readValue(contentStream, ServerGetCapabilitiesDto.class);
-                    
-                    resource.setServiceType(EnumSpatialDataServiceType.WFS);
-                    resource.setFilterCapabilities(result.getFilterCapabilities());
-                    resource.setOutputFormats(result.getOutputFormats());
-                    
+
                     final ServerGetCapabilitiesDto.WGS84BoundingBox bbox = result.getBoundingBox(workspace, typeName);
                     if (bbox != null) {
                         resource.setBbox(this.getBoundingBox(bbox));
                     }
+
+                    resource.setCrs(result.getCrs(workspace, typeName));
+                    resource.setFilterCapabilities(result.getFilterCapabilities());
+                    resource.setOutputFormats(result.getOutputFormats());
+                    resource.setServiceType(EnumSpatialDataServiceType.WFS);
                 }
             } else {
                 throw new OgcServiceClientException(
-                    OgcServiceMessageCode.WFS_SERVICE_ERROR, 
-                    String.format("Request has failed. [code=%s, reason=%s]", 
-                        response.getStatusLine().getStatusCode(), 
+                    OgcServiceMessageCode.WFS_SERVICE_ERROR,
+                    String.format("Request has failed. [code=%s, reason=%s]",
+                        response.getStatusLine().getStatusCode(),
                         response.getStatusLine().getReasonPhrase()
                     )
                 );
@@ -103,6 +105,7 @@ public class DefaultWfsClient implements WfsClient {
         }
     }
 
+    @SuppressWarnings("unused")
     private void getFeatureTypeMetadata(String endpoint, String workspace, String typeName, String userName, String password, ServiceResourceDto resource) throws Exception {
         final URI uri = new URIBuilder(endpoint)
                 .clearParameters()
@@ -111,7 +114,7 @@ public class DefaultWfsClient implements WfsClient {
                 .addParameter("VERSION", "2.0.0")
                 .addParameter("TYPENAME", typeName)
                 .build();
-           
+
         final RequestBuilder reqBuilder = this.getBuilder(HttpMethod.GET, uri);
         final HttpUriRequest request    = reqBuilder.build();
 
@@ -130,7 +133,7 @@ public class DefaultWfsClient implements WfsClient {
                     final XPath    xPath      = XPathFactory.newInstance().newXPath();
                     final String   expression = "//complexType//element";
                     final NodeList nodes      = (NodeList) xPath.compile(expression).evaluate(doc, XPathConstants.NODESET);
-                    
+
                     for (int i = 0; i < nodes.getLength(); i++) {
                         final Node node = nodes.item(i);
 
@@ -141,16 +144,16 @@ public class DefaultWfsClient implements WfsClient {
                 }
             } else {
                 throw new OgcServiceClientException(
-                    OgcServiceMessageCode.WFS_SERVICE_ERROR, 
-                    String.format("Request has failed. [code=%s, reason=%s]", 
-                        response.getStatusLine().getStatusCode(), 
+                    OgcServiceMessageCode.WFS_SERVICE_ERROR,
+                    String.format("Request has failed. [code=%s, reason=%s]",
+                        response.getStatusLine().getStatusCode(),
                         response.getStatusLine().getReasonPhrase()
                     )
                 );
             }
         }
     }
-    
+
     private RequestBuilder getBuilder(HttpMethod method, URI uri) throws Exception {
         switch (method) {
             case POST :
@@ -166,17 +169,17 @@ public class DefaultWfsClient implements WfsClient {
                 );
         }
     }
-    
+
     private Geometry getBoundingBox(ServerGetCapabilitiesDto.WGS84BoundingBox bbox) {
-        final List<Double> uppderCorner = bbox.getUpperCorner().getCoordinates();
+        final List<Double> upperCorner = bbox.getUpperCorner().getCoordinates();
         final List<Double> lowerCorner = bbox.getLowerCorner().getCoordinates();
-        
+
         final double minX = lowerCorner.get(0);
         final double minY = lowerCorner.get(1);
-        final double maxX = uppderCorner.get(0);
-        final double maxY = uppderCorner.get(1);
-        
-        GeometryFactory factory = new GeometryFactory(new PrecisionModel(), 4326);
+        final double maxX = upperCorner.get(0);
+        final double maxY = upperCorner.get(1);
+
+        final GeometryFactory factory = new GeometryFactory(new PrecisionModel(), 4326);
 
         return factory.createPolygon(new Coordinate[] {
             new Coordinate(minX, minY),
@@ -185,9 +188,9 @@ public class DefaultWfsClient implements WfsClient {
             new Coordinate(minX, maxY),
             new Coordinate(minX, minY)
         });
-        
+
     }
-    
+
     private void handleException(Exception ex) {
         if (ex instanceof URISyntaxException) {
             logger.error("The input is not a valid URI", ex);
@@ -204,5 +207,5 @@ public class DefaultWfsClient implements WfsClient {
 
         throw ApplicationException.fromPattern(OgcServiceMessageCode.UNKNOWN);
     }
-    
+
 }
