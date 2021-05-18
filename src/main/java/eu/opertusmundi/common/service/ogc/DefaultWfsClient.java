@@ -35,6 +35,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
 import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
+import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 
 @Service
 public class DefaultWfsClient implements WfsClient {
@@ -81,6 +82,7 @@ public class DefaultWfsClient implements WfsClient {
                 try (InputStream contentStream = response.getEntity().getContent()) {
                     final ServerGetCapabilitiesDto result = this.xmlMapper.readValue(contentStream, ServerGetCapabilitiesDto.class);
                     
+                    resource.setServiceType(EnumSpatialDataServiceType.WFS);
                     resource.setFilterCapabilities(result.getFilterCapabilities());
                     resource.setOutputFormats(result.getOutputFormats());
                     
