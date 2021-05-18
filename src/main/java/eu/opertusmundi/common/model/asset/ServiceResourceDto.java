@@ -134,9 +134,20 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
         Assert.isTrue(r.getType() == this.type);
 
         final ServiceResourceDto resource = (ServiceResourceDto) r;
-        // Id and type are immutable
-        this.serviceType = resource.serviceType;
-        this.endpoint    = resource.endpoint;
+        // Id, parent Id and type are immutable
+        this.attributes         = resource.attributes;
+        this.attribution        = resource.attribution;
+        this.bbox               = resource.bbox;
+        this.crs                = resource.crs;
+        this.dimensions         = resource.dimensions;
+        this.endpoint           = resource.endpoint;
+        this.filterCapabilities = resource.filterCapabilities;
+        this.maxScale           = resource.maxScale;
+        this.minScale           = resource.minScale;
+        this.outputFormats      = resource.outputFormats;
+        this.serviceType        = resource.serviceType;
+        this.styles             = resource.styles;
+        this.tileSets           = resource.tileSets;
     }
 
     @Override
