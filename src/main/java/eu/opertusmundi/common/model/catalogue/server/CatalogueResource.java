@@ -102,11 +102,11 @@ public class CatalogueResource implements Serializable {
 
     @JsonProperty("min_scale")
     @JsonInclude(Include.NON_NULL)
-    private Integer minScale;
+    private Double minScale;
 
     @JsonProperty("max_scale")
     @JsonInclude(Include.NON_NULL)
-    private Integer maxScale;
+    private Double maxScale;
 
     @JsonProperty("tile_sets")
     @JsonInclude(Include.NON_NULL)

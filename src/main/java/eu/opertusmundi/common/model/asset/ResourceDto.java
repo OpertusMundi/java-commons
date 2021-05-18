@@ -31,6 +31,11 @@ public abstract class ResourceDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    public ResourceDto(EnumResourceType type) {
+        super();
+        this.type     = type;
+    }
+
     public ResourceDto(UUID id, UUID parentId, EnumResourceType type) {
         super();
 

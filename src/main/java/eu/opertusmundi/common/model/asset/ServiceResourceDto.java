@@ -22,12 +22,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@NoArgsConstructor
 @Getter
 @Setter
 public class ServiceResourceDto extends ResourceDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    public ServiceResourceDto() {
+        super(EnumResourceType.SERVICE);
+    }
 
     @JsonCreator
     @Builder
@@ -40,8 +43,8 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
         @JsonProperty("endpoint") String endpoint,
         @JsonProperty("filterCapabilities") List<String> filterCapabilities,
         @JsonProperty("id") UUID id,
-        @JsonProperty("maxScale") Integer maxScale,
-        @JsonProperty("minScale") Integer minScale,
+        @JsonProperty("maxScale") Double maxScale,
+        @JsonProperty("minScale") Double minScale,
         @JsonProperty("outputFormats") List<String> outputFormats,
         @JsonProperty("parentId") UUID parentId,
         @JsonProperty("serviceType") EnumSpatialDataServiceType serviceType,
@@ -121,10 +124,10 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
     private String attribution;
 
     @Schema(description = "Resource minimum scale denominator")
-    private Integer minScale;
+    private Double minScale;
 
     @Schema(description = "Resource maximum scale denominator")
-    private Integer maxScale;
+    private Double maxScale;
 
     @Schema(description = "Resource tile sets")
     private List<TileSet> tileSets;
@@ -238,9 +241,11 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
         private Integer fixedHeight;
     }
 
+    @AllArgsConstructor
     @NoArgsConstructor
     @Getter
     @Setter
+    @Builder
     @Schema(description = "The dimensions of the resource (derived from WMS)")
     public static class Dimension implements Serializable {
 
