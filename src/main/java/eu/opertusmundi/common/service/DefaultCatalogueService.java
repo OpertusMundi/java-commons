@@ -808,6 +808,11 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     private void logView(RequestContext ctx, CatalogueItemDetailsDto item, String query, AssetViewRecord.EnumSource source) {
+        if (ctx == null) {
+            // Ignore request. A request initialized internally, may have a
+            // null context e.g. a quotation request
+            return;
+        }
         final AssetViewRecord r = AssetViewRecord.from(ctx, item, query, source);
 
         try {
