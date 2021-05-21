@@ -59,6 +59,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.opertusmundi.common.config.ElasticConfiguration;
+import eu.opertusmundi.common.model.analytics.ProfileRecord;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import eu.opertusmundi.common.model.catalogue.client.EnumType;
 import eu.opertusmundi.common.model.catalogue.elastic.CreateIndexCommand;
@@ -112,7 +113,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
     @Retryable(include = {ElasticServiceException.class}, maxAttempts = 4, backoff = @Backoff(delay = 2000, maxDelay = 20000))
     public void initializeIndices() {
         configuration.getIndices().stream().forEach(def -> {
-            if (!this.checkIndex(def.getName())) {
+            if (def != null && def.isValid() && !this.checkIndex(def.getName())) {
                 this.createIndex(def);
             }
         });
@@ -187,6 +188,21 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             throw new ElasticServiceException("Failed to delete index", ex);
         } catch (final Exception ex) {
             throw new ElasticServiceException("Failed to delete index", ex);
+        }
+    }
+
+    @Override
+    public void addProfile(ProfileRecord profile) throws ElasticServiceException {
+        try {
+            final IndexRequest request       = new IndexRequest(this.configuration.getProfileIndex().getName());
+            final String       content       = objectMapper.writeValueAsString(profile);
+
+            request.id(profile.getKey().toString());
+            request.source(content, XContentType.JSON);
+
+            client.index(request, RequestOptions.DEFAULT);
+        } catch (final Exception ex) {
+            throw new ElasticServiceException("Failed to add profile to index", ex);
         }
     }
 

@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.model.dto;
 
+import java.io.Serializable;
+
 import javax.validation.constraints.Pattern;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -12,7 +14,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class AccountProfileBaseDto {
+public class AccountProfileBaseDto implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "User image")
     protected byte[] image;

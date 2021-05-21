@@ -42,7 +42,7 @@ public class AccountDto extends AccountBaseDto implements Serializable {
     private ZonedDateTime emailVerifiedAt;
 
     @JsonIgnore
-    protected Integer id;
+    private Integer id;
 
     @Schema(description = "IDP name used for account registration", example = "Google")
     private EnumAuthProvider idpName;

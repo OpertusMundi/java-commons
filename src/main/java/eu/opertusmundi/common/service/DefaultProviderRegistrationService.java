@@ -15,6 +15,7 @@ import org.springframework.util.Assert;
 
 import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.model.EnumActivationTokenType;
+import eu.opertusmundi.common.model.analytics.ProfileRecord;
 import eu.opertusmundi.common.model.dto.AccountDto;
 import eu.opertusmundi.common.model.dto.ActivationTokenDto;
 import eu.opertusmundi.common.model.dto.CustomerProfessionalDto;
@@ -35,7 +36,10 @@ public class DefaultProviderRegistrationService extends AbstractCustomerRegistra
 
     @Autowired
     private PersistentIdentifierService pidService;
-    
+
+    @Autowired(required = false)
+    private ElasticSearchService elasticSearchService;
+
     @Override
     @Transactional
     public AccountDto updateRegistration(ProviderProfessionalCommandDto command) throws IllegalArgumentException {
@@ -91,11 +95,11 @@ public class DefaultProviderRegistrationService extends AbstractCustomerRegistra
     @Transactional
     public AccountDto completeRegistration(UUID userKey) throws IllegalArgumentException {
         final AccountEntity entity = this.accountRepository.findOneByKey(userKey).orElse(null);
-        
+
         // The PID service user id will be set only during the first provider
         // registration
         final Integer pidServiceUserId = this.pidService.registerUser(entity.getProfile().getProviderRegistration().getName());
-        
+
         final AccountDto account = this.accountRepository.completeProviderRegistration(userKey, pidServiceUserId);
 
         // Check if provider email requires validation
@@ -108,6 +112,11 @@ public class DefaultProviderRegistrationService extends AbstractCustomerRegistra
             );
             // Send activation link to client
             this.sendMail(account.getProfile().getFullName(), token);
+        }
+
+        // Update account profile
+        if (elasticSearchService != null) {
+            elasticSearchService.addProfile(ProfileRecord.from(account));
         }
 
         return account;

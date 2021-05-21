@@ -4,6 +4,7 @@ import java.time.ZonedDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,5 +32,8 @@ public class AccountSubscriptionDto {
 
     @Schema(description = "Operation that registered the subscription")
     private EnumAssetSource source;
+
+    @Schema(description = "First asset topic category if any exist")
+    private EnumTopicCategory segment;
 
 }

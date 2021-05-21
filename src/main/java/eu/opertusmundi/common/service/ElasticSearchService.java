@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.service;
 
+import eu.opertusmundi.common.model.analytics.ProfileRecord;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQuery;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQueryResult;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticServiceException;
@@ -57,6 +58,14 @@ public interface ElasticSearchService {
      * @throws ElasticServiceException
      */
     void initializeIndices() throws ElasticServiceException;
+
+    /**
+     * Add or update profile
+     *
+     * @param profile
+     * @throws ElasticServiceException
+     */
+    void addProfile(ProfileRecord profile) throws ElasticServiceException;
 
     /**
      * Add or update feature

@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import eu.opertusmundi.common.model.EnumActivationTokenType;
+import eu.opertusmundi.common.model.analytics.ProfileRecord;
 import eu.opertusmundi.common.model.dto.AccountDto;
 import eu.opertusmundi.common.model.dto.ActivationTokenDto;
 import eu.opertusmundi.common.model.dto.CustomerCommandDto;
@@ -31,6 +32,9 @@ public class DefaultConsumerRegistrationService extends AbstractCustomerRegistra
 
     @Autowired
     private ActivationTokenRepository activationTokenRepository;
+
+    @Autowired(required = false)
+    private ElasticSearchService elasticSearchService;
 
     @Override
     @Transactional
@@ -98,6 +102,11 @@ public class DefaultConsumerRegistrationService extends AbstractCustomerRegistra
             );
             // Send activation link to client
             this.sendMail(account.getProfile().getFullName(), token);
+        }
+
+        // Update account profile
+        if (elasticSearchService != null) {
+            elasticSearchService.addProfile(ProfileRecord.from(account));
         }
 
         return account;

@@ -21,9 +21,13 @@ public class ElasticConfiguration {
 
     @Getter
     @Setter
+    private IndexDefinition profileIndex;
+
+    @Getter
+    @Setter
     private HttpHostConfig[] hosts;
 
     public List<IndexDefinition> getIndices() {
-        return Arrays.asList(assetIndex);
+        return Arrays.asList(assetIndex, profileIndex);
     }
 }
