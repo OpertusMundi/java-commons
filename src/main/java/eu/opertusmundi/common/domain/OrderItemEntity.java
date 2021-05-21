@@ -21,6 +21,7 @@ import org.hibernate.validator.constraints.Length;
 
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 
+import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import eu.opertusmundi.common.model.order.EnumOrderItemType;
 import eu.opertusmundi.common.model.order.OrderItemDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
@@ -56,17 +57,36 @@ public class OrderItemEntity {
     private Integer index;
 
     @NotNull
+    @ManyToOne(targetEntity = AccountEntity.class, fetch = FetchType.LAZY)
+    @JoinColumn(name = "provider", nullable = false)
+    @Getter
+    @Setter
+    private AccountEntity provider;
+
+    @NotNull
     @Column(name = "`type`")
     @Enumerated(EnumType.STRING)
     @Getter
     @Setter
     private EnumOrderItemType type;
 
+    @Column(name = "`segment`")
+    @Enumerated(EnumType.STRING)
+    @Getter
+    @Setter
+    private EnumTopicCategory segment;
+
     @NotNull
     @Column(name = "`item`")
     @Getter
     @Setter
     private String item;
+
+    @NotNull
+    @Column(name = "`version`")
+    @Getter
+    @Setter
+    private String version;
 
     @NotNull
     @Column(name = "`description`")
@@ -97,7 +117,7 @@ public class OrderItemEntity {
     @Getter
     @Setter
     private BigDecimal totalTax;
-    
+
     @Length(max = 64)
     @Column(name = "`discount_code`", length = 64)
     @Getter

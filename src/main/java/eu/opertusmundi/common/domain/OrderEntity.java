@@ -53,17 +53,17 @@ public class OrderEntity {
 
     @NotNull
     @ManyToOne(targetEntity = AccountEntity.class, fetch = FetchType.LAZY)
-    @JoinColumn(name = "account", nullable = false)
+    @JoinColumn(name = "consumer", nullable = false)
     @Getter
     @Setter
-    private AccountEntity account;
+    private AccountEntity consumer;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payin", nullable = false)
     @Getter
     @Setter
     private PayInEntity payin;
-    
+
     @OneToMany(
         mappedBy = "order",
         fetch = FetchType.LAZY,
@@ -73,7 +73,7 @@ public class OrderEntity {
     @Getter
     @Setter
     private List<OrderItemEntity> items = new ArrayList<>();
-    
+
     @OneToMany(
         mappedBy = "order",
         fetch = FetchType.LAZY,
@@ -83,7 +83,7 @@ public class OrderEntity {
     @Getter
     @Setter
     private List<OrderStatusEntity> statusHistory = new ArrayList<>();
-    
+
     /**
      * Reference to the cart instance used during the checkout operation
      */
@@ -110,7 +110,7 @@ public class OrderEntity {
     @Getter
     @Setter
     private BigDecimal totalTax;
-    
+
     @NotNull
     @Column(name = "`tax_percent`")
     @Getter
@@ -122,6 +122,11 @@ public class OrderEntity {
     @Getter
     @Setter
     private String currency;
+
+    @Column(name = "`country`")
+    @Getter
+    @Setter
+    private String country;
 
     @NotNull
     @Column(name = "`created_on`")
@@ -156,7 +161,7 @@ public class OrderEntity {
 
     public OrderDto toDto() {
         final OrderDto o = new OrderDto();
-        
+
         o.setCartId(cart);
         o.setCreatedOn(createdOn);
         o.setCurrency(currency);

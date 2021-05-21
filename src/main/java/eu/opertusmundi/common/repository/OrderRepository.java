@@ -27,6 +27,9 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     @Query("SELECT a FROM Account a WHERE a.id = :id")
     Optional<AccountEntity> findAccountById(@Param("id") Integer id);
 
+    @Query("SELECT a FROM Account a WHERE a.key = :key")
+    Optional<AccountEntity> findAccountByKey(@Param("key") UUID key);
+
     @Query("SELECT c FROM Cart c WHERE c.id = :id")
     Optional<CartEntity> findCartById(@Param("id") Integer id);
 
@@ -34,11 +37,14 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     Optional<OrderEntity> findOneByKey(@Param("key") UUID key);
 
     default OrderDto create(OrderCommand command) throws Exception {
-        final AccountEntity account = this.findAccountById(command.getUserId()).orElse(null);
-        final OrderEntity   order   = new OrderEntity();
+        final AccountEntity consumer = this.findAccountById(command.getUserId()).orElse(null);
+        final AccountEntity provider = this.findAccountByKey(command.getAsset().getPublisherId()).orElse(null);
+        final OrderEntity   order    = new OrderEntity();
+        final String        country  = command.getLocation().getCountry();
 
-        order.setAccount(account);
         order.setCart(command.getCartId());
+        order.setConsumer(consumer);
+        order.setCountry(country);
         order.setCreatedOn(ZonedDateTime.now());
         order.setCurrency(command.getQuotation().getQuotation().getCurrency().toString());
         order.setDeliveryMethod(command.getDeliveryMethod());
@@ -48,25 +54,28 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
         order.setTaxPercent(command.getQuotation().getQuotation().getTaxPercent());
         order.setTotalPrice(command.getQuotation().getQuotation().getTotalPrice());
         order.setTotalPriceExcludingTax(command.getQuotation().getQuotation().getTotalPriceExcludingTax());
-        order.setTotalTax(command.getQuotation().getQuotation().getTax());       
+        order.setTotalTax(command.getQuotation().getQuotation().getTax());
 
         final OrderStatusEntity status = new OrderStatusEntity();
         status.setOrder(order);
         status.setStatus(order.getStatus());
-        status.setStatusUpdatedBy(account);
+        status.setStatusUpdatedBy(consumer);
         status.setStatusUpdatedOn(order.getCreatedOn());
-        
+
         order.getStatusHistory().add(status);
-        
+
         final OrderItemEntity item = new OrderItemEntity();
         item.setDescription(command.getAsset().getTitle());
         item.setIndex(1);
         item.setItem(command.getAsset().getId());
         item.setOrder(order);
         item.setPricingModel(command.getQuotation());
+        item.setProvider(provider);
+        item.setSegment(command.getAsset().getTopicCategory().stream().findFirst().orElse(null));
         item.setTotalPrice(command.getQuotation().getQuotation().getTotalPrice());
         item.setTotalPriceExcludingTax(command.getQuotation().getQuotation().getTotalPriceExcludingTax());
         item.setTotalTax(command.getQuotation().getQuotation().getTax());
+        item.setVersion(command.getAsset().getVersion());
         switch (command.getAsset().getType()) {
             case VECTOR :
             case RASTER :
@@ -85,5 +94,5 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
         return order.toDto();
     }
-    
+
 }

@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.model.payment;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -43,5 +44,23 @@ public class SubscriptionBillingDto {
 
     @Schema(description = "Total calls used by purchased SKUs. This field is exclusive with field `skuTotalRows`")
     private Integer skuTotalCalls;
+
+    @Schema(
+        description = "Item total price ",
+        example = "1,24"
+    )
+    private BigDecimal totalPrice;
+
+    @Schema(
+        description = "Item price excluding tax",
+        example = "1,00"
+    )
+    private BigDecimal totalPriceExcludingTax;
+
+    @Schema(
+        description = "Item tax ",
+        example = "0,24"
+    )
+    private BigDecimal totalTax;
 
 }

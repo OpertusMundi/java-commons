@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreType;
 
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumDeliveryMethod;
+import eu.opertusmundi.common.model.location.Location;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -31,5 +32,7 @@ public class OrderCommand {
     private EnumDeliveryMethod deliveryMethod;
 
     private String referenceNumber;
+
+    private Location location;
 
 }

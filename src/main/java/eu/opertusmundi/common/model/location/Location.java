@@ -35,7 +35,15 @@ public class Location implements Serializable {
     private String ip;
 
     public static Location empty(String ip) {
-        return Location.builder().ip(ip).build();
+        return Location.empty(ip, null);
     }
+
+    public static Location empty(String ip, String country) {
+        return Location.builder()
+            .country(country)
+            .ip(ip)
+            .build();
+    }
+
 
 }

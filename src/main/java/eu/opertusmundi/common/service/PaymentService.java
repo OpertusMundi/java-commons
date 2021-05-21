@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import eu.opertusmundi.common.model.dto.AccountDto;
 import eu.opertusmundi.common.model.dto.BankAccountDto;
+import eu.opertusmundi.common.model.location.Location;
 import eu.opertusmundi.common.model.order.CartDto;
 import eu.opertusmundi.common.model.order.OrderDto;
 import eu.opertusmundi.common.model.payment.BankwirePayInCommand;
@@ -28,25 +29,25 @@ public interface  PaymentService {
 
     /**
      * Creates a new order from a cart
-     * 
+     *
      * @param cart
      * @return
      * @throws PaymentException
      */
-    OrderDto createOrderFromCart(CartDto cart) throws PaymentException;
-    
+    OrderDto createOrderFromCart(CartDto cart, Location location) throws PaymentException;
+
     /**
      * Get client registration information
-     * 
+     *
      * @return
      * @throws PaymentException
      */
     ClientDto getClient() throws PaymentException;
-    
+
     /**
      * Create a new user in the external payment service and link it to a
      * OpertusMundi account
-     * 
+     *
      * @param command
      * @return
      * @throws PaymentException
@@ -94,82 +95,82 @@ public interface  PaymentService {
 
     /**
      * Get user bank accounts.
-     * 
+     *
      * MangoPay pagination is 1-based.
-     * 
+     *
      * @param command
      * @return
      * @throws PaymentException
      */
     List<BankAccountDto> getBankAccounts(UserPaginationCommand command) throws PaymentException;
-    
+
     /**
      * Get user registered cards
-     * 
+     *
      * MangoPay pagination is 1-based.
-     * 
+     *
      * @param command
      * @return
      * @throws PaymentException
      */
     List<CardDto> getRegisteredCards(UserPaginationCommand command) throws PaymentException;
-    
+
     /**
      * Get user registered card
-     * 
+     *
      * @param command
      * @return
      * @throws PaymentException
      */
     CardDto getRegisteredCard(UserCardCommand command) throws PaymentException;
-    
+
     /**
      * Deactivate card
-     * 
+     *
      * @param command
      * @throws PaymentException
      */
     void deactivateCard(UserCardCommand command) throws PaymentException;
-    
+
     /**
      * Create card registration
-     * 
+     *
      * @param command
      * @return
      * @throws PaymentException
      */
     CardRegistrationDto createCardRegistration(UserCommand command) throws PaymentException;
-    
+
     /**
      * Register card to user account
-     * 
+     *
      * @param command
      * @return
      * @throws PaymentException
      */
     String registerCard(CardRegistrationCommandDto command) throws PaymentException;
-    
+
     /**
      * Get PayIn by key
-     * 
+     *
      * @param userId
      * @param payInKey
      * @return
      */
     PayInDto getPayIn(Integer userId, UUID payInKey);
-    
+
     /**
      * Create bank wire PayIn for a consumer order
-     * 
+     *
      * @param command
      * @return
      * @throws PaymentException
      */
     PayInDto createPayInBankwireForOrder(BankwirePayInCommand command) throws PaymentException;
-    
+
     /**
      * Crate direct PayIn with a registered card for the specified order
-     * 
+     *
      * @param command
      * @return
      * @throws PaymentException
@@ -178,45 +179,45 @@ public interface  PaymentService {
 
     /**
      * Update PayIn
-     * 
+     *
      * This method checks the payment provider for updates of a specific PayIn.
      * A webhook may invoke this method to update a pending bankwire or credit
      * card PyaIn.
-     * 
+     *
      * @param payIn The payment provider unique PayIn identifier
      * @return
      * @throws PaymentException
      */
     PayInDto updatePayIn(String payIn) throws PaymentException;
-    
+
     /**
      * Update PayIn
-     * 
+     *
      * This method checks the payment provider for updates of a specific PayIn.
-     * 
+     *
      * The controller action that handles the 3-D Secure validation redirect URL
      * will invoke this method for updating the specified PayIn. An update may
      * also be triggered by a webhook; hence the operation is implemented as
      * idempotent.
-     * 
+     *
      * @param payInKey The platform specific unique PayIn key
      * @param payInId The payment provider unique PayIn identifier
      * @return
      * @throws PaymentException
      */
     PayInDto updatePayIn(UUID payInKey, String payInId) throws PaymentException;
-    
+
     /**
-     * Transfer 
+     * Transfer
      * @param command
      * @return
      * @throws PaymentException
      */
     TransferDto createTransfer(TransferCommandDto command) throws PaymentException;
-    
+
     /**
      * Create a pay out from a provider's wallet to her bank account
-     * 
+     *
      * @param command
      * @return
      * @throws PaymentException

@@ -66,12 +66,15 @@ import eu.opertusmundi.common.domain.CustomerProfessionalEntity;
 import eu.opertusmundi.common.domain.CustomerRrepresentativeEmbeddable;
 import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
+import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.model.EnumCustomerRegistrationStatus;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.dto.AccountDto;
 import eu.opertusmundi.common.model.dto.BankAccountDto;
+import eu.opertusmundi.common.model.dto.EnumCustomerType;
 import eu.opertusmundi.common.model.dto.EnumLegalPersonType;
 import eu.opertusmundi.common.model.dto.EnumMangopayUserType;
+import eu.opertusmundi.common.model.location.Location;
 import eu.opertusmundi.common.model.order.CartDto;
 import eu.opertusmundi.common.model.order.CartItemDto;
 import eu.opertusmundi.common.model.order.OrderCommand;
@@ -100,6 +103,7 @@ import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.OrderRepository;
+import eu.opertusmundi.common.repository.PayInItemHistoryRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
 
 @Service
@@ -127,6 +131,9 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     private PayInRepository payInRepository;
 
     @Autowired
+    private PayInItemHistoryRepository payInItemHistoryRepository;
+
+    @Autowired
     private CatalogueService catalogueService;
 
     @Autowired
@@ -152,9 +159,9 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final AccountEntity account = this.getAccount(command.getUserKey());
 
             // Resolve registration
-            final CustomerDraftEntity registration   = this.resolveRegistration(account, command.getRegistrationKey());
-            final EnumMangopayUserType    type           = registration.getType();
-            final String              idempotencyKey = registration.getUserIdempotentKey().toString();
+            final CustomerDraftEntity  registration   = this.resolveRegistration(account, command.getType(), command.getRegistrationKey());
+            final EnumMangopayUserType type           = registration.getType();
+            final String               idempotencyKey = registration.getUserIdempotentKey().toString();
 
             // Check if this is a retry
             switch (type) {
@@ -213,8 +220,8 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final AccountEntity account = this.getAccount(command.getUserKey());
 
             // Resolve registration
-            final CustomerDraftEntity registration = this.resolveRegistration(account, command.getRegistrationKey());
-            final EnumMangopayUserType    type         = registration.getType();
+            final CustomerDraftEntity  registration = this.resolveRegistration(account, command.getType(), command.getRegistrationKey());
+            final EnumMangopayUserType type         = registration.getType();
 
             // A linked account must already exist
             user = this.api.getUserApi().get(registration.getPaymentProviderUser());
@@ -260,7 +267,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final AccountEntity account = this.getAccount(command.getUserKey());
 
             // Resolve registration
-            final CustomerDraftEntity registration   = this.resolveRegistration(account, command.getRegistrationKey());
+            final CustomerDraftEntity registration   = this.resolveRegistration(account, command.getType(), command.getRegistrationKey());
             final String              idempotencyKey = registration.getWalletIdempotentKey().toString();
 
             // OpertusMundi user must be registered to the MangoPay platform
@@ -318,7 +325,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final AccountEntity account = this.getAccount(command.getUserKey());
 
             // Resolve registration
-            final CustomerDraftEntity registration   = this.resolveRegistration(account, command.getRegistrationKey());
+            final CustomerDraftEntity registration   = this.resolveRegistration(account, command.getType(), command.getRegistrationKey());
             final String              idempotencyKey = registration.getBankAccountIdempotentKey().toString();
 
             // OpertusMundi user must be registered to the MangoPay platform
@@ -386,9 +393,11 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     @Override
     public AccountDto updateBankAccount(UserRegistrationCommand command) {
         try {
-            final AccountEntity                   account               = this.getAccount(command.getUserKey());
-            final CustomerProfessionalEntity      customer              = account.getProfile().getProvider();
-            final CustomerDraftProfessionalEntity registration          = this.getProviderRegistration(account, command.getRegistrationKey());
+            final UUID                            registrationKey = command.getRegistrationKey();
+            final AccountEntity                   account         = this.getAccount(command.getUserKey());
+            final CustomerProfessionalEntity      customer        = account.getProfile().getProvider();
+            final CustomerDraftProfessionalEntity registration    = (CustomerDraftProfessionalEntity)
+                this.resolveRegistration(account, command.getType(), registrationKey);
 
             if(registration == null) {
                 throw new PaymentException(String.format(
@@ -400,7 +409,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             if (registration.getStatus() != EnumCustomerRegistrationStatus.SUBMITTED) {
                 throw new PaymentException(String.format(
                     "[MANGOPAY] Invalid registration state [%s] for key [%s]. Expected [SUBMITTED]",
-                    registration.getStatus(), command.getRegistrationKey()
+                    registration.getStatus(), registrationKey
                 ));
             }
 
@@ -412,14 +421,16 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final String mangoPayUserId        = customer.getPaymentProviderUser();
             final String mangoPayBankAccountId = customer.getBankAccount().getId();
 
-            // A linked account must already exist
-            final BankAccount currentBankAccount = this.api.getUserApi().getBankAccount(mangoPayUserId, mangoPayBankAccountId);
+            // A linked account may already exists
+            if (!StringUtils.isBlank(mangoPayBankAccountId)) {
+                final BankAccount currentBankAccount = this.api.getUserApi().getBankAccount(mangoPayUserId, mangoPayBankAccountId);
 
-            // Deactivate the current bank account of the provider
-            this.deactivateAccount(mangoPayUserId, currentBankAccount);
-            customer.getBankAccount().setId(null);
+                // Deactivate the current bank account of the provider
+                this.deactivateAccount(mangoPayUserId, currentBankAccount);
+                customer.getBankAccount().setId(null);
 
-            this.accountRepository.saveAndFlush(account);
+                this.accountRepository.saveAndFlush(account);
+            }
 
             // Create new account
             final AccountDto result = this.createBankAccount(command);
@@ -566,7 +577,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     @Override
-    public OrderDto createOrderFromCart(CartDto cart) throws PaymentException {
+    public OrderDto createOrderFromCart(CartDto cart, Location location) throws PaymentException {
         try {
 
             if (cart == null || cart.getItems().size() == 0) {
@@ -606,6 +617,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 .asset(asset)
                 .cartId(cart.getId())
                 .deliveryMethod(asset.getDeliveryMethod())
+                .location(location)
                 .quotation(quotation)
                 .referenceNumber(this.createReferenceNumber())
                 .userId(cart.getAccountId())
@@ -784,6 +796,13 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 .build();
 
             final PayInDto result = this.payInRepository.updatePayInStatus(command);
+
+            // Update history table only for succeeded PayIns
+            if (payInEntity.getStatus() == EnumTransactionStatus.SUCCEEDED) {
+                for (final PayInItemEntity item : payInEntity.getItems()) {
+                    payInItemHistoryRepository.create(item);
+                }
+            }
 
             return result;
         } catch (final Exception ex) {
@@ -1095,26 +1114,18 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         return d;
     }
 
-    private CustomerDraftProfessionalEntity getProviderRegistration(AccountEntity account, UUID key) {
-        return (CustomerDraftProfessionalEntity) this.resolveRegistration(account, key);
-    }
-
-    private CustomerDraftEntity resolveRegistration(AccountEntity account, UUID key) {
-        // Lookup for consumers
-        CustomerDraftEntity registration = account.getProfile().getConsumerRegistration();
-
-        if (registration != null && registration.getKey().equals(key)) {
-            if (registration.getStatus() != EnumCustomerRegistrationStatus.SUBMITTED) {
-                throw new PaymentException(String.format(
-                    "[MANGOPAY] Invalid registration state [%s] for key [%s]. Expected [SUBMITTED]",
-                    registration.getStatus(), key
-                ));
-            }
-            return registration;
+    private CustomerDraftEntity resolveRegistration(AccountEntity account, EnumCustomerType type, UUID key) {
+        CustomerDraftEntity registration;
+        switch (type) {
+            case CONSUMER :
+                registration = account.getProfile().getConsumerRegistration();
+                break;
+            case PROVIDER :
+                registration = account.getProfile().getProviderRegistration();
+                break;
+            default :
+                registration = null;
         }
-
-        // Lookup for providers
-        registration = account.getProfile().getProviderRegistration();
 
         if (registration != null && registration.getKey().equals(key)) {
             if (registration.getStatus() != EnumCustomerRegistrationStatus.SUBMITTED) {

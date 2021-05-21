@@ -6,6 +6,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -15,6 +16,7 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
+import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import eu.opertusmundi.common.model.dto.AccountSubscriptionDto;
 import eu.opertusmundi.common.model.dto.EnumAssetSource;
 import lombok.Getter;
@@ -33,10 +35,10 @@ public class AccountSubscriptionEntity {
 
     @NotNull
     @ManyToOne(targetEntity = AccountEntity.class)
-    @JoinColumn(name = "account", nullable = false)
+    @JoinColumn(name = "consumer", nullable = false)
     @Getter
     @Setter
-    private AccountEntity account;
+    private AccountEntity consumer;
 
     @NotNull
     @ManyToOne(targetEntity = OrderEntity.class)
@@ -44,6 +46,13 @@ public class AccountSubscriptionEntity {
     @Getter
     @Setter
     private OrderEntity order;
+
+    @NotNull
+    @ManyToOne(targetEntity = AccountEntity.class, fetch = FetchType.LAZY)
+    @JoinColumn(name = "provider", nullable = false)
+    @Getter
+    @Setter
+    private AccountEntity provider;
 
     @NotNull
     @Column(name = "`service`")
@@ -70,12 +79,19 @@ public class AccountSubscriptionEntity {
     @Setter
     private EnumAssetSource source;
 
+    @Column(name = "`segment`")
+    @Enumerated(EnumType.STRING)
+    @Getter
+    @Setter
+    private EnumTopicCategory segment;
+
     public AccountSubscriptionDto toDto() {
         final AccountSubscriptionDto s = new AccountSubscriptionDto();
 
         s.setAddedOn(addedOn);
         s.setId(id);
         s.setOrderId(order.getId());
+        s.setSegment(segment);
         s.setService(service);
         s.setSource(source);
         s.setUpdatedOn(updatedOn);

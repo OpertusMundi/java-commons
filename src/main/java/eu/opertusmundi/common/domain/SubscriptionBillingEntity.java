@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.domain;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 
 import javax.persistence.Column;
@@ -71,6 +72,24 @@ public class SubscriptionBillingEntity {
     @Setter
     private Integer skuTotalCalls;
 
+    @NotNull
+    @Column(name = "`total_price`", columnDefinition = "numeric", precision = 20, scale = 6)
+    @Getter
+    @Setter
+    private BigDecimal totalPrice;
+
+    @NotNull
+    @Column(name = "`total_price_excluding_tax`", columnDefinition = "numeric", precision = 20, scale = 6)
+    @Getter
+    @Setter
+    private BigDecimal totalPriceExcludingTax;
+
+    @NotNull
+    @Column(name = "`total_tax`", columnDefinition = "numeric", precision = 20, scale = 6)
+    @Getter
+    @Setter
+    private BigDecimal totalTax;
+
     public SubscriptionBillingDto toDto() {
         final SubscriptionBillingDto s = new SubscriptionBillingDto();
 
@@ -82,7 +101,10 @@ public class SubscriptionBillingEntity {
         s.setSkuTotalRows(skuTotalRows);
         s.setToDate(toDate);
         s.setTotalCalls(skuTotalCalls);
+        s.setTotalPrice(totalPrice);
+        s.setTotalPriceExcludingTax(totalPriceExcludingTax);
         s.setTotalRows(skuTotalRows);
+        s.setTotalTax(totalTax);
 
         return s;
     }

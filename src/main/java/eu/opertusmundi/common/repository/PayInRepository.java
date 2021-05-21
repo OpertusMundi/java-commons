@@ -40,11 +40,11 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
 
     @Query("SELECT c FROM Cart c WHERE c.id = : id")
     Optional<CartEntity> findCartById(Integer id);
-    
+
     @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE i.order.key = key")
     Optional<PayInEntity> findOneByOrderKey(@Param("key") UUID key);
-    
-    @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE p.key = :payInKey and p.account.id = :userId")
+
+    @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE p.key = :payInKey and p.consumer.id = :userId")
     Optional<PayInEntity> findOneByAccountIdAndKey(@Param("userId") Integer userId, @Param("payInKey") UUID payInKey);
 
     @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE p.payIn = :payIn")
@@ -53,18 +53,18 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     @Modifying
     @Query("UPDATE Order o SET o.payin = :payin where o.id = :orderId")
     void setOrderPayIn(@Param("payin") PayInEntity payin, @Param("orderId") Integer orderId);
-    
+
     default PayInDto createBankwirePayInForOrder(BankwirePayInCommand command) throws Exception {
         Assert.notNull(command, "Expected a non-null command");
         Assert.notNull(command.getOrderKey(), "Expected a non-null order key");
-        
-        final OrderEntity order = this.findOrderByKey(command.getOrderKey()).orElse(null);
-        final AccountEntity account = order.getAccount();
-        final BankWirePayInEntity payin = new BankWirePayInEntity();
-        
 
-        payin.setAccount(account);
+        final OrderEntity         order    = this.findOrderByKey(command.getOrderKey()).orElse(null);
+        final AccountEntity       consumer = order.getConsumer();
+        final BankWirePayInEntity payin    = new BankWirePayInEntity();
+
+
         payin.setBankAccount(BankAccountEmbeddable.from(command.getBankAccount()));
+        payin.setConsumer(consumer);
         payin.setCreatedOn(command.getCreatedOn());
         payin.setCurrency(order.getCurrency());
         payin.setKey(command.getPayInKey());
@@ -76,14 +76,14 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         payin.setTotalPriceExcludingTax(order.getTotalPriceExcludingTax());
         payin.setTotalTax(order.getTotalTax());
         payin.setWireReference(command.getWireReference());
-       
+
         final PayInStatusEntity status = new PayInStatusEntity();
         status.setPayin(payin);
         status.setStatus(payin.getStatus());
         status.setStatusUpdatedOn(payin.getStatusUpdatedOn());
-        
+
         payin.getStatusHistory().add(status);
-        
+
         final PayInItemEntity item = new PayInItemEntity();
         item.setIndex(1);
         item.setOrder(order);
@@ -93,24 +93,23 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         payin.getItems().add(item);
 
         this.saveAndFlush(payin);
-        
+
         this.setOrderPayIn(payin, order.getId());
-                
+
         return payin.toDto();
     }
-    
+
     default PayInDto createCardDirectPayInForOrder(CardDirectPayInCommand command) throws Exception {
         Assert.notNull(command, "Expected a non-null command");
         Assert.notNull(command.getOrderKey(), "Expected a non-null order key");
-        
-        final OrderEntity order = this.findOrderByKey(command.getOrderKey()).orElse(null);
-        final AccountEntity account = order.getAccount();
-        final CardDirectPayInEntity payin = new CardDirectPayInEntity();
-        
 
-        payin.setAccount(account);
+        final OrderEntity           order    = this.findOrderByKey(command.getOrderKey()).orElse(null);
+        final AccountEntity         consumer = order.getConsumer();
+        final CardDirectPayInEntity payin    = new CardDirectPayInEntity();
+
         // Do not save card alias to our database!
         payin.setCard(command.getCardId());
+        payin.setConsumer(consumer);
         payin.setCreatedOn(command.getCreatedOn());
         payin.setCurrency(order.getCurrency());
         payin.setExecutedOn(command.getExecutedOn());
@@ -125,14 +124,14 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         payin.setTotalPrice(order.getTotalPrice());
         payin.setTotalPriceExcludingTax(order.getTotalPriceExcludingTax());
         payin.setTotalTax(order.getTotalTax());
-               
+
         final PayInStatusEntity status = new PayInStatusEntity();
         status.setPayin(payin);
         status.setStatus(payin.getStatus());
         status.setStatusUpdatedOn(payin.getStatusUpdatedOn());
-        
+
         payin.getStatusHistory().add(status);
-        
+
         final PayInItemEntity item = new PayInItemEntity();
         item.setIndex(1);
         item.setOrder(order);
@@ -142,9 +141,9 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         payin.getItems().add(item);
 
         this.saveAndFlush(payin);
-        
+
         this.setOrderPayIn(payin, order.getId());
-                
+
         return payin.toDto();
     }
 

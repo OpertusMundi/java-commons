@@ -34,10 +34,10 @@ public class AccountAssetEntity {
 
     @NotNull
     @ManyToOne(targetEntity = AccountEntity.class, fetch = FetchType.LAZY)
-    @JoinColumn(name = "account", nullable = false)
+    @JoinColumn(name = "consumer", nullable = false)
     @Getter
     @Setter
-    private AccountEntity account;
+    private AccountEntity consumer;
 
     @NotNull
     @ManyToOne(targetEntity = OrderEntity.class)
@@ -82,7 +82,7 @@ public class AccountAssetEntity {
     @Getter
     @Setter
     private EnumAssetSource source;
-    
+
     public AccountAssetDto toDto() {
         final AccountAssetDto a = new AccountAssetDto();
 

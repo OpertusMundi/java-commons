@@ -342,4 +342,20 @@ public class AccountEntity {
         return this.profile != null ? this.profile.getProvider() : null;
     }
 
+    @Transient
+    public String getCountry() {
+        final CustomerEntity customer = this.getConsumer();
+        if (customer == null) {
+            return null;
+        }
+        switch (customer.getType()) {
+            case INDIVIDUAL :
+                return ((CustomerIndividualEntity) customer).getCountryOfResidence();
+            case PROFESSIONAL :
+                return ((CustomerProfessionalEntity) customer).getHeadquartersAddress().getCountry();
+            default :
+                return null;
+        }
+    }
+
 }

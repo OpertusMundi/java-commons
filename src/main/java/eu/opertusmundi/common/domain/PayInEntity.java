@@ -51,31 +51,31 @@ public abstract class PayInEntity {
     protected PayInEntity(EnumPaymentMethod paymentMethod) {
         this.paymentMethod = paymentMethod;
     }
-    
+
     @Id
     @Column(name = "`id`", updatable = false)
     @SequenceGenerator(sequenceName = "billing.payin_id_seq", name = "payin_id_seq", allocationSize = 1)
     @GeneratedValue(generator = "payin_id_seq", strategy = GenerationType.SEQUENCE)
     @Getter
     protected Integer id;
-    
+
     @NotNull
     @NaturalId
     @Column(name = "`key`", updatable = false, columnDefinition = "uuid")
     @Getter
     @Setter
     protected UUID key;
-    
+
     /**
      * Reference to the consumer account that created the PayIn
      */
     @NotNull
     @ManyToOne(targetEntity = AccountEntity.class, fetch = FetchType.LAZY)
-    @JoinColumn(name = "account", nullable = false)
+    @JoinColumn(name = "consumer", nullable = false)
     @Getter
     @Setter
-    protected AccountEntity account;
-    
+    protected AccountEntity consumer;
+
     /**
      * Collection of items paid with this PayIn. An PayIn may contain either a
      * single order or multiple subscription billing records
@@ -99,13 +99,13 @@ public abstract class PayInEntity {
     @Getter
     @Setter
     private List<PayInStatusEntity> statusHistory = new ArrayList<>();
-    
+
     @NotNull
     @Column(name = "`total_price`", columnDefinition = "numeric", precision = 20, scale = 6)
     @Getter
     @Setter
     protected BigDecimal totalPrice;
-    
+
     @NotNull
     @Column(name = "`total_price_excluding_tax`", columnDefinition = "numeric", precision = 20, scale = 6)
     @Getter
@@ -134,7 +134,7 @@ public abstract class PayInEntity {
     @Getter
     @Setter
     protected ZonedDateTime executedOn;
-    
+
     @NotNull
     @Column(name = "`status`")
     @Enumerated(EnumType.STRING)
@@ -170,12 +170,12 @@ public abstract class PayInEntity {
     @Getter
     @Setter
     protected String resultCode;
-    
+
     @Column(name = "`result_message`")
     @Getter
     @Setter
     protected String resultMessage;
-    
+
     public abstract PayInDto toDto();
-    
+
 }
