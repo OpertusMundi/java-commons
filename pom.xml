@@ -7,11 +7,11 @@
 
     <groupId>eu.opertusmundi</groupId>
     <artifactId>opertus-mundi-common</artifactId>
-    <version>1.0.36</version>
+    <version>1.0.37</version>
     <name>[opertus-mundi] Common</name>
 
     <packaging>jar</packaging>
-    
+
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -136,7 +136,7 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-zipkin</artifactId>
 		</dependency>
-		
+
 		<!-- Hibernate -->
 		<dependency>
 			<groupId>org.hibernate</groupId>
@@ -204,7 +204,7 @@
 	    </dependency>
 
 		<!-- Utilities -->
-        
+
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -279,7 +279,7 @@
 			<artifactId>springdoc-openapi-common</artifactId>
 			<version>${springdoc.version}</version>
 		</dependency>
-	
+
 	</dependencies>
 
 </project>
