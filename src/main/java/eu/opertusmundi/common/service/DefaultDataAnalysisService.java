@@ -4,7 +4,9 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.persistence.EntityManager;
@@ -12,18 +14,46 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import eu.opertusmundi.common.model.analytics.AssetQuery;
 import eu.opertusmundi.common.model.analytics.BaseQuery;
 import eu.opertusmundi.common.model.analytics.DataPoint;
 import eu.opertusmundi.common.model.analytics.DataSeries;
 import eu.opertusmundi.common.model.analytics.SalesQuery;
+import eu.opertusmundi.common.model.spatial.CountryDto;
+import eu.opertusmundi.common.repository.CountryRepository;
 
 @Service
-public class DefaultDataAnalysisService implements DataAnalysisService {
+public class DefaultDataAnalysisService implements DataAnalysisService, InitializingBean {
+
+    private final Map<String, CountryDto> countries = new HashMap<>();
 
     @PersistenceContext(unitName = "default")
     private EntityManager entityManager;
+
+    @Autowired
+    private CountryRepository countryRepository;
+
+    @Autowired(required = false)
+    private ElasticSearchService elasticSearchService;
+
+    @Override
+    public void afterPropertiesSet() {
+        countryRepository.findAll().stream().forEach(c -> this.countries.put(c.getCode(), c.toDto()));
+
+        // Update ISO codes with the corresponding NUTS codes
+        if (countries.containsKey("GB")) {
+            countries.get("GB").setCode("UK");
+            countries.put("UK", countries.get("GB"));
+        }
+        if (countries.containsKey("GR")) {
+            countries.get("GR").setCode("EL");
+            countries.put("EL", countries.get("GR"));
+        }
+    }
 
     @Override
     public DataSeries<?> execute(SalesQuery query) {
@@ -139,6 +169,42 @@ public class DefaultDataAnalysisService implements DataAnalysisService {
 
         for (final Object[] r : rows) {
             result.getPoints().add(this.mapObjectToDataPoint(query, r));
+        }
+
+        // Update coordinates
+        for (final DataPoint<BigDecimal> p : result.getPoints()) {
+            if (p.getLocation() != null) {
+                final CountryDto country = countries.get(p.getLocation().getCode());
+                if (country != null) {
+                    p.getLocation().setLat(country.getLatitude());
+                    p.getLocation().setLon(country.getLongitude());
+                }
+            }
+        }
+
+        return result;
+    }
+
+
+    @Override
+    public DataSeries<?> execute(AssetQuery query) {
+        if (elasticSearchService == null || query == null || query.getMetric() == null) {
+            return DataSeries.<BigInteger>empty();
+        }
+
+        final DataSeries<BigDecimal> result = new DataSeries<>();
+
+        // TODO: Execute ElasticSearch query and update result ...
+
+        // Update coordinates
+        for (final DataPoint<BigDecimal> p : result.getPoints()) {
+            if (p.getLocation() != null) {
+                final CountryDto country = countries.get(p.getLocation().getCode());
+                if (country != null) {
+                    p.getLocation().setLat(country.getLatitude());
+                    p.getLocation().setLon(country.getLongitude());
+                }
+            }
         }
 
         return result;

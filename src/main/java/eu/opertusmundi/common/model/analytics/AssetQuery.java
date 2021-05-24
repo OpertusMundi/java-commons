@@ -11,7 +11,10 @@ import lombok.Setter;
 public class AssetQuery extends BaseQuery {
 
     public enum EnumMetric {
-        COUNT
+        /**
+         * Number of views
+         */
+        COUNT_VIEWS
         ;
     }
 

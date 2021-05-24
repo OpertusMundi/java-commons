@@ -24,8 +24,17 @@ public class AssetViewRecord implements Serializable {
     private static final long serialVersionUID = 1L;
 
     public enum EnumSource {
+        /**
+         * Search operation view
+         */
         SEARCH,
+        /**
+         * Record view
+         */
         VIEW,
+        /**
+         * Related assets operation view
+         */
         REFERENCE,
         ;
     }
