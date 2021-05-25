@@ -28,6 +28,13 @@ public class EmailAddressDto {
         this.name    = name;
     }
 
+    public static EmailAddressDto of(String address, String name) {
+        final EmailAddressDto a = new EmailAddressDto();
+        a.address = address;
+        a.name    = name;
+        return a;
+    }
+
     @Override
     public String toString() {
         return "EmailAddress [name=" + this.name + ", address=" + this.address + "]";

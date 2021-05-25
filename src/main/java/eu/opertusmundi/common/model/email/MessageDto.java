@@ -55,6 +55,10 @@ public class MessageDto<M> {
         this.sender = new EmailAddressDto(address, name);
     }
 
+    public void setSender(EmailAddressDto sender) {
+        this.sender = sender;
+    }
+
     public void setRecipients(String address) {
         this.recipients = Arrays.asList(new EmailAddressDto(address));
     }
