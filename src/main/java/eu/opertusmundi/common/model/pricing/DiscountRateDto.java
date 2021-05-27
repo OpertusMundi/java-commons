@@ -34,7 +34,7 @@ public class DiscountRateDto implements Serializable {
 
     @Schema(description = "Discount percent as an 2 digit integer")
     @Digits(integer = 3, fraction = 2)
-    @DecimalMin("1.00")
+    @DecimalMin(value = "0.00", inclusive = false)
     @DecimalMax("100.00")
     @NotNull
     @JsonSerialize(using = BigDecimalSerializer.class)

@@ -9,6 +9,9 @@ import javax.validation.constraints.Digits;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import eu.opertusmundi.common.support.BigDecimalSerializer;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,10 +30,11 @@ public class PrePaidTierDto implements Serializable {
     private Long count;
 
     @Schema(description = "Discount percent")
-    @Digits(fraction = 2, integer = 3)
+    @Digits(integer = 3, fraction = 2)
     @DecimalMin(value = "0.00", inclusive = false)
     @DecimalMax(value = "100.00")
     @NotNull
+    @JsonSerialize(using = BigDecimalSerializer.class)
     private BigDecimal discount;
 
 }
