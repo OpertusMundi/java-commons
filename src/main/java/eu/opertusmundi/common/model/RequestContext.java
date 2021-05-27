@@ -17,9 +17,12 @@ public class RequestContext {
 
     private Location location;
 
-    public static RequestContext of(String ip, @Nullable AccountDto account, @Nullable Location location) {
+    private boolean ignoreLogging;
+
+    public static RequestContext of(String ip, @Nullable AccountDto account, @Nullable Location location, boolean ignoreLogging) {
         final RequestContext ctx = new RequestContext();
         ctx.setAccount(account);
+        ctx.setIgnoreLogging(ignoreLogging);
         ctx.setIp(ip);
         ctx.setLocation(location);
         return ctx;

@@ -808,7 +808,7 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     private void logView(RequestContext ctx, CatalogueItemDetailsDto item, String query, AssetViewRecord.EnumSource source) {
-        if (ctx == null) {
+        if (ctx == null || ctx.isIgnoreLogging()) {
             // Ignore request. A request initialized internally, may have a
             // null context e.g. a quotation request
             return;
@@ -823,6 +823,10 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     private void logViews(RequestContext ctx, List<CatalogueItemDto> items, String query, AssetViewRecord.EnumSource source) {
+        if (ctx.isIgnoreLogging()) {
+            return;
+        }
+
         items.stream().forEach(item -> {
             final AssetViewRecord r = AssetViewRecord.from(ctx, item, query, source);
 
