@@ -87,9 +87,10 @@ public class AccountAssetEntity {
         final AccountAssetDto a = new AccountAssetDto();
 
         a.setAddedOn(addedOn);
-        a.setAsset(asset);
+        a.setAssetId(asset);
         a.setId(id);
         a.setOrderId(order.getId());
+        a.setOrderKey(order.getKey());
         a.setPurchasedOn(purchasedOn);
         a.setSource(source);
         a.setUpdateEligibility(updateEligibility);

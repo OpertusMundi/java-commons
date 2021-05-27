@@ -6,6 +6,8 @@ import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -20,11 +22,10 @@ import eu.opertusmundi.common.domain.CardDirectPayInEntity;
 import eu.opertusmundi.common.domain.CartEntity;
 import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
-import eu.opertusmundi.common.domain.PayInItemEntity;
+import eu.opertusmundi.common.domain.PayInOrderItemEntity;
 import eu.opertusmundi.common.domain.PayInStatusEntity;
 import eu.opertusmundi.common.model.payment.BankwirePayInCommand;
 import eu.opertusmundi.common.model.payment.CardDirectPayInCommand;
-import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PayInDto;
 import eu.opertusmundi.common.model.payment.PayInStatusUpdateCommand;
@@ -41,6 +42,9 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     @Query("SELECT c FROM Cart c WHERE c.id = : id")
     Optional<CartEntity> findCartById(Integer id);
 
+    @Query("SELECT p FROM PayIn p WHERE p.key = :key")
+    Optional<PayInEntity> findOneByKey(@Param("key") UUID key);
+
     @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE i.order.key = key")
     Optional<PayInEntity> findOneByOrderKey(@Param("key") UUID key);
 
@@ -50,10 +54,26 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE p.payIn = :payIn")
     Optional<PayInEntity> findOneByPayInId(@Param("payIn") String payIn);
 
+    @Query("SELECT p FROM PayIn p WHERE (:status IS NULL or p.status = :status) and (p.consumer.key = :userKey)")
+    Page<PayInEntity> findAllConsumerPayIns(
+        @Param("userKey") UUID userKey, @Param("status") EnumTransactionStatus status, Pageable pageable
+    );
+
     @Modifying
+    @Transactional(readOnly = false)
     @Query("UPDATE Order o SET o.payin = :payin where o.id = :orderId")
     void setOrderPayIn(@Param("payin") PayInEntity payin, @Param("orderId") Integer orderId);
 
+    @Modifying
+    @Transactional(readOnly = false)
+    @Query("UPDATE PayIn p SET p.processDefinition = :processDefinition, p.processInstance = :processInstance WHERE p.id = :id")
+    void setPayInWorkflowInstance(
+        @Param("id")                Integer id,
+        @Param("processDefinition") String processDefinition,
+        @Param("processInstance")   String processInstance
+    );
+
+    @Transactional(readOnly = false)
     default PayInDto createBankwirePayInForOrder(BankwirePayInCommand command) throws Exception {
         Assert.notNull(command, "Expected a non-null command");
         Assert.notNull(command.getOrderKey(), "Expected a non-null order key");
@@ -84,11 +104,10 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
 
         payin.getStatusHistory().add(status);
 
-        final PayInItemEntity item = new PayInItemEntity();
+        final PayInOrderItemEntity item = new PayInOrderItemEntity();
         item.setIndex(1);
         item.setOrder(order);
         item.setPayin(payin);
-        item.setType(EnumPaymentItemType.ORDER);
 
         payin.getItems().add(item);
 
@@ -99,6 +118,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         return payin.toDto();
     }
 
+    @Transactional(readOnly = false)
     default PayInDto createCardDirectPayInForOrder(CardDirectPayInCommand command) throws Exception {
         Assert.notNull(command, "Expected a non-null command");
         Assert.notNull(command.getOrderKey(), "Expected a non-null order key");
@@ -132,11 +152,10 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
 
         payin.getStatusHistory().add(status);
 
-        final PayInItemEntity item = new PayInItemEntity();
+        final PayInOrderItemEntity item = new PayInOrderItemEntity();
         item.setIndex(1);
         item.setOrder(order);
         item.setPayin(payin);
-        item.setType(EnumPaymentItemType.ORDER);
 
         payin.getItems().add(item);
 
@@ -147,6 +166,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         return payin.toDto();
     }
 
+    @Transactional(readOnly = false)
     default PayInDto updatePayInStatus(PayInStatusUpdateCommand command) throws PaymentException {
         final PayInEntity payIn = this.findOneByPayInId(command.getProviderPayInId()).orElse(null);
 

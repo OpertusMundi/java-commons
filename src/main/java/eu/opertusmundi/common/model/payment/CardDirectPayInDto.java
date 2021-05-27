@@ -20,18 +20,19 @@ public class CardDirectPayInDto extends PayInDto {
 
     @JsonIgnore
     private String card;
-    
+
     @Schema(description = "A partially obfuscated version of the credit card number")
     @JsonInclude(Include.NON_EMPTY)
     private String alias;
-    
+
     @Schema(
         description = "A custom description to appear on the user's bank statement",
         externalDocs = @ExternalDocumentation(url = "https://docs.mangopay.com/guide/customising-bank-statement-references-direct-debit")
     )
     private String statementDescriptor;
-    
+
     @Schema(description = "Redirect URL if 3-D Secure validation is required")
+    @JsonInclude(Include.NON_NULL)
     private String secureModeRedirectURL;
 
 }

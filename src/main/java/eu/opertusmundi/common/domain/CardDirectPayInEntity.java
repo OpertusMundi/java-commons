@@ -27,7 +27,7 @@ public class CardDirectPayInEntity extends PayInEntity {
     @Getter
     @Setter
     private String alias;
-    
+
     @NotEmpty
     @Column(name = "`card`")
     @Getter
@@ -41,7 +41,8 @@ public class CardDirectPayInEntity extends PayInEntity {
     @Setter
     private String statementDescriptor;
 
-    public PayInDto toDto() {
+    @Override
+    public PayInDto toDto(boolean includeDetails) {
         final CardDirectPayInDto p = new CardDirectPayInDto();
 
         p.setAlias(alias);
@@ -53,6 +54,8 @@ public class CardDirectPayInEntity extends PayInEntity {
         p.setKey(key);
         p.setPayIn(payIn);
         p.setPaymentMethod(paymentMethod);
+        p.setProcessDefinition(processDefinition);
+        p.setProcessInstance(processInstance);
         p.setReferenceNumber(referenceNumber);
         p.setStatementDescriptor(statementDescriptor);
         p.setStatus(status);
@@ -60,9 +63,11 @@ public class CardDirectPayInEntity extends PayInEntity {
         p.setTotalPrice(totalPrice);
         p.setTotalPriceExcludingTax(totalPriceExcludingTax);
         p.setTotalTax(totalTax);
-        
-        this.items.stream().map(PayInItemEntity::toDto).forEach(p::addItem);
+
+        if (includeDetails) {
+            this.items.stream().map(PayInItemEntity::toDto).forEach(p::addItem);
+        }
         return p;
     }
-    
+
 }

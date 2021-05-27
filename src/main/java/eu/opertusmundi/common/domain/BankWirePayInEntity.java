@@ -48,10 +48,10 @@ public class BankWirePayInEntity extends PayInEntity {
     @Setter
     private BankAccountEmbeddable bankAccount;
 
-    public PayInDto toDto() {
+    @Override
+    public PayInDto toDto(boolean includeDetails) {
         final BankwirePayInDto p = new BankwirePayInDto();
 
-        p.setBankAccount(bankAccount.toDto());
         p.setCreatedOn(createdOn);
         p.setCurrency(currency);
         p.setExecutedOn(executedOn);
@@ -59,6 +59,8 @@ public class BankWirePayInEntity extends PayInEntity {
         p.setKey(key);
         p.setPayIn(payIn);
         p.setPaymentMethod(paymentMethod);
+        p.setProcessDefinition(processDefinition);
+        p.setProcessInstance(processInstance);
         p.setReferenceNumber(referenceNumber);
         p.setStatus(status);
         p.setStatusUpdatedOn(statusUpdatedOn);
@@ -66,9 +68,13 @@ public class BankWirePayInEntity extends PayInEntity {
         p.setTotalPriceExcludingTax(totalPriceExcludingTax);
         p.setTotalTax(totalTax);
         p.setWireReference(wireReference);
-        
-        this.items.stream().map(PayInItemEntity::toDto).forEach(p::addItem);
+
+        if (includeDetails) {
+            p.setBankAccount(bankAccount.toDto());
+
+            this.items.stream().map(PayInItemEntity::toDto).forEach(p::addItem);
+        }
         return p;
     }
-    
+
 }

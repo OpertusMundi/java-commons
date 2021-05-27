@@ -1,9 +1,11 @@
 package eu.opertusmundi.common.model.dto;
 
 import java.time.ZonedDateTime;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,8 +20,11 @@ public class AccountAssetDto {
     @JsonIgnore
     private Integer orderId;
 
-    @Schema(description = "Asset PID")
-    private String asset;
+    @Schema(description = "Order unique key")
+    private UUID orderKey;
+
+    @JsonIgnore
+    private String assetId;
 
     @Schema(description = "Date of purchase")
     private ZonedDateTime purchasedOn;
@@ -35,5 +40,8 @@ public class AccountAssetDto {
 
     @Schema(description = "Operation that registered the subscription")
     private EnumAssetSource source;
+
+    @Schema(description = "Catalogue item")
+    private CatalogueItemDto item;
 
 }

@@ -16,13 +16,13 @@ import eu.opertusmundi.common.domain.AccountEntity;
 public interface ProviderRepository extends JpaRepository<AccountEntity, Integer> {
 
     @Query("SELECT distinct a FROM Account a "
-            + "LEFT OUTER JOIN FETCH a.profile p "
-            + "WHERE a.key in :keys")
+         + "LEFT OUTER JOIN FETCH a.profile p "
+         + "WHERE a.key in :keys")
     List<AccountEntity> findAllByKey(@Param("keys") UUID[] keys);
 
     @Query("SELECT a FROM Account a "
-            + "LEFT OUTER JOIN FETCH a.profile p "
-            + "WHERE a.key = :key")
+         + "LEFT OUTER JOIN FETCH a.profile p "
+         + "WHERE a.key = :key")
     AccountEntity findOneByKey(@Param("key") UUID key);
 
 }

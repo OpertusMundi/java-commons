@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -30,19 +32,33 @@ import lombok.Setter;
     @Type(name = "BANKWIRE", value = BankwirePayInDto.class),
 })
 public abstract class PayInDto {
-    
+
     @JsonIgnore
     protected Integer id;
 
     @Schema(description = "PayIn unique key")
     protected UUID key;
 
+    /**
+     * Identifier of the workflow definition used for processing this PayIn
+     * record
+     */
+    @JsonIgnore
+    protected String processDefinition;
+
+    /**
+     * Identifier of the workflow instance processing this PayIn record
+     */
+    @JsonIgnore
+    protected String processInstance;
+
     @ArraySchema(arraySchema = @Schema(
-        description = "PayIn payments. A PayIn may include a single order or multiple subscription billing records"), 
-        minItems = 1, 
-        uniqueItems = true, 
+        description = "PayIn payments. A PayIn may include a single order or multiple subscription billing records"),
+        minItems = 1,
+        uniqueItems = true,
         schema = @Schema(oneOf = {OrderPayInItemDto.class, SubscriptionBillingPayInItemDto.class})
     )
+    @JsonInclude(Include.NON_EMPTY)
     protected List<PayInItemDto> items = new ArrayList<>();
 
     @Schema(description = "The total price of all PayIn items (the debited funds of the PayIn)")
@@ -55,7 +71,7 @@ public abstract class PayInDto {
     protected BigDecimal totalTax;
 
     @Schema(
-        description = "The currency in ISO 4217 format. Only `EUR` is supported", 
+        description = "The currency in ISO 4217 format. Only `EUR` is supported",
         externalDocs = @ExternalDocumentation(url = "https://en.wikipedia.org/wiki/ISO_4217")
     )
     protected String currency;
@@ -83,7 +99,7 @@ public abstract class PayInDto {
 
     @Schema(description = "Platform reference number")
     protected String referenceNumber;
-    
+
     public void addItem(PayInItemDto i) {
         this.items.add(i);
     }

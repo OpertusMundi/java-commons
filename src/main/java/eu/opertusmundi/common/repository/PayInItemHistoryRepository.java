@@ -13,6 +13,8 @@ import eu.opertusmundi.common.domain.OrderItemEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInItemHistoryEntity;
+import eu.opertusmundi.common.domain.PayInOrderItemEntity;
+import eu.opertusmundi.common.domain.PayInSubscriptionBillingItemEntity;
 import eu.opertusmundi.common.domain.SubscriptionBillingEntity;
 import eu.opertusmundi.common.model.order.EnumOrderItemType;
 
@@ -21,10 +23,19 @@ import eu.opertusmundi.common.model.order.EnumOrderItemType;
 public interface PayInItemHistoryRepository extends JpaRepository<PayInItemHistoryEntity, Integer> {
 
     default void create(PayInItemEntity item) {
-        final PayInEntity               payIn               = item.getPayin();
-        final OrderEntity               order               = item.getOrder();
-        final SubscriptionBillingEntity subBilling = item.getSubscriptionBilling();
-        final PayInItemHistoryEntity    e                   = new PayInItemHistoryEntity();
+        final PayInEntity            payIn      = item.getPayin();
+        final PayInItemHistoryEntity e          = new PayInItemHistoryEntity();
+        OrderEntity                  order      = null;
+        SubscriptionBillingEntity    subBilling = null;
+
+        switch (item.getType()) {
+            case ORDER :
+                order = ((PayInOrderItemEntity) item).getOrder();
+                break;
+            case SUBSCRIPTION_BILLING :
+                subBilling = ((PayInSubscriptionBillingItemEntity) item).getSubscriptionBilling();
+                break;
+        }
 
         // A PayIn item may have a reference to either an order or a
         // subscription billing. An order should only have a single order item.

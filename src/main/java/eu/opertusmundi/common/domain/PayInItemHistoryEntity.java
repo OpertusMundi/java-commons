@@ -119,9 +119,9 @@ public class PayInItemHistoryEntity {
     private Integer transferDay;
 
     @Column(name = "`transfer_credited_funds`", columnDefinition = "numeric", precision = 20, scale = 6)
-    private BigDecimal tranferCreditedFunds;
+    private BigDecimal transferCreditedFunds;
 
     @Column(name = "`transfer_platform_fees`", columnDefinition = "numeric", precision = 20, scale = 6)
-    private BigDecimal tranferPlatformFees;
+    private BigDecimal transferPlatformFees;
 
 }

@@ -36,6 +36,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     @Query("SELECT o FROM Order o WHERE o.key = :key")
     Optional<OrderEntity> findOneByKey(@Param("key") UUID key);
 
+    @Transactional(readOnly = false)
     default OrderDto create(OrderCommand command) throws Exception {
         final AccountEntity consumer = this.findAccountById(command.getUserId()).orElse(null);
         final AccountEntity provider = this.findAccountByKey(command.getAsset().getPublisherId()).orElse(null);

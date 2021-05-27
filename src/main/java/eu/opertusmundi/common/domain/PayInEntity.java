@@ -67,6 +67,23 @@ public abstract class PayInEntity {
     protected UUID key;
 
     /**
+     * Identifier of the workflow definition used for processing this PayIn
+     * record
+     */
+    @Column(name = "`process_definition`")
+    @Getter
+    @Setter
+    protected String processDefinition;
+
+    /**
+     * Identifier of the workflow instance processing this PayIn record
+     */
+    @Column(name = "`process_instance`")
+    @Getter
+    @Setter
+    protected String processInstance;
+
+    /**
      * Reference to the consumer account that created the PayIn
      */
     @NotNull
@@ -176,6 +193,10 @@ public abstract class PayInEntity {
     @Setter
     protected String resultMessage;
 
-    public abstract PayInDto toDto();
+    public PayInDto toDto() {
+        return this.toDto(true);
+    }
+
+    public abstract PayInDto toDto(boolean includeDetails);
 
 }

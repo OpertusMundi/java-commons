@@ -141,8 +141,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     private PersistentIdentifierService pidService;
 
     @Override
-    public PageResultDto<AssetDraftDto> findAllDraft(UUID publisherKey, Set<EnumProviderAssetDraftStatus> status, int pageIndex,
-            int pageSize, EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order) {
+    public PageResultDto<AssetDraftDto> findAllDraft(
+        UUID publisherKey, Set<EnumProviderAssetDraftStatus> status, int pageIndex,
+        int pageSize, EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order
+    ) {
         final Direction direction = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
 
         final PageRequest   pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
