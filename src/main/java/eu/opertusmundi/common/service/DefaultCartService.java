@@ -100,10 +100,10 @@ public class DefaultCartService implements CartService {
     }
 
     @Override
-    public void setAccount(final UUID cartKey, Integer accountId) {
+    public CartDto setAccount(final UUID cartKey, Integer accountId) {
         final UUID effectiveCartKey = this.ensureCart(cartKey);
 
-        this.cartStore.setAccount(effectiveCartKey, accountId);
+        return this.cartStore.setAccount(effectiveCartKey, accountId);
     }
 
     private UUID ensureCart(UUID cartKey) {

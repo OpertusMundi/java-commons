@@ -53,7 +53,7 @@ public interface CartRepository extends JpaRepository<CartEntity, Integer> {
     }
 
     @Transactional(readOnly = false)
-    default void setAccount(UUID cartKey, Integer accountId) {
+    default CartDto setAccount(UUID cartKey, Integer accountId) {
         Assert.notNull(cartKey, "Cart key must not be null");
         Assert.notNull(accountId, "Account id must not be null");
 
@@ -75,7 +75,7 @@ public interface CartRepository extends JpaRepository<CartEntity, Integer> {
 
         cart.setAccount(account);
 
-        this.saveAndFlush(cart);
+        return this.saveAndFlush(cart).toDto();
     }
 
     @Transactional(readOnly = false)
@@ -109,12 +109,11 @@ public interface CartRepository extends JpaRepository<CartEntity, Integer> {
         }
         // Always update modified time
         cart.setModifiedAt(item.getAddedAt());
-        
+
         cart.updateAggregates();
 
         return this.saveAndFlush(cart).toDto();
     }
-
 
     @Transactional(readOnly = false)
     default CartDto removeItem(UUID cartKey, UUID itemKey) {
@@ -143,7 +142,7 @@ public interface CartRepository extends JpaRepository<CartEntity, Integer> {
         }
 
         cart.updateAggregates();
-        
+
         return this.saveAndFlush(cart).toDto();
     }
 

@@ -21,6 +21,6 @@ public interface CartStore {
 
     CartDto clear(UUID cartKey);
 
-    void setAccount(UUID cartKey, Integer accountId);
+    CartDto setAccount(UUID cartKey, Integer accountId);
 
 }

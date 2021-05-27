@@ -21,7 +21,6 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
-import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.model.order.CartDto;
 import lombok.Getter;
 import lombok.Setter;
@@ -47,9 +46,6 @@ public class CartEntity {
     @Getter
     @Setter
     private AccountEntity account;
-
-    @Column(name = "`account`", insertable = false, updatable = false)
-    private Integer accountId;
 
     @OneToMany(
         mappedBy = "cart", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true
@@ -101,7 +97,7 @@ public class CartEntity {
 
     private void updateDto(CartDto c) {
         if (this.account != null) {
-            c.setAccountId(this.accountId);
+            c.setAccountId(this.account.getId());
         }
 
         c.setCreatedAt(this.createdAt);
@@ -116,7 +112,7 @@ public class CartEntity {
 
         c.setTotalItems(c.getItems().size());
     }
-    
+
     public void updateAggregates() {
         this.taxTotal = this.items.stream()
             .filter(i -> i.getRemovedAt() == null)

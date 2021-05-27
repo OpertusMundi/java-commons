@@ -50,8 +50,8 @@ public class DefaultCartStore implements CartStore {
     }
 
     @Override
-    public void setAccount(UUID cartKey, Integer accountId) {
-        this.cartRepository.setAccount(cartKey, accountId);
+    public CartDto setAccount(UUID cartKey, Integer accountId) {
+        return this.cartRepository.setAccount(cartKey, accountId);
     }
 
 }
