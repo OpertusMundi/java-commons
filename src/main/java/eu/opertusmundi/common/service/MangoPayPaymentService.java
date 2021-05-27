@@ -15,6 +15,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,12 +72,14 @@ import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.model.EnumCustomerRegistrationStatus;
+import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.dto.AccountDto;
 import eu.opertusmundi.common.model.dto.BankAccountDto;
 import eu.opertusmundi.common.model.dto.EnumCustomerType;
 import eu.opertusmundi.common.model.dto.EnumLegalPersonType;
 import eu.opertusmundi.common.model.dto.EnumMangopayUserType;
+import eu.opertusmundi.common.model.dto.EnumSortingOrder;
 import eu.opertusmundi.common.model.location.Location;
 import eu.opertusmundi.common.model.order.CartDto;
 import eu.opertusmundi.common.model.order.CartItemDto;
@@ -86,6 +92,7 @@ import eu.opertusmundi.common.model.payment.CardDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationCommandDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationDto;
 import eu.opertusmundi.common.model.payment.ClientDto;
+import eu.opertusmundi.common.model.payment.EnumPayInSortField;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PayInDto;
 import eu.opertusmundi.common.model.payment.PayInStatusUpdateCommand;
@@ -138,6 +145,9 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
     @Autowired
     private QuotationService quotationService;
+
+    @Autowired
+    private OrderFulfillmentService orderFulfillmentService;
 
     @Override
     public ClientDto getClient() throws PaymentException {
@@ -639,6 +649,23 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     @Override
+    public PageResultDto<PayInDto> findAllConsumerPayIns(
+        UUID userKey, EnumTransactionStatus status, int pageIndex, int pageSize, EnumPayInSortField orderBy, EnumSortingOrder order
+    ) {
+        final Direction direction = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
+
+        final PageRequest       pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
+        final Page<PayInEntity> page        = this.payInRepository.findAllConsumerPayIns(userKey, status, pageRequest);
+
+        final long           count   = page.getTotalElements();
+        final List<PayInDto> records = page.getContent().stream()
+            .map(p -> p.toDto(false))
+            .collect(Collectors.toList());
+
+        return PageResultDto.of(pageIndex, pageSize, records, count);
+    }
+
+    @Override
     public PayInDto createPayInBankwireForOrder(BankwirePayInCommand command) throws PaymentException {
         try {
             final AccountEntity  account        = this.getAccount(command.getUserKey());
@@ -716,14 +743,6 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             // Get card
             final CardDto card = this.getRegisteredCard(UserCardCommand.of(command.getUserKey(), command.getCardId()));
 
-            // Check payment
-            final PayInEntity payIn = order.getPayin();
-            if (payIn != null) {
-                final PayInDto result = payIn.toDto();
-                ((CardDirectPayInDto) result).setAlias(card.getAlias());
-                return result;
-            }
-
             // Update command with order properties
 
             // MANGOPAY expects not decimal values e.g. 100,50 is formatted as a
@@ -741,7 +760,8 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
                 payInResponse = this.api.getPayInApi().create(idempotencyKey, payInRequest);
             } else {
-                // Override PayIn key
+                // Override PayIn key with existing one from the payment
+                // provider
                 command.setPayInKey(UUID.fromString(payInResponse.getTag()));
             }
 
@@ -762,7 +782,14 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             }
 
             // Create database record
-            final CardDirectPayInDto result = (CardDirectPayInDto) this.payInRepository.createCardDirectPayInForOrder(command);
+            final PayInEntity  payIn  = order.getPayin();
+            CardDirectPayInDto result = null;
+            if (payIn != null) {
+                result = (CardDirectPayInDto) payIn.toDto();
+            } else {
+                result = (CardDirectPayInDto) this.payInRepository.createCardDirectPayInForOrder(command);
+            }
+
 
             // Add client-only information (card alias is never saved in our
             // database)
@@ -773,6 +800,11 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         } catch (final Exception ex) {
             throw this.wrapException("Create PayIn Card Direct", ex, command);
         }
+    }
+
+    @Override
+    public PayInDto updatePayIn(UUID payInKey, String providerPayInId) throws PaymentException {
+        return this.updatePayIn(providerPayInId);
     }
 
     @Override
@@ -798,21 +830,19 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final PayInDto result = this.payInRepository.updatePayInStatus(command);
 
             // Update history table only for succeeded PayIns
-            if (payInEntity.getStatus() == EnumTransactionStatus.SUCCEEDED) {
+            if (result.getStatus() == EnumTransactionStatus.SUCCEEDED) {
                 for (final PayInItemEntity item : payInEntity.getItems()) {
                     payInItemHistoryRepository.create(item);
                 }
             }
 
+            // Update order fulfillment workflow instance
+            this.orderFulfillmentService.sendPayInStatusUpdateMessage(result.getKey(), result.getStatus());
+
             return result;
         } catch (final Exception ex) {
             throw this.wrapException("Update PayIn", ex, providerPayInId);
         }
-    }
-
-    @Override
-    public PayInDto updatePayIn(UUID payInKey, String providerPayInId) throws PaymentException {
-        return this.updatePayIn(providerPayInId);
     }
 
     @Override

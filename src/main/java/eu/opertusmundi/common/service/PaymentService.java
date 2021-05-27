@@ -3,8 +3,10 @@ package eu.opertusmundi.common.service;
 import java.util.List;
 import java.util.UUID;
 
+import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.dto.AccountDto;
 import eu.opertusmundi.common.model.dto.BankAccountDto;
+import eu.opertusmundi.common.model.dto.EnumSortingOrder;
 import eu.opertusmundi.common.model.location.Location;
 import eu.opertusmundi.common.model.order.CartDto;
 import eu.opertusmundi.common.model.order.OrderDto;
@@ -14,6 +16,8 @@ import eu.opertusmundi.common.model.payment.CardDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationCommandDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationDto;
 import eu.opertusmundi.common.model.payment.ClientDto;
+import eu.opertusmundi.common.model.payment.EnumPayInSortField;
+import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PayInDto;
 import eu.opertusmundi.common.model.payment.PayOutCommandDto;
 import eu.opertusmundi.common.model.payment.PayOutDto;
@@ -158,6 +162,21 @@ public interface  PaymentService {
      * @return
      */
     PayInDto getPayIn(Integer userId, UUID payInKey);
+
+    /**
+     * Search consumer PayIns
+     *
+     * @param userKey
+     * @param status
+     * @param pageIndex
+     * @param pageSize
+     * @param orderBy
+     * @param order
+     * @return
+     */
+    PageResultDto<PayInDto> findAllConsumerPayIns(
+        UUID userKey, EnumTransactionStatus status, int pageIndex, int pageSize, EnumPayInSortField orderBy, EnumSortingOrder order
+    );
 
     /**
      * Create bank wire PayIn for a consumer order

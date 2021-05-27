@@ -13,6 +13,7 @@ public enum PaymentMessageCode implements MessageCode {
     PLATFORM_CUSTOMER_NOT_FOUND,
     PROVIDER_USER_NOT_FOUND,
     ENUM_MEMBER_NOT_SUPPORTED,
+    PAYIN_ITEM_TYPE_NOT_SUPPORTED,
     ;
 
     @Override
