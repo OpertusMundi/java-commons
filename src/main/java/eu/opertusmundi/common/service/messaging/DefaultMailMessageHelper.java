@@ -67,8 +67,10 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
     public Map<String, Object> createModel(EnumMailType type, Map<String, Object> variables) {
         Assert.isTrue(type != null, "Expected a non-null mail type");
 
-        Map<String, Object> result = new HashMap<>();
-        result.putAll(variables);
+        final Map<String, Object> result = new HashMap<>();
+        if (variables != null) {
+            result.putAll(variables);
+        }
 
         switch (type) {
             case ACCOUNT_ACTIVATION_TOKEN :
