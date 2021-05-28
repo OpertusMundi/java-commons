@@ -7,7 +7,7 @@
 
     <groupId>eu.opertusmundi</groupId>
     <artifactId>opertus-mundi-common</artifactId>
-    <version>1.0.39</version>
+    <version>1.0.40</version>
     <name>[opertus-mundi] Common</name>
 
     <packaging>jar</packaging>
