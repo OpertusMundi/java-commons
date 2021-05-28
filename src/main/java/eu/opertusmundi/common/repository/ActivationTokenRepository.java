@@ -55,7 +55,9 @@ public interface ActivationTokenRepository extends JpaRepository<ActivationToken
 
     @Transactional(readOnly = false)
     default void redeem(ActivationTokenEntity token) {
-        token.setRedeemedAt(ZonedDateTime.now());
+        if (token.getRedeemedAt() == null) {
+            token.setRedeemedAt(ZonedDateTime.now());
+        }
 
         this.saveAndFlush(token);
     }
