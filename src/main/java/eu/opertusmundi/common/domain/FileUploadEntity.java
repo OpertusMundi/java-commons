@@ -19,8 +19,8 @@ import javax.validation.constraints.NotNull;
 
 import org.hibernate.annotations.NaturalId;
 
-import eu.opertusmundi.common.model.EnumFileSystemType;
-import eu.opertusmundi.common.model.dto.FileUploadDto;
+import eu.opertusmundi.common.model.file.EnumFileSystemType;
+import eu.opertusmundi.common.model.file.FileUploadDto;
 import lombok.Getter;
 import lombok.Setter;
 

@@ -2,7 +2,7 @@ package eu.opertusmundi.common.model.message.client;
 
 import java.util.UUID;
 
-import eu.opertusmundi.common.model.message.server.EnumMessageType;
+import eu.opertusmundi.common.model.message.EnumMessageType;
 import eu.opertusmundi.common.model.message.server.ServerMessageDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;

@@ -18,12 +18,12 @@ import javax.validation.constraints.NotNull;
 
 import org.hibernate.annotations.Type;
 
-import eu.opertusmundi.common.model.dto.AccountProfileDto;
-import eu.opertusmundi.common.model.dto.AccountProfileCommandDto;
-import eu.opertusmundi.common.model.dto.CustomerDraftDto;
-import eu.opertusmundi.common.model.dto.CustomerDraftProfessionalDto;
-import eu.opertusmundi.common.model.dto.CustomerDto;
-import eu.opertusmundi.common.model.dto.CustomerProfessionalDto;
+import eu.opertusmundi.common.model.account.AccountProfileCommandDto;
+import eu.opertusmundi.common.model.account.AccountProfileDto;
+import eu.opertusmundi.common.model.account.CustomerDraftDto;
+import eu.opertusmundi.common.model.account.CustomerDraftProfessionalDto;
+import eu.opertusmundi.common.model.account.CustomerDto;
+import eu.opertusmundi.common.model.account.CustomerProfessionalDto;
 import lombok.Getter;
 import lombok.Setter;
 

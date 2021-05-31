@@ -3,7 +3,7 @@ package eu.opertusmundi.common.model.payment;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import eu.opertusmundi.common.model.dto.BankAccountDto;
+import eu.opertusmundi.common.model.account.BankAccountDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

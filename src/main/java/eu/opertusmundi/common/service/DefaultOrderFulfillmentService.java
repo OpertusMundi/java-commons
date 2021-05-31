@@ -28,7 +28,7 @@ import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
 import eu.opertusmundi.common.feign.client.BpmServerFeignClient;
-import eu.opertusmundi.common.model.dto.EnumAssetSource;
+import eu.opertusmundi.common.model.account.EnumAssetSource;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.PaymentMessageCode;

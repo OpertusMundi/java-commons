@@ -13,8 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 
 import eu.opertusmundi.common.feign.client.BpmServerFeignClient;
+import eu.opertusmundi.common.model.account.ActivationTokenDto;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
-import eu.opertusmundi.common.model.dto.ActivationTokenDto;
 import feign.FeignException;
 
 abstract class AbstractCustomerRegistrationService {

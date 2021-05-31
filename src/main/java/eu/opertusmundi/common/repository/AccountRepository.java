@@ -22,15 +22,15 @@ import eu.opertusmundi.common.domain.CustomerDraftProfessionalEntity;
 import eu.opertusmundi.common.domain.CustomerEntity;
 import eu.opertusmundi.common.domain.CustomerKycLevelEntity;
 import eu.opertusmundi.common.domain.CustomerProfessionalEntity;
-import eu.opertusmundi.common.model.EnumActivationStatus;
 import eu.opertusmundi.common.model.EnumAuthProvider;
-import eu.opertusmundi.common.model.EnumCustomerRegistrationStatus;
 import eu.opertusmundi.common.model.EnumRole;
-import eu.opertusmundi.common.model.dto.AccountCommandDto;
-import eu.opertusmundi.common.model.dto.AccountDto;
-import eu.opertusmundi.common.model.dto.AccountProfileCommandDto;
-import eu.opertusmundi.common.model.dto.CustomerCommandDto;
-import eu.opertusmundi.common.model.dto.ProviderProfessionalCommandDto;
+import eu.opertusmundi.common.model.account.AccountCommandDto;
+import eu.opertusmundi.common.model.account.AccountDto;
+import eu.opertusmundi.common.model.account.AccountProfileCommandDto;
+import eu.opertusmundi.common.model.account.CustomerCommandDto;
+import eu.opertusmundi.common.model.account.EnumActivationStatus;
+import eu.opertusmundi.common.model.account.EnumCustomerRegistrationStatus;
+import eu.opertusmundi.common.model.account.ProviderProfessionalCommandDto;
 
 @Repository
 @Transactional(readOnly = true)

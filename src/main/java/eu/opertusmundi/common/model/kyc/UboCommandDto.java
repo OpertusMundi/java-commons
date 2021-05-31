@@ -12,8 +12,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mangopay.core.enumerations.CountryIso;
 import com.mangopay.entities.Ubo;
 
-import eu.opertusmundi.common.model.dto.AddressCommandDto;
-import eu.opertusmundi.common.model.dto.BirthplaceCommandDto;
+import eu.opertusmundi.common.model.account.AddressCommandDto;
+import eu.opertusmundi.common.model.account.BirthplaceCommandDto;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;

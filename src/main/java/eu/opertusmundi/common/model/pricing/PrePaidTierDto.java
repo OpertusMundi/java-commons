@@ -3,6 +3,7 @@ package eu.opertusmundi.common.model.pricing;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
+import javax.validation.Valid;
 import javax.validation.constraints.DecimalMax;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Digits;
@@ -19,6 +20,7 @@ import lombok.Setter;
 @Schema(description = "Pre-Paid tire")
 @Getter
 @Setter
+@Valid
 public class PrePaidTierDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

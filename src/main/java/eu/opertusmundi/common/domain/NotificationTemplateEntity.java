@@ -11,7 +11,7 @@ import javax.persistence.Table;
 
 import org.hibernate.annotations.NaturalId;
 
-import eu.opertusmundi.common.model.message.client.EnumNotificationType;
+import eu.opertusmundi.common.model.message.EnumNotificationType;
 import lombok.Getter;
 
 @Entity(name = "NotificationTemplate")

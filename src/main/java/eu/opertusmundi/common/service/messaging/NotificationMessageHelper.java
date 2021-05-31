@@ -5,7 +5,7 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.model.ServiceException;
-import eu.opertusmundi.common.model.message.client.EnumNotificationType;
+import eu.opertusmundi.common.model.message.EnumNotificationType;
 
 public interface NotificationMessageHelper {
 

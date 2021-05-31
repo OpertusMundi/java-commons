@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
-import eu.opertusmundi.common.model.DraftFileNamingStrategyContext;
+import eu.opertusmundi.common.model.asset.DraftFileNamingStrategyContext;
 
 @Service
 public class DefaultDraftFileNamingStrategy extends AbstractFileNamingStrategy<DraftFileNamingStrategyContext> {

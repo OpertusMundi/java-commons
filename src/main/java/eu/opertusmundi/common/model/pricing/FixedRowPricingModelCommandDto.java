@@ -25,8 +25,8 @@ public class FixedRowPricingModelCommandDto extends BasePricingModelCommandDto {
 
     @Schema(description = "The price prospective clients will pay per 1,000 rows")
     @NotNull
-    @DecimalMin("0.01")
-    @Digits(fraction = 2, integer = 6)
+    @DecimalMin(value = "0.00", inclusive = false)
+    @Digits(integer = 6, fraction = 2)
     @Getter
     @Setter
     private BigDecimal price;
@@ -36,7 +36,7 @@ public class FixedRowPricingModelCommandDto extends BasePricingModelCommandDto {
     @Getter
     @Setter
     private Integer minRows;
-    
+
     @ArraySchema(
         arraySchema = @Schema(
             description = "Discount rates based on the number of selected rows. Each element (except for the first one) "
@@ -56,7 +56,7 @@ public class FixedRowPricingModelCommandDto extends BasePricingModelCommandDto {
     public void validate() throws QuotationException {
         // No validation is required
     }
-    
+
     public void validate(QuotationParametersDto params) throws QuotationException {
         if (params.getNuts() == null || params.getNuts().isEmpty()) {
             throw new QuotationException(QuotationMessageCode.NO_NUTS_SELECTED, "At least a region must be selected");
@@ -71,7 +71,7 @@ public class FixedRowPricingModelCommandDto extends BasePricingModelCommandDto {
             BigDecimal         discount  = BigDecimal.ZERO;
 
             quotation.setTaxPercent(params.getTaxPercent().intValue());
-            
+
             if (this.discountRates != null) {
                 for (DiscountRateDto r : this.discountRates) {
                     if (params.getSystemParams().getRows() > r.getCount()) {
@@ -91,11 +91,11 @@ public class FixedRowPricingModelCommandDto extends BasePricingModelCommandDto {
                 .divide(new BigDecimal(100))
                 .setScale(2, RoundingMode.HALF_UP)
             );
-            
+
             result.setQuotation(quotation);
         }
 
         return result;
     }
-    
+
 }

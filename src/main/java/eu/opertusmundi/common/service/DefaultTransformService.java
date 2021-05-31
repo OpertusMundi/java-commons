@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import eu.opertusmundi.common.feign.client.TransformServiceFeignClient;
-import eu.opertusmundi.common.model.transform.EnumSourceType;
+import eu.opertusmundi.common.model.transform.EnumTransformSource;
 import eu.opertusmundi.common.model.transform.EnumTransformResponse;
 import eu.opertusmundi.common.model.transform.ServerStatusResponseDto;
 import eu.opertusmundi.common.model.transform.ServerTransformDeferredResponseDto;
@@ -33,7 +33,7 @@ public class DefaultTransformService implements TransformService {
 
     @Override
     public void transformSync(
-        EnumSourceType sourceType, String source, String format, String sourceCrs, String target, String targetCrs
+        EnumTransformSource sourceType, String source, String format, String sourceCrs, String target, String targetCrs
     ) throws TransformServiceException {
         try {
             final File sourceFile = new File(source);
@@ -86,7 +86,7 @@ public class DefaultTransformService implements TransformService {
 
     @Override
     public ServerTransformDeferredResponseDto transformAsync(
-        EnumSourceType sourceType, String source, String format, String sourceCrs, String targetCrs
+        EnumTransformSource sourceType, String source, String format, String sourceCrs, String targetCrs
     ) throws TransformServiceException {
         try {
             final File file = new File(source);

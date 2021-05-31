@@ -15,8 +15,8 @@ import javax.persistence.Table;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
 
-import eu.opertusmundi.common.model.EnumActivationTokenType;
-import eu.opertusmundi.common.model.dto.ActivationTokenDto;
+import eu.opertusmundi.common.model.account.ActivationTokenDto;
+import eu.opertusmundi.common.model.account.EnumActivationTokenType;
 import lombok.Getter;
 import lombok.Setter;
 

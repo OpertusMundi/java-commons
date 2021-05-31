@@ -7,8 +7,8 @@ import java.time.ZonedDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mangopay.entities.Ubo;
 
-import eu.opertusmundi.common.model.dto.AddressDto;
-import eu.opertusmundi.common.model.dto.BirthplaceDto;
+import eu.opertusmundi.common.model.account.AddressDto;
+import eu.opertusmundi.common.model.account.BirthplaceDto;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;

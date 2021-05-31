@@ -16,9 +16,9 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
+import eu.opertusmundi.common.model.account.AccountSubscriptionDto;
+import eu.opertusmundi.common.model.account.EnumAssetSource;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
-import eu.opertusmundi.common.model.dto.AccountSubscriptionDto;
-import eu.opertusmundi.common.model.dto.EnumAssetSource;
 import lombok.Getter;
 import lombok.Setter;
 

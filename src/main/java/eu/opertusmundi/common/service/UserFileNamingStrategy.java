@@ -3,7 +3,7 @@ package eu.opertusmundi.common.service;
 import java.io.IOException;
 import java.nio.file.Path;
 
-import eu.opertusmundi.common.model.FileNamingStrategyContext;
+import eu.opertusmundi.common.model.file.FileNamingStrategyContext;
 
 public interface UserFileNamingStrategy<C extends FileNamingStrategyContext> {
 

@@ -25,12 +25,12 @@ public class RowPrePaidPricingModelCommandDto extends BasePricingModelCommandDto
 
     @Schema(description = "The price per row")
     @NotNull
-    @DecimalMin("0.001")
-    @Digits(fraction = 3, integer = 3)
+    @DecimalMin(value = "0.000", inclusive = false)
+    @Digits(integer = 3, fraction = 3)
     @Getter
     @Setter
     private BigDecimal price;
-    
+
     @ArraySchema(
         arraySchema = @Schema(
             description = "Prepaid tiers using data rows as units. Each element (except for the first one) "
@@ -67,7 +67,7 @@ public class RowPrePaidPricingModelCommandDto extends BasePricingModelCommandDto
             }
         }
     }
-    
+
     public void validate(QuotationParametersDto params) throws QuotationException {
         final Integer tier = params.getPrePaidTier();
 
@@ -86,7 +86,7 @@ public class RowPrePaidPricingModelCommandDto extends BasePricingModelCommandDto
         if (params.getPrePaidTier() != null) {
             final PrePaidTierDto tier = this.prePaidTiers.get(params.getPrePaidTier());
             final QuotationDto quotation = new QuotationDto();
-            
+
             quotation.setTaxPercent(params.getTaxPercent().intValue());
             quotation.setTotalPriceExcludingTax(this.getPrice()
                 .multiply(BigDecimal.valueOf(tier.getCount()))
@@ -100,11 +100,11 @@ public class RowPrePaidPricingModelCommandDto extends BasePricingModelCommandDto
                 .divide(new BigDecimal(100))
                 .setScale(2, RoundingMode.HALF_UP)
             );
-            
+
             result.setQuotation(quotation);
         }
 
         return result;
     }
-    
+
 }

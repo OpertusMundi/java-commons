@@ -2,7 +2,7 @@ package eu.opertusmundi.common.model;
 
 import javax.annotation.Nullable;
 
-import eu.opertusmundi.common.model.dto.AccountDto;
+import eu.opertusmundi.common.model.account.AccountDto;
 import eu.opertusmundi.common.model.location.Location;
 import lombok.Getter;
 import lombok.Setter;

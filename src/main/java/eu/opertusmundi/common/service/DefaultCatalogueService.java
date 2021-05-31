@@ -35,7 +35,9 @@ import eu.opertusmundi.common.model.PageRequestDto;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.RequestContext;
 import eu.opertusmundi.common.model.RestResponse;
+import eu.opertusmundi.common.model.account.PublisherDto;
 import eu.opertusmundi.common.model.analytics.AssetViewRecord;
+import eu.opertusmundi.common.model.analytics.EnumAssetViewSource;
 import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.catalogue.CatalogueResult;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
@@ -55,7 +57,6 @@ import eu.opertusmundi.common.model.catalogue.elastic.ElasticServiceException;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueCollection;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueResponse;
-import eu.opertusmundi.common.model.dto.PublisherDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.repository.AssetAdditionalResourceRepository;
@@ -126,7 +127,7 @@ public class DefaultCatalogueService implements CatalogueService {
             );
 
             // Log asset views
-            this.logViews(ctx, response.getResult().getItems(), request.getQuery(), AssetViewRecord.EnumSource.SEARCH);
+            this.logViews(ctx, response.getResult().getItems(), request.getQuery(), EnumAssetViewSource.SEARCH);
 
             return response;
         } catch (final FeignException fex) {
@@ -172,7 +173,7 @@ public class DefaultCatalogueService implements CatalogueService {
             );
 
             // Log asset views
-            this.logViews(ctx, response.getResult().getItems(), null, AssetViewRecord.EnumSource.REFERENCE);
+            this.logViews(ctx, response.getResult().getItems(), null, EnumAssetViewSource.REFERENCE);
 
             return response;
         } catch (final FeignException fex) {
@@ -218,7 +219,7 @@ public class DefaultCatalogueService implements CatalogueService {
             );
 
             // Log asset views
-            this.logViews(ctx, response.getResult().getItems(), request.getText(), AssetViewRecord.EnumSource.SEARCH);
+            this.logViews(ctx, response.getResult().getItems(), request.getText(), EnumAssetViewSource.SEARCH);
 
             return response;
         } catch (final Exception ex) {
@@ -369,7 +370,7 @@ public class DefaultCatalogueService implements CatalogueService {
             this.refreshPricingModels(item);
 
             // Log asset views
-            this.logView(ctx,  item, null, AssetViewRecord.EnumSource.VIEW);
+            this.logView(ctx,  item, null, EnumAssetViewSource.VIEW);
 
             return item;
         } catch (final FeignException fex) {
@@ -807,7 +808,7 @@ public class DefaultCatalogueService implements CatalogueService {
         }
     }
 
-    private void logView(RequestContext ctx, CatalogueItemDetailsDto item, String query, AssetViewRecord.EnumSource source) {
+    private void logView(RequestContext ctx, CatalogueItemDetailsDto item, String query, EnumAssetViewSource source) {
         if (ctx == null || ctx.isIgnoreLogging()) {
             // Ignore request. A request initialized internally, may have a
             // null context e.g. a quotation request
@@ -822,7 +823,7 @@ public class DefaultCatalogueService implements CatalogueService {
         }
     }
 
-    private void logViews(RequestContext ctx, List<CatalogueItemDto> items, String query, AssetViewRecord.EnumSource source) {
+    private void logViews(RequestContext ctx, List<CatalogueItemDto> items, String query, EnumAssetViewSource source) {
         if (ctx.isIgnoreLogging()) {
             return;
         }

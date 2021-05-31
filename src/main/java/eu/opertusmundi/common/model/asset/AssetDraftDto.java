@@ -3,8 +3,8 @@ package eu.opertusmundi.common.model.asset;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
+import eu.opertusmundi.common.model.account.PublisherDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
-import eu.opertusmundi.common.model.dto.PublisherDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;

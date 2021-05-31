@@ -10,11 +10,11 @@ import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
-import eu.opertusmundi.common.model.dto.CustomerCommandDto;
-import eu.opertusmundi.common.model.dto.CustomerDraftDto;
-import eu.opertusmundi.common.model.dto.CustomerDraftIndividualDto;
-import eu.opertusmundi.common.model.dto.ConsumerIndividualCommandDto;
-import eu.opertusmundi.common.model.dto.EnumMangopayUserType;
+import eu.opertusmundi.common.model.account.ConsumerIndividualCommandDto;
+import eu.opertusmundi.common.model.account.CustomerCommandDto;
+import eu.opertusmundi.common.model.account.CustomerDraftDto;
+import eu.opertusmundi.common.model.account.CustomerDraftIndividualDto;
+import eu.opertusmundi.common.model.account.EnumMangopayUserType;
 import lombok.Getter;
 import lombok.Setter;
 

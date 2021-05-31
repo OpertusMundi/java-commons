@@ -25,12 +25,12 @@ public class CallPrePaidPricingModelCommandDto extends BasePricingModelCommandDt
 
     @Schema(description = "The price per call")
     @NotNull
-    @DecimalMin("0.001")
-    @Digits(fraction = 3, integer = 3)
+    @DecimalMin(value = "0.000", inclusive = false)
+    @Digits(integer = 3, fraction = 3)
     @Getter
     @Setter
     private BigDecimal price;
-    
+
     @ArraySchema(
         arraySchema = @Schema(
             description = "Prepaid tiers using service calls as units. Each element (except for the first one) "
@@ -79,14 +79,14 @@ public class CallPrePaidPricingModelCommandDto extends BasePricingModelCommandDt
             throw new QuotationException(QuotationMessageCode.PRE_PAID_TIER_NOT_FOUND, "Prepaid tier was not found");
         }
     }
-    
+
     public  EffectivePricingModelDto compute(QuotationParametersDto params) {
         final EffectivePricingModelDto result = EffectivePricingModelDto.from(this, params);
 
         if (params.getPrePaidTier() != null) {
             final PrePaidTierDto tier = this.prePaidTiers.get(params.getPrePaidTier());
             final QuotationDto quotation = new QuotationDto();
-            
+
             quotation.setTaxPercent(params.getTaxPercent().intValue());
             quotation.setTotalPriceExcludingTax(this.getPrice()
                 .multiply(BigDecimal.valueOf(tier.getCount()))
@@ -100,11 +100,11 @@ public class CallPrePaidPricingModelCommandDto extends BasePricingModelCommandDt
                 .divide(new BigDecimal(100))
                 .setScale(2, RoundingMode.HALF_UP)
             );
-            
+
             result.setQuotation(quotation);
         }
 
         return result;
     }
-    
+
 }

@@ -16,8 +16,8 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
-import eu.opertusmundi.common.model.dto.AccountAssetDto;
-import eu.opertusmundi.common.model.dto.EnumAssetSource;
+import eu.opertusmundi.common.model.account.AccountAssetDto;
+import eu.opertusmundi.common.model.account.EnumAssetSource;
 import lombok.Getter;
 import lombok.Setter;
 

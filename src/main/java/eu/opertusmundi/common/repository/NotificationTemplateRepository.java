@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import eu.opertusmundi.common.domain.NotificationTemplateEntity;
-import eu.opertusmundi.common.model.message.client.EnumNotificationType;
+import eu.opertusmundi.common.model.message.EnumNotificationType;
 
 @Repository
 @Transactional(readOnly = true)

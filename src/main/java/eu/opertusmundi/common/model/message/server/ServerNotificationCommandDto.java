@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import eu.opertusmundi.common.model.message.EnumMessageType;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;

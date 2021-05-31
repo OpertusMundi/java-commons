@@ -2,12 +2,12 @@ package eu.opertusmundi.common.service;
 
 import java.util.UUID;
 
+import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
+import eu.opertusmundi.common.model.account.AccountAssetDto;
+import eu.opertusmundi.common.model.account.ConsumerServiceException;
 import eu.opertusmundi.common.model.asset.EnumConsumerAssetSortField;
 import eu.opertusmundi.common.model.catalogue.client.EnumType;
-import eu.opertusmundi.common.model.dto.AccountAssetDto;
-import eu.opertusmundi.common.model.dto.ConsumerServiceException;
-import eu.opertusmundi.common.model.dto.EnumSortingOrder;
 
 public interface ConsumerAssetService {
 

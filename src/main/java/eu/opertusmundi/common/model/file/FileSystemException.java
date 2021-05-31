@@ -1,6 +1,5 @@
 package eu.opertusmundi.common.model.file;
 
-import eu.opertusmundi.common.model.FileSystemMessageCode;
 import eu.opertusmundi.common.model.ServiceException;
 
 public class FileSystemException extends ServiceException {

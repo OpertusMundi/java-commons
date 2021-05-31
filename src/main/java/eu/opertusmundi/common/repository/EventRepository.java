@@ -3,8 +3,8 @@ package eu.opertusmundi.common.repository;
 import org.springframework.data.domain.PageRequest;
 
 import eu.opertusmundi.common.model.PageResultDto;
-import eu.opertusmundi.common.model.dto.EventDto;
-import eu.opertusmundi.common.model.dto.EventQuery;
+import eu.opertusmundi.common.model.logging.EventDto;
+import eu.opertusmundi.common.model.logging.EventQuery;
 
 public interface EventRepository {
 

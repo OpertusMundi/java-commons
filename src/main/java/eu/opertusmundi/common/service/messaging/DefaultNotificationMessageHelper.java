@@ -12,7 +12,7 @@ import com.ibm.icu.text.MessageFormat;
 
 import eu.opertusmundi.common.domain.NotificationTemplateEntity;
 import eu.opertusmundi.common.model.ServiceException;
-import eu.opertusmundi.common.model.message.client.EnumNotificationType;
+import eu.opertusmundi.common.model.message.EnumNotificationType;
 import eu.opertusmundi.common.model.message.client.NotificationMessageCode;
 import eu.opertusmundi.common.repository.NotificationTemplateRepository;
 import io.jsonwebtoken.lang.Assert;

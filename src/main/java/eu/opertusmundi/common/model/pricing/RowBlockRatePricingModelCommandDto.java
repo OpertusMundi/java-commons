@@ -23,13 +23,13 @@ public class RowBlockRatePricingModelCommandDto extends BasePricingModelCommandD
     }
 
     @Schema(description = "The price per row")
-    @Digits(fraction = 3, integer = 3)
-    @DecimalMin("0.001")
+    @DecimalMin(value = "0.000", inclusive = false)
+    @Digits(integer = 3, fraction = 3)
     @NotNull
     @Getter
     @Setter
     private BigDecimal price;
-   
+
     @ArraySchema(
         arraySchema = @Schema(
             description = "Discount rates based on the number of selected rows. Each element (except for the first one) "
@@ -73,8 +73,8 @@ public class RowBlockRatePricingModelCommandDto extends BasePricingModelCommandD
 
     public  EffectivePricingModelDto compute(QuotationParametersDto params) {
         final EffectivePricingModelDto result = EffectivePricingModelDto.from(this, params);
-        
+
         return result;
     }
-    
+
 }

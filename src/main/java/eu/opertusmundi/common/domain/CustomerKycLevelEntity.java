@@ -15,7 +15,7 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
-import eu.opertusmundi.common.model.dto.EnumKycLevel;
+import eu.opertusmundi.common.model.account.EnumKycLevel;
 import lombok.Getter;
 import lombok.Setter;
 

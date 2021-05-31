@@ -7,8 +7,8 @@ import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
 import javax.validation.constraints.NotNull;
 
-import eu.opertusmundi.common.model.dto.CustomerRepresentativeCommandDto;
-import eu.opertusmundi.common.model.dto.CustomerRepresentativeDto;
+import eu.opertusmundi.common.model.account.CustomerRepresentativeCommandDto;
+import eu.opertusmundi.common.model.account.CustomerRepresentativeDto;
 import lombok.Getter;
 import lombok.Setter;
 

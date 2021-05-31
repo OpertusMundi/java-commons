@@ -10,7 +10,7 @@ import java.util.Set;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
-import eu.opertusmundi.common.model.FileNamingStrategyContext;
+import eu.opertusmundi.common.model.file.FileNamingStrategyContext;
 import eu.opertusmundi.common.model.file.FileSystemException;
 
 public abstract class AbstractFileNamingStrategy<C extends FileNamingStrategyContext> implements UserFileNamingStrategy<C> {

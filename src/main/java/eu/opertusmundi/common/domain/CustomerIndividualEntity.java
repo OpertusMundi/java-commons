@@ -13,12 +13,12 @@ import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang3.StringUtils;
 
-import eu.opertusmundi.common.model.dto.ConsumerIndividualCommandDto;
-import eu.opertusmundi.common.model.dto.CustomerCommandDto;
-import eu.opertusmundi.common.model.dto.CustomerDto;
-import eu.opertusmundi.common.model.dto.CustomerIndividualDto;
-import eu.opertusmundi.common.model.dto.EnumMangopayUserType;
-import eu.opertusmundi.common.model.dto.EnumKycLevel;
+import eu.opertusmundi.common.model.account.ConsumerIndividualCommandDto;
+import eu.opertusmundi.common.model.account.CustomerCommandDto;
+import eu.opertusmundi.common.model.account.CustomerDto;
+import eu.opertusmundi.common.model.account.CustomerIndividualDto;
+import eu.opertusmundi.common.model.account.EnumKycLevel;
+import eu.opertusmundi.common.model.account.EnumMangopayUserType;
 import lombok.Getter;
 import lombok.Setter;
 

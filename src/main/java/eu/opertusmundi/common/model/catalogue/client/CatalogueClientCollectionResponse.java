@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.RestResponse;
-import eu.opertusmundi.common.model.dto.PublisherDto;
+import eu.opertusmundi.common.model.account.PublisherDto;
 import eu.opertusmundi.common.util.StreamUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;

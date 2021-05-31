@@ -14,12 +14,12 @@ public class AssetQuery extends BaseQuery {
         /**
          * Number of views
          */
-        COUNT_VIEWS
+        COUNT_VIEWS,
         ;
     }
 
     @Schema(description = "Source of data")
-    private AssetViewRecord.EnumSource source;
+    private EnumAssetViewSource source;
 
     @Schema(description = "Aggregate to compute")
     private EnumMetric metric;

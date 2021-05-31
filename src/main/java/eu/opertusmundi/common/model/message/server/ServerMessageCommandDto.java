@@ -2,6 +2,7 @@ package eu.opertusmundi.common.model.message.server;
 
 import java.util.UUID;
 
+import eu.opertusmundi.common.model.message.EnumMessageType;
 import lombok.Getter;
 import lombok.Setter;
 

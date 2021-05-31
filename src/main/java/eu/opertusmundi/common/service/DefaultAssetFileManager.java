@@ -13,12 +13,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
-import eu.opertusmundi.common.model.AssetFileNamingStrategyContext;
-import eu.opertusmundi.common.model.FileSystemMessageCode;
+import eu.opertusmundi.common.model.asset.AssetFileNamingStrategyContext;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
 import eu.opertusmundi.common.model.file.FileDto;
 import eu.opertusmundi.common.model.file.FileSystemException;
+import eu.opertusmundi.common.model.file.FileSystemMessageCode;
 
 @Service
 public class DefaultAssetFileManager implements AssetFileManager {

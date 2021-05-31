@@ -28,14 +28,14 @@ import javax.validation.constraints.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.NaturalId;
 
-import eu.opertusmundi.common.model.EnumActivationStatus;
 import eu.opertusmundi.common.model.EnumAuthProvider;
 import eu.opertusmundi.common.model.EnumRole;
-import eu.opertusmundi.common.model.dto.AccountDto;
-import eu.opertusmundi.common.model.dto.AccountProfileCommandDto;
-import eu.opertusmundi.common.model.dto.EnumCustomerType;
-import eu.opertusmundi.common.model.dto.PublisherDto;
-import eu.opertusmundi.common.model.dto.SimplAccountDto;
+import eu.opertusmundi.common.model.account.AccountDto;
+import eu.opertusmundi.common.model.account.AccountProfileCommandDto;
+import eu.opertusmundi.common.model.account.EnumActivationStatus;
+import eu.opertusmundi.common.model.account.EnumCustomerType;
+import eu.opertusmundi.common.model.account.PublisherDto;
+import eu.opertusmundi.common.model.account.SimpleAccountDto;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -295,10 +295,10 @@ public class AccountEntity {
     /**
      * Convert to a simple account DTO object
      *
-     * @return a new {@link SimplAccountDto} instance
+     * @return a new {@link SimpleAccountDto} instance
      */
-    public SimplAccountDto toSimpleDto() {
-        final SimplAccountDto a = new SimplAccountDto();
+    public SimpleAccountDto toSimpleDto() {
+        final SimpleAccountDto a = new SimpleAccountDto();
 
         a.setKey(this.key);
         a.setUsername(this.email);

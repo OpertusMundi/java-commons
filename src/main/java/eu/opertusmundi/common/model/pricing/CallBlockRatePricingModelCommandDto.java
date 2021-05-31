@@ -24,12 +24,12 @@ public class CallBlockRatePricingModelCommandDto extends BasePricingModelCommand
 
     @Schema(description = "The price per call")
     @NotNull
-    @DecimalMin("0.001")
-    @Digits(fraction = 3, integer = 3)
+    @DecimalMin(value = "0.000", inclusive = false)
+    @Digits(integer = 3, fraction = 3)
     @Getter
     @Setter
     private BigDecimal price;
-    
+
     @ArraySchema(
         arraySchema = @Schema(
             description = "Discount rates based on the number of service calls. Each element (except for the first one) "
@@ -66,15 +66,15 @@ public class CallBlockRatePricingModelCommandDto extends BasePricingModelCommand
             }
         }
     }
-    
+
     public void validate(QuotationParametersDto params) throws QuotationException {
         // No validation is required
     }
-    
+
     public  EffectivePricingModelDto compute(QuotationParametersDto params) {
         final EffectivePricingModelDto result = EffectivePricingModelDto.from(this, params);
-        
+
         return result;
     }
-    
+
 }

@@ -14,8 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.ActivationTokenEntity;
-import eu.opertusmundi.common.model.EnumActivationTokenType;
-import eu.opertusmundi.common.model.dto.ActivationTokenDto;
+import eu.opertusmundi.common.model.account.ActivationTokenDto;
+import eu.opertusmundi.common.model.account.EnumActivationTokenType;
 
 @Repository
 @Transactional(readOnly = true)

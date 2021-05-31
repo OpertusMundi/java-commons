@@ -5,8 +5,8 @@ import java.util.List;
 
 import eu.opertusmundi.common.model.PageRequestDto;
 import eu.opertusmundi.common.model.PageResultDto;
+import eu.opertusmundi.common.model.account.PublisherDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
-import eu.opertusmundi.common.model.dto.PublisherDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;

@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.mangopay.entities.Client;
 
-import eu.opertusmundi.common.model.dto.AddressDto;
+import eu.opertusmundi.common.model.account.AddressDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;

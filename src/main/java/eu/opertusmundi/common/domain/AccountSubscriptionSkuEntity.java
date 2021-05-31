@@ -11,7 +11,7 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
-import eu.opertusmundi.common.model.dto.AccountSubscriptionSkuDto;
+import eu.opertusmundi.common.model.account.AccountSubscriptionSkuDto;
 import lombok.Getter;
 import lombok.Setter;
 

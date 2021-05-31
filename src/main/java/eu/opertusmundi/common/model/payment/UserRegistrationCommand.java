@@ -4,7 +4,7 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreType;
 
-import eu.opertusmundi.common.model.dto.EnumCustomerType;
+import eu.opertusmundi.common.model.account.EnumCustomerType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

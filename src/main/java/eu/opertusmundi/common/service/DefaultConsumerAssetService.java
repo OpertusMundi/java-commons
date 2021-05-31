@@ -7,14 +7,14 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
+import eu.opertusmundi.common.model.account.AccountAssetDto;
+import eu.opertusmundi.common.model.account.ConsumerServiceException;
+import eu.opertusmundi.common.model.account.ConsumerServiceMessageCode;
 import eu.opertusmundi.common.model.asset.EnumConsumerAssetSortField;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumType;
-import eu.opertusmundi.common.model.dto.AccountAssetDto;
-import eu.opertusmundi.common.model.dto.ConsumerServiceException;
-import eu.opertusmundi.common.model.dto.ConsumerServiceMessageCode;
-import eu.opertusmundi.common.model.dto.EnumSortingOrder;
 import eu.opertusmundi.common.repository.AccountAssetRepository;
 
 @Service

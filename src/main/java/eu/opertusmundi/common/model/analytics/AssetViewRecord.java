@@ -23,40 +23,24 @@ public class AssetViewRecord implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    public enum EnumSource {
-        /**
-         * Search operation view
-         */
-        SEARCH,
-        /**
-         * Record view
-         */
-        VIEW,
-        /**
-         * Related assets operation view
-         */
-        REFERENCE,
-        ;
-    }
+    private String              country;
+    private ZonedDateTime       dateTime;
+    private int                 day;
+    private String              id;
+    private Location            location;
+    private int                 month;
+    private UUID                publisherKey;
+    private String              query;
+    private String              remoteIpAddress;
+    private EnumTopicCategory   segment;
+    private EnumAssetViewSource source;
+    private Integer             userId;
+    private UUID                userKey;
+    private String              version;
+    private int                 week;
+    private int                 year;
 
-    private String            country;
-    private ZonedDateTime     dateTime;
-    private int               day;
-    private String            id;
-    private Location          location;
-    private int               month;
-    private UUID              publisherKey;
-    private String            query;
-    private String            remoteIpAddress;
-    private EnumTopicCategory segment;
-    private EnumSource        source;
-    private Integer           userId;
-    private UUID              userKey;
-    private String            version;
-    private int               week;
-    private int               year;
-
-    public static AssetViewRecord from(RequestContext ctx, CatalogueItemDto asset, String query, EnumSource source) {
+    public static AssetViewRecord from(RequestContext ctx, CatalogueItemDto asset, String query, EnumAssetViewSource source) {
         final ZonedDateTime datetime = ZonedDateTime.now();
 
         final EnumTopicCategory segment = asset.getTopicCategory() != null && asset.getTopicCategory().size() > 0

@@ -3,10 +3,10 @@ package eu.opertusmundi.common.service;
 import java.util.List;
 import java.util.UUID;
 
+import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
-import eu.opertusmundi.common.model.dto.AccountDto;
-import eu.opertusmundi.common.model.dto.BankAccountDto;
-import eu.opertusmundi.common.model.dto.EnumSortingOrder;
+import eu.opertusmundi.common.model.account.AccountDto;
+import eu.opertusmundi.common.model.account.BankAccountDto;
 import eu.opertusmundi.common.model.location.Location;
 import eu.opertusmundi.common.model.order.CartDto;
 import eu.opertusmundi.common.model.order.OrderDto;

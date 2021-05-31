@@ -1,7 +1,7 @@
 package eu.opertusmundi.common.service;
 
 import eu.opertusmundi.common.model.PageResultDto;
-import eu.opertusmundi.common.model.dto.CustomerDto;
+import eu.opertusmundi.common.model.account.CustomerDto;
 import eu.opertusmundi.common.model.kyc.CustomerVerificationException;
 import eu.opertusmundi.common.model.kyc.KycDocumentCommand;
 import eu.opertusmundi.common.model.kyc.KycDocumentCommandDto;

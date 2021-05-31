@@ -3,8 +3,8 @@ package eu.opertusmundi.common.domain;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 
-import eu.opertusmundi.common.model.dto.BankAccountCommandDto;
-import eu.opertusmundi.common.model.dto.BankAccountDto;
+import eu.opertusmundi.common.model.account.BankAccountCommandDto;
+import eu.opertusmundi.common.model.account.BankAccountDto;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;

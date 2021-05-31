@@ -17,12 +17,12 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.Type;
 
-import eu.opertusmundi.common.model.dto.CustomerCommandDto;
-import eu.opertusmundi.common.model.dto.ProviderProfessionalCommandDto;
-import eu.opertusmundi.common.model.dto.CustomerProfessionalDto;
-import eu.opertusmundi.common.model.dto.EnumMangopayUserType;
-import eu.opertusmundi.common.model.dto.EnumKycLevel;
-import eu.opertusmundi.common.model.dto.EnumLegalPersonType;
+import eu.opertusmundi.common.model.account.CustomerCommandDto;
+import eu.opertusmundi.common.model.account.CustomerProfessionalDto;
+import eu.opertusmundi.common.model.account.EnumKycLevel;
+import eu.opertusmundi.common.model.account.EnumLegalPersonType;
+import eu.opertusmundi.common.model.account.EnumMangopayUserType;
+import eu.opertusmundi.common.model.account.ProviderProfessionalCommandDto;
 import lombok.Getter;
 import lombok.Setter;
 

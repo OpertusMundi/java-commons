@@ -3,7 +3,7 @@ package eu.opertusmundi.common.model.converter;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
-import eu.opertusmundi.common.model.dto.EnumMangopayUserType;
+import eu.opertusmundi.common.model.account.EnumMangopayUserType;
 
 @Converter(autoApply = false)
 public class EnumCustomerTypeAttributeConverter implements AttributeConverter<EnumMangopayUserType, Integer> {

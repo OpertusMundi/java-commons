@@ -13,8 +13,8 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
-import eu.opertusmundi.common.model.EnumEventLevel;
-import eu.opertusmundi.common.model.dto.EventDto;
+import eu.opertusmundi.common.model.logging.EnumEventLevel;
+import eu.opertusmundi.common.model.logging.EventDto;
 import lombok.Getter;
 import lombok.Setter;
 

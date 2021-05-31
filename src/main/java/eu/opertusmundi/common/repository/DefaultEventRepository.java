@@ -16,8 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import eu.opertusmundi.common.domain.EventEntity;
 import eu.opertusmundi.common.model.PageResultDto;
-import eu.opertusmundi.common.model.dto.EventDto;
-import eu.opertusmundi.common.model.dto.EventQuery;
+import eu.opertusmundi.common.model.logging.EventDto;
+import eu.opertusmundi.common.model.logging.EventQuery;
 
 @Repository()
 @Transactional(readOnly = true)

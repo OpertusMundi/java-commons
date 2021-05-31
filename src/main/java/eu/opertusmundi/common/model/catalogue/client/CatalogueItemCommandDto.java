@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -108,6 +109,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
             RowBlockRatePricingModelCommandDto.class,
         })
     )
+    @Valid
     private List<BasePricingModelCommandDto> pricingModels;
 
     @Schema(description = "A name given to the resource", required = true)
@@ -155,7 +157,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
             .filter(r -> r.getEndpoint().equals(resource.getEndpoint()))
             .findFirst()
             .orElse(null);
-        
+
         if (existing == null) {
             this.resources.add(resource);
         } else {

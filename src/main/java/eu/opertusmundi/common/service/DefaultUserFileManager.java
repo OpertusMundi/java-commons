@@ -20,12 +20,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
-import eu.opertusmundi.common.model.FileSystemMessageCode;
-import eu.opertusmundi.common.model.UserFileNamingStrategyContext;
 import eu.opertusmundi.common.model.file.DirectoryDto;
 import eu.opertusmundi.common.model.file.FilePathCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
+import eu.opertusmundi.common.model.file.FileSystemMessageCode;
 import eu.opertusmundi.common.model.file.FileUploadCommand;
+import eu.opertusmundi.common.model.file.UserFileNamingStrategyContext;
 
 @Service
 public class DefaultUserFileManager implements UserFileManager {

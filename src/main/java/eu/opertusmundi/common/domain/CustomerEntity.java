@@ -30,13 +30,13 @@ import javax.validation.constraints.NotNull;
 
 import org.hibernate.annotations.NaturalId;
 
+import eu.opertusmundi.common.model.account.ConsumerIndividualCommandDto;
+import eu.opertusmundi.common.model.account.CustomerCommandDto;
+import eu.opertusmundi.common.model.account.CustomerDto;
+import eu.opertusmundi.common.model.account.EnumKycLevel;
+import eu.opertusmundi.common.model.account.EnumMangopayUserType;
+import eu.opertusmundi.common.model.account.ProviderProfessionalCommandDto;
 import eu.opertusmundi.common.model.converter.EnumCustomerTypeAttributeConverter;
-import eu.opertusmundi.common.model.dto.ConsumerIndividualCommandDto;
-import eu.opertusmundi.common.model.dto.CustomerCommandDto;
-import eu.opertusmundi.common.model.dto.CustomerDto;
-import eu.opertusmundi.common.model.dto.EnumMangopayUserType;
-import eu.opertusmundi.common.model.dto.EnumKycLevel;
-import eu.opertusmundi.common.model.dto.ProviderProfessionalCommandDto;
 import lombok.Getter;
 import lombok.Setter;
 

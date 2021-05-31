@@ -4,7 +4,8 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import eu.opertusmundi.common.model.message.server.EnumMessageType;
+import eu.opertusmundi.common.model.message.EnumMessageType;
+import eu.opertusmundi.common.model.message.EnumNotificationType;
 import eu.opertusmundi.common.model.message.server.ServerNotificationDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;

@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.util.List;
 
 import javax.validation.Valid;
+import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Digits;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
@@ -26,7 +27,8 @@ public class FixedPopulationPricingModelCommandDto extends BasePricingModelComma
 
     @Schema(description = "The price prospective clients will pay per 10,000 people")
     @NotNull
-    @Digits(fraction = 2, integer = 6)
+    @DecimalMin(value = "0.000", inclusive = false)
+    @Digits(integer = 3, fraction = 3)
     @Getter
     @Setter
     private BigDecimal price;
@@ -38,7 +40,7 @@ public class FixedPopulationPricingModelCommandDto extends BasePricingModelComma
     @Getter
     @Setter
     private Integer minPercent;
-    
+
     @ArraySchema(
         arraySchema = @Schema(
             description = "Discount rates based on the the size of population in tens of thousands of people. "
@@ -56,6 +58,7 @@ public class FixedPopulationPricingModelCommandDto extends BasePricingModelComma
     @Setter
     private List<DiscountRateDto> discountRates;
 
+    @Override
     public void validate() throws QuotationException {
         if (this.discountRates != null) {
             for (int i = 1; i < this.discountRates.size(); i++) {
@@ -77,12 +80,14 @@ public class FixedPopulationPricingModelCommandDto extends BasePricingModelComma
         }
     }
 
+    @Override
     public void validate(QuotationParametersDto params) throws QuotationException {
         if (params.getNuts() == null || params.getNuts().isEmpty()) {
             throw new QuotationException(QuotationMessageCode.NO_NUTS_SELECTED, "At least a region must be selected");
         }
     }
 
+    @Override
     public  EffectivePricingModelDto compute(QuotationParametersDto params) {
         final EffectivePricingModelDto result = EffectivePricingModelDto.from(this, params);
 
@@ -91,9 +96,9 @@ public class FixedPopulationPricingModelCommandDto extends BasePricingModelComma
             BigDecimal         discount  = BigDecimal.ZERO;
 
             quotation.setTaxPercent(params.getTaxPercent().intValue());
-            
+
             if (this.discountRates != null) {
-                for (DiscountRateDto r : this.discountRates) {
+                for (final DiscountRateDto r : this.discountRates) {
                     if (params.getSystemParams().getPopulation() > r.getCount()) {
                         discount = r.getDiscount();
                     }
@@ -111,11 +116,11 @@ public class FixedPopulationPricingModelCommandDto extends BasePricingModelComma
                 .divide(new BigDecimal(100))
                 .setScale(2, RoundingMode.HALF_UP)
             );
-            
+
             result.setQuotation(quotation);
         }
 
         return result;
     }
-    
+
 }

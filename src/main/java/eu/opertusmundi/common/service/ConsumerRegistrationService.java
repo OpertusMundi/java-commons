@@ -2,8 +2,8 @@ package eu.opertusmundi.common.service;
 
 import java.util.UUID;
 
-import eu.opertusmundi.common.model.dto.AccountDto;
-import eu.opertusmundi.common.model.dto.CustomerCommandDto;
+import eu.opertusmundi.common.model.account.AccountDto;
+import eu.opertusmundi.common.model.account.CustomerCommandDto;
 
 public interface ConsumerRegistrationService {
 

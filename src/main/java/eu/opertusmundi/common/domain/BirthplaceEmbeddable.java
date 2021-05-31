@@ -3,8 +3,8 @@ package eu.opertusmundi.common.domain;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 
-import eu.opertusmundi.common.model.dto.BirthplaceCommandDto;
-import eu.opertusmundi.common.model.dto.BirthplaceDto;
+import eu.opertusmundi.common.model.account.BirthplaceCommandDto;
+import eu.opertusmundi.common.model.account.BirthplaceDto;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
