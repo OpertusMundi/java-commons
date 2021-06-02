@@ -1,6 +1,6 @@
 package eu.opertusmundi.common.model.analytics;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,11 +40,11 @@ public class BaseQuery {
 
         @Schema(description = "Min date in YYYY-MM-DD ISO format")
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-        private Date min;
+        private LocalDate min;
 
         @Schema(description = "Max date in YYYY-MM-DD ISO format")
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-        private Date max;
+        private LocalDate max;
 
     }
 

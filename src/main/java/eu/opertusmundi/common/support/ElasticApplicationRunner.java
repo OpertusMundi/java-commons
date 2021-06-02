@@ -33,7 +33,7 @@ public class ElasticApplicationRunner implements ApplicationRunner {
 
     private void initializeIndices() throws ElasticServiceException {
         if (this.elasticSearchService != null) {
-            this.elasticSearchService.initializeIndices();
+            this.elasticSearchService.initialize();
         }
     }
 

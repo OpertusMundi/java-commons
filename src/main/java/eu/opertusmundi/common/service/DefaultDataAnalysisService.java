@@ -3,6 +3,7 @@ package eu.opertusmundi.common.service;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +19,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import eu.opertusmundi.common.model.analytics.AssetQuery;
+import eu.opertusmundi.common.model.analytics.AssetViewQuery;
 import eu.opertusmundi.common.model.analytics.BaseQuery;
 import eu.opertusmundi.common.model.analytics.DataPoint;
 import eu.opertusmundi.common.model.analytics.DataSeries;
@@ -91,11 +92,11 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
             // Apply temporal dimension filtering
             if (time.getMin() != null) {
                 filters.add("payin_executed_on >= ?");
-                args.add(time.getMin());
+                args.add(time.getMin().atTime(0, 0, 0).atZone(ZoneId.of("UTC")));
             }
             if (time.getMax() != null) {
                 filters.add("payin_executed_on <= ?");
-                args.add(time.getMax());
+                args.add(time.getMax().atTime(0, 0, 0).atZone(ZoneId.of("UTC")));
             }
         }
 
@@ -188,14 +189,12 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 
 
     @Override
-    public DataSeries<?> execute(AssetQuery query) {
+    public DataSeries<?> execute(AssetViewQuery query) {
         if (elasticSearchService == null || query == null || query.getMetric() == null) {
             return DataSeries.<BigInteger>empty();
         }
 
-        final DataSeries<BigDecimal> result = new DataSeries<>();
-
-        // TODO: Execute ElasticSearch query and update result ...
+        final DataSeries<BigDecimal> result = elasticSearchService.searchAssetViews(query);
 
         // Update coordinates
         for (final DataPoint<BigDecimal> p : result.getPoints()) {

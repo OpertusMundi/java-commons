@@ -1,5 +1,9 @@
 package eu.opertusmundi.common.service;
 
+import java.math.BigDecimal;
+
+import eu.opertusmundi.common.model.analytics.AssetViewQuery;
+import eu.opertusmundi.common.model.analytics.DataSeries;
 import eu.opertusmundi.common.model.analytics.ProfileRecord;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQuery;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQueryResult;
@@ -53,11 +57,11 @@ public interface ElasticSearchService {
     boolean deleteIndex(String name) throws ElasticServiceException;
 
     /**
-     * Initializes all registered index definitions
+     * Initializes all registered object definitions
      *
      * @throws ElasticServiceException
      */
-    void initializeIndices() throws ElasticServiceException;
+    void initialize() throws ElasticServiceException;
 
     /**
      * Add or update profile
@@ -86,12 +90,65 @@ public interface ElasticSearchService {
     void addAsset(String content) throws ElasticServiceException;
 
     /**
+     * Create a pipeline
+     *
+     * @param name The name of the pipeline
+     * @return If the response is acknowledged
+     * @throws ElasticServiceException
+     */
+    boolean createPipelineInsertTimestamp(String name) throws ElasticServiceException;
+
+    /**
+     * Delete pipeline with the specified {@code} name
+     * @param name The name of the pipeline to delete
+     * @return If the response is acknowledged
+     * @throws ElasticServiceException
+     */
+    boolean deletePipeline(String name) throws ElasticServiceException;
+
+    /**
+     * Delete transform with the specified {@code} name
+     * @param name The name of the transform to delete
+     * @param force When true deletes the transform regardless the state, if false deletes it if it is stopped
+     * @return If the response is acknowledged
+     * @throws ElasticServiceException
+     */
+    boolean deleteTransform(String name, boolean force) throws ElasticServiceException;
+
+    /**
+     * Start transform with the specified {@code} name
+     * @param name The name of the transform to start
+     * @return If the response is acknowledged
+     * @throws ElasticServiceException
+     */
+    boolean startTransform(String name) throws ElasticServiceException;
+
+    /**
+     * Stop transform with the specified {@code} name
+     * @param name The name of the transform to stop
+     * @param allowNoMatch
+     * @param waitForCheckpoint
+     * @param waitForCompletion
+     * @return If the response is acknowledged
+     * @throws ElasticServiceException
+     */
+    boolean stopTransform(String name, boolean allowNoMatch, boolean waitForCheckpoint, boolean waitForCompletion) throws ElasticServiceException;
+
+    /**
      * Search asset index
      *
-     * @param assetQuery Asset query Object with the values of the front end filters
+     * @param query Asset query Object with the values of the front end filters
      * @return
      * @throws ElasticServiceException
      */
-    ElasticAssetQueryResult searchAssets(ElasticAssetQuery assetQuery) throws ElasticServiceException;
+    ElasticAssetQueryResult searchAssets(ElasticAssetQuery query) throws ElasticServiceException;
+
+    /**
+     * Search asset view aggregate index
+     *
+     * @param query
+     * @return
+     */
+    DataSeries<BigDecimal> searchAssetViews(AssetViewQuery query) throws ElasticServiceException;
 
 }

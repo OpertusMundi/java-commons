@@ -1,6 +1,6 @@
 package eu.opertusmundi.common.service;
 
-import eu.opertusmundi.common.model.analytics.AssetQuery;
+import eu.opertusmundi.common.model.analytics.AssetViewQuery;
 import eu.opertusmundi.common.model.analytics.DataSeries;
 import eu.opertusmundi.common.model.analytics.SalesQuery;
 
@@ -20,6 +20,6 @@ public interface DataAnalysisService {
      * @param query
      * @return
      */
-    DataSeries<?> execute(AssetQuery query);
+    DataSeries<?> execute(AssetViewQuery query);
 
 }
