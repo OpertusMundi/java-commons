@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 
 import eu.opertusmundi.common.model.catalogue.elastic.HttpHostConfig;
 import eu.opertusmundi.common.model.catalogue.elastic.IndexDefinition;
+import eu.opertusmundi.common.model.catalogue.elastic.PipelineDefinition;
 import eu.opertusmundi.common.model.catalogue.elastic.TransformDefinition;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,6 +32,10 @@ public class ElasticConfiguration {
     @Getter
     @Setter
     private IndexDefinition profileIndex;
+
+    @Getter
+    @Setter
+    private PipelineDefinition autoTimestampPipeline;
 
     @Getter
     @Setter

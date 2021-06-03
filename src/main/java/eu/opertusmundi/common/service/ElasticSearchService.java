@@ -9,6 +9,7 @@ import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQuery;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQueryResult;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticServiceException;
 import eu.opertusmundi.common.model.catalogue.elastic.IndexDefinition;
+import eu.opertusmundi.common.model.catalogue.elastic.PipelineDefinition;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 
 public interface ElasticSearchService {
@@ -92,11 +93,23 @@ public interface ElasticSearchService {
     /**
      * Create a pipeline
      *
-     * @param name The name of the pipeline
+     * @param def The pipeline definition
      * @return If the response is acknowledged
      * @throws ElasticServiceException
      */
-    boolean createPipelineInsertTimestamp(String name) throws ElasticServiceException;
+    default boolean createPipeline(PipelineDefinition def) throws ElasticServiceException {
+        return this.createPipeline(def.getName(), def.getDefinition());
+    }
+
+    /**
+     * Create a pipeline
+     *
+     * @param name The name of the pipeline
+     * @param definitionResource The resource with the pipeline definition
+     * @return If the response is acknowledged
+     * @throws ElasticServiceException
+     */
+    boolean createPipeline(String name, String definitionResource) throws ElasticServiceException;
 
     /**
      * Delete pipeline with the specified {@code} name

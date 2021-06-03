@@ -70,9 +70,11 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.AggregatorFactories;
+import org.elasticsearch.search.aggregations.bucket.composite.CompositeAggregation;
 import org.elasticsearch.search.aggregations.bucket.composite.CompositeAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.TermsValuesSourceBuilder;
+import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 import org.elasticsearch.search.aggregations.metrics.SumAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
@@ -80,6 +82,7 @@ import org.elasticsearch.search.sort.ScoreSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.locationtech.jts.geom.Coordinate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.retry.annotation.Backoff;
@@ -114,6 +117,14 @@ import io.jsonwebtoken.lang.Assert;
 public class DefaultElasticSearchService implements ElasticSearchService {
 
     private static final Logger logger = LogManager.getLogger(DefaultElasticSearchService.class);
+
+    /**
+     * Maximum number of buckets returned by aggregation queries
+     *
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket.html
+     */
+    @Value("${opertusmundi.elastic.max-bucket-count:1000}")
+    private int maxBucketCount;
 
     private RestHighLevelClient client = null;
 
@@ -157,7 +168,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             }
         });
 
-        this.createPipelineInsertTimestamp("auto_timestamp_pipeline");
+        this.createPipeline(configuration.getAutoTimestampPipeline());
 
         final TransformDefinition transformDef = configuration.getAssetViewAggregateTransform();
 
@@ -243,21 +254,25 @@ public class DefaultElasticSearchService implements ElasticSearchService {
     }
 
     @Override
-    public boolean createPipelineInsertTimestamp(String name) throws ElasticServiceException {
-        final String             processor =
-            "{\"description\": \"Creates a timestamp when a document is initially indexed\","
-          + "\"processors\": [{\"set\":{\"field\": \"_source.insertTimestamp\", \"value\": \"{{_ingest.timestamp}}\"}}]}";
+    public boolean createPipeline(String name, String definitionResource) throws ElasticServiceException {
+        try (
+            final InputStream definitionIs = resourceLoader.getResource(definitionResource).getInputStream();
+        ) {
+            final String processor = IOUtils.toString(definitionIs, StandardCharsets.UTF_8);
 
-        AcknowledgedResponse     response = null;
-        final PutPipelineRequest request  = new PutPipelineRequest(
-            name, new BytesArray(processor.getBytes(StandardCharsets.UTF_8)), XContentType.JSON
-        );
+            final PutPipelineRequest request  = new PutPipelineRequest(
+                name, new BytesArray(processor.getBytes(StandardCharsets.UTF_8)), XContentType.JSON
+            );
 
-        try {
-            response = client.ingest().putPipeline(request, RequestOptions.DEFAULT);
+            final AcknowledgedResponse response = client.ingest().putPipeline(request, RequestOptions.DEFAULT);
             return response.isAcknowledged();
-        } catch (final IOException ex) {
-            throw new ElasticServiceException("Failed to create pipeline", ex);
+        } catch (final Exception ex) {
+            logger.error(String.format(
+                "Failed to create pipeline [name=%s, definition=%s]",
+                name, definitionResource
+            ), ex );
+
+            throw new ElasticServiceException("Failed to create index", ex);
         }
     }
 
@@ -320,7 +335,6 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             .setDest(destConfig)
             .setFrequency(TimeValue.timeValueSeconds(60))
             .setPivotConfig(pivotConfig)
-            .setDescription("Grouped assets")
             .setSyncConfig(syncConfig)
             .build();
 
@@ -790,9 +804,9 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             final SearchSourceBuilder                   sourceBuilder          = new SearchSourceBuilder();
 
             if (time != null) {
+                // Apply temporal dimension grouping
                 result.setTimeUnit(time.getUnit());
 
-                // Apply temporal dimension grouping
                 if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.YEAR.ordinal()) {
                     groupByFields.add("year");
                     aggregationByYear = new TermsValuesSourceBuilder("year").field("year");
@@ -814,79 +828,35 @@ public class DefaultElasticSearchService implements ElasticSearchService {
                     sources.add(aggregationByDay);
                 }
 
-                int minYear     = 0,    maxYear     = 0;
-                int minMonth    = 0,    maxMonth    = 0;
-                int minWeek     = 0,    maxWeek     = 0;
-                int minDay      = 0,    maxDay      = 0;
+                int minYear  = 0, maxYear = 0;
+                int minMonth = 0, maxMonth = 0;
+                int minWeek  = 0, maxWeek = 0;
+                int minDay   = 0, maxDay = 0;
 
                 // Apply temporal dimension filtering
-                if (time.getMin() != null) {
-                    minYear     = time.getMin().getYear();
-                    minMonth    = time.getMin().getMonthValue();
-                    minWeek     = time.getMin().get(WeekFields.of(Locale.getDefault()).weekOfYear());
-                    minDay      = time.getMin().getDayOfMonth();
+                if (time.getMin() != null && time.getMax() != null) {
+                    minYear  = time.getMin().getYear();
+                    minMonth = time.getMin().getMonthValue();
+                    minWeek  = time.getMin().get(WeekFields.of(Locale.getDefault()).weekOfYear());
+                    minDay   = time.getMin().getDayOfMonth();
 
-                    filterQuery.must(QueryBuilders.boolQuery()
-                            .should(QueryBuilders.boolQuery()
-                                .must(QueryBuilders.rangeQuery("year").gt(minYear))
-                            )
-                            .should(QueryBuilders.boolQuery()
-                                .mustNot(QueryBuilders.rangeQuery("year").gt(minYear))
-                                .must(QueryBuilders.rangeQuery("year").gte(minYear))
-                                .must(QueryBuilders.rangeQuery("month").gt(minMonth))
-                            )
-                            .should(QueryBuilders.boolQuery()
-                                .mustNot(QueryBuilders.rangeQuery("year").gt(minYear))
-                                .must(QueryBuilders.rangeQuery("year").gte(minYear))
-                                .mustNot(QueryBuilders.rangeQuery("month").gt(minMonth))
-                                .must(QueryBuilders.rangeQuery("month").gte(minMonth))
-                                .must(QueryBuilders.rangeQuery("week").gt(minWeek))
-                            )
-                            .should(QueryBuilders.boolQuery()
-                                .mustNot(QueryBuilders.rangeQuery("year").gt(minYear))
-                                .must(QueryBuilders.rangeQuery("year").gte(minYear))
-                                .mustNot(QueryBuilders.rangeQuery("month").gt(minMonth))
-                                .must(QueryBuilders.rangeQuery("month").gte(minMonth))
-                                .mustNot(QueryBuilders.rangeQuery("week").gt(minWeek))
-                                .must(QueryBuilders.rangeQuery("week").gte(minWeek))
-                                .must(QueryBuilders.rangeQuery("day").gte(minDay))
-                            )
-                    );
+                    maxYear  = time.getMax().getYear();
+                    maxMonth = time.getMax().getMonthValue();
+                    maxWeek  = time.getMax().get(WeekFields.of(Locale.getDefault()).weekOfYear());
+                    maxDay   = time.getMax().getDayOfMonth();
 
-                }
-                if (time.getMax() != null) {
-                    maxYear     = time.getMax().getYear();
-                    maxMonth    = time.getMax().getMonthValue();
-                    maxWeek     = time.getMax().get(WeekFields.of(Locale.getDefault()).weekOfYear());
-                    maxDay      = time.getMax().getDayOfMonth();
-
-                    filterQuery.must(QueryBuilders.boolQuery()
-                            .should(QueryBuilders.boolQuery()
-                                .must(QueryBuilders.rangeQuery("year").lt(maxYear))
-                            )
-                            .should(QueryBuilders.boolQuery()
-                                .mustNot(QueryBuilders.rangeQuery("year").lt(maxYear))
-                                .must(QueryBuilders.rangeQuery("year").lte(maxYear))
-                                .must(QueryBuilders.rangeQuery("month").lt(maxMonth))
-                            )
-                            .should(QueryBuilders.boolQuery()
-                                .mustNot(QueryBuilders.rangeQuery("year").lt(maxYear))
-                                .must(QueryBuilders.rangeQuery("year").lte(maxYear))
-                                .mustNot(QueryBuilders.rangeQuery("month").lt(maxMonth))
-                                .must(QueryBuilders.rangeQuery("month").lte(maxMonth))
-                                .must(QueryBuilders.rangeQuery("week").lt(maxWeek))
-                            )
-                            .should(QueryBuilders.boolQuery()
-                                .mustNot(QueryBuilders.rangeQuery("year").lt(maxYear))
-                                .must(QueryBuilders.rangeQuery("year").lte(maxYear))
-                                .mustNot(QueryBuilders.rangeQuery("month").lt(maxMonth))
-                                .must(QueryBuilders.rangeQuery("month").lte(maxMonth))
-                                .mustNot(QueryBuilders.rangeQuery("week").lt(maxWeek))
-                                .must(QueryBuilders.rangeQuery("week").lte(maxWeek))
-                                .must(QueryBuilders.rangeQuery("day").lte(maxDay))
-                            )
-                    );
-
+                    if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.YEAR.ordinal()) {
+                        filterQuery.must(QueryBuilders.rangeQuery("year").gte(minYear).lte(maxYear));
+                    }
+                    if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.MONTH.ordinal()) {
+                        filterQuery.must(QueryBuilders.rangeQuery("month").gte(minMonth).lte(maxMonth));
+                    }
+                    if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.WEEK.ordinal()) {
+                        filterQuery.must(QueryBuilders.rangeQuery("week").gte(minWeek).lte(maxWeek));
+                    }
+                    if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.DAY.ordinal()) {
+                        filterQuery.must(QueryBuilders.rangeQuery("day").gte(minDay).lte(maxDay));
+                    }
                 }
             }
 
@@ -902,7 +872,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
                 if (spatial.getCodes() != null && !spatial.getCodes().isEmpty()) {
                     final List<QueryBuilder> spatialQueries = new ArrayList<QueryBuilder>();
                     for (int i = 0; i < spatial.getCodes().size(); i++) {
-                            spatialQueries.add(QueryBuilders.termQuery("country.keyword", spatial.getCodes().get(i)));
+                        spatialQueries.add(QueryBuilders.termQuery("country.keyword", spatial.getCodes().get(i)));
                     }
                     final BoolQueryBuilder tempBool = QueryBuilders.boolQuery();
                     for (final QueryBuilder currentQuery : spatialQueries) {
@@ -921,15 +891,17 @@ public class DefaultElasticSearchService implements ElasticSearchService {
                 }
 
                 // Apply segment filtering
-                final List<QueryBuilder> segmentQueries = new ArrayList<QueryBuilder>();
-                for (int i = 0; i < segments.getSegments().size(); i++) {
+                if (segments.getSegments() != null && !segments.getSegments().isEmpty()) {
+                    final List<QueryBuilder> segmentQueries = new ArrayList<QueryBuilder>();
+                    for (int i = 0; i < segments.getSegments().size(); i++) {
                         segmentQueries.add(QueryBuilders.termQuery("segment.keyword", segments.getSegments().get(i)));
+                    }
+                    final BoolQueryBuilder tempBool = QueryBuilders.boolQuery();
+                    for (final QueryBuilder currentQuery : segmentQueries) {
+                        tempBool.should(currentQuery);
+                    }
+                    filterQuery.must(tempBool);
                 }
-                final BoolQueryBuilder tempBool = QueryBuilders.boolQuery();
-                for (final QueryBuilder currentQuery : segmentQueries) {
-                    tempBool.should(currentQuery);
-                }
-                filterQuery.must(tempBool);
             }
 
             if (publishers != null) {
@@ -976,38 +948,52 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             SumAggregationBuilder       sumOfSearch                 = null;
             SumAggregationBuilder       sumOfRef                    = null;
             CompositeAggregationBuilder compositeAggregationBuilder = null;
-
             if (source == EnumAssetViewSource.VIEW) {
-                sumOfView                   = AggregationBuilders.sum("view_count").field("view_count");
+                sumOfView                   = AggregationBuilders
+                    .sum("view_count")
+                    .field("view_count");
                 compositeAggregationBuilder = new CompositeAggregationBuilder("groupby", sources)
                     .subAggregation(sumOfView);
+
             } else if (source == EnumAssetViewSource.SEARCH) {
-                sumOfSearch                 = AggregationBuilders.sum("search_count").field("search_count");
+                sumOfSearch                 = AggregationBuilders
+                    .sum("search_count")
+                    .field("search_count");
                 compositeAggregationBuilder = new CompositeAggregationBuilder("groupby", sources)
                     .subAggregation(sumOfSearch);
+
             } else if (source == EnumAssetViewSource.REFERENCE) {
-                sumOfRef                    = AggregationBuilders.sum("reference_count").field("reference_count");
+                sumOfRef                    = AggregationBuilders
+                    .sum("reference_count")
+                    .field("reference_count");
                 compositeAggregationBuilder = new CompositeAggregationBuilder("groupby", sources)
                     .subAggregation(sumOfRef);
+
             } else {
-                sumOfView                   = AggregationBuilders.sum("view_count").field("view_count");
-                sumOfSearch                 = AggregationBuilders.sum("search_count").field("search_count");
-                sumOfRef                    = AggregationBuilders.sum("reference_count").field("reference_count");
+                sumOfView                   = AggregationBuilders
+                    .sum("view_count")
+                    .field("view_count");
+                sumOfSearch                 = AggregationBuilders
+                    .sum("search_count")
+                    .field("search_count");
+                sumOfRef                    = AggregationBuilders
+                    .sum("reference_count")
+                    .field("reference_count");
                 compositeAggregationBuilder = new CompositeAggregationBuilder("groupby", sources)
                     .subAggregation(sumOfView)
-                    .subAggregation(sumOfSearch)
-                    .subAggregation(sumOfRef);
+                    .subAggregation(sumOfSearch).subAggregation(sumOfRef);
             }
+            compositeAggregationBuilder.size(maxBucketCount);
             sourceBuilder.aggregation(compositeAggregationBuilder);
 
             // Define index
-            final SearchRequest searchRequest             = new SearchRequest(this.configuration.getAssetViewAggregateIndex().getName());
+            final SearchRequest       searchRequest       = new SearchRequest(this.configuration.getAssetViewAggregateIndex().getName());
             final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
             // Create query - aggregations and filters
-            searchSourceBuilder.query(filterQuery).aggregation(compositeAggregationBuilder).size(1000);
+            searchSourceBuilder.query(filterQuery).aggregation(compositeAggregationBuilder).size(0);
 
             // Sort results order by grouping fields
-            for (int i = 0 ; i < groupByFields.size() ; i++) {
+            for (int i = 0; i < groupByFields.size(); i++) {
                 searchSourceBuilder.sort(new FieldSortBuilder(groupByFields.get(i)).order(SortOrder.ASC));
             }
             searchRequest.source(searchSourceBuilder);
@@ -1015,80 +1001,82 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             List<Map<String, Object>> assetAnalytics = new ArrayList<Map<String, Object>>();
 
             final SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
-            final SearchHits hits = searchResponse.getHits();
+            final SearchHits     hits           = searchResponse.getHits();
             assetAnalytics = new ArrayList<Map<String, Object>>();
 
             for (final SearchHit hit : hits) {
                 final Map<String, Object> sourceAsMap = hit.getSourceAsMap();
-                result.getPoints().add(this.mapObjectToDataPoint(query, hit));
                 assetAnalytics.add(sourceAsMap);
-             }
+            }
+
+            final CompositeAggregation agg = searchResponse.getAggregations().get("groupby");
+
+            // For each entry
+            for (final CompositeAggregation.Bucket bucket : agg.getBuckets()) {
+                result.getPoints().add(this.mapObjectToDataPoint(query, bucket));
+            }
 
             return result;
-        } catch(final Exception ex) {
+        } catch (final Exception ex) {
             throw new ElasticServiceException("Search operation has failed", ex);
         }
     }
 
-    private DataPoint<BigDecimal> mapObjectToDataPoint(AssetViewQuery query, SearchHit hit) {
+    private DataPoint<BigDecimal> mapObjectToDataPoint(AssetViewQuery query, CompositeAggregation.Bucket bucket) {
         final BaseQuery.TemporalDimension time       = query.getTime();
         final BaseQuery.SpatialDimension  spatial    = query.getAreas();
         final BaseQuery.SegmentDimension  segments   = query.getSegments();
         final List<UUID>                  publishers = query.getPublishers();
         final List<String>                assets     = query.getAssets();
         final EnumAssetViewSource         source     = query.getSource();
-        final Map<String, Object>         sourceMap  = hit.getSourceAsMap();
 
-        final DataPoint<BigDecimal> p     = new DataPoint<>();
+        final DataPoint<BigDecimal> p = new DataPoint<>();
 
-        // The order we extract values must match the order we apply grouping fields
+        // The order we extract values must match the order we apply grouping
+        // fields
         if (time != null) {
             p.setTime(new DataPoint.TimeInstant());
 
             if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.YEAR.ordinal()) {
-                p.getTime().setYear((Integer) sourceMap.get("year"));
+                p.getTime().setYear((Integer) bucket.getKey().get("year"));
             }
             if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.MONTH.ordinal()) {
-                p.getTime().setMonth((Integer) sourceMap.get("month"));
+                p.getTime().setMonth((Integer) bucket.getKey().get("month"));
             }
             if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.WEEK.ordinal()) {
-                p.getTime().setWeek((Integer) sourceMap.get("week"));
+                p.getTime().setWeek((Integer) bucket.getKey().get("week"));
             }
             if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.DAY.ordinal()) {
-                p.getTime().setDay((Integer) sourceMap.get("day"));
+                p.getTime().setDay((Integer) bucket.getKey().get("day"));
             }
         }
 
         if (spatial != null && spatial.isEnabled()) {
-            p.setLocation(DataPoint.Location.of((String) sourceMap.get("country")));
+            p.setLocation(DataPoint.Location.of((String) bucket.getKey().get("country")));
         }
 
         if (segments != null && segments.isEnabled()) {
-            p.setSegment((String) sourceMap.get("segment"));
+            p.setSegment((String) bucket.getKey().get("segment"));
         }
 
         if (publishers != null && publishers.size() > 1) {
-            p.setPublisher(UUID.fromString((String) sourceMap.get("publisherKey")));
+            p.setPublisher(UUID.fromString((String) bucket.getKey().get("publisherKey")));
         }
 
         if (assets != null && assets.size() > 1) {
-            p.setAsset((String) sourceMap.get("id"));
+            p.setAsset((String) bucket.getKey().get("id"));
         }
 
         switch (source) {
             case VIEW :
-                p.setValue(BigDecimal.valueOf(((Integer) sourceMap.get("view_count")).longValue()));
+                p.setValue(BigDecimal.valueOf(((ParsedSum) bucket.getAggregations().asMap().get("view_count")).getValue()));
                 break;
             case SEARCH :
-                p.setValue(BigDecimal.valueOf(((Integer) sourceMap.get("search_count")).longValue()));
+                p.setValue(BigDecimal.valueOf(((ParsedSum) bucket.getAggregations().asMap().get("search_count")).getValue()));
                 break;
             case REFERENCE :
-                p.setValue(BigDecimal.valueOf(((Integer) sourceMap.get("reference_count")).longValue()));
+                p.setValue(BigDecimal.valueOf(((ParsedSum) bucket.getAggregations().asMap().get("reference_count")).getValue()));
                 break;
-            default :
-                p.setValue(BigDecimal.valueOf( ((Integer) sourceMap.get("view_count")).longValue()
-                                             + ((Integer) sourceMap.get("search_count")).longValue()
-                                             + ((Integer) sourceMap.get("reference_count")).longValue()));
         }
 
         return p;
