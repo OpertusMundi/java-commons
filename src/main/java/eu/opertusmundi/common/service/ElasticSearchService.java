@@ -58,13 +58,6 @@ public interface ElasticSearchService {
     boolean deleteIndex(String name) throws ElasticServiceException;
 
     /**
-     * Initializes all registered object definitions
-     *
-     * @throws ElasticServiceException
-     */
-    void initialize() throws ElasticServiceException;
-
-    /**
      * Add or update profile
      *
      * @param profile
@@ -101,6 +94,19 @@ public interface ElasticSearchService {
         return this.createPipeline(def.getName(), def.getDefinition());
     }
 
+    default boolean checkPipeline(PipelineDefinition def) throws ElasticServiceException {
+        return this.checkPipeline(def.getName());
+    }
+
+    /**
+     * Check if pipeline exists
+     *
+     * @param name The name of the pipeline
+     * @return
+     * @throws ElasticServiceException
+     */
+    boolean checkPipeline(String name) throws ElasticServiceException;
+
     /**
      * Create a pipeline
      *
@@ -118,6 +124,24 @@ public interface ElasticSearchService {
      * @throws ElasticServiceException
      */
     boolean deletePipeline(String name) throws ElasticServiceException;
+
+    /**
+     * Check if transform exists
+     *
+     * @param name The name of the transform
+     * @return
+     * @throws ElasticServiceException
+     */
+    boolean checkTransform(String name) throws ElasticServiceException;
+
+    /**
+     * Check if transform is started
+     *
+     * @param name The name of the transform
+     * @return
+     * @throws ElasticServiceException
+     */
+    boolean isTransformStarted(String name) throws ElasticServiceException;
 
     /**
      * Delete transform with the specified {@code} name

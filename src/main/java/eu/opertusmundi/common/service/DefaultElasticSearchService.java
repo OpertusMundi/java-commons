@@ -6,7 +6,6 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.temporal.WeekFields;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -18,7 +17,6 @@ import javax.annotation.PreDestroy;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpHost;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
@@ -26,18 +24,20 @@ import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.ingest.DeletePipelineRequest;
+import org.elasticsearch.action.ingest.GetPipelineRequest;
+import org.elasticsearch.action.ingest.GetPipelineResponse;
 import org.elasticsearch.action.ingest.PutPipelineRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.client.transform.DeleteTransformRequest;
+import org.elasticsearch.client.transform.GetTransformStatsRequest;
+import org.elasticsearch.client.transform.GetTransformStatsResponse;
 import org.elasticsearch.client.transform.PutTransformRequest;
 import org.elasticsearch.client.transform.StartTransformRequest;
 import org.elasticsearch.client.transform.StartTransformResponse;
@@ -49,6 +49,8 @@ import org.elasticsearch.client.transform.transforms.SourceConfig;
 import org.elasticsearch.client.transform.transforms.SyncConfig;
 import org.elasticsearch.client.transform.transforms.TimeSyncConfig;
 import org.elasticsearch.client.transform.transforms.TransformConfig;
+import org.elasticsearch.client.transform.transforms.TransformStats;
+import org.elasticsearch.client.transform.transforms.TransformStats.State;
 import org.elasticsearch.client.transform.transforms.pivot.AggregationConfig;
 import org.elasticsearch.client.transform.transforms.pivot.GroupConfig;
 import org.elasticsearch.client.transform.transforms.pivot.PivotConfig;
@@ -108,6 +110,7 @@ import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQuery;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQueryResult;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticServiceException;
 import eu.opertusmundi.common.model.catalogue.elastic.EnumElasticSearchSortField;
+import eu.opertusmundi.common.model.catalogue.elastic.PipelineDefinition;
 import eu.opertusmundi.common.model.catalogue.elastic.TransformDefinition;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import io.jsonwebtoken.lang.Assert;
@@ -118,6 +121,9 @@ public class DefaultElasticSearchService implements ElasticSearchService {
 
     private static final Logger logger = LogManager.getLogger(DefaultElasticSearchService.class);
 
+    @Value("${opertusmundi.elastic.create-on-startup:false}")
+    private boolean createOnStartup;
+
     /**
      * Maximum number of buckets returned by aggregation queries
      *
@@ -125,8 +131,6 @@ public class DefaultElasticSearchService implements ElasticSearchService {
      */
     @Value("${opertusmundi.elastic.max-bucket-count:1000}")
     private int maxBucketCount;
-
-    private RestHighLevelClient client = null;
 
     @Autowired
     private ResourceLoader resourceLoader;
@@ -137,21 +141,12 @@ public class DefaultElasticSearchService implements ElasticSearchService {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private RestHighLevelClient client;
+
     @PostConstruct
     private void init() {
-        try {
-            final HttpHost[] hosts = Arrays.asList(configuration.getHosts()).stream()
-                .map(c -> new HttpHost(c.getHostName(), c.getPort(), c.getScheme()))
-                .toArray(HttpHost[]::new);
-
-            final RestClientBuilder builder = RestClient.builder(hosts);
-
-            client = new RestHighLevelClient(builder);
-
-            logger.debug("Client initialization completed");
-        } catch (final Exception ex) {
-            logger.error("Failed to initialize client", ex);
-        }
+        this.initialize(createOnStartup);
     }
 
     @PreDestroy
@@ -159,25 +154,62 @@ public class DefaultElasticSearchService implements ElasticSearchService {
         this.close();
     }
 
-    @Override
+    /**
+     * Initializes all registered object definitions
+     *
+     * @param createOnStartup Create missing objects on startup
+     * @throws ElasticServiceException
+     */
     @Retryable(include = {ElasticServiceException.class}, maxAttempts = 4, backoff = @Backoff(delay = 2000, maxDelay = 20000))
-    public void initialize() {
+    protected void initialize(boolean createOnStartup) throws ElasticServiceException {
+        // Check and (optionally) create indices
         configuration.getIndices().stream().forEach(def -> {
             if (def != null && def.isValid() && !this.checkIndex(def.getName())) {
-                this.createIndex(def);
+                if (createOnStartup) {
+                    this.createIndex(def);
+                } else {
+                    throw new ElasticServiceException(String.format("Index not found [name=%s]", def.getName()));
+                }
             }
         });
 
-        this.createPipeline(configuration.getAutoTimestampPipeline());
+        // Check and (optionally) create pipelines
+        final PipelineDefinition pipelineDef = configuration.getAutoTimestampPipeline();
 
+        if (!this.checkPipeline(pipelineDef)) {
+            if (createOnStartup) {
+                this.createPipeline(configuration.getAutoTimestampPipeline());
+            } else {
+                throw new ElasticServiceException(String.format("Pipeline not found [name=%s]", pipelineDef.getName()));
+            }
+        }
+
+        // Check and (optionally) create transforms
         final TransformDefinition transformDef = configuration.getAssetViewAggregateTransform();
 
         if (transformDef != null && transformDef.isValid()) {
-            this.createAssetViewAggregationTransform(
-                transformDef.getName(), transformDef.getSourceIndex(), transformDef.getDestIndex()
-            );
+            final TransformStats stats = this.getTransformStats(transformDef.getName());
 
-            this.startTransform(transformDef.getName());
+            if (stats == null) {
+                if(createOnStartup) {
+                    this.createAssetViewAggregationTransform(
+                        transformDef.getName(), transformDef.getSourceIndex(), transformDef.getDestIndex()
+                    );
+
+                    this.startTransform(transformDef.getName());
+                } else {
+                    throw new ElasticServiceException(String.format("Transform not found [name=%s]", transformDef.getName()));
+                }
+            } else if (stats.getState() != State.STARTED) {
+                if(createOnStartup) {
+                    this.startTransform(transformDef.getName());
+                } else {
+                    throw new ElasticServiceException(String.format(
+                        "Transform is not started [name=%s, state=%s, expected=%s]",
+                        transformDef.getName(), stats.getState(), State.STARTED
+                    ));
+                }
+            }
         }
     }
 
@@ -193,17 +225,14 @@ public class DefaultElasticSearchService implements ElasticSearchService {
 
     @Override
     public boolean checkIndex(String name) {
-        boolean               exists  = false;
-        final GetIndexRequest request = new GetIndexRequest(name);
-
         try {
-            exists = client.indices().exists(request, RequestOptions.DEFAULT);
-        } catch (final IOException ex) {
-            logger.error("Failed to query index", ex);
+            final GetIndexRequest request = new GetIndexRequest(name);
+            final boolean         exists  = client.indices().exists(request, RequestOptions.DEFAULT);
 
-            throw new ElasticServiceException("Failed to query index", ex);
+            return exists;
+        } catch (final Exception ex) {
+            throw new ElasticServiceException(String.format("Failed to query index [name=%s]", name), ex);
         }
-        return exists;
     }
 
     @Override
@@ -254,6 +283,19 @@ public class DefaultElasticSearchService implements ElasticSearchService {
     }
 
     @Override
+    public boolean checkPipeline(String name) throws ElasticServiceException {
+        try {
+            final GetPipelineRequest request = new GetPipelineRequest(name);
+
+            final GetPipelineResponse response = client.ingest().getPipeline(request, RequestOptions.DEFAULT);
+
+            return response.isFound();
+        } catch (final Exception ex) {
+            throw new ElasticServiceException(String.format("Failed to query pipeline [name=%s]", name), ex);
+        }
+    }
+
+    @Override
     public boolean createPipeline(String name, String definitionResource) throws ElasticServiceException {
         try (
             final InputStream definitionIs = resourceLoader.getResource(definitionResource).getInputStream();
@@ -284,6 +326,54 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             return response.isAcknowledged();
         } catch (final IOException ex) {
             throw new ElasticServiceException("Failed to delete pipeline", ex);
+        }
+    }
+
+    private TransformStats getTransformStats(String name) throws ElasticServiceException {
+        try {
+            final GetTransformStatsRequest request = new GetTransformStatsRequest(name);
+            request.setAllowNoMatch(true);
+
+            final GetTransformStatsResponse response = client.transform().getTransformStats(request, RequestOptions.DEFAULT);
+
+            final TransformStats stats = response.getTransformsStats().stream()
+                .filter(s -> s.getId().equals(name))
+                .findFirst()
+                .orElse(null);
+
+            return stats;
+        } catch (final Exception ex) {
+            throw new ElasticServiceException(String.format("Failed to query transform stats [name=%s]", name), ex);
+        }
+    }
+
+    @Override
+    public boolean checkTransform(String name) throws ElasticServiceException {
+        try {
+            final TransformStats stats = this.getTransformStats(name);
+
+            if (stats == null) {
+                return false;
+            }
+
+            return true;
+        } catch (final ElasticServiceException ex) {
+            throw ex;
+        } catch (final Exception ex) {
+            throw new ElasticServiceException(String.format("Failed to query transform [name=%s]", name), ex);
+        }
+    }
+
+    @Override
+    public boolean isTransformStarted(String name) throws ElasticServiceException {
+        try {
+            final TransformStats stats = this.getTransformStats(name);
+
+            return (stats != null && stats.getState() == State.STARTED);
+        } catch (final ElasticServiceException ex) {
+            throw ex;
+        } catch (final Exception ex) {
+            throw new ElasticServiceException(String.format("Failed to query transform [name=%s]", name), ex);
         }
     }
 
