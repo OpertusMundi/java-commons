@@ -176,7 +176,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
         // Check and (optionally) create pipelines
         final PipelineDefinition pipelineDef = configuration.getAutoTimestampPipeline();
 
-        if (!this.checkPipeline(pipelineDef)) {
+        if (pipelineDef != null && !this.checkPipeline(pipelineDef)) {
             if (createOnStartup) {
                 this.createPipeline(configuration.getAutoTimestampPipeline());
             } else {
