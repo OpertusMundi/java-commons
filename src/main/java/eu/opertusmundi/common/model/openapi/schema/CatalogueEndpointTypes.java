@@ -2,11 +2,11 @@ package eu.opertusmundi.common.model.openapi.schema;
 
 import java.util.Map;
 
+import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.RestResponse;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueClientCollectionResponse;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
-import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDraftDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -18,7 +18,7 @@ public class CatalogueEndpointTypes {
     }
 
     @Schema(description = "Draft collection response")
-    public static class DraftCollectionResponse extends CatalogueClientCollectionResponse<CatalogueItemDraftDto> {
+    public static class DraftCollectionResponse extends RestResponse<PageResultDto<AssetDraftDto>> {
 
     }
 
