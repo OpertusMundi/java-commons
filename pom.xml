@@ -1,23 +1,23 @@
 <?xml version="1.0"?>
 <project
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
-    xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <modelVersion>4.0.0</modelVersion>
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
 
-    <groupId>eu.opertusmundi</groupId>
-    <artifactId>opertus-mundi-common</artifactId>
-    <version>1.0.45</version>
-    <name>[opertus-mundi] Common</name>
+	<groupId>eu.opertusmundi</groupId>
+	<artifactId>opertus-mundi-common</artifactId>
+	<version>1.0.45</version>
+	<name>[opertus-mundi] Common</name>
 
-    <packaging>jar</packaging>
+	<packaging>jar</packaging>
 
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.3.4.RELEASE</version>
-        <relativePath />
-    </parent>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.3.4.RELEASE</version>
+		<relativePath />
+	</parent>
 
 	<properties>
 		<spring-cloud.version>Hoxton.SR8</spring-cloud.version>
@@ -33,7 +33,7 @@
 		<org.locationtech.jts.version>1.17.1</org.locationtech.jts.version>
 		<org.locationtech.jts.spatial4j.version>0.7</org.locationtech.jts.spatial4j.version>
 		<springdoc.version>1.5.4</springdoc.version>
-        <postgresql.version>42.2.19</postgresql.version>
+		<postgresql.version>42.2.19</postgresql.version>
 	</properties>
 
 	<repositories>
@@ -115,7 +115,7 @@
 			<exclusions>
 				<exclusion>
 					<groupId>io.github.openfeign</groupId>
-        			<artifactId>feign-hystrix</artifactId>
+					<artifactId>feign-hystrix</artifactId>
 				</exclusion>
 			</exclusions>
 		</dependency>
@@ -200,9 +200,9 @@
 
 		<!-- Elastic search -->
 		<dependency>
-		    <groupId>org.elasticsearch.client</groupId>
-		    <artifactId>elasticsearch-rest-high-level-client</artifactId>
-	    </dependency>
+			<groupId>org.elasticsearch.client</groupId>
+			<artifactId>elasticsearch-rest-high-level-client</artifactId>
+		</dependency>
 
 		<!-- Utilities -->
 
@@ -286,7 +286,18 @@
 			<artifactId>springdoc-openapi-common</artifactId>
 			<version>${springdoc.version}</version>
 		</dependency>
-
 	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<configuration>
+					<show>public</show>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>
