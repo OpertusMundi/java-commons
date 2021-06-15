@@ -194,9 +194,9 @@ public abstract class PayInEntity {
     protected String resultMessage;
 
     public PayInDto toDto() {
-        return this.toDto(true);
+        return this.toDto(true, false);
     }
 
-    public abstract PayInDto toDto(boolean includeDetails);
+    public abstract PayInDto toDto(boolean includeDetails, boolean includeHelpdeskData);
 
 }

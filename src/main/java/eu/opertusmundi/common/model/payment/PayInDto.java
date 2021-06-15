@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import eu.opertusmundi.common.model.account.CustomerDto;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -99,6 +100,18 @@ public abstract class PayInDto {
 
     @Schema(description = "Platform reference number")
     protected String referenceNumber;
+
+    @JsonInclude(Include.NON_NULL)
+    private CustomerDto customer;
+
+    @JsonInclude(Include.NON_EMPTY)
+    protected String providerPayIn;
+
+    @JsonInclude(Include.NON_EMPTY)
+    protected String providerResultCode;
+
+    @JsonInclude(Include.NON_EMPTY)
+    protected String providerResultMessage;
 
     public void addItem(PayInItemDto i) {
         this.items.add(i);

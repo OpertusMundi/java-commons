@@ -26,6 +26,9 @@ import javax.validation.constraints.NotNull;
 
 import org.hibernate.annotations.NaturalId;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 import eu.opertusmundi.common.model.catalogue.client.EnumDeliveryMethod;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
 import eu.opertusmundi.common.model.order.OrderDto;
@@ -72,6 +75,7 @@ public class OrderEntity {
     )
     @Getter
     @Setter
+    @JsonInclude(Include.NON_NULL)
     private List<OrderItemEntity> items = new ArrayList<>();
 
     @OneToMany(
@@ -160,6 +164,10 @@ public class OrderEntity {
     private String referenceNumber;
 
     public OrderDto toDto() {
+        return this.toDto(true, false);
+    }
+    
+    public OrderDto toDto(boolean includeItems, boolean includeHelpdeskData) {
         final OrderDto o = new OrderDto();
 
         o.setCartId(cart);
@@ -178,7 +186,15 @@ public class OrderEntity {
         o.setTotalPriceExcludingTax(totalPriceExcludingTax);
         o.setTotalTax(totalTax);
 
-        items.stream().map(OrderItemEntity::toDto).forEach(o::addItem);
+        if (includeItems) {
+            items.stream().map(OrderItemEntity::toDto).forEach(o::addItem);
+        }
+        if (includeHelpdeskData) {
+            o.setCustomer(consumer.getProfile().getConsumer().toDto());
+            o.setPayIn(payin.toDto(false, true));
+
+            statusHistory.stream().map(OrderStatusEntity::toDto).forEach(o::addStatusHistory);
+        }
 
         return o;
     }

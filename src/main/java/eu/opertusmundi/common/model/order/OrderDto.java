@@ -7,9 +7,13 @@ import java.util.List;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import eu.opertusmundi.common.model.account.CustomerDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumDeliveryMethod;
 import eu.opertusmundi.common.model.payment.EnumPaymentMethod;
+import eu.opertusmundi.common.model.payment.PayInDto;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -30,14 +34,23 @@ public class OrderDto {
     private UUID key;
 
     @ArraySchema(arraySchema = @Schema(
-        description = "Order items. Currently only a single item is allowed per order"), 
-        minItems = 1, 
+        description = "Order items. Currently only a single item is allowed per order"),
+        minItems = 1,
         maxItems = 1,
-        uniqueItems = true, 
+        uniqueItems = true,
         schema = @Schema(implementation = OrderItemDto.class)
     )
     private List<OrderItemDto> items = new ArrayList<>();
-    
+
+    @ArraySchema(arraySchema = @Schema(
+        description = "Order status history records"),
+        minItems = 0,
+        uniqueItems = true,
+        schema = @Schema(implementation = OrderStatusDto.class)
+    )
+    @JsonInclude(Include.NON_EMPTY)
+    private List<OrderStatusDto> statusHistory = new ArrayList<>();
+
     @JsonIgnore
     private Integer cartId;
 
@@ -51,7 +64,7 @@ public class OrderDto {
     protected BigDecimal totalTax;
 
     @Schema(
-        description = "The currency in ISO 4217 format. Only `EUR` is supported", 
+        description = "The currency in ISO 4217 format. Only `EUR` is supported",
         externalDocs = @ExternalDocumentation(url = "https://en.wikipedia.org/wiki/ISO_4217")
     )
     protected String currency;
@@ -66,11 +79,21 @@ public class OrderDto {
 
     private EnumPaymentMethod paymentMethod;
 
+    @JsonInclude(Include.NON_NULL)
+    private CustomerDto customer;
+
+    @JsonInclude(Include.NON_NULL)
+    private PayInDto payIn;
+
     @Schema(description = "User friendly reference code for support")
     private String referenceNumber;
-    
+
     public void addItem(OrderItemDto i) {
         this.items.add(i);
     }
-   
+
+    public void addStatusHistory(OrderStatusDto h) {
+        this.statusHistory.add(h);
+    }
+
 }

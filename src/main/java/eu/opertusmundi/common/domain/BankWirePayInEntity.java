@@ -49,7 +49,7 @@ public class BankWirePayInEntity extends PayInEntity {
     private BankAccountEmbeddable bankAccount;
 
     @Override
-    public PayInDto toDto(boolean includeDetails) {
+    public PayInDto toDto(boolean includeDetails, boolean includeHelpdeskData) {
         final BankwirePayInDto p = new BankwirePayInDto();
 
         p.setCreatedOn(createdOn);
@@ -74,6 +74,13 @@ public class BankWirePayInEntity extends PayInEntity {
 
             this.items.stream().map(PayInItemEntity::toDto).forEach(p::addItem);
         }
+        if (includeHelpdeskData) {
+            p.setCustomer(consumer.getProfile().getConsumer().toDto());
+            p.setProviderPayIn(payIn);
+            p.setProviderResultCode(resultCode);
+            p.setProviderResultMessage(resultMessage);
+        }
+
         return p;
     }
 

@@ -42,7 +42,7 @@ public class CardDirectPayInEntity extends PayInEntity {
     private String statementDescriptor;
 
     @Override
-    public PayInDto toDto(boolean includeDetails) {
+    public PayInDto toDto(boolean includeDetails, boolean includeHelpdeskData) {
         final CardDirectPayInDto p = new CardDirectPayInDto();
 
         p.setAlias(alias);
@@ -67,6 +67,13 @@ public class CardDirectPayInEntity extends PayInEntity {
         if (includeDetails) {
             this.items.stream().map(PayInItemEntity::toDto).forEach(p::addItem);
         }
+        if (includeHelpdeskData) {
+            p.setCustomer(consumer.getProfile().getConsumer().toDto());
+            p.setProviderPayIn(payIn);
+            p.setProviderResultCode(resultCode);
+            p.setProviderResultMessage(resultMessage);
+        }
+
         return p;
     }
 
