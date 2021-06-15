@@ -152,9 +152,14 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 
         String sqlString =
             "select     %1$s , count(*), sum(payin_total_price) "
-          + "from       \"analytics\".payin_item_hist "
-          + "where      " + String.join(" and ", filters) + " "
-          + "group by   " + String.join(", ", groupByFields) + " "
+          + "from       \"analytics\".payin_item_hist ";
+
+        if (filters.size() > 0) {
+            sqlString += "where      " + String.join(" and ", filters) + " ";
+        }
+
+        sqlString +=
+            "group by   " + String.join(", ", groupByFields) + " "
           + "order by   " + String.join(", ", groupByFields);
 
 
