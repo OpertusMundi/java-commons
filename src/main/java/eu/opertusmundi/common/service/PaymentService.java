@@ -164,6 +164,15 @@ public interface  PaymentService {
     PayInDto getPayIn(Integer userId, UUID payInKey);
 
     /**
+     * Query payment provider service for PayIn transaction status
+     *
+     * @param payIn
+     * @return
+     * @throws PaymentException
+     */
+    EnumTransactionStatus getTransactionStatus(String payIn) throws PaymentException;
+
+    /**
      * Search consumer PayIns
      *
      * @param userKey

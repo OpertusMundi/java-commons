@@ -68,12 +68,13 @@ public class DefaultConsumerRegistrationService extends AbstractCustomerRegistra
             this.setStringVariable(variables, "userKey", userKey);
             this.setStringVariable(variables, "registrationKey", registrationKey);
             this.setBooleanVariable(variables, "isUpdate", isUpdate);
+            this.setBooleanVariable(variables, "isReviewRequired", true);
 
             options.setBusinessKey(registrationKey.toString());
             options.setVariables(variables);
             options.setWithVariablesInReturn(true);
 
-            instance = this.bpmClient.getObject().startProcessByKey(WORKFLOW_CONSUMER_REGISTRATION, options);
+            instance = this.bpmClient.getObject().startProcessDefinitionByKey(WORKFLOW_CONSUMER_REGISTRATION, options);
         }
 
         return account;

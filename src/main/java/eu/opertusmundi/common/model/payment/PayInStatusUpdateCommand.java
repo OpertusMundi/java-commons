@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.model.payment;
 
+import java.time.ZonedDateTime;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreType;
 
 import lombok.AllArgsConstructor;
@@ -16,7 +18,7 @@ public class PayInStatusUpdateCommand {
 
     private String providerPayInId;
 
-    private Long executedOn;
+    private ZonedDateTime executedOn;
 
     private EnumTransactionStatus status;
 

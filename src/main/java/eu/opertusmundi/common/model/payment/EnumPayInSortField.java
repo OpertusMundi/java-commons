@@ -3,9 +3,13 @@ package eu.opertusmundi.common.model.payment;
 import lombok.Getter;
 
 public enum EnumPayInSortField {
+    CREATED_ON("createdOn"),
     EXECUTED_ON("executedOn"),
+    MODIFIED_ON("statusUpdatedOn"),
     REFERENCE_NUMBER("referenceNumber"),
+    STATUS("status"),
     TOTAL_PRICE("totalPrice"),
+    USER_NAME("consumer.email"),
     ;
 
     @Getter

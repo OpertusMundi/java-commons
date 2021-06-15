@@ -31,8 +31,6 @@ public class OrderCommand {
 
     private EnumDeliveryMethod deliveryMethod;
 
-    private String referenceNumber;
-
     private Location location;
 
 }

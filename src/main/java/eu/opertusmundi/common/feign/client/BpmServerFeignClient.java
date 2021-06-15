@@ -49,12 +49,20 @@ public interface BpmServerFeignClient {
     );
 
     /**
+     * Count process instances
+     *
+     * @see https://docs.camunda.org/manual/latest/reference/rest/process-instance/get-query-count/
+     */
+    @PostMapping(value = "/process-instance/count", consumes = "application/json")
+    CountResultDto countProcessInstances();
+
+    /**
      * Get Instance
      *
      * @see https://docs.camunda.org/manual/latest/reference/rest/process-instance/get/
      */
     @PostMapping(value = "/process-instance", consumes = "application/json")
-    List<ProcessInstanceDto> getInstance(
+    List<ProcessInstanceDto> getProcessInstance(
         @PathVariable("businessKey") String businessKey
     );
 
@@ -64,7 +72,7 @@ public interface BpmServerFeignClient {
      * @see https://docs.camunda.org/manual/latest/reference/rest/process-definition/post-start-process-instance/
      */
     @PostMapping(value = "/process-definition/key/{key}/start", consumes = "application/json")
-    ProcessInstanceWithVariablesDto startProcessByKey(
+    ProcessInstanceWithVariablesDto startProcessDefinitionByKey(
         @PathVariable("key") String processDefinitionKey,
         StartProcessInstanceDto startProcessInstance
     );
@@ -75,7 +83,7 @@ public interface BpmServerFeignClient {
      * @see https://docs.camunda.org/manual/latest/reference/rest/task/get-query/
      */
     @GetMapping(value = "/task", consumes = "application/json")
-    List<TaskDto> findInstanceTaskById(
+    List<TaskDto> findTaskById(
         @RequestParam String processInstanceBusinessKey,
         @RequestParam String taskId
     );

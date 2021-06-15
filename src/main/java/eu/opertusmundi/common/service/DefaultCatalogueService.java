@@ -475,7 +475,7 @@ public class DefaultCatalogueService implements CatalogueService {
                 options.setVariables(variables);
                 options.setWithVariablesInReturn(true);
 
-                this.bpmClient.getObject().startProcessByKey(WORKFLOW_CATALOGUE_HARVEST, options);
+                this.bpmClient.getObject().startProcessDefinitionByKey(WORKFLOW_CATALOGUE_HARVEST, options);
             }
         } catch (final FeignException fex) {
             logger.error("Operation has failed", fex);
@@ -575,7 +575,7 @@ public class DefaultCatalogueService implements CatalogueService {
      * @return
      */
     private ProcessInstanceDto findRunningInstance(String businessKey) {
-        final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getInstance(businessKey);
+        final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstance(businessKey);
 
         return instances.stream()
             .filter(i -> !i.isEnded())

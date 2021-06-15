@@ -83,6 +83,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.location.Location;
 import eu.opertusmundi.common.model.order.CartDto;
 import eu.opertusmundi.common.model.order.CartItemDto;
+import eu.opertusmundi.common.model.order.EnumOrderStatus;
 import eu.opertusmundi.common.model.order.OrderCommand;
 import eu.opertusmundi.common.model.order.OrderDto;
 import eu.opertusmundi.common.model.payment.BankwirePayInCommand;
@@ -93,8 +94,11 @@ import eu.opertusmundi.common.model.payment.CardRegistrationCommandDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationDto;
 import eu.opertusmundi.common.model.payment.ClientDto;
 import eu.opertusmundi.common.model.payment.EnumPayInSortField;
+import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
+import eu.opertusmundi.common.model.payment.OrderPayInItemDto;
 import eu.opertusmundi.common.model.payment.PayInDto;
+import eu.opertusmundi.common.model.payment.PayInItemDto;
 import eu.opertusmundi.common.model.payment.PayInStatusUpdateCommand;
 import eu.opertusmundi.common.model.payment.PayOutCommandDto;
 import eu.opertusmundi.common.model.payment.PayOutDto;
@@ -629,7 +633,6 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 .deliveryMethod(asset.getDeliveryMethod())
                 .location(location)
                 .quotation(quotation)
-                .referenceNumber(this.createReferenceNumber())
                 .userId(cart.getAccountId())
                 .build();
 
@@ -649,6 +652,17 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     @Override
+    public EnumTransactionStatus getTransactionStatus(String payIn) throws PaymentException {
+        try {
+            final PayIn result = this.api.getPayInApi().get(payIn);
+
+            return EnumTransactionStatus.from(result.getStatus());
+        } catch (final Exception ex) {
+            throw this.wrapException("Update PayIn", ex, payIn);
+        }
+    }
+
+    @Override
     public PageResultDto<PayInDto> findAllConsumerPayIns(
         UUID userKey, EnumTransactionStatus status, int pageIndex, int pageSize, EnumPayInSortField orderBy, EnumSortingOrder order
     ) {
@@ -659,7 +673,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
         final long           count   = page.getTotalElements();
         final List<PayInDto> records = page.getContent().stream()
-            .map(p -> p.toDto(false))
+            .map(p -> p.toDto(false, false))
             .collect(Collectors.toList());
 
         return PageResultDto.of(pageIndex, pageSize, records, count);
@@ -670,7 +684,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         try {
             final AccountEntity  account        = this.getAccount(command.getUserKey());
             final CustomerEntity customer       = account.getProfile().getConsumer();
-            final OrderEntity    order          = this.orderRepository.findOneByKey(command.getOrderKey()).orElse(null);
+            final OrderEntity    order          = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).orElse(null);
 
             // Check customer
             this.ensureConsumer(customer, command.getUserKey());
@@ -696,13 +710,14 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             // Check if this is a retry operation
             PayIn payInResponse = this.<PayIn>getResponse(idempotencyKey);
 
+            // Create a new PayIn if needed
             if (payInResponse == null) {
-                // Create a new PayIn if needed
                 final PayIn payInRequest = this.createBankWirePayIn(customer, command);
 
                 payInResponse = this.api.getPayInApi().create(idempotencyKey, payInRequest);
             } else {
-                // Override PayIn key
+                // Override PayIn key with existing one from the payment
+                // provider
                 command.setPayInKey(UUID.fromString(payInResponse.getTag()));
             }
 
@@ -718,6 +733,8 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
             // Create database record
             final PayInDto result = this.payInRepository.createBankwirePayInForOrder(command);
+            // Link PayIn record to order
+            this.orderRepository.setPayIn(command.getOrderKey(), result.getPayIn());
 
             return result;
         } catch (final Exception ex) {
@@ -730,7 +747,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         try {
             final AccountEntity  account        = this.getAccount(command.getUserKey());
             final CustomerEntity customer       = account.getProfile().getConsumer();
-            final OrderEntity    order          = this.orderRepository.findOneByKey(command.getOrderKey()).orElse(null);
+            final OrderEntity    order          = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).orElse(null);
 
             // Check customer
             this.ensureConsumer(customer, command.getUserKey());
@@ -788,8 +805,16 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 result = (CardDirectPayInDto) payIn.toDto();
             } else {
                 result = (CardDirectPayInDto) this.payInRepository.createCardDirectPayInForOrder(command);
-            }
 
+                // Link PayIn record to order
+                this.orderRepository.setPayIn(command.getOrderKey(), result.getPayIn());
+
+                // Update order status if we have a valid response i.e.
+                // 3D-Secure validation was skipped
+                if (result.getStatus() != EnumTransactionStatus.CREATED) {
+                    this.orderRepository.setStatus(order.getKey(), result.getStatus().toOrderStatus(), ZonedDateTime.now());
+                }
+            }
 
             // Add client-only information (card alias is never saved in our
             // database)
@@ -821,7 +846,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
             final PayInStatusUpdateCommand command = PayInStatusUpdateCommand.builder()
                 .providerPayInId(providerPayInId)
-                .executedOn(payInObject.getExecutionDate())
+                .executedOn(this.timestampToDate(payInObject.getExecutionDate()))
                 .status(EnumTransactionStatus.from(payInObject.getStatus()))
                 .resultCode(payInObject.getResultCode())
                 .resultMessage(payInObject.getResultMessage())
@@ -836,8 +861,19 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 }
             }
 
+            // Update order status
+            for (final PayInItemDto item : result.getItems()) {
+                if(item.getType() == EnumPaymentItemType.ORDER) {
+                    this.orderRepository.setStatus(
+                        ((OrderPayInItemDto) item).getOrder().getKey(), result.getStatus().toOrderStatus(), ZonedDateTime.now()
+                    );
+                }
+            }
+
             // Update order fulfillment workflow instance
-            this.orderFulfillmentService.sendPayInStatusUpdateMessage(result.getKey(), result.getStatus());
+            if (result.getStatus() == EnumTransactionStatus.SUCCEEDED) {
+                this.orderFulfillmentService.sendPayInStatusUpdateMessage(result.getKey(), result.getStatus());
+            }
 
             return result;
         } catch (final Exception ex) {
@@ -1306,6 +1342,12 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 String.format("[MANGOPAY] Order [%s] was not", key)
             );
         }
+        if (order.getStatus() != EnumOrderStatus.CREATED) {
+            throw new PaymentException(PaymentMessageCode.ORDER_INVALID_STATUS, String.format(
+                "[MANGOPAY] Invalid order status [order=%s, status=%s, expected=%]",
+                key, order.getStatus(), EnumOrderStatus.CREATED
+            ));
+        }
     }
 
     private PayInEntity ensurePayIn(String providerPayInId) {
@@ -1319,6 +1361,15 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         }
 
         return payInEntity;
+    }
+
+    private ZonedDateTime timestampToDate(Long timestamp) {
+        // MANGOPAY returns dates as integer numbers that represent the
+        // number of seconds since the Unix Epoch
+        if (timestamp != null) {
+            return ZonedDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneOffset.UTC);
+        }
+        return null;
     }
 
 }

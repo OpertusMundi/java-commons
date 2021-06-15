@@ -1,11 +1,11 @@
 package eu.opertusmundi.common.repository;
 
-import java.time.Instant;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -43,7 +43,11 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     Optional<CartEntity> findCartById(Integer id);
 
     @Query("SELECT p FROM PayIn p WHERE p.key = :key")
-    Optional<PayInEntity> findOneByKey(@Param("key") UUID key);
+    Optional<PayInEntity> findOneEntityByKey(@Param("key") UUID key);
+
+    default Optional<PayInDto> findOneObjectByKey(UUID key, boolean includeHelpdeskData) {
+        return this.findOneEntityByKey(key).map(o -> o.toDto(true, includeHelpdeskData));
+    }
 
     @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE i.order.key = key")
     Optional<PayInEntity> findOneByOrderKey(@Param("key") UUID key);
@@ -59,10 +63,36 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         @Param("userKey") UUID userKey, @Param("status") EnumTransactionStatus status, Pageable pageable
     );
 
-    @Modifying
-    @Transactional(readOnly = false)
-    @Query("UPDATE Order o SET o.payin = :payin where o.id = :orderId")
-    void setOrderPayIn(@Param("payin") PayInEntity payin, @Param("orderId") Integer orderId);
+    @Query(
+        "SELECT p "
+      + "FROM   PayIn p "
+      + "WHERE (p.status in :status or :status is null) and "
+      + "      (p.consumer.email = :email or :email IS NULL) and "
+      + "      (:referenceNumber IS NULL or p.referenceNumber = :referenceNumber) "
+    )
+    Page<PayInEntity> findAllPayInEntities(
+        @Param("status") Set<EnumTransactionStatus> status,
+        @Param("email") String email,
+        @Param("referenceNumber") String referenceNumber,
+        Pageable pageable
+    );
+
+    default Page<PayInDto> findAllPayInObjects(
+        @Param("status") Set<EnumTransactionStatus> status,
+        @Param("email") String email,
+        @Param("referenceNumber") String referenceNumber,
+        Pageable pageable
+    ) {
+        final Page<PayInEntity> page = this.findAllPayInEntities(
+            status != null && status.size() > 0 ? status : null,
+            StringUtils.isBlank(email) ? null : email,
+            StringUtils.isBlank(referenceNumber) ? null : referenceNumber,
+            pageable
+        );
+
+        return page.map(e -> e.toDto(true, true));
+    }
+
 
     @Modifying
     @Transactional(readOnly = false)
@@ -113,8 +143,6 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
 
         this.saveAndFlush(payin);
 
-        this.setOrderPayIn(payin, order.getId());
-
         return payin.toDto();
     }
 
@@ -161,8 +189,6 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
 
         this.saveAndFlush(payin);
 
-        this.setOrderPayIn(payin, order.getId());
-
         return payin.toDto();
     }
 
@@ -170,20 +196,17 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     default PayInDto updatePayInStatus(PayInStatusUpdateCommand command) throws PaymentException {
         final PayInEntity payIn = this.findOneByPayInId(command.getProviderPayInId()).orElse(null);
 
+        // Update PayIn
         if (command.getExecutedOn() != null) {
-            // MANGOPAY returns dates as integer numbers that represent the
-            // number of seconds since the Unix Epoch
-            payIn.setExecutedOn(ZonedDateTime.ofInstant(Instant.ofEpochSecond(command.getExecutedOn()), ZoneOffset.UTC));
-
-            payIn.setStatus(command.getStatus());
-            payIn.setStatusUpdatedOn(payIn.getExecutedOn());
-        } else {
-            payIn.setStatus(command.getStatus());
-            payIn.setStatusUpdatedOn(ZonedDateTime.now());
+            payIn.setExecutedOn(command.getExecutedOn());
         }
+
         payIn.setResultCode(command.getResultCode());
         payIn.setResultMessage(command.getResultMessage());
+        payIn.setStatus(command.getStatus());
+        payIn.setStatusUpdatedOn(ZonedDateTime.now());
 
+        // Create status history record
         final PayInStatusEntity status = new PayInStatusEntity();
         status.setPayin(payIn);
         status.setStatus(payIn.getStatus());

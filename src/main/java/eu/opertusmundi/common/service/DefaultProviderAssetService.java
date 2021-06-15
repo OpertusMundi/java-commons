@@ -427,7 +427,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 options.setVariables(variables);
                 options.setWithVariablesInReturn(true);
 
-                instance = this.bpmClient.getObject().startProcessByKey(WORKFLOW_SELL_ASSET, options);
+                instance = this.bpmClient.getObject().startProcessDefinitionByKey(WORKFLOW_SELL_ASSET, options);
             }
 
             this.draftRepository.update(command, EnumProviderAssetDraftStatus.SUBMITTED, instance.getDefinitionId(), instance.getId());
@@ -460,7 +460,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     private void reviewHelpDesk(UUID publisherKey, UUID draftKey, boolean rejected, String reason) throws AssetDraftException {
         try {
             // Find workflow instance
-            final List<TaskDto> tasks = this.bpmClient.getObject().findInstanceTaskById(draftKey.toString(), TASK_REVIEW);
+            final List<TaskDto> tasks = this.bpmClient.getObject().findTaskById(draftKey.toString(), TASK_REVIEW);
 
             if (tasks.size() == 1) {
                 // Complete task
@@ -939,7 +939,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     private ProcessInstanceDto findInstance(UUID businessKey) {
         try {
-            final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getInstance(businessKey.toString());
+            final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstance(businessKey.toString());
 
             return instances.stream().findFirst().orElse(null);
         } catch (final FeignException fex) {

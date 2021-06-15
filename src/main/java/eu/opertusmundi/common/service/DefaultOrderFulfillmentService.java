@@ -70,7 +70,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     @Retryable(include = {Exception.class}, maxAttempts = 3, backoff = @Backoff(delay = 2000, maxDelay = 3000))
     public String start(UUID payInKey) {
         try {
-            final PayInEntity payIn = payInRepository.findOneByKey(payInKey).orElse(null);
+            final PayInEntity payIn = payInRepository.findOneEntityByKey(payInKey).orElse(null);
 
             if (!StringUtils.isBlank(payIn.getProcessInstance())) {
                 // Workflow instance already exists
@@ -91,7 +91,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                 options.setVariables(variables);
                 options.setWithVariablesInReturn(true);
 
-                instance = this.bpmClient.getObject().startProcessByKey(WORKFLOW_PROCESS_PAYIN, options);
+                instance = this.bpmClient.getObject().startProcessDefinitionByKey(WORKFLOW_PROCESS_PAYIN, options);
             }
 
             payInRepository.setPayInWorkflowInstance(payIn.getId(), instance.getDefinitionId(), instance.getId());
@@ -111,7 +111,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     @Retryable(include = {Exception.class}, maxAttempts = 3, backoff = @Backoff(delay = 2000, maxDelay = 3000))
     public void sendPayInStatusUpdateMessage(UUID payInKey, EnumTransactionStatus status) {
         try {
-            final PayInEntity payIn       = payInRepository.findOneByKey(payInKey).orElse(null);
+            final PayInEntity payIn       = payInRepository.findOneEntityByKey(payInKey).orElse(null);
             final String      businessKey = payIn.getKey().toString();
 
             final CorrelationMessageDto         message   = new CorrelationMessageDto();
@@ -157,7 +157,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
      */
     @Override
     public void updateConsumer(UUID payInKey) {
-        final PayInEntity payIn = payInRepository.findOneByKey(payInKey).orElse(null);
+        final PayInEntity payIn = payInRepository.findOneEntityByKey(payInKey).orElse(null);
 
         for (final PayInItemEntity item : payIn.getItems()) {
             switch (item.getType()) {
@@ -220,7 +220,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
      * @return
      */
     private ProcessInstanceDto findRunningInstance(String businessKey) {
-        final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getInstance(businessKey);
+        final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstance(businessKey);
 
         return instances.stream()
             .filter(i -> !i.isEnded())

@@ -6,6 +6,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -63,6 +65,15 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
 
     Optional<AccountEntity> findOneByEmailAndIdNot(String email, Integer id);
 
+    @Query("SELECT     a "
+         + "FROM Account a "
+         + "WHERE      (:email is null or a.email like :email)"
+    )
+    Page<AccountEntity> findAll(
+        @Param("email")String email,
+        Pageable pageable
+    );
+    
     @Transactional(readOnly = false)
     default AccountDto updateProfile(AccountProfileCommandDto command) {
         // Get account
