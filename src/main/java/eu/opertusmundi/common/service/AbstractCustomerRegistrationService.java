@@ -26,7 +26,7 @@ abstract class AbstractCustomerRegistrationService {
 
     protected ProcessInstanceDto findInstance(UUID businessKey) {
         try {
-            final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstance(businessKey.toString());
+            final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstances(businessKey.toString());
 
             return instances.stream().findFirst().orElse(null);
         } catch (final FeignException fex) {

@@ -59,6 +59,7 @@ import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueResponse;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
+import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.repository.AssetAdditionalResourceRepository;
 import eu.opertusmundi.common.repository.AssetResourceRepository;
 import eu.opertusmundi.common.repository.ProviderRepository;
@@ -467,6 +468,7 @@ public class DefaultCatalogueService implements CatalogueService {
                     command.setType(EnumCatalogueType.CSW);
                 }
                 // Set variables
+                this.setStringVariable(variables, EnumProcessInstanceVariable.START_USER_KEY.getValue(), command.getUserKey());
                 this.setStringVariable(variables, "userKey", command.getUserKey());
                 this.setStringVariable(variables, "catalogueUrl", command.getUrl());
                 this.setStringVariable(variables, "catalogueType", command.getType().toString());
@@ -575,7 +577,7 @@ public class DefaultCatalogueService implements CatalogueService {
      * @return
      */
     private ProcessInstanceDto findRunningInstance(String businessKey) {
-        final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstance(businessKey);
+        final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstances(businessKey);
 
         return instances.stream()
             .filter(i -> !i.isEnded())

@@ -20,6 +20,7 @@ import eu.opertusmundi.common.model.account.CustomerProfessionalDto;
 import eu.opertusmundi.common.model.account.EnumActivationTokenType;
 import eu.opertusmundi.common.model.account.ProviderProfessionalCommandDto;
 import eu.opertusmundi.common.model.analytics.ProfileRecord;
+import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.ActivationTokenRepository;
 
@@ -69,6 +70,7 @@ public class DefaultProviderRegistrationService extends AbstractCustomerRegistra
             final Map<String, VariableValueDto> variables = new HashMap<String, VariableValueDto>();
 
             // Set variables
+            this.setStringVariable(variables, EnumProcessInstanceVariable.START_USER_KEY.getValue(), userKey);
             this.setStringVariable(variables, "userKey", userKey);
             this.setStringVariable(variables, "registrationKey", registrationKey);
             this.setBooleanVariable(variables, "isUpdate", isUpdate);

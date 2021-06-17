@@ -35,6 +35,7 @@ import eu.opertusmundi.common.model.payment.PaymentMessageCode;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.pricing.EnumPricingModel;
 import eu.opertusmundi.common.model.pricing.FixedPricingModelCommandDto;
+import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.repository.AccountAssetRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
 import feign.FeignException;
@@ -85,6 +86,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                 final Map<String, VariableValueDto> variables = new HashMap<String, VariableValueDto>();
 
                 // Set variables
+                this.setStringVariable(variables, EnumProcessInstanceVariable.START_USER_KEY.getValue(), "");
                 this.setStringVariable(variables, "payInKey", payInKey);
 
                 options.setBusinessKey(payInKey.toString());
@@ -220,7 +222,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
      * @return
      */
     private ProcessInstanceDto findRunningInstance(String businessKey) {
-        final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstance(businessKey);
+        final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstances(businessKey);
 
         return instances.stream()
             .filter(i -> !i.isEnded())

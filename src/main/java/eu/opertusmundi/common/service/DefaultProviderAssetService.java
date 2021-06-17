@@ -80,6 +80,7 @@ import eu.opertusmundi.common.model.file.FileSystemMessageCode;
 import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestResultResponseDto;
+import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.AssetAdditionalResourceRepository;
 import eu.opertusmundi.common.repository.AssetFileTypeRepository;
@@ -418,6 +419,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 final Map<String, VariableValueDto> variables = new HashMap<String, VariableValueDto>();
 
                 // Set variables
+                this.setStringVariable(variables, EnumProcessInstanceVariable.START_USER_KEY.getValue(), command.getPublisherKey());
                 this.setStringVariable(variables, "draftKey", command.getAssetKey());
                 this.setStringVariable(variables, "publisherKey", command.getPublisherKey());
                 this.setStringVariable(variables, "type", command.getType().toString());
@@ -939,7 +941,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     private ProcessInstanceDto findInstance(UUID businessKey) {
         try {
-            final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstance(businessKey.toString());
+            final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstances(businessKey.toString());
 
             return instances.stream().findFirst().orElse(null);
         } catch (final FeignException fex) {
