@@ -59,8 +59,6 @@ public class BankWirePayInEntity extends PayInEntity {
         p.setKey(key);
         p.setPayIn(payIn);
         p.setPaymentMethod(paymentMethod);
-        p.setProcessDefinition(processDefinition);
-        p.setProcessInstance(processInstance);
         p.setReferenceNumber(referenceNumber);
         p.setStatus(status);
         p.setStatusUpdatedOn(statusUpdatedOn);
@@ -76,6 +74,8 @@ public class BankWirePayInEntity extends PayInEntity {
         }
         if (includeHelpdeskData) {
             p.setCustomer(consumer.getProfile().getConsumer().toDto());
+            p.setProcessDefinition(processDefinition);
+            p.setProcessInstance(processInstance);
             p.setProviderPayIn(payIn);
             p.setProviderResultCode(resultCode);
             p.setProviderResultMessage(resultMessage);

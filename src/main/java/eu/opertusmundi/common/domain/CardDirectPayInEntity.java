@@ -54,8 +54,6 @@ public class CardDirectPayInEntity extends PayInEntity {
         p.setKey(key);
         p.setPayIn(payIn);
         p.setPaymentMethod(paymentMethod);
-        p.setProcessDefinition(processDefinition);
-        p.setProcessInstance(processInstance);
         p.setReferenceNumber(referenceNumber);
         p.setStatementDescriptor(statementDescriptor);
         p.setStatus(status);
@@ -69,6 +67,8 @@ public class CardDirectPayInEntity extends PayInEntity {
         }
         if (includeHelpdeskData) {
             p.setCustomer(consumer.getProfile().getConsumer().toDto());
+            p.setProcessDefinition(processDefinition);
+            p.setProcessInstance(processInstance);
             p.setProviderPayIn(payIn);
             p.setProviderResultCode(resultCode);
             p.setProviderResultMessage(resultMessage);

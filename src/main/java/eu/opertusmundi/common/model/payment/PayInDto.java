@@ -44,13 +44,13 @@ public abstract class PayInDto {
      * Identifier of the workflow definition used for processing this PayIn
      * record
      */
-    @JsonIgnore
+    @JsonInclude(Include.NON_NULL)
     protected String processDefinition;
 
     /**
      * Identifier of the workflow instance processing this PayIn record
      */
-    @JsonIgnore
+    @JsonInclude(Include.NON_NULL)
     protected String processInstance;
 
     @ArraySchema(arraySchema = @Schema(
