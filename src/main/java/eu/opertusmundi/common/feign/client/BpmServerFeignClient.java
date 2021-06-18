@@ -7,7 +7,11 @@ import org.camunda.bpm.engine.rest.dto.CountResultDto;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.externaltask.SetRetriesForExternalTasksDto;
 import org.camunda.bpm.engine.rest.dto.history.HistoricActivityInstanceDto;
+import org.camunda.bpm.engine.rest.dto.history.HistoricExternalTaskLogDto;
+import org.camunda.bpm.engine.rest.dto.history.HistoricIncidentDto;
 import org.camunda.bpm.engine.rest.dto.history.HistoricProcessInstanceDto;
+import org.camunda.bpm.engine.rest.dto.history.HistoricTaskInstanceDto;
+import org.camunda.bpm.engine.rest.dto.history.HistoricVariableInstanceDto;
 import org.camunda.bpm.engine.rest.dto.message.CorrelationMessageDto;
 import org.camunda.bpm.engine.rest.dto.message.MessageCorrelationResultWithVariableDto;
 import org.camunda.bpm.engine.rest.dto.repository.ProcessDefinitionDto;
@@ -114,6 +118,20 @@ public interface BpmServerFeignClient {
     );
 
     /**
+     * Queries for historic variable instances that fulfill the given
+     * parameters.
+     *
+     * @param processInstanceId
+     * @return
+     *
+     * @see https://docs.camunda.org/manual/latest/reference/rest/history/variable-instance/get-variable-instance-query/
+     */
+    @GetMapping(value = "/history/variable-instance", consumes = "application/json")
+    List<HistoricVariableInstanceDto> getHistoryProcessInstanceVariables(
+        @RequestParam("processInstanceId") String processInstanceId
+    );
+
+    /**
      * Retrieves an Activity Instance (Tree) for a given process instance by id.
      *
      * @param processInstanceId
@@ -127,7 +145,8 @@ public interface BpmServerFeignClient {
     );
 
     /**
-     * Queries for historic activity instances that fulfill the given parameters.
+     * Queries for historic activity instances that fulfill the given
+     * parameters.
      *
      * @param processInstanceId
      * @return
@@ -151,6 +170,17 @@ public interface BpmServerFeignClient {
     );
 
     /**
+     * Queries for historic external task logs that fulfill the given
+     * parameters.
+     *
+     * @see https://docs.camunda.org/manual/latest/reference/rest/history/external-task-log/get-external-task-log-query/
+     */
+    @GetMapping(value = "/history/external-task-log", consumes = "application/json")
+    List<HistoricExternalTaskLogDto> getHistoryExternalTaskLog(
+        @RequestParam("processInstanceId") String processInstanceId
+    );
+
+    /**
      * Sets the number of retries left to execute external tasks by id
      * synchronously. If retries are set to 0, an incident is created.
      *
@@ -170,6 +200,17 @@ public interface BpmServerFeignClient {
     @GetMapping(value = "/external-task/{activityId}/errorDetails", consumes = "application/json")
     String getExternalTaskErrorDetails(
         @PathVariable("activityId") String activityId
+    );
+
+    /**
+     * Retrieves the corresponding error details of the passed historic external
+     * task log by id.
+     *
+     * @see https://docs.camunda.org/manual/latest/reference/rest/history/external-task-log/get-external-task-log-error-details/
+     */
+    @GetMapping(value = "/history/external-task-log/{logId}/error-details", consumes = "application/json")
+    String getHistoryExternalTaskLogErrorDetails(
+        @PathVariable("logId") String logId
     );
 
     /**
@@ -205,6 +246,16 @@ public interface BpmServerFeignClient {
     );
 
     /**
+     * Queries for historic tasks that fulfill the given parameters.
+     *
+     * @see https://docs.camunda.org/manual/latest/reference/rest/history/task/get-task-query/
+     */
+    @GetMapping(value = "/history/task", consumes = "application/json")
+    List<HistoricTaskInstanceDto> getHistoryTasks(
+        @RequestParam("processInstanceId") String processInstanceId
+    );
+
+    /**
      * Correlates a message to the process engine to either trigger a message
      * start event or an intermediate message catching event.
      *
@@ -234,6 +285,17 @@ public interface BpmServerFeignClient {
         @RequestParam(required = false) String executionId,
         @RequestParam(required = false) String sortBy,
         @RequestParam(required = false) String sortOrder
+    );
+
+
+    /**
+     * Queries for historic incidents that fulfill given parameters.
+     *
+     * @see https://docs.camunda.org/manual/latest/reference/rest/history/incident/get-incident-query/
+     */
+    @GetMapping(value = "/history/incident", consumes = "application/json")
+    List<HistoricIncidentDto> getHistoryIncidents(
+        @RequestParam String processInstanceId
     );
 
 }
