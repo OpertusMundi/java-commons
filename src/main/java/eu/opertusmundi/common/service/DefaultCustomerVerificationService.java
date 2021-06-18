@@ -88,7 +88,7 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
 
             return PageResultDto.of(page, size, items);
         } catch (final Exception ex) {
-            throw this.wrapException("List UBO Declarations", ex, command);
+            throw this.wrapException("List KYC Documents", ex, command);
         }
     }
 
