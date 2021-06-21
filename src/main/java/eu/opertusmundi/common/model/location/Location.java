@@ -2,6 +2,10 @@ package eu.opertusmundi.common.model.location;
 
 import java.io.Serializable;
 
+import org.apache.commons.lang3.StringUtils;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -34,6 +38,11 @@ public class Location implements Serializable {
 
     private String ip;
 
+    @JsonIgnore
+    public boolean isEmpty() {
+        return StringUtils.isBlank(country) && StringUtils.isBlank(longitude) && StringUtils.isBlank(latitude);
+    }
+
     public static Location empty(String ip) {
         return Location.empty(ip, null);
     }
@@ -44,6 +53,5 @@ public class Location implements Serializable {
             .ip(ip)
             .build();
     }
-
 
 }
