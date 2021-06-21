@@ -4,7 +4,10 @@ import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import eu.opertusmundi.common.model.account.AccountSubscriptionDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,6 +20,9 @@ public class SubscriptionBillingDto {
 
     @JsonIgnore
     private Integer id;
+
+    @JsonInclude(Include.NON_NULL)
+    private AccountSubscriptionDto subscription;
 
     @JsonIgnore
     private Integer subscriptionId;

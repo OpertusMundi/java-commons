@@ -125,6 +125,10 @@ public class OrderItemEntity {
     private String discountCode;
 
     public OrderItemDto toDto() {
+        return this.toDto(false);
+    }
+
+    public OrderItemDto toDto(boolean includeHelpdeskData) {
         final OrderItemDto i = new OrderItemDto();
 
         i.setDescription(description);
@@ -138,6 +142,10 @@ public class OrderItemEntity {
         i.setTotalPriceExcludingTax(totalPriceExcludingTax);
         i.setTotalTax(totalTax);
         i.setType(type);
+
+        if (includeHelpdeskData) {
+            i.setProvider(this.provider.getProvider().toDto());
+        }
 
         return i;
     }

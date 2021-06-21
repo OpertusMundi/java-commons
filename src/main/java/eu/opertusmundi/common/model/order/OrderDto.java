@@ -79,14 +79,14 @@ public class OrderDto {
 
     private EnumPaymentMethod paymentMethod;
 
+    @Schema(description = "User friendly reference code for support")
+    private String referenceNumber;
+
     @JsonInclude(Include.NON_NULL)
-    private CustomerDto customer;
+    private CustomerDto consumer;
 
     @JsonInclude(Include.NON_NULL)
     private PayInDto payIn;
-
-    @Schema(description = "User friendly reference code for support")
-    private String referenceNumber;
 
     public void addItem(OrderItemDto i) {
         this.items.add(i);

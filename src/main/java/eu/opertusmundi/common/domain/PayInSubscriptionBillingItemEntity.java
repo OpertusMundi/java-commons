@@ -29,12 +29,12 @@ public class PayInSubscriptionBillingItemEntity extends PayInItemEntity {
     private SubscriptionBillingEntity subscriptionBilling;
 
     @Override
-    public PayInItemDto toDto() throws PaymentException {
+    public PayInItemDto toDto(boolean includeHelpdeskData) throws PaymentException {
         final SubscriptionBillingPayInItemDto i = new SubscriptionBillingPayInItemDto();
 
         i.setId(id);
         i.setIndex(index);
-        i.setSubscriptionBilling(this.subscriptionBilling.toDto());
+        i.setSubscriptionBilling(this.subscriptionBilling.toDto(includeHelpdeskData));
         i.setTransfer(this.toTransferDto());
         i.setType(type);
 

@@ -66,7 +66,7 @@ public class CardDirectPayInEntity extends PayInEntity {
             this.items.stream().map(PayInItemEntity::toDto).forEach(p::addItem);
         }
         if (includeHelpdeskData) {
-            p.setCustomer(consumer.getProfile().getConsumer().toDto());
+            p.setConsumer(consumer.getProfile().getConsumer().toDto());
             p.setProcessDefinition(processDefinition);
             p.setProcessInstance(processInstance);
             p.setProviderPayIn(payIn);

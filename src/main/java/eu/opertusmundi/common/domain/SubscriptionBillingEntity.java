@@ -91,10 +91,15 @@ public class SubscriptionBillingEntity {
     private BigDecimal totalTax;
 
     public SubscriptionBillingDto toDto() {
+        return this.toDto(false);
+    }
+
+    public SubscriptionBillingDto toDto(boolean includeHelpDeskData) {
         final SubscriptionBillingDto s = new SubscriptionBillingDto();
 
         s.setFromDate(fromDate);
         s.setId(id);
+        s.setSubscription(this.getSubscription().toDto(includeHelpDeskData));
         s.setSubscriptionId(this.getSubscription().getId());
         s.setService(this.getSubscription().getService());
         s.setSkuTotalCalls(skuTotalCalls);

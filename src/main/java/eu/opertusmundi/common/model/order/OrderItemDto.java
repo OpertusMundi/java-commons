@@ -3,7 +3,10 @@ package eu.opertusmundi.common.model.order;
 import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import eu.opertusmundi.common.model.account.CustomerDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -33,7 +36,7 @@ public class OrderItemDto {
         example = "opertusmundi.topio.1.asset"
     )
     private String item;
-    
+
     @Schema(description = "Item description at the time of the purchase")
     private String description;
 
@@ -57,8 +60,11 @@ public class OrderItemDto {
         example = "0,24"
     )
     private BigDecimal totalTax;
-    
+
     @Schema(description = "Optional discount code applied to the item's price")
     private String discountCode;
+
+    @JsonInclude(Include.NON_NULL)
+    private CustomerDto provider;
 
 }

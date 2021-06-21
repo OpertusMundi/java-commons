@@ -86,6 +86,10 @@ public class AccountSubscriptionEntity {
     private EnumTopicCategory segment;
 
     public AccountSubscriptionDto toDto() {
+        return this.toDto(false);
+    }
+
+    public AccountSubscriptionDto toDto(boolean includeHelpDeskData) {
         final AccountSubscriptionDto s = new AccountSubscriptionDto();
 
         s.setAddedOn(addedOn);
@@ -95,6 +99,11 @@ public class AccountSubscriptionEntity {
         s.setService(service);
         s.setSource(source);
         s.setUpdatedOn(updatedOn);
+
+        if (includeHelpDeskData) {
+            s.setConsumer(this.consumer.getConsumer().toDto());
+            s.setProvider(this.provider.getProvider().toDto());
+        }
 
         return s;
     }

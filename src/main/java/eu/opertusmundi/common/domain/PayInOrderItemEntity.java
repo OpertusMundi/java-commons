@@ -8,7 +8,6 @@ import javax.persistence.ManyToOne;
 import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
 import eu.opertusmundi.common.model.payment.OrderPayInItemDto;
 import eu.opertusmundi.common.model.payment.PayInItemDto;
-import eu.opertusmundi.common.model.payment.PaymentException;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -29,12 +28,12 @@ public class PayInOrderItemEntity extends PayInItemEntity {
     private OrderEntity order;
 
     @Override
-    public PayInItemDto toDto() throws PaymentException {
+    public PayInItemDto toDto(boolean includeHelpdeskData) {
         final OrderPayInItemDto i = new OrderPayInItemDto();
 
         i.setId(id);
         i.setIndex(index);
-        i.setOrder(this.order.toDto());
+        i.setOrder(this.order.toDto(includeHelpdeskData, includeHelpdeskData));
         i.setTransfer(this.toTransferDto());
         i.setType(type);
 

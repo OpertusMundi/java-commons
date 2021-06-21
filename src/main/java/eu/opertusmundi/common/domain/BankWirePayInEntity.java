@@ -70,10 +70,10 @@ public class BankWirePayInEntity extends PayInEntity {
         if (includeDetails) {
             p.setBankAccount(bankAccount.toDto());
 
-            this.items.stream().map(PayInItemEntity::toDto).forEach(p::addItem);
+            this.items.stream().map(e -> e.toDto(includeHelpdeskData)).forEach(p::addItem);
         }
         if (includeHelpdeskData) {
-            p.setCustomer(consumer.getProfile().getConsumer().toDto());
+            p.setConsumer(consumer.getProfile().getConsumer().toDto());
             p.setProcessDefinition(processDefinition);
             p.setProcessInstance(processInstance);
             p.setProviderPayIn(payIn);

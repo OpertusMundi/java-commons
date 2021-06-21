@@ -2,6 +2,7 @@ package eu.opertusmundi.common.model.payment;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -16,21 +17,29 @@ import lombok.Setter;
 public class TransferDto {
 
     @JsonIgnore
-    protected String id;
+    private String id;
+
+    private UUID key;
 
     @Schema(description = "Funds debited from buyer's wallet and credited to seller's wallet")
-    protected BigDecimal creditedFunds;
+    private BigDecimal creditedFunds;
 
     @Schema(description = "Platform fees")
-    protected BigDecimal fees;
+    private BigDecimal fees;
 
     @Schema(description = "Transaction status")
-    protected EnumTransactionStatus status;
+    private EnumTransactionStatus status;
 
     @Schema(description = "Date of creation")
-    protected ZonedDateTime createdOn;
+    private ZonedDateTime createdOn;
 
     @Schema(description = "Date of execution")
-    protected ZonedDateTime executedOn;
+    private ZonedDateTime executedOn;
+
+    @Schema(description = "Payment provider result code")
+    private String resultCode;
+
+    @Schema(description = "Payment provider result message")
+    private String resultMessage;
 
 }

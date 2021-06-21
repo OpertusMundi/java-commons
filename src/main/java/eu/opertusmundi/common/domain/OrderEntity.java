@@ -166,7 +166,7 @@ public class OrderEntity {
     public OrderDto toDto() {
         return this.toDto(true, false);
     }
-    
+
     public OrderDto toDto(boolean includeItems, boolean includeHelpdeskData) {
         final OrderDto o = new OrderDto();
 
@@ -187,11 +187,13 @@ public class OrderEntity {
         o.setTotalTax(totalTax);
 
         if (includeItems) {
-            items.stream().map(OrderItemEntity::toDto).forEach(o::addItem);
+            items.stream().map(i -> i.toDto(true)).forEach(o::addItem);
         }
         if (includeHelpdeskData) {
-            o.setCustomer(consumer.getProfile().getConsumer().toDto());
-            o.setPayIn(payin.toDto(false, true));
+            o.setConsumer(consumer.getProfile().getConsumer().toDto());
+            if (payin != null) {
+                o.setPayIn(payin.toDto(false, true));
+            }
 
             statusHistory.stream().map(OrderStatusEntity::toDto).forEach(o::addStatusHistory);
         }

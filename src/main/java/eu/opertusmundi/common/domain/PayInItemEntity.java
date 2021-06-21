@@ -2,6 +2,7 @@ package eu.opertusmundi.common.domain;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
@@ -22,6 +23,7 @@ import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
@@ -68,6 +70,12 @@ public abstract class PayInItemEntity {
     @Setter
     protected String transfer;
 
+    @NotNull
+    @NaturalId
+    @Column(name = "transfer_key", updatable = false, columnDefinition = "uuid")
+    @Getter
+    private final UUID transferKey = UUID.randomUUID();
+
     @Column(name = "`transfer_credited_funds`", columnDefinition = "numeric", precision = 20, scale = 6)
     @Getter
     @Setter
@@ -94,8 +102,31 @@ public abstract class PayInItemEntity {
     @Setter
     protected ZonedDateTime transferExecutedOn;
 
+    @Column(name = "`transfer_result_code`")
+    @Getter
+    @Setter
+    protected String transferResultCode;
 
-    public abstract PayInItemDto toDto() throws PaymentException;
+    @Column(name = "`transfer_result_message`")
+    @Getter
+    @Setter
+    protected String transferResultMessage;
+
+    public void updateTransfer(TransferDto t) {
+        this.transfer              = t.getId();
+        this.transferCreatedOn     = t.getCreatedOn();
+        this.transferCreditedFunds = t.getCreditedFunds();
+        this.transferExecutedOn    = t.getExecutedOn();
+        this.transferFees          = t.getFees();
+        this.transferResultCode    = t.getResultCode();
+        this.transferResultMessage = t.getResultMessage();
+        this.transferStatus        = t.getStatus();
+    }
+
+    public PayInItemDto toDto() throws PaymentException {
+        return this.toDto(false);
+    }
+    public abstract PayInItemDto toDto(boolean includeHelpdeskData);
 
     public TransferDto toTransferDto() {
         final TransferDto t = new TransferDto();
@@ -109,6 +140,9 @@ public abstract class PayInItemEntity {
         t.setExecutedOn(transferExecutedOn);
         t.setFees(transferFees);
         t.setId(transfer);
+        t.setKey(transferKey);
+        t.setResultCode(transferResultCode);
+        t.setResultMessage(transferResultMessage);
         t.setStatus(transferStatus);
 
         return t;

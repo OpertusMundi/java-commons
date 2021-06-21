@@ -102,7 +102,7 @@ public abstract class PayInDto {
     protected String referenceNumber;
 
     @JsonInclude(Include.NON_NULL)
-    private CustomerDto customer;
+    private CustomerDto consumer;
 
     @JsonInclude(Include.NON_EMPTY)
     protected String providerPayIn;
