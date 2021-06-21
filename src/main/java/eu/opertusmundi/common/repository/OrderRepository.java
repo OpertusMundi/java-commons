@@ -133,6 +133,12 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
     @Transactional(readOnly = false)
     default void setPayIn(UUID orderKey, String payInProviderId) throws Exception {
+        this.setPayIn(orderKey, payInProviderId, null);
+    }
+
+    @Transactional(readOnly = false)
+    default void setPayIn(UUID orderKey, String payInProviderId, UUID accountKey) throws Exception {
+        final AccountEntity account = this.findAccountByKey(accountKey).orElse(null);
         final OrderEntity order = this.findOrderEntityByKey(orderKey).orElse(null);
         final PayInEntity payIn = this.findPayInById(payInProviderId).orElse(null);
 
@@ -150,13 +156,30 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
         status.setOrder(order);
         status.setStatus(order.getStatus());
         status.setStatusUpdatedOn(payIn.getCreatedOn());
+        status.setStatusUpdatedBy(account);
 
         order.getStatusHistory().add(status);
     }
 
+    /**
+     * Update order status
+     *
+     * This method is idempotent and will update an order only on status
+     * changes.
+     *
+     * @param orderKey
+     * @param status
+     * @param when
+     * @throws Exception
+     */
     @Transactional(readOnly = false)
     default void setStatus(UUID orderKey, EnumOrderStatus status, ZonedDateTime when) throws Exception {
         final OrderEntity order = this.findOrderEntityByKey(orderKey).orElse(null);
+
+        // Update only on status changes
+        if (order.getStatus() == status) {
+            return;
+        }
 
         // Update order
         order.setStatus(status);

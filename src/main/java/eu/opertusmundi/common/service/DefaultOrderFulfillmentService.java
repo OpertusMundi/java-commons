@@ -29,6 +29,7 @@ import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
 import eu.opertusmundi.common.feign.client.BpmServerFeignClient;
 import eu.opertusmundi.common.model.account.EnumAssetSource;
+import eu.opertusmundi.common.model.order.EnumOrderStatus;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.PaymentMessageCode;
@@ -37,6 +38,7 @@ import eu.opertusmundi.common.model.pricing.EnumPricingModel;
 import eu.opertusmundi.common.model.pricing.FixedPricingModelCommandDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.repository.AccountAssetRepository;
+import eu.opertusmundi.common.repository.OrderRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
 import feign.FeignException;
 
@@ -49,6 +51,9 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     private static final String MESSAGE_UPDATE_PAYIN_STATUS = "payin-updated-message";
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultOrderFulfillmentService.class);
+
+    @Autowired
+    private OrderRepository orderRepository;
 
     @Autowired
     private PayInRepository payInRepository;
@@ -69,7 +74,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
      */
     @Override
     @Retryable(include = {Exception.class}, maxAttempts = 3, backoff = @Backoff(delay = 2000, maxDelay = 3000))
-    public String start(UUID payInKey) {
+    public String start(UUID payInKey, String payInId, EnumTransactionStatus payInStatus) {
         try {
             final PayInEntity payIn = payInRepository.findOneEntityByKey(payInKey).orElse(null);
 
@@ -88,6 +93,8 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                 // Set variables
                 this.setStringVariable(variables, EnumProcessInstanceVariable.START_USER_KEY.getValue(), "");
                 this.setStringVariable(variables, "payInKey", payInKey);
+                this.setStringVariable(variables, "payInId", payInId);
+                this.setStringVariable(variables, "payInStatus", payInStatus.toString());
 
                 options.setBusinessKey(payInKey.toString());
                 options.setVariables(variables);
@@ -141,14 +148,15 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                     "Failed to send message [workflow={}, businessKey={}, message={}, ex={}]",
                     WORKFLOW_PROCESS_PAYIN, payInKey, MESSAGE_UPDATE_PAYIN_STATUS, fex.getMessage()
                 );
+                throw fex;
             }
         } catch(final Exception ex) {
             logger.error(
                 "Failed to send message [workflow={}, businessKey={}, message={}, ex={}]",
                 WORKFLOW_PROCESS_PAYIN, payInKey, MESSAGE_UPDATE_PAYIN_STATUS, ex.getMessage()
             );
+            throw ex;
         }
-
     }
 
     /**
@@ -158,13 +166,19 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
      * the BPM engine
      */
     @Override
-    public void updateConsumer(UUID payInKey) {
+    public void updateConsumer(UUID payInKey) throws Exception {
         final PayInEntity payIn = payInRepository.findOneEntityByKey(payInKey).orElse(null);
 
+        // Update account profile
         for (final PayInItemEntity item : payIn.getItems()) {
             switch (item.getType()) {
                 case ORDER :
+                    final PayInOrderItemEntity orderItem = (PayInOrderItemEntity) item;
+
                     this.registerAsset(payIn, (PayInOrderItemEntity) item);
+
+                    // Complete order
+                    this.orderRepository.setStatus(orderItem.getOrder().getKey(), EnumOrderStatus.SUCCEEDED, ZonedDateTime.now());
                     break;
                 default :
                     throw new PaymentException(PaymentMessageCode.PAYIN_ITEM_TYPE_NOT_SUPPORTED, String.format(

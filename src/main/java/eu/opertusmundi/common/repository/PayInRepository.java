@@ -5,10 +5,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import javax.persistence.LockModeType;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,12 +25,14 @@ import eu.opertusmundi.common.domain.CardDirectPayInEntity;
 import eu.opertusmundi.common.domain.CartEntity;
 import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
+import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
 import eu.opertusmundi.common.domain.PayInStatusEntity;
 import eu.opertusmundi.common.model.payment.BankwirePayInCommand;
 import eu.opertusmundi.common.model.payment.CardDirectPayInCommand;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PayInDto;
+import eu.opertusmundi.common.model.payment.PayInItemDto;
 import eu.opertusmundi.common.model.payment.PayInStatusUpdateCommand;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import io.jsonwebtoken.lang.Assert;
@@ -55,8 +60,12 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE p.key = :payInKey and p.consumer.id = :userId")
     Optional<PayInEntity> findOneByAccountIdAndKey(@Param("userId") Integer userId, @Param("payInKey") UUID payInKey);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE p.payIn = :payIn")
     Optional<PayInEntity> findOneByPayInId(@Param("payIn") String payIn);
+
+    @Query("SELECT i FROM PayInItem i WHERE i.transfer = :transferId")
+    Optional<PayInItemEntity> findOnePayInItemByTransferId(@Param("transferId") String transferId);
 
     @Query("SELECT p FROM PayIn p WHERE (:status IS NULL or p.status = :status) and (p.consumer.key = :userKey)")
     Page<PayInEntity> findAllConsumerPayIns(
@@ -93,6 +102,32 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         return page.map(e -> e.toDto(true, true));
     }
 
+    @Query(
+        "SELECT i "
+      + "FROM   PayInItem i "
+      + "WHERE (i.transferStatus in :status or :status is null) and "
+      + "      (i.transfer is not null) and "
+      + "      (:referenceNumber IS NULL or i.payin.referenceNumber = :referenceNumber) "
+    )
+    Page<PayInItemEntity> findAllTransferEntities(
+        @Param("status") Set<EnumTransactionStatus> status,
+        @Param("referenceNumber") String referenceNumber,
+        Pageable pageable
+    );
+
+    default Page<PayInItemDto> findAllTransferObjects(
+        @Param("status") Set<EnumTransactionStatus> status,
+        @Param("referenceNumber") String referenceNumber,
+        Pageable pageable
+    ) {
+        final Page<PayInItemEntity> page = this.findAllTransferEntities(
+            status != null && status.size() > 0 ? status : null,
+            StringUtils.isBlank(referenceNumber) ? null : referenceNumber,
+            pageable
+        );
+
+        return page.map(i -> i.toDto(true));
+    }
 
     @Modifying
     @Transactional(readOnly = false)
@@ -117,9 +152,12 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         payin.setConsumer(consumer);
         payin.setCreatedOn(command.getCreatedOn());
         payin.setCurrency(order.getCurrency());
+        payin.setExecutedOn(command.getExecutedOn());
         payin.setKey(command.getPayInKey());
         payin.setPayIn(command.getPayIn());
         payin.setReferenceNumber(command.getReferenceNumber());
+        payin.setResultCode(command.getResultCode());
+        payin.setResultMessage(command.getResultMessage());
         payin.setStatus(EnumTransactionStatus.CREATED);
         payin.setStatusUpdatedOn(payin.getCreatedOn());
         payin.setTotalPrice(order.getTotalPrice());
@@ -195,6 +233,11 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     @Transactional(readOnly = false)
     default PayInDto updatePayInStatus(PayInStatusUpdateCommand command) throws PaymentException {
         final PayInEntity payIn = this.findOneByPayInId(command.getProviderPayInId()).orElse(null);
+
+        // Update only on status changes
+        if (payIn.getStatus() == command.getStatus()) {
+            return payIn.toDto();
+        }
 
         // Update PayIn
         if (command.getExecutedOn() != null) {

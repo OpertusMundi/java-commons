@@ -2,6 +2,7 @@ package eu.opertusmundi.common.repository;
 
 import java.time.temporal.WeekFields;
 import java.util.Locale;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -17,12 +18,22 @@ import eu.opertusmundi.common.domain.PayInOrderItemEntity;
 import eu.opertusmundi.common.domain.PayInSubscriptionBillingItemEntity;
 import eu.opertusmundi.common.domain.SubscriptionBillingEntity;
 import eu.opertusmundi.common.model.order.EnumOrderItemType;
+import eu.opertusmundi.common.model.payment.TransferDto;
 
 @Repository
 @Transactional(readOnly = false)
 public interface PayInItemHistoryRepository extends JpaRepository<PayInItemHistoryEntity, Integer> {
 
-    default void create(PayInItemEntity item) {
+    Optional<PayInItemHistoryEntity> findOneById(Integer id);
+
+    default void createIfNotExists(PayInItemEntity item) {
+        // Item identifier is equal to the history item identifier
+        final PayInItemHistoryEntity existing = this.findOneById(item.getId()).orElse(null);
+        if (existing != null) {
+            // Item already created
+            return;
+        }
+
         final PayInEntity            payIn      = item.getPayin();
         final PayInItemHistoryEntity e          = new PayInItemHistoryEntity();
         OrderEntity                  order      = null;
@@ -55,6 +66,7 @@ public interface PayInItemHistoryRepository extends JpaRepository<PayInItemHisto
             e.setSegment(orderItem.getSegment());
         }
         if (subBilling != null) {
+            // TODO: Implement
             e.setAssetId(subBilling.getSubscription().getService());
             e.setAssetType(EnumOrderItemType.SERVICE);
             e.setPayInCountry(subBilling.getSubscription().getConsumer().getCountry());
@@ -78,4 +90,24 @@ public interface PayInItemHistoryRepository extends JpaRepository<PayInItemHisto
 
         this.saveAndFlush(e);
     }
+
+    default void updateTransfer(Integer id, TransferDto transfer) {
+        Assert.notNull(transfer, "Expected a non-null transfer");
+
+        final PayInItemHistoryEntity history = this.findOneById(id).orElse(null);
+
+        Assert.notNull(history, "Expected a non-null history record");
+
+        history.setTransferCreditedFunds(transfer.getCreditedFunds());
+        history.setTransferDay(transfer.getExecutedOn().getDayOfMonth());
+        history.setTransferExecutedOn(transfer.getExecutedOn());
+        history.setTransferMonth(transfer.getExecutedOn().getMonthValue());
+        history.setTransferPlatformFees(transfer.getFees());
+        history.setTransferProviderId(transfer.getId());
+        history.setTransferWeek(transfer.getExecutedOn().get(WeekFields.of(Locale.getDefault()).weekOfYear()));
+        history.setTransferYear(transfer.getExecutedOn().getYear());
+
+        this.saveAndFlush(history);
+    }
+
 }

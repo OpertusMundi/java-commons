@@ -26,7 +26,14 @@ public class MangoPayWebhookHandler {
             case PAYIN_NORMAL_SUCCEEDED :
             case PAYIN_NORMAL_FAILED :
                 // Update PayIn
-                this.paymentService.updatePayIn(resourceId);
+                this.paymentService.sendPayInStatusUpdateMessage(resourceId);
+                break;
+
+            case TRANSFER_NORMAL_CREATED:
+            case TRANSFER_NORMAL_FAILED:
+            case TRANSFER_NORMAL_SUCCEEDED:
+                // Update Transfer
+                this.paymentService.updateTransfer(resourceId);
                 break;
 
             case KYC_CREATED :
@@ -50,6 +57,5 @@ public class MangoPayWebhookHandler {
                 break;
         }
     }
-
 
 }

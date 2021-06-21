@@ -3,6 +3,8 @@ package eu.opertusmundi.common.service;
 import java.util.List;
 import java.util.UUID;
 
+import javax.annotation.Nullable;
+
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.account.AccountDto;
@@ -22,7 +24,6 @@ import eu.opertusmundi.common.model.payment.PayInDto;
 import eu.opertusmundi.common.model.payment.PayOutCommandDto;
 import eu.opertusmundi.common.model.payment.PayOutDto;
 import eu.opertusmundi.common.model.payment.PaymentException;
-import eu.opertusmundi.common.model.payment.TransferCommandDto;
 import eu.opertusmundi.common.model.payment.TransferDto;
 import eu.opertusmundi.common.model.payment.UserCardCommand;
 import eu.opertusmundi.common.model.payment.UserCommand;
@@ -206,17 +207,40 @@ public interface  PaymentService {
     PayInDto createPayInCardDirectForOrder(CardDirectPayInCommand command) throws PaymentException;
 
     /**
+     * Sends a message to an order fulfillment process instance to update the
+     * PayIn status
+     *
+     * @param payInKey
+     * @param payInId
+     * @throws PaymentException
+     */
+    default void sendPayInStatusUpdateMessage(String payInId) throws PaymentException {
+        this.sendPayInStatusUpdateMessage(null, payInId);
+    }
+
+    /**
+     * Sends a message to an order fulfillment process instance to update the
+     * PayIn status
+     *
+     * @param payInId
+     * @throws PaymentException
+     */
+    void sendPayInStatusUpdateMessage(UUID payInKey, String payInId) throws PaymentException;
+
+    /**
      * Update PayIn
      *
      * This method checks the payment provider for updates of a specific PayIn.
      * A webhook may invoke this method to update a pending bankwire or credit
      * card PyaIn.
      *
-     * @param payIn The payment provider unique PayIn identifier
+     * @param payInId The payment provider unique PayIn identifier
      * @return
      * @throws PaymentException
      */
-    PayInDto updatePayIn(String payIn) throws PaymentException;
+    default PayInDto updatePayIn(String payInId) throws PaymentException {
+        return this.updatePayIn(null, payInId);
+    }
 
     /**
      * Update PayIn
@@ -233,15 +257,29 @@ public interface  PaymentService {
      * @return
      * @throws PaymentException
      */
-    PayInDto updatePayIn(UUID payInKey, String payInId) throws PaymentException;
+    PayInDto updatePayIn(@Nullable UUID payInKey, String payInId) throws PaymentException;
 
     /**
-     * Transfer
-     * @param command
+     * Create transfers for all items in a PayIn record
+     *
+     * @param userKey
+     * @param payInKey
      * @return
      * @throws PaymentException
      */
-    TransferDto createTransfer(TransferCommandDto command) throws PaymentException;
+    List<TransferDto> createTransfer(UUID userKey, UUID payInKey) throws PaymentException;
+
+    /**
+     * Update transfer
+     *
+     * This method checks the payment provider for updates of a specific
+     * Transfer. A webhook may invoke this method to update a pending transfer
+     * with the execution date and its status.
+     *
+     * @param transfer The payment provider Transfer unique identifier
+     * @throws PaymentException
+     */
+    void updateTransfer(String transferId) throws PaymentException;
 
     /**
      * Create a pay out from a provider's wallet to her bank account
