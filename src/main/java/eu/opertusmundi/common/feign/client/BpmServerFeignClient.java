@@ -97,11 +97,12 @@ public interface BpmServerFeignClient {
      * Queries for process instances that fulfill given parameters. Parameters
      * may be static as well as dynamic runtime properties of process instances.
      *
-     * @see https://docs.camunda.org/manual/latest/reference/rest/history/process-instance/
+     * @see https://docs.camunda.org/manual/latest/reference/rest/history/process-instance/get-process-instance-query/
      */
-    @PostMapping(value = "/history/process-instance", consumes = "application/json")
+    @GetMapping(value = "/history/process-instance", consumes = "application/json")
     List<HistoricProcessInstanceDto> getHistoryProcessInstances(
-        @PathVariable("processInstanceId") String processInstanceId
+        @RequestParam(name = "processInstanceBusinessKey", required = false) String businessKey,
+        @RequestParam(name = "processInstanceId", required = false) String processInstanceId
     );
 
     /**
