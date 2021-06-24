@@ -191,6 +191,8 @@ public class CustomerIndividualEntity extends CustomerEntity {
         c.setTermsAccepted(this.termsAccepted);
         c.setTermsAcceptedAt(this.termsAcceptedAt);
         c.setType(this.type);
+        c.setWalletFunds(this.walletFunds);
+        c.setWalletFundsUpdatedOn(this.walletFundsUpdatedOn);
 
         return c;
     }

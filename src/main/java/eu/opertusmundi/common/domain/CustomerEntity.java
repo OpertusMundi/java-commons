@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.domain;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,7 +86,7 @@ public abstract class CustomerEntity {
     @Getter
     @Setter
     private List<CustomerKycLevelEntity> levelHistory = new ArrayList<>();
-    
+
     @NotNull
     @Column(name = "`type`", nullable = false, updatable = false)
     @Convert(converter = EnumCustomerTypeAttributeConverter.class)
@@ -156,6 +157,17 @@ public abstract class CustomerEntity {
     @Getter
     @Setter
     protected ZonedDateTime termsAcceptedAt;
+
+    @NotNull
+    @Column(name = "`wallet_funds`", columnDefinition = "numeric", precision = 20, scale = 6)
+    @Getter
+    @Setter
+    protected BigDecimal walletFunds;
+
+    @Column(name = "`wallet_funds_updated_on`")
+    @Getter
+    @Setter
+    protected ZonedDateTime walletFundsUpdatedOn;
 
     public abstract CustomerDto toDto();
 

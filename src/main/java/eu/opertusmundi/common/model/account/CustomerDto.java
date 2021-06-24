@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.model.account;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
@@ -45,5 +46,9 @@ public abstract class CustomerDto implements Serializable {
     protected ZonedDateTime termsAcceptedAt;
 
     protected EnumMangopayUserType type;
+
+    protected BigDecimal walletFunds;
+
+    protected ZonedDateTime walletFundsUpdatedOn;
 
 }

@@ -119,7 +119,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
     @Getter
     @Setter
     private String name;
-    
+
     @Column(name = "`pid_service_user_id`")
     @Getter
     @Setter
@@ -335,6 +335,8 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         p.setTermsAccepted(this.termsAccepted);
         p.setTermsAcceptedAt(this.termsAcceptedAt);
         p.setType(this.type);
+        p.setWalletFunds(this.walletFunds);
+        p.setWalletFundsUpdatedOn(this.walletFundsUpdatedOn);
 
         return p;
     }
