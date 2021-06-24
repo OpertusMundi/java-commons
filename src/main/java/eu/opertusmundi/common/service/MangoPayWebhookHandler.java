@@ -29,6 +29,19 @@ public class MangoPayWebhookHandler {
                 this.paymentService.sendPayInStatusUpdateMessage(resourceId);
                 break;
 
+            case PAYOUT_NORMAL_SUCCEEDED:
+            case PAYOUT_NORMAL_FAILED:
+                // Update PayOut
+                this.paymentService.sendPayOutStatusUpdateMessage(resourceId);
+                break;
+
+            case PAYOUT_REFUND_SUCCEEDED:
+            case PAYOUT_REFUND_FAILED:
+                // Update PayOut refund
+                this.paymentService.updatePayOutRefund(resourceId);
+                break;
+
+
             case TRANSFER_NORMAL_CREATED:
             case TRANSFER_NORMAL_FAILED:
             case TRANSFER_NORMAL_SUCCEEDED:

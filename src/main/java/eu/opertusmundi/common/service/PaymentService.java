@@ -9,6 +9,7 @@ import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.account.AccountDto;
 import eu.opertusmundi.common.model.account.BankAccountDto;
+import eu.opertusmundi.common.model.account.EnumCustomerType;
 import eu.opertusmundi.common.model.location.Location;
 import eu.opertusmundi.common.model.order.CartDto;
 import eu.opertusmundi.common.model.order.OrderDto;
@@ -29,6 +30,7 @@ import eu.opertusmundi.common.model.payment.UserCardCommand;
 import eu.opertusmundi.common.model.payment.UserCommand;
 import eu.opertusmundi.common.model.payment.UserPaginationCommand;
 import eu.opertusmundi.common.model.payment.UserRegistrationCommand;
+import eu.opertusmundi.common.model.payment.WalletDto;
 
 public interface  PaymentService {
 
@@ -171,7 +173,27 @@ public interface  PaymentService {
      * @return
      * @throws PaymentException
      */
-    EnumTransactionStatus getTransactionStatus(String payIn) throws PaymentException;
+    EnumTransactionStatus getPayInStatus(String payIn) throws PaymentException;
+
+    /**
+     * Refreshes all user wallets from remote payment provider
+     *
+     * @param userKey
+     * @return
+     * @throws PaymentException
+     */
+    AccountDto refreshUserWallets(UUID userKey) throws PaymentException;
+
+    /**
+     * Updates wallet funds for the specified customer from the Payment Provider
+     * (MANGOPAY)
+     *
+     * @param userKey
+     * @param type
+     * @return
+     * @throws PaymentException
+     */
+    WalletDto updateCustomerWalletFunds(UUID userKey, EnumCustomerType type) throws PaymentException;
 
     /**
      * Search consumer PayIns
@@ -282,12 +304,49 @@ public interface  PaymentService {
     void updateTransfer(String transferId) throws PaymentException;
 
     /**
-     * Create a pay out from a provider's wallet to her bank account
+     * Create a PayOut record from a provider's wallet to her bank account in
+     * the OpertusMundi platform.
      *
      * @param command
      * @return
      * @throws PaymentException
      */
-    PayOutDto createPayOut(PayOutCommandDto command) throws PaymentException;
+    PayOutDto createPayOutAtOpertusMundi(PayOutCommandDto command) throws PaymentException;
+
+    /**
+     * Create a PayOut at the MANGOPAY service
+     *
+     * @param payOutKey
+     * @return
+     * @throws PaymentException
+     */
+    PayOutDto createPayOutAtProvider(UUID payOutKey) throws PaymentException;
+
+    /**
+     * Sends a message to a PayOut process instance to update its status
+     *
+     * @param payOutId
+     * @throws PaymentException
+     */
+    void sendPayOutStatusUpdateMessage(String payOutId) throws PaymentException;
+
+    /**
+     * Update PayOut
+     *
+     * @param payOutKey PayOut unique OpertusMundi key
+     * @param payOutId The payment provider unique PayOut identifier
+     * @return
+     * @throws PaymentException
+     */
+    PayOutDto updatePayOut(UUID payOutKey, String payOutId) throws PaymentException;
+
+    /**
+     * Update PayOut refund
+     *
+     * @param refundId
+     * @return
+     * @throws PaymentException
+     */
+    PayOutDto updatePayOutRefund(String refundId) throws PaymentException;
 
 }

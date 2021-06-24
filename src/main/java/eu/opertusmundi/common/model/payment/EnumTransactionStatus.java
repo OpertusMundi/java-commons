@@ -6,17 +6,21 @@ import eu.opertusmundi.common.model.order.EnumOrderStatus;
 
 public enum EnumTransactionStatus {
     /**
-     * New payment, no PayIn has been created yet
+     * Not specified.
+     */
+    NotSpecified,
+    /**
+     * CREATED transaction status.
      */
     CREATED,
     /**
-     * PayIn failed
-     */
-    FAILED,
-    /**
-     * PayIn succeeded
+     * SUCCEEDED transaction status.
      */
     SUCCEEDED,
+    /**
+     * FAILED transaction status.
+     */
+    FAILED
     ;
 
     public static EnumTransactionStatus from(TransactionStatus s) throws PaymentException {

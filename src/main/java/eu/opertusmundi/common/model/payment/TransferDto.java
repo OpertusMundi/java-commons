@@ -19,6 +19,7 @@ public class TransferDto {
     @JsonIgnore
     private String id;
 
+    @Schema(description = "Transfer unique key")
     private UUID key;
 
     @Schema(description = "Funds debited from buyer's wallet and credited to seller's wallet")

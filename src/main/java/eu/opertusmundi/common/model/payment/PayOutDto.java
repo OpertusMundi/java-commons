@@ -5,7 +5,10 @@ import java.time.ZonedDateTime;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import eu.opertusmundi.common.model.account.CustomerDto;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -23,23 +26,36 @@ public class PayOutDto {
     @Schema(description = "Payout platform unique key")
     private UUID key;
 
-    @JsonIgnore
-    private String payOut;
+    /**
+     * Identifier of the workflow definition used for processing this PayIn
+     * record
+     */
+    @JsonInclude(Include.NON_NULL)
+    private String processDefinition;
+
+    /**
+     * Identifier of the workflow instance processing this PayIn record
+     */
+    @JsonInclude(Include.NON_NULL)
+    private String processInstance;
 
     @Schema(description = "Information about the funds that are being debited from seller's wallet")
-    private BigDecimal creditedFunds;
+    private BigDecimal debitedFunds;
 
     @Schema(description = "Information about the fees that were taken by the client for this transaction")
     private BigDecimal fees;
 
     @Schema(
-        description = "The currency in ISO 4217 format. Only `EUR` is supported", 
+        description = "The currency in ISO 4217 format. Only `EUR` is supported",
         externalDocs = @ExternalDocumentation(url = "https://en.wikipedia.org/wiki/ISO_4217")
     )
     private String currency;
 
     @Schema(description = "Transaction status")
     private EnumTransactionStatus status;
+
+    @Schema(description = "Date of transaction status last update")
+    private ZonedDateTime statusUpdatedOn;
 
     @Schema(description = "Date of creation")
     private ZonedDateTime createdOn;
@@ -49,5 +65,35 @@ public class PayOutDto {
 
     @Schema(description = "A custom reference that will appear on the user’s bank statement")
     private String bankwireRef;
+
+    @JsonInclude(Include.NON_NULL)
+    private CustomerDto provider;
+
+    @JsonInclude(Include.NON_EMPTY)
+    private String providerPayOut;
+
+    @JsonInclude(Include.NON_EMPTY)
+    private String providerResultCode;
+
+    @JsonInclude(Include.NON_EMPTY)
+    private String providerResultMessage;
+
+    @JsonInclude(Include.NON_EMPTY)
+    private String refund;
+
+    @JsonInclude(Include.NON_NULL)
+    private ZonedDateTime refundCreatedOn;
+
+    @JsonInclude(Include.NON_NULL)
+    private ZonedDateTime refundExecutedOn;
+
+    @JsonInclude(Include.NON_NULL)
+    private EnumTransactionStatus refundStatus;
+
+    @JsonInclude(Include.NON_EMPTY)
+    private String refundReasonType;
+
+    @JsonInclude(Include.NON_EMPTY)
+    private String refundReasonMessage;
 
 }

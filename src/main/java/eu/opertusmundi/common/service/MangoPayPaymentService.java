@@ -49,6 +49,7 @@ import com.mangopay.entities.Client;
 import com.mangopay.entities.IdempotencyResponse;
 import com.mangopay.entities.PayIn;
 import com.mangopay.entities.PayOut;
+import com.mangopay.entities.Refund;
 import com.mangopay.entities.Transfer;
 import com.mangopay.entities.User;
 import com.mangopay.entities.UserLegal;
@@ -74,6 +75,7 @@ import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
 import eu.opertusmundi.common.domain.PayInSubscriptionBillingItemEntity;
+import eu.opertusmundi.common.domain.PayOutEntity;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.account.AccountDto;
@@ -105,6 +107,7 @@ import eu.opertusmundi.common.model.payment.PayInItemDto;
 import eu.opertusmundi.common.model.payment.PayInStatusUpdateCommand;
 import eu.opertusmundi.common.model.payment.PayOutCommandDto;
 import eu.opertusmundi.common.model.payment.PayOutDto;
+import eu.opertusmundi.common.model.payment.PayOutStatusUpdateCommand;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.PaymentMessageCode;
 import eu.opertusmundi.common.model.payment.TransferDto;
@@ -112,12 +115,14 @@ import eu.opertusmundi.common.model.payment.UserCardCommand;
 import eu.opertusmundi.common.model.payment.UserCommand;
 import eu.opertusmundi.common.model.payment.UserPaginationCommand;
 import eu.opertusmundi.common.model.payment.UserRegistrationCommand;
+import eu.opertusmundi.common.model.payment.WalletDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.OrderRepository;
 import eu.opertusmundi.common.repository.PayInItemHistoryRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
+import eu.opertusmundi.common.repository.PayOutRepository;
 
 @Service
 @Transactional
@@ -147,6 +152,9 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     private PayInRepository payInRepository;
 
     @Autowired
+    private PayOutRepository payOutRepository;
+
+    @Autowired
     private PayInItemHistoryRepository payInItemHistoryRepository;
 
     @Autowired
@@ -157,6 +165,9 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
     @Autowired
     private OrderFulfillmentService orderFulfillmentService;
+
+    @Autowired
+    private PayOutService payOutService;
 
     @Override
     public ClientDto getClient() throws PaymentException {
@@ -466,7 +477,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final AccountEntity              account  = this.getAccount(command.getUserKey());
             final CustomerProfessionalEntity customer = account.getProfile().getProvider();
 
-            this.ensureConsumer(customer, command.getUserKey());
+            this.ensureCostumer(customer, command.getUserKey());
 
             final int               page           = command.getPage() < 1 ? 1 : command.getPage();
             final int               size           = command.getSize() < 1 ? 10 : command.getSize();
@@ -489,7 +500,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final AccountEntity  account  = this.getAccount(command.getUserKey());
             final CustomerEntity customer = account.getProfile().getConsumer();
 
-            this.ensureConsumer(customer, command.getUserKey());
+            this.ensureCostumer(customer, command.getUserKey());
 
             final int        page           = command.getPage() < 1 ? 1 : command.getPage();
             final int        size           = command.getSize() < 1 ? 10 : command.getSize();
@@ -512,7 +523,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final AccountEntity  account  = this.getAccount(command.getUserKey());
             final CustomerEntity customer = account.getProfile().getConsumer();
 
-            this.ensureConsumer(customer, command.getUserKey());
+            this.ensureCostumer(customer, command.getUserKey());
 
             final String mangoPayUserId = customer.getPaymentProviderUser();
             final Card   card           = this.api.getCardApi().get(command.getCardId());
@@ -538,7 +549,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final AccountEntity  account  = this.getAccount(command.getUserKey());
             final CustomerEntity customer = account.getProfile().getConsumer();
 
-            this.ensureConsumer(customer, command.getUserKey());
+            this.ensureCostumer(customer, command.getUserKey());
 
             final Card card = this.api.getCardApi().get(command.getCardId());
 
@@ -558,7 +569,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final AccountEntity  account  = this.getAccount(command.getUserKey());
             final CustomerEntity customer = account.getProfile().getConsumer();
 
-            this.ensureConsumer(customer, command.getUserKey());
+            this.ensureCostumer(customer, command.getUserKey());
 
             final String           mangoPayUserId      = customer.getPaymentProviderUser();
             final CardRegistration registrationRequest = new CardRegistration();
@@ -581,7 +592,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final AccountEntity  account  = this.getAccount(command.getUserKey());
             final CustomerEntity customer = account.getProfile().getConsumer();
 
-            this.ensureConsumer(customer, command.getUserKey());
+            this.ensureCostumer(customer, command.getUserKey());
 
             final CardRegistration registrationRequest = new CardRegistration();
             registrationRequest.setId(command.getRegistrationId());
@@ -657,13 +668,84 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     @Override
-    public EnumTransactionStatus getTransactionStatus(String payIn) throws PaymentException {
+    public EnumTransactionStatus getPayInStatus(String payIn) throws PaymentException {
         try {
             final PayIn result = this.api.getPayInApi().get(payIn);
 
             return EnumTransactionStatus.from(result.getStatus());
         } catch (final Exception ex) {
-            throw this.wrapException("Update PayIn", ex, payIn);
+            throw this.wrapException("Get PayIn status", ex, payIn);
+        }
+    }
+
+    @Override
+    public AccountDto refreshUserWallets(UUID userKey) throws PaymentException {
+        try {
+            final AccountEntity  account  = this.accountRepository.findOneByKey(userKey).orElse(null);
+            final CustomerEntity consumer = account.getConsumer();
+            final CustomerEntity provider = account.getProvider();
+
+            if (consumer != null) {
+                this.ensureCostumer(consumer, userKey);
+
+                final String    walletId = consumer.getPaymentProviderWallet();
+                final Wallet    wallet   = this.api.getWalletApi().get(walletId);
+                final WalletDto result   = WalletDto.from(wallet);
+
+                consumer.setWalletFunds(result.getAmount());
+                consumer.setWalletFundsUpdatedOn(ZonedDateTime.now());
+            }
+            if (provider != null) {
+                this.ensureCostumer(provider, userKey);
+
+                final String    walletId = provider.getPaymentProviderWallet();
+                final Wallet    wallet   = this.api.getWalletApi().get(walletId);
+                final WalletDto result   = WalletDto.from(wallet);
+
+                provider.setWalletFunds(result.getAmount());
+                provider.setWalletFundsUpdatedOn(ZonedDateTime.now());
+            }
+
+            this.accountRepository.saveAndFlush(account);
+
+            return account.toDto();
+        } catch (final ResponseException ex) {
+            logger.error("Failed to load customer wallet", ex);
+
+            throw new PaymentException("[MANGOPAY] Error: " + ex.getApiMessage(), ex);
+        } catch (final PaymentException ex) {
+            throw ex;
+        } catch (final Exception ex) {
+            throw this.wrapException("Get Wallet", ex, userKey);
+        }
+    }
+
+    @Override
+    public WalletDto updateCustomerWalletFunds(UUID userKey, EnumCustomerType type) throws PaymentException {
+        try {
+            final AccountEntity  account  = this.accountRepository.findOneByKey(userKey).orElse(null);
+            final CustomerEntity customer = type == EnumCustomerType.CONSUMER ? account.getConsumer() : account.getProvider();
+
+            this.ensureCostumer(customer, userKey);
+
+            final String    walletId = customer.getPaymentProviderWallet();
+            final Wallet    wallet   = this.api.getWalletApi().get(walletId);
+            final WalletDto result   = WalletDto.from(wallet);
+
+            customer.setWalletFunds(result.getAmount());
+            customer.setWalletFundsUpdatedOn(ZonedDateTime.now());
+
+            this.accountRepository.saveAndFlush(account);
+
+            return result;
+        } catch (final ResponseException ex) {
+            logger.error("Failed to load customer wallet", ex);
+
+            throw new PaymentException("[MANGOPAY] Error: " + ex.getApiMessage(), ex);
+        } catch (final PaymentException ex) {
+            throw ex;
+        } catch (final Exception ex) {
+            throw this.wrapException("Get Wallet", ex, userKey);
         }
     }
 
@@ -692,7 +774,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final OrderEntity    order          = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).orElse(null);
 
             // Check customer
-            this.ensureConsumer(customer, command.getUserKey());
+            this.ensureCostumer(customer, command.getUserKey());
 
             // Check order
             this.ensureOrder(order, command.getOrderKey());
@@ -755,7 +837,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final OrderEntity    order          = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).orElse(null);
 
             // Check customer
-            this.ensureConsumer(customer, command.getUserKey());
+            this.ensureCostumer(customer, command.getUserKey());
 
             // Check order
             this.ensureOrder(order, command.getOrderKey());
@@ -888,6 +970,11 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 }
             }
 
+            // Update consumer wallet if PayIn was successful
+            if (result.getStatus() == EnumTransactionStatus.SUCCEEDED) {
+                this.updateCustomerWalletFunds(payInEntity.getConsumer().getKey(), EnumCustomerType.CONSUMER);
+            }
+
             return result;
         } catch (final Exception ex) {
             throw this.wrapException("Update PayIn", ex, providerPayInId);
@@ -967,7 +1054,17 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
                     transfer.setKey(item.getTransferKey());
                     transfers.add(transfer);
+
+                    // Update provider wallet
+                    if (transfer.getStatus() == EnumTransactionStatus.SUCCEEDED) {
+                        this.updateCustomerWalletFunds(item.getProvider().getKey(), EnumCustomerType.PROVIDER);
+                    }
                 }
+            }
+
+            // Update consumer wallet if at least one transfer exists
+            if (!transfers.isEmpty()) {
+                this.updateCustomerWalletFunds(debitAccount.getKey(), EnumCustomerType.CONSUMER);
             }
 
             return transfers;
@@ -1085,52 +1182,184 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     @Override
-    public PayOutDto createPayOut(PayOutCommandDto command) throws PaymentException {
+    public PayOutDto createPayOutAtOpertusMundi(PayOutCommandDto command) throws PaymentException {
         try {
-            final AccountEntity              account        = this.getAccount(command.getUserKey());
-            final CustomerProfessionalEntity customer       = account.getProfile().getProvider();
-            final String                     idempotencyKey = command.getPayOutKey().toString();
+            // Account with provider role must exist
+            final AccountEntity              account  = this.getAccount(command.getProviderKey());
+            final CustomerProfessionalEntity customer = account.getProfile().getProvider();
 
             if (customer == null) {
                 throw new PaymentException(
                     PaymentMessageCode.SERVER_ERROR,
-                    String.format("[MANGOPAY] Customer was not found for account with key [%s]", command.getUserKey())
+                    String.format("[MANGOPAY] Customer was not found for account [key=%s]", command.getProviderKey())
                 );
             }
+
+            // Funds must exist
+            if (customer.getWalletFunds().compareTo(command.getDebitedFunds()) < 0) {
+                throw new PaymentException(PaymentMessageCode.VALIDATION_ERROR, "Not enough funds. Check wallet balance");
+            }
+            // Fees are applied in Transfers.
+            command.setFees(BigDecimal.ZERO);
+
+            // Generate unique reference number and create PayOut locally
+            final String bankWireRef = this.createReferenceNumber();
+
+            command.setBankWireRef(bankWireRef);
+            final PayOutDto payout = this.payOutRepository.createPayOut(command);
+
+            // Start PayOut workflow instance
+            this.payOutService.start(command.getAdminUserKey(), payout.getKey());
+
+            // Refresh provider's wallet from the payment provider
+            this.updateCustomerWalletFunds(command.getProviderKey(), EnumCustomerType.PROVIDER);
+
+            return payout;
+        } catch (final Exception ex) {
+            throw this.wrapException("Create PayOut", ex, command);
+        }
+    }
+
+    @Override
+    public PayOutDto createPayOutAtProvider(UUID payOutKey) throws PaymentException {
+        try {
+            final PayOutEntity payOut = this.payOutRepository.findOneEntityByKey(payOutKey).orElse(null);
+
+            if (payOut == null) {
+                throw new PaymentException(
+                    PaymentMessageCode.SERVER_ERROR,
+                    String.format("[MANGOPAY] PayOut was not found [key=%s]", payOutKey)
+                );
+            }
+
+            final String idempotencyKey = payOut.getKey().toString();
 
             // Check if this is a retry operation
             PayOut payoutResponse = this.<PayOut>getResponse(idempotencyKey);
 
             // Create a new PayPout if needed
             if (payoutResponse == null) {
-                final PayOut payOutRequest = this.createPayOut(customer, command);
+                final PayOut payOutRequest = this.createPayOut(payOut);
 
                 payoutResponse = this.api.getPayOutApi().create(idempotencyKey, payOutRequest);
             }
 
-            // TODO: Create result
-            return null;
+            final PayOutStatusUpdateCommand update = PayOutStatusUpdateCommand.builder()
+                .createdOn(this.timestampToDate(payoutResponse.getCreationDate()))
+                .executedOn(this.timestampToDate(payoutResponse.getExecutionDate()))
+                .key(payOutKey)
+                .providerPayOutId(payoutResponse.getId())
+                .resultCode(payoutResponse.getResultCode())
+                .resultMessage(payoutResponse.getResultMessage())
+                .status(EnumTransactionStatus.from(payoutResponse.getStatus()))
+                .build();
+
+            this.payOutRepository.updatePayOutStatus(update);
+
+            return payOut.toDto();
         } catch (final Exception ex) {
-            throw this.wrapException("Create PayOut", ex, command);
+            throw this.wrapException("Create MANGOPAY PayOut", ex, payOutKey);
         }
     }
 
-    private PayOut createPayOut(CustomerProfessionalEntity customer, PayOutCommandDto command) {
+    @Override
+    public void sendPayOutStatusUpdateMessage(String payOutId) throws PaymentException {
+        try {
+            final PayOutEntity payOutEntity = this.ensurePayOut(payOutId);
+
+            final PayOut payOutObject = this.api.getPayOutApi().get(payOutId);
+
+            // Update workflow instance only if status has been modified
+            if (payOutEntity.getStatus() != EnumTransactionStatus.from(payOutObject.getStatus())) {
+                this.payOutService.sendPayOutStatusUpdateMessage(
+                    payOutEntity.getKey(),
+                    EnumTransactionStatus.from(payOutObject.getStatus())
+                );
+            }
+        } catch (final Exception ex) {
+            throw this.wrapException("Update PayIn", ex, payOutId);
+        }
+    }
+
+    @Override
+    public PayOutDto updatePayOut(UUID payOutKey, String payOutId) throws PaymentException {
+        try {
+            // Ensure that the PayOut record exists in our database
+            final PayOutEntity payOutEntity = this.ensurePayOut(payOutId);
+
+            Assert.isTrue(payOutKey.equals(payOutEntity.getKey()), String.format(
+                "Expected PayOut entity key to match parameter payOutKey [key=%s, payOutKey=%s]" ,
+                payOutEntity.getKey(), payOutKey
+            ));
+
+            // Fetch PayIn object from the Payment Provider (MANGOPAY)
+            final PayOut payOutObject = this.api.getPayOutApi().get(payOutId);
+
+            // Update PayIn local instance only
+            final PayOutStatusUpdateCommand command = PayOutStatusUpdateCommand.builder()
+                .createdOn(this.timestampToDate(payOutObject.getCreationDate()))
+                .executedOn(this.timestampToDate(payOutObject.getExecutionDate()))
+                .key(payOutEntity.getKey())
+                .providerPayOutId(payOutObject.getId())
+                .resultCode(payOutObject.getResultCode())
+                .resultMessage(payOutObject.getResultMessage())
+                .status(EnumTransactionStatus.from(payOutObject.getStatus()))
+                .build();
+
+            final PayOutDto result = this.payOutRepository.updatePayOutStatus(command);
+
+
+            // Update provider wallet
+            this.updateCustomerWalletFunds(payOutEntity.getProvider().getKey(), EnumCustomerType.PROVIDER);
+
+            return result;
+        } catch (final Exception ex) {
+            throw this.wrapException("Update PayIn", ex, payOutId);
+        }
+    }
+
+    @Override
+    public PayOutDto updatePayOutRefund(String refundId) throws PaymentException {
+        try {
+            final Refund refund = this.api.getRefundApi().get(refundId);
+
+            final PayOutEntity payOutEntity = this.ensurePayOut(refund.getInitialTransactionId());
+
+            payOutEntity.setRefund(refundId);
+            payOutEntity.setRefundCreatedOn(this.timestampToDate(refund.getCreationDate()));
+            payOutEntity.setRefundExecutedOn(this.timestampToDate(refund.getExecutionDate()));
+            payOutEntity.setRefundReasonMessage(refund.getRefundReason().getRefundReasonMessage());
+            payOutEntity.setRefundReasonType(refund.getRefundReason().getRefundReasonType().toString());
+            payOutEntity.setRefundStatus(EnumTransactionStatus.from(refund.getStatus()));
+
+            this.payOutRepository.saveAndFlush(payOutEntity);
+
+            return payOutEntity.toDto();
+        } catch (final Exception ex) {
+            throw this.wrapException("Update MANGOPAY Refund", ex, refundId);
+        }
+    }
+
+    private PayOut createPayOut(PayOutEntity payOut) {
+        final CustomerProfessionalEntity customer = (CustomerProfessionalEntity) payOut.getProvider().getProvider();
+
+        Assert.notNull(customer, "Expected a non-null provider");
+
         final String userId        = customer.getPaymentProviderUser();
         final String walletId      = customer.getPaymentProviderWallet();
         final String bankAccountId = customer.getBankAccount().getId();
 
         final PayOutPaymentDetailsBankWire details = new PayOutPaymentDetailsBankWire();
         details.setBankAccountId(bankAccountId);
-        details.setBankWireRef(command.getBankWireRef());
+        details.setBankWireRef(payOut.getBankwireRef());
 
         final PayOut result = new PayOut();
         result.setAuthorId(userId);
-        result.setDebitedFunds(new Money(CurrencyIso.EUR, command.getDebitedFunds()));
+        result.setDebitedFunds(new Money(CurrencyIso.EUR, payOut.getDebitedFunds().multiply(BigDecimal.valueOf(100L)).intValue()));
         result.setDebitedWalletId(walletId);
-        result.setFees(new Money(CurrencyIso.EUR, command.getFees()));
+        result.setFees(new Money(CurrencyIso.EUR, payOut.getPlatformFees().multiply(BigDecimal.valueOf(100L)).intValue()));
         result.setMeanOfPaymentDetails(details);
-        result.setTag(command.getPayOutKey().toString());
+        result.setTag(payOut.getKey().toString());
 
         return result;
     }
@@ -1507,11 +1736,11 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         return result;
     }
 
-    private void ensureConsumer(CustomerEntity consumer, UUID key) throws PaymentException {
+    private void ensureCostumer(CustomerEntity consumer, UUID key) throws PaymentException {
         if (consumer == null) {
             throw new PaymentException(
                 PaymentMessageCode.PLATFORM_CUSTOMER_NOT_FOUND,
-                String.format("[MANGOPAY] Consumer registration was not found for account with key [%s]", key)
+                String.format("[MANGOPAY] Customer registration was not found for account with key [%s]", key)
             );
         }
     }
@@ -1542,6 +1771,19 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         }
 
         return payInEntity;
+    }
+
+    private PayOutEntity ensurePayOut(String providerPayOutId) {
+        final PayOutEntity payOutEntity = this.payOutRepository.findOneByPayOutId(providerPayOutId).orElse(null);
+
+        if(providerPayOutId == null) {
+            throw new PaymentException(
+                PaymentMessageCode.SERVER_ERROR,
+                String.format("[OpertusMundi] PayOut [%s] was not found", providerPayOutId)
+            );
+        }
+
+        return payOutEntity;
     }
 
     private PayInItemEntity ensurePayInItemTransfer(String transferId) {

@@ -5,10 +5,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import javax.persistence.LockModeType;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -46,6 +49,11 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
          + "WHERE a.key = :key")
     Optional<AccountEntity> findOneByKey(@Param("key") UUID key);
 
+    @Lock(LockModeType.PESSIMISTIC_READ)
+    @Query("SELECT a FROM Account a  "
+         + "WHERE a.key = :key")
+    Optional<AccountEntity> findAndLockOneByKey(@Param("key") UUID key);
+
     @Query("SELECT a FROM Account a "
          + "LEFT OUTER JOIN FETCH a.profile p "
          + "WHERE a.email = :email")
@@ -65,15 +73,38 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
 
     Optional<AccountEntity> findOneByEmailAndIdNot(String email, Integer id);
 
-    @Query("SELECT     a "
-         + "FROM Account a "
+    @Query("SELECT a FROM Account a "
+         + "LEFT OUTER JOIN a.profile p "
+         + "LEFT OUTER JOIN p.consumer cr "
+         + "LEFT OUTER JOIN p.provider pr "
          + "WHERE      (:email is null or a.email like :email)"
     )
     Page<AccountEntity> findAll(
         @Param("email")String email,
         Pageable pageable
     );
-    
+    @Query("SELECT a FROM Account a "
+         + "LEFT OUTER JOIN a.profile p "
+         + "LEFT OUTER JOIN p.consumer cr "
+         + "WHERE  (:email is null or a.email like :email) and "
+         + "       (p.consumer is not null) "
+    )
+    Page<AccountEntity> findAllConsumers(
+        @Param("email")String email,
+        Pageable pageable
+    );
+
+    @Query("SELECT a FROM Account a "
+         + "LEFT OUTER JOIN a.profile p "
+         + "LEFT OUTER JOIN p.provider pr "
+         + "WHERE  (:email is null or a.email like :email) and "
+         + "       (p.provider is not null) "
+    )
+    Page<AccountEntity> findAllProviders(
+        @Param("email")String email,
+        Pageable pageable
+    );
+
     @Transactional(readOnly = false)
     default AccountDto updateProfile(AccountProfileCommandDto command) {
         // Get account
@@ -252,9 +283,9 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
             level.setLevel(consumer.getKycLevel());
             level.setUpdatedOn(consumer.getCreatedAt());
             consumer.getLevelHistory().add(level);
-            
+
             profile.setConsumer(consumer);
-            
+
             // Add ROLE_CONSUMER to the account
             account.grant(EnumRole.ROLE_CONSUMER, null);
         } else {
@@ -372,7 +403,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
             level.setLevel(provider.getKycLevel());
             level.setUpdatedOn(provider.getCreatedAt());
             provider.getLevelHistory().add(level);
-            
+
             profile.setProvider(provider);
 
             // Add ROLE_PROVIDER to the account

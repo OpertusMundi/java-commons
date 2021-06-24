@@ -1,6 +1,10 @@
 package eu.opertusmundi.common.model.payment;
 
+import java.math.BigDecimal;
 import java.util.UUID;
+
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.Digits;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -13,26 +17,22 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PayOutCommandDto {
-  
-    @JsonIgnore
-    private UUID userKey;
-    
-    @JsonIgnore
-    private UUID payOutKey;
 
-    @Schema(description = "A custom reference you wish to appear on the user’s bank statement", maxLength = 12)
-    private String bankWireRef;
+    @JsonIgnore
+    private UUID adminUserKey;
+
+    @JsonIgnore
+    private UUID providerKey;
 
     @Schema(description = "Information about the funds that are being debited")
-    private int debitedFunds;
+    @Digits(integer = 10, fraction = 2)
+    @DecimalMin(value = "0.00", inclusive = false)
+    private BigDecimal debitedFunds;
 
-    @Schema(
-        description = "Information about the fees that were taken by the client for this "
-                    + "transaction (and were hence transferred to the Client's platform wallet)"
-    )
-    private int fees;
+    @JsonIgnore
+    private BigDecimal fees;
 
-    @Schema(description = "Application specific information for this PayOut")
-    private String tag;
+    @JsonIgnore
+    private String bankWireRef;
 
 }
