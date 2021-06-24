@@ -143,10 +143,13 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         Assert.notNull(command, "Expected a non-null command");
         Assert.notNull(command.getOrderKey(), "Expected a non-null order key");
 
-        final OrderEntity         order    = this.findOrderByKey(command.getOrderKey()).orElse(null);
+        final OrderEntity order = this.findOrderByKey(command.getOrderKey()).orElse(null);
+
+        Assert.notNull(order, "Expected a non-null order");
+        Assert.notNull(order.getItems().size() == 1, "Expected a single order item");
+
         final AccountEntity       consumer = order.getConsumer();
         final BankWirePayInEntity payin    = new BankWirePayInEntity();
-
 
         payin.setBankAccount(BankAccountEmbeddable.from(command.getBankAccount()));
         payin.setConsumer(consumer);
@@ -176,6 +179,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         item.setIndex(1);
         item.setOrder(order);
         item.setPayin(payin);
+        item.setProvider(order.getItems().get(0).getProvider());
 
         payin.getItems().add(item);
 
@@ -189,7 +193,11 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         Assert.notNull(command, "Expected a non-null command");
         Assert.notNull(command.getOrderKey(), "Expected a non-null order key");
 
-        final OrderEntity           order    = this.findOrderByKey(command.getOrderKey()).orElse(null);
+        final OrderEntity order = this.findOrderByKey(command.getOrderKey()).orElse(null);
+
+        Assert.notNull(order, "Expected a non-null order");
+        Assert.notNull(order.getItems().size() == 1, "Expected a single order item");
+
         final AccountEntity         consumer = order.getConsumer();
         final CardDirectPayInEntity payin    = new CardDirectPayInEntity();
 
@@ -222,6 +230,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         item.setIndex(1);
         item.setOrder(order);
         item.setPayin(payin);
+        item.setProvider(order.getItems().get(0).getProvider());
 
         payin.getItems().add(item);
 
@@ -230,6 +239,15 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         return payin.toDto();
     }
 
+    /**
+     * Update PayIn status
+     *
+     * PayIn is updated only when status changes.
+     *
+     * @param command
+     * @return
+     * @throws PaymentException
+     */
     @Transactional(readOnly = false)
     default PayInDto updatePayInStatus(PayInStatusUpdateCommand command) throws PaymentException {
         final PayInEntity payIn = this.findOneByPayInId(command.getProviderPayInId()).orElse(null);

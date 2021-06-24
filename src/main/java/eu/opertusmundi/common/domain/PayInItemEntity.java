@@ -53,6 +53,16 @@ public abstract class PayInItemEntity {
     @Setter
     protected PayInEntity payin;
 
+    /**
+     * Reference to the provider account for the specific item
+     */
+    @NotNull
+    @ManyToOne(targetEntity = AccountEntity.class, fetch = FetchType.LAZY)
+    @JoinColumn(name = "provider", nullable = false)
+    @Getter
+    @Setter
+    protected AccountEntity provider;
+    
     @NotNull
     @Column(name = "`index`")
     @Getter
