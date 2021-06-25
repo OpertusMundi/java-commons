@@ -21,6 +21,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -1221,6 +1223,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     @Override
+    @Retryable(include = {PaymentException.class}, maxAttempts = 3, backoff = @Backoff(delay = 2000, maxDelay = 3000))
     public PayOutDto createPayOutAtProvider(UUID payOutKey) throws PaymentException {
         try {
             final PayOutEntity payOut = this.payOutRepository.findOneEntityByKey(payOutKey).orElse(null);
@@ -1256,7 +1259,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
             this.payOutRepository.updatePayOutStatus(update);
 
-            return payOut.toDto();
+            return payOut.toDto(true);
         } catch (final Exception ex) {
             throw this.wrapException("Create MANGOPAY PayOut", ex, payOutKey);
         }
