@@ -24,13 +24,13 @@ import eu.opertusmundi.common.model.analytics.BaseQuery;
 import eu.opertusmundi.common.model.analytics.DataPoint;
 import eu.opertusmundi.common.model.analytics.DataSeries;
 import eu.opertusmundi.common.model.analytics.SalesQuery;
-import eu.opertusmundi.common.model.spatial.CountryDto;
+import eu.opertusmundi.common.model.spatial.CountryCapitalCityDto;
 import eu.opertusmundi.common.repository.CountryRepository;
 
 @Service
 public class DefaultDataAnalysisService implements DataAnalysisService, InitializingBean {
 
-    private final Map<String, CountryDto> countries = new HashMap<>();
+    private final Map<String, CountryCapitalCityDto> countries = new HashMap<>();
 
     @PersistenceContext(unitName = "default")
     private EntityManager entityManager;
@@ -43,7 +43,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 
     @Override
     public void afterPropertiesSet() {
-        countryRepository.findAll().stream().forEach(c -> this.countries.put(c.getCode(), c.toDto()));
+        countryRepository.getCountryCapitalCities().stream().forEach(c -> this.countries.put(c.getCode(), c.toDto()));
 
         // Update ISO codes with the corresponding NUTS codes
         if (countries.containsKey("GB")) {
@@ -73,20 +73,22 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
         final List<Object>                args          = new ArrayList<>();
 
         if (time != null) {
-            result.setTimeUnit(time.getUnit());
-
             // Apply temporal dimension grouping
-            if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.YEAR.ordinal()) {
-                groupByFields.add("payin_year");
-            }
-            if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.MONTH.ordinal()) {
-                groupByFields.add("payin_month");
-            }
-            if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.WEEK.ordinal()) {
-                groupByFields.add("payin_week");
-            }
-            if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.DAY.ordinal()) {
-                groupByFields.add("payin_day");
+            if (time.getUnit() != null) {
+                result.setTimeUnit(time.getUnit());
+
+                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.YEAR.ordinal()) {
+                    groupByFields.add("payin_year");
+                }
+                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.MONTH.ordinal()) {
+                    groupByFields.add("payin_month");
+                }
+                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.WEEK.ordinal()) {
+                    groupByFields.add("payin_week");
+                }
+                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.DAY.ordinal()) {
+                    groupByFields.add("payin_day");
+                }
             }
 
             // Apply temporal dimension filtering
@@ -150,20 +152,23 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
             }
         }
 
-        String sqlString =
-            "select     %1$s , count(*), sum(payin_total_price) "
-          + "from       \"analytics\".payin_item_hist ";
+        String sqlString = groupByFields.isEmpty() ? "select count(*), sum(payin_total_price) " : "select %1$s , count(*), sum(payin_total_price) ";
+
+        sqlString += "from \"analytics\".payin_item_hist ";
 
         if (filters.size() > 0) {
             sqlString += "where      " + String.join(" and ", filters) + " ";
         }
 
-        sqlString +=
-            "group by   " + String.join(", ", groupByFields) + " "
-          + "order by   " + String.join(", ", groupByFields);
+        if(!groupByFields.isEmpty()) {
+            sqlString +=
+                "group by   " + String.join(", ", groupByFields) + " "
+              + "order by   " + String.join(", ", groupByFields);
+        }
 
-
-        sqlString = String.format(sqlString, String.join(", ", groupByFields));
+        if (!groupByFields.isEmpty()) {
+            sqlString = String.format(sqlString, String.join(", ", groupByFields));
+        }
 
         final Query nativeQuery = entityManager.createNativeQuery(sqlString);
 
@@ -181,7 +186,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
         // Update coordinates
         for (final DataPoint<BigDecimal> p : result.getPoints()) {
             if (p.getLocation() != null) {
-                final CountryDto country = countries.get(p.getLocation().getCode());
+                final CountryCapitalCityDto country = countries.get(p.getLocation().getCode());
                 if (country != null) {
                     p.getLocation().setLat(country.getLatitude());
                     p.getLocation().setLon(country.getLongitude());
@@ -204,7 +209,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
         // Update coordinates
         for (final DataPoint<BigDecimal> p : result.getPoints()) {
             if (p.getLocation() != null) {
-                final CountryDto country = countries.get(p.getLocation().getCode());
+                final CountryCapitalCityDto country = countries.get(p.getLocation().getCode());
                 if (country != null) {
                     p.getLocation().setLat(country.getLatitude());
                     p.getLocation().setLon(country.getLongitude());
@@ -228,19 +233,21 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
         // The order we extract values must match the order we apply grouping
         // fields
         if (time != null) {
-            p.setTime(new DataPoint.TimeInstant());
+            if (time.getUnit() != null) {
+                p.setTime(new DataPoint.TimeInstant());
 
-            if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.YEAR.ordinal()) {
-                p.getTime().setYear((Integer) o[index++]);
-            }
-            if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.MONTH.ordinal()) {
-                p.getTime().setMonth((Integer) o[index++]);
-            }
-            if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.WEEK.ordinal()) {
-                p.getTime().setWeek((Integer) o[index++]);
-            }
-            if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.DAY.ordinal()) {
-                p.getTime().setDay((Integer) o[index++]);
+                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.YEAR.ordinal()) {
+                    p.getTime().setYear((Integer) o[index++]);
+                }
+                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.MONTH.ordinal()) {
+                    p.getTime().setMonth((Integer) o[index++]);
+                }
+                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.WEEK.ordinal()) {
+                    p.getTime().setWeek((Integer) o[index++]);
+                }
+                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.DAY.ordinal()) {
+                    p.getTime().setDay((Integer) o[index++]);
+                }
             }
         }
 
