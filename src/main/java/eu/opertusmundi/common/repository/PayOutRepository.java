@@ -34,7 +34,7 @@ public interface PayOutRepository extends JpaRepository<PayOutEntity, Integer> {
 
     @Query("SELECT a FROM Account a WHERE a.key = :key")
     Optional<AccountEntity> findAccountByKey(@Param("key") UUID key);
-    
+
     @Query("SELECT p FROM PayOut p WHERE p.key = :key")
     Optional<PayOutEntity> findOneEntityByKey(@Param("key") UUID key);
 
@@ -48,7 +48,7 @@ public interface PayOutRepository extends JpaRepository<PayOutEntity, Integer> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM PayOut p WHERE p.payOut = :payOut")
     Optional<PayOutEntity> findOneByPayOutId(@Param("payOut") String payOut);
-    
+
     @Query("SELECT p FROM PayOut p WHERE (:status IS NULL or p.status = :status) and (p.provider.key = :userKey)")
     Page<PayOutEntity> findAllProviderPayOuts(
         @Param("userKey") UUID userKey, @Param("status") EnumTransactionStatus status, Pageable pageable
@@ -93,7 +93,7 @@ public interface PayOutRepository extends JpaRepository<PayOutEntity, Integer> {
         @Param("processInstance")   String processInstance
     );
 
-    
+
     @Transactional(readOnly = false)
     default PayOutDto createPayOut(PayOutCommandDto command) throws Exception {
         Assert.notNull(command, "Expected a non-null command");
@@ -127,9 +127,9 @@ public interface PayOutRepository extends JpaRepository<PayOutEntity, Integer> {
 
     /**
      * Update PayOut status
-     * 
+     *
      * PayOut is updated only when status changes.
-     * 
+     *
      * @param command
      * @return
      * @throws PaymentException
@@ -140,7 +140,7 @@ public interface PayOutRepository extends JpaRepository<PayOutEntity, Integer> {
 
         // Update only on status changes
         if (payOut.getStatus() == command.getStatus()) {
-            return payOut.toDto();
+            return payOut.toDto(true);
         }
 
         // Update PayOut
