@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import eu.opertusmundi.common.model.contract.PrintContractCommandDto;
+import eu.opertusmundi.common.model.contract.PrintConsumerContractCommand;
 import eu.opertusmundi.common.model.contract.ProviderTemplateContractCommandDto;
 import eu.opertusmundi.common.model.contract.ProviderTemplateContractDto;
-import eu.opertusmundi.common.model.contract.ProviderTemplateContractQueryDto;
+import eu.opertusmundi.common.model.contract.ProviderTemplateContractQuery;
 
 /**
  * Provider template contracts
@@ -20,7 +20,7 @@ public interface ProviderTemplateContractService {
      * @param query
      * @return
      */
-    List<ProviderTemplateContractDto> findAll(ProviderTemplateContractQueryDto query);
+    List<ProviderTemplateContractDto> findAll(ProviderTemplateContractQuery query);
 
     /**
      * Find all asset identifiers who are assigned a contract based on the
@@ -78,6 +78,6 @@ public interface ProviderTemplateContractService {
      * @param command
      * @return
      */
-    byte[] print(PrintContractCommandDto command);
+    byte[] print(PrintConsumerContractCommand command);
 
 }

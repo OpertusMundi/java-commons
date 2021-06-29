@@ -7,7 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import eu.opertusmundi.common.model.contract.ConsumerContractCommandDto;
 import eu.opertusmundi.common.model.contract.ConsumerContractDto;
-import eu.opertusmundi.common.model.contract.PrintContractCommandDto;
+import eu.opertusmundi.common.model.contract.PrintConsumerContractCommand;
+import eu.opertusmundi.common.model.contract.SignConsumerContractCommand;
 
 @Service
 @Transactional
@@ -26,7 +27,13 @@ public class DefaultConsumerContractService implements ConsumerContractService {
     }
 
     @Override
-    public byte[] print(PrintContractCommandDto command) {
+    public ConsumerContractDto print(PrintConsumerContractCommand command) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ConsumerContractDto sign(SignConsumerContractCommand command) {
         // TODO Auto-generated method stub
         return null;
     }

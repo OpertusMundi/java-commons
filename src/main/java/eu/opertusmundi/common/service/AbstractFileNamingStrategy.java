@@ -16,13 +16,11 @@ import eu.opertusmundi.common.model.file.FileSystemException;
 public abstract class AbstractFileNamingStrategy<C extends FileNamingStrategyContext> implements UserFileNamingStrategy<C> {
 
     protected static final Set<PosixFilePermission> DEFAULT_DIRECTORY_PERMISSIONS = PosixFilePermissions.fromString("rwxrwxr-x");
-    
+
     @Override
     public Path resolvePath(C ctx, String relativePath) throws IOException, FileSystemException {
         Assert.notNull(ctx, "Expected a non-null context");
         Assert.isTrue(!StringUtils.isEmpty(relativePath), "Expected a non-empty path");
-
-        this.validatePath(relativePath);
 
         return this.resolvePath(ctx, Paths.get(relativePath));
     }

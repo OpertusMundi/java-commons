@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import eu.opertusmundi.common.model.contract.MasterContractQueryDto;
 import eu.opertusmundi.common.model.contract.MasterTemplateContractCommandDto;
 import eu.opertusmundi.common.model.contract.MasterTemplateContractDto;
-import eu.opertusmundi.common.model.contract.PrintContractCommandDto;
+import eu.opertusmundi.common.model.contract.PrintConsumerContractCommand;
 
 @Service
 @Transactional
@@ -47,7 +47,7 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
     }
 
     @Override
-    public byte[] print(PrintContractCommandDto command) {
+    public byte[] print(PrintConsumerContractCommand command) {
         // TODO Auto-generated method stub
         return null;
     }

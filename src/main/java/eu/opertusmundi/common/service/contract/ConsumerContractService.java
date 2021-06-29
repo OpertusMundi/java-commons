@@ -4,7 +4,8 @@ import java.util.Optional;
 
 import eu.opertusmundi.common.model.contract.ConsumerContractCommandDto;
 import eu.opertusmundi.common.model.contract.ConsumerContractDto;
-import eu.opertusmundi.common.model.contract.PrintContractCommandDto;
+import eu.opertusmundi.common.model.contract.PrintConsumerContractCommand;
+import eu.opertusmundi.common.model.contract.SignConsumerContractCommand;
 
 /**
  * Consumer contracts
@@ -34,6 +35,14 @@ public interface ConsumerContractService {
      * @param command
      * @return
      */
-    byte[] print(PrintContractCommandDto command);
+    ConsumerContractDto print(PrintConsumerContractCommand command);
+
+    /**
+     * Sign contract
+     *
+     * @param command
+     * @return
+     */
+    ConsumerContractDto sign(SignConsumerContractCommand command);
 
 }

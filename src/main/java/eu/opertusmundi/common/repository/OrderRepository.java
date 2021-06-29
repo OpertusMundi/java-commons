@@ -101,9 +101,10 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
         order.getStatusHistory().add(status);
 
         final OrderItemEntity item = new OrderItemEntity();
+        item.setAssetId(command.getAsset().getId());
+        item.setAssetVersion(command.getAsset().getVersion());
         item.setDescription(command.getAsset().getTitle());
         item.setIndex(1);
-        item.setItem(command.getAsset().getId());
         item.setOrder(order);
         item.setPricingModel(command.getQuotation());
         item.setProvider(provider);
@@ -111,7 +112,6 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
         item.setTotalPrice(command.getQuotation().getQuotation().getTotalPrice());
         item.setTotalPriceExcludingTax(command.getQuotation().getQuotation().getTotalPriceExcludingTax());
         item.setTotalTax(command.getQuotation().getQuotation().getTax());
-        item.setVersion(command.getAsset().getVersion());
         switch (command.getAsset().getType()) {
             case VECTOR :
             case RASTER :
@@ -192,4 +192,18 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
         order.getStatusHistory().add(history);
     }
+
+    @Transactional(readOnly = false)
+    default void setContractSignedDate(UUID orderKey, ZonedDateTime contractSignedOn) throws Exception {
+        final OrderEntity order = this.findOrderEntityByKey(orderKey).orElse(null);
+
+        Assert.notNull(order, "Expected a non-null order");
+        Assert.isTrue(order.getItems().size() == 1, "Expected a single order item");
+
+        final OrderItemEntity item = order.getItems().get(0);
+        item.setContractSignedOn(contractSignedOn);
+
+        this.saveAndFlush(order);
+    }
+
 }

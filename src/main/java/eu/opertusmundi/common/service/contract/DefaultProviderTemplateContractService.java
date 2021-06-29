@@ -7,17 +7,17 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import eu.opertusmundi.common.model.contract.PrintContractCommandDto;
+import eu.opertusmundi.common.model.contract.PrintConsumerContractCommand;
 import eu.opertusmundi.common.model.contract.ProviderTemplateContractCommandDto;
 import eu.opertusmundi.common.model.contract.ProviderTemplateContractDto;
-import eu.opertusmundi.common.model.contract.ProviderTemplateContractQueryDto;
+import eu.opertusmundi.common.model.contract.ProviderTemplateContractQuery;
 
 @Service
 @Transactional
 public class DefaultProviderTemplateContractService implements ProviderTemplateContractService {
 
     @Override
-    public List<ProviderTemplateContractDto> findAll(ProviderTemplateContractQueryDto query) {
+    public List<ProviderTemplateContractDto> findAll(ProviderTemplateContractQuery query) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -59,7 +59,7 @@ public class DefaultProviderTemplateContractService implements ProviderTemplateC
     }
 
     @Override
-    public byte[] print(PrintContractCommandDto command) {
+    public byte[] print(PrintConsumerContractCommand command) {
         // TODO Auto-generated method stub
         return null;
     }

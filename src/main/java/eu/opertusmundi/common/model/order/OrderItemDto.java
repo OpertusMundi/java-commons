@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.model.order;
 
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -35,7 +36,22 @@ public class OrderItemDto {
         description = "Catalogue item unique Id",
         example = "opertusmundi.topio.1.asset"
     )
-    private String item;
+    private String assetId;
+
+    @Schema(
+        description = "Catalogue item version",
+        example = "1.1.0"
+    )
+    private String assetVersion;
+
+    @Schema(description = "Asset contract template identifier")
+    private Integer contractTemplateId;
+
+    @Schema(description = "Asset contract template version")
+    private Integer contractTemplateVersion;
+
+    @Schema(description = "Asset contract signature date")
+    private ZonedDateTime contractSignedOn;
 
     @Schema(description = "Item description at the time of the purchase")
     private String description;

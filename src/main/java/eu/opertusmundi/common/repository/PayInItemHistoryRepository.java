@@ -55,7 +55,7 @@ public interface PayInItemHistoryRepository extends JpaRepository<PayInItemHisto
 
             final OrderItemEntity orderItem = order.getItems().get(0);
 
-            e.setAssetId(orderItem.getItem());
+            e.setAssetId(orderItem.getAssetId());
             e.setAssetType(orderItem.getType());
             e.setPayInCountry(order.getCountry());
             e.setPayInTotalPrice(orderItem.getTotalPrice());

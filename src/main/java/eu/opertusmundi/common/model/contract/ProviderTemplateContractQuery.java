@@ -2,6 +2,8 @@ package eu.opertusmundi.common.model.contract;
 
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreType;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,13 +13,11 @@ import lombok.Setter;
 @Getter
 @Setter
 @Builder
-public class PrintContractCommandDto {
+@JsonIgnoreType
+public class ProviderTemplateContractQuery {
 
-    private EnumContract type;
+    private Boolean active;
 
     private UUID providerKey;
 
-    private UUID userKey;
-
-    private String assetId;
 }

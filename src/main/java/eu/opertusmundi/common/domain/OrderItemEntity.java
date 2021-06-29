@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.domain;
 
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -14,6 +15,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 
 import org.hibernate.annotations.TypeDef;
@@ -77,16 +79,33 @@ public class OrderItemEntity {
     private EnumTopicCategory segment;
 
     @NotNull
-    @Column(name = "`item`")
+    @Column(name = "`asset_pid`")
     @Getter
     @Setter
-    private String item;
+    private String assetId;
 
     @NotNull
-    @Column(name = "`version`")
+    @Column(name = "`asset_version`")
     @Getter
     @Setter
-    private String version;
+    private String assetVersion;
+
+    @NotNull
+    @Column(name = "`contract_template_id`")
+    @Getter
+    @Setter
+    private Integer contractTemplateId;
+
+    @NotNull
+    @Column(name = "`contract_template_version`")
+    @Getter
+    @Setter
+    private Integer contractTemplateVersion;
+
+    @Column(name = "`contract_signed_on`")
+    @Getter
+    @Setter
+    private ZonedDateTime contractSignedOn;
 
     @NotNull
     @Column(name = "`description`")
@@ -124,6 +143,11 @@ public class OrderItemEntity {
     @Setter
     private String discountCode;
 
+    @Transient
+    public boolean signed() {
+        return this.contractSignedOn != null;
+    }
+
     public OrderItemDto toDto() {
         return this.toDto(false);
     }
@@ -131,11 +155,15 @@ public class OrderItemEntity {
     public OrderItemDto toDto(boolean includeHelpdeskData) {
         final OrderItemDto i = new OrderItemDto();
 
+        i.setAssetId(assetId);
+        i.setAssetVersion(assetVersion);
+        i.setContractSignedOn(contractSignedOn);
+        i.setContractTemplateId(contractTemplateId);
+        i.setContractTemplateVersion(contractTemplateVersion);
         i.setDescription(description);
         i.setDiscountCode(discountCode);
         i.setId(id);
         i.setIndex(index);
-        i.setItem(item);
         i.setOrderId(order.getId());
         i.setPricingModel(pricingModel);
         i.setTotalPrice(totalPrice);

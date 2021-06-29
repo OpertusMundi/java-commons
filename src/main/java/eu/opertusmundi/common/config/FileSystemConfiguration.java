@@ -26,11 +26,13 @@ public class FileSystemConfiguration {
     private Path userDir;
 
     private Path draftDir;
-    
+
     private Path assetDir;
 
+    private Path contractDir;
+
     private static final Set<PosixFilePermission> DEFAULT_DIRECTORY_PERMISSIONS = PosixFilePermissions.fromString("rwxrwxr-x");
-    
+
     @Autowired
     private void setTempDir(@Value("${opertusmundi.file-system.temp-dir}") String d) {
         final Path path = Paths.get(d);
@@ -58,10 +60,19 @@ public class FileSystemConfiguration {
         Assert.isTrue(path.isAbsolute(), "Expected an absolute directory path");
         this.assetDir = path;
     }
-    
+
+    @Autowired
+    private void setContractDir(@Value("${opertusmundi.file-system.contract-dir}") String d) {
+        final Path path = Paths.get(d);
+        Assert.isTrue(path.isAbsolute(), "Expected an absolute directory path");
+        this.contractDir = path;
+    }
+
     @PostConstruct
     private void initialize() throws IOException {
-        for (final Path dataDir : Arrays.asList(this.tempDir, this.userDir, this.draftDir, this.assetDir)) {
+        for (final Path dataDir : Arrays.asList(
+            this.tempDir, this.userDir, this.draftDir, this.assetDir, this.contractDir
+        )) {
             try {
                 if(!dataDir.toFile().exists()) {
                     Files.createDirectories(dataDir);
@@ -87,10 +98,15 @@ public class FileSystemConfiguration {
     Path draftDirectory() {
         return this.draftDir;
     }
-    
+
     @Bean
     Path assetDirectory() {
         return this.assetDir;
+    }
+
+    @Bean
+    Path contractDirectory() {
+        return this.contractDir;
     }
 
 }

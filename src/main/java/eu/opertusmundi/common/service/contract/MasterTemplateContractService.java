@@ -7,7 +7,7 @@ import java.util.UUID;
 import eu.opertusmundi.common.model.contract.MasterContractQueryDto;
 import eu.opertusmundi.common.model.contract.MasterTemplateContractCommandDto;
 import eu.opertusmundi.common.model.contract.MasterTemplateContractDto;
-import eu.opertusmundi.common.model.contract.PrintContractCommandDto;
+import eu.opertusmundi.common.model.contract.PrintConsumerContractCommand;
 
 /**
  * OpertusMundi Master Template Contracts (MTC)
@@ -61,6 +61,6 @@ public interface MasterTemplateContractService {
      * @param command
      * @return
      */
-    byte[] print(PrintContractCommandDto command);
+    byte[] print(PrintConsumerContractCommand command);
 
 }

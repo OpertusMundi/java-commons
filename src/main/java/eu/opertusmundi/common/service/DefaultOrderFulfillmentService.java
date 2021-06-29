@@ -197,7 +197,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         final EffectivePricingModelDto pricingModel = orderItem.getPricingModel();
 
         // Check if the order item is already registered
-        final AccountAssetEntity ownedAsset = accountAssetRepository.findAllByUserKeyAndAssetId(userKey, orderItem.getItem()).stream()
+        final AccountAssetEntity ownedAsset = accountAssetRepository.findAllByUserKeyAndAssetId(userKey, orderItem.getAssetId()).stream()
             .filter(a -> a.getOrder().getId() == order.getId())
             .findFirst().orElse(null);
         if (ownedAsset != null) {
@@ -208,7 +208,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         final AccountAssetEntity reg = new AccountAssetEntity();
 
         reg.setAddedOn(ZonedDateTime.now());
-        reg.setAsset(orderItem.getItem());
+        reg.setAsset(orderItem.getAssetId());
         reg.setConsumer(payIn.getConsumer());
         reg.setOrder(order);
         reg.setPurchasedOn(payIn.getExecutedOn());
