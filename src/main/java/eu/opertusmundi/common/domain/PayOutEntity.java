@@ -24,10 +24,12 @@ import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PayOutDto;
+import eu.opertusmundi.common.model.payment.RefundDto;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -196,6 +198,21 @@ public class PayOutEntity {
         p.setStatus(status);
         p.setStatusUpdatedOn(statusUpdatedOn);
 
+        if(!StringUtils.isBlank(refund)) {
+            final RefundDto r = new RefundDto();
+
+            if (includeHelpdeskData) {
+                r.setRefund(refund);
+            }
+            r.setRefundCreatedOn(refundCreatedOn);
+            r.setRefundExecutedOn(refundExecutedOn);
+            r.setRefundReasonMessage(refundReasonMessage);
+            r.setRefundReasonType(refundReasonType);
+            r.setRefundStatus(refundStatus);
+
+            p.setRefund(r);
+        }
+
         if (includeHelpdeskData) {
             p.setProvider(this.provider.getProvider().toDto());
 
@@ -205,13 +222,6 @@ public class PayOutEntity {
             p.setProviderPayOut(payOut);
             p.setProviderResultCode(resultCode);
             p.setProviderResultMessage(resultMessage);
-
-            p.setRefund(refund);
-            p.setRefundCreatedOn(refundCreatedOn);
-            p.setRefundExecutedOn(refundExecutedOn);
-            p.setRefundReasonMessage(refundReasonMessage);
-            p.setRefundReasonType(refundReasonType);
-            p.setRefundStatus(refundStatus);
         }
 
         return p;

@@ -5,6 +5,8 @@ import java.time.ZonedDateTime;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -37,10 +39,12 @@ public class TransferDto {
     @Schema(description = "Date of execution")
     private ZonedDateTime executedOn;
 
-    @Schema(description = "Payment provider result code")
+    @Schema(hidden = true, description = "Payment provider result code")
+    @JsonInclude(Include.NON_NULL)
     private String resultCode;
 
-    @Schema(description = "Payment provider result message")
+    @Schema(hidden = true, description = "Payment provider result message")
+    @JsonInclude(Include.NON_NULL)
     private String resultMessage;
 
 }

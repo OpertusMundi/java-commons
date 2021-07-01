@@ -136,7 +136,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
             this.bpmClient.getObject().correlateMessage(message);
         } catch (final FeignException fex) {
-            if (fex.status() != HttpStatus.BAD_REQUEST.value()) {
+            if (fex.status() == HttpStatus.BAD_REQUEST.value()) {
                 // No process definition or execution matches the parameters.
                 //
                 // This error may occur if a web hook message is received before

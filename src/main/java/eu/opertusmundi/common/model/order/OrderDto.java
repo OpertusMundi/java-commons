@@ -15,6 +15,7 @@ import eu.opertusmundi.common.model.catalogue.client.EnumDeliveryMethod;
 import eu.opertusmundi.common.model.payment.EnumPaymentMethod;
 import eu.opertusmundi.common.model.payment.PayInDto;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -40,10 +41,12 @@ public class OrderDto {
         uniqueItems = true,
         schema = @Schema(implementation = OrderItemDto.class)
     )
+    @JsonInclude(Include.NON_EMPTY)
     private List<OrderItemDto> items = new ArrayList<>();
 
+    @Hidden
     @ArraySchema(arraySchema = @Schema(
-        description = "Order status history records"),
+        description = "Order status history records. This property is available only to Helpdesk application"),
         minItems = 0,
         uniqueItems = true,
         schema = @Schema(implementation = OrderStatusDto.class)
@@ -82,9 +85,11 @@ public class OrderDto {
     @Schema(description = "User friendly reference code for support")
     private String referenceNumber;
 
+    @Schema(hidden = true, description = "Order consumer customer. This property is available only to Helpdesk application")
     @JsonInclude(Include.NON_NULL)
     private CustomerDto consumer;
 
+    @Schema(hidden = true, description = "Order linked PayIn object. This property is available only to Helpdesk application")
     @JsonInclude(Include.NON_NULL)
     private PayInDto payIn;
 

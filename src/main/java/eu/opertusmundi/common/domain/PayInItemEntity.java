@@ -62,7 +62,7 @@ public abstract class PayInItemEntity {
     @Getter
     @Setter
     protected AccountEntity provider;
-    
+
     @NotNull
     @Column(name = "`index`")
     @Getter
@@ -134,11 +134,11 @@ public abstract class PayInItemEntity {
     }
 
     public PayInItemDto toDto() throws PaymentException {
-        return this.toDto(false);
+        return this.toDto(false, false, false);
     }
-    public abstract PayInItemDto toDto(boolean includeHelpdeskData);
+    public abstract PayInItemDto toDto(boolean includeDetails, boolean incluedTransfer, boolean includeHelpdeskData);
 
-    public TransferDto toTransferDto() {
+    public TransferDto toTransferDto(boolean includeHelpdeskData) {
         final TransferDto t = new TransferDto();
 
         if (StringUtils.isBlank(transfer)) {
@@ -151,9 +151,13 @@ public abstract class PayInItemEntity {
         t.setFees(transferFees);
         t.setId(transfer);
         t.setKey(transferKey);
-        t.setResultCode(transferResultCode);
-        t.setResultMessage(transferResultMessage);
         t.setStatus(transferStatus);
+
+        if (includeHelpdeskData) {
+            t.setResultCode(transferResultCode);
+            t.setResultMessage(transferResultMessage);
+        }
+
 
         return t;
     }

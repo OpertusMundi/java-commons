@@ -63,7 +63,7 @@ public class CardDirectPayInEntity extends PayInEntity {
         p.setTotalTax(totalTax);
 
         if (includeDetails) {
-            this.items.stream().map(PayInItemEntity::toDto).forEach(p::addItem);
+            this.items.stream().map(e -> e.toDto(includeDetails, includeHelpdeskData, includeHelpdeskData)).forEach(p::addItem);
         }
         if (includeHelpdeskData) {
             p.setConsumer(consumer.getProfile().getConsumer().toDto());

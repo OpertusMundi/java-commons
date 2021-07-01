@@ -28,14 +28,18 @@ public class PayInOrderItemEntity extends PayInItemEntity {
     private OrderEntity order;
 
     @Override
-    public PayInItemDto toDto(boolean includeHelpdeskData) {
+    public PayInItemDto toDto(boolean includeDetails, boolean includeTransfer, boolean includeHelpdeskData) {
         final OrderPayInItemDto i = new OrderPayInItemDto();
 
         i.setId(id);
         i.setIndex(index);
-        i.setOrder(this.order.toDto(includeHelpdeskData, includeHelpdeskData));
-        i.setTransfer(this.toTransferDto());
+        i.setOrder(this.order.toDto(includeDetails, includeHelpdeskData));
+        i.setPayIn(payin.getKey());
         i.setType(type);
+
+        if (includeTransfer || includeHelpdeskData) {
+            i.setTransfer(this.toTransferDto(includeHelpdeskData));
+        }
 
         return i;
     }

@@ -100,7 +100,9 @@ import eu.opertusmundi.common.model.payment.CardDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationCommandDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationDto;
 import eu.opertusmundi.common.model.payment.ClientDto;
+import eu.opertusmundi.common.model.payment.EnumPayInItemSortField;
 import eu.opertusmundi.common.model.payment.EnumPayInSortField;
+import eu.opertusmundi.common.model.payment.EnumPayOutSortField;
 import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.OrderPayInItemDto;
@@ -611,7 +613,6 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     @Override
     public OrderDto createOrderFromCart(CartDto cart, Location location) throws PaymentException {
         try {
-
             if (cart == null || cart.getItems().size() == 0) {
                 throw new PaymentException(PaymentMessageCode.CART_IS_EMPTY, "Cart is empty");
             }
@@ -663,10 +664,17 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     @Override
-    public PayInDto getPayIn(Integer userId, UUID payInKey) {
-        final PayInEntity payIn = this.payInRepository.findOneByAccountIdAndKey(userId, payInKey).orElse(null);
+    public PayInDto getConsumerPayIn(Integer userId, UUID payInKey) {
+        final PayInEntity payIn = this.payInRepository.findOneByConsumerIdAndKey(userId, payInKey).orElse(null);
 
         return payIn == null ? null : payIn.toDto();
+    }
+
+    @Override
+    public PayInItemDto getProviderPayInItem(Integer userId, UUID payInKey, Integer index) {
+        final PayInItemEntity item = this.payInRepository.findOnePayInItemByProvider(userId, payInKey, index).orElse(null);
+
+        return item == null ? null : item.toDto(true, true, false);
     }
 
     @Override
@@ -763,6 +771,23 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         final long           count   = page.getTotalElements();
         final List<PayInDto> records = page.getContent().stream()
             .map(p -> p.toDto(false, false))
+            .collect(Collectors.toList());
+
+        return PageResultDto.of(pageIndex, pageSize, records, count);
+    }
+
+    @Override
+    public PageResultDto<PayInItemDto> findAllProviderPayInItems(
+        UUID userKey, EnumTransactionStatus status, int pageIndex, int pageSize, EnumPayInItemSortField orderBy, EnumSortingOrder order
+    ) {
+        final Direction direction = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
+
+        final PageRequest           pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
+        final Page<PayInItemEntity> page        = this.payInRepository.findAllProviderPayInItems(userKey, status, pageRequest);
+
+        final long           count   = page.getTotalElements();
+        final List<PayInItemDto> records = page.getContent().stream()
+            .map(p -> p.toDto(false, false, false))
             .collect(Collectors.toList());
 
         return PageResultDto.of(pageIndex, pageSize, records, count);
@@ -1020,7 +1045,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 if (!StringUtils.isBlank(item.getTransfer())) {
                     // If a valid transfer transaction identifier exists, this
                     // is a retry operation
-                    transfers.add(item.toTransferDto());
+                    transfers.add(item.toTransferDto(true));
                     continue;
                 }
                 final String idempotencyKey = item.getTransferKey().toString();
@@ -1197,6 +1222,15 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 );
             }
 
+            // No pending PayOut records must exist
+            final long pending = this.payOutRepository.countProviderPendingPayOuts(command.getProviderKey());
+            if (pending != 0) {
+                throw new PaymentException(
+                    PaymentMessageCode.VALIDATION_ERROR,
+                    "Pending PayOut has been found. Wait until the current operation is completed"
+                );
+            }
+
             // Funds must exist
             if (customer.getWalletFunds().compareTo(command.getDebitedFunds()) < 0) {
                 throw new PaymentException(PaymentMessageCode.VALIDATION_ERROR, "Not enough funds. Check wallet balance");
@@ -1341,6 +1375,30 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         } catch (final Exception ex) {
             throw this.wrapException("Update MANGOPAY Refund", ex, refundId);
         }
+    }
+
+    @Override
+    public PayOutDto getProviderPayOut(Integer userId, UUID payOutKey) {
+        final PayOutEntity payOut = this.payOutRepository.findOneByAccountIdAndKey(userId, payOutKey).orElse(null);
+
+        return payOut == null ? null : payOut.toDto(false);
+    }
+
+    @Override
+    public PageResultDto<PayOutDto> findAllProviderPayOuts(
+        UUID userKey, EnumTransactionStatus status, int pageIndex, int pageSize, EnumPayOutSortField orderBy, EnumSortingOrder order
+    ) {
+        final Direction direction = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
+
+        final PageRequest        pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
+        final Page<PayOutEntity> page        = this.payOutRepository.findAllProviderPayOuts(userKey, status, pageRequest);
+
+        final long           count   = page.getTotalElements();
+        final List<PayOutDto> records = page.getContent().stream()
+            .map(p -> p.toDto(false))
+            .collect(Collectors.toList());
+
+        return PageResultDto.of(pageIndex, pageSize, records, count);
     }
 
     private PayOut createPayOut(PayOutEntity payOut) {

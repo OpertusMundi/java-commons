@@ -45,12 +45,15 @@ public class OrderItemDto {
     private String assetVersion;
 
     @Schema(description = "Asset contract template identifier")
+    @JsonInclude(Include.NON_NULL)
     private Integer contractTemplateId;
 
     @Schema(description = "Asset contract template version")
+    @JsonInclude(Include.NON_NULL)
     private Integer contractTemplateVersion;
 
     @Schema(description = "Asset contract signature date")
+    @JsonInclude(Include.NON_NULL)
     private ZonedDateTime contractSignedOn;
 
     @Schema(description = "Item description at the time of the purchase")

@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -47,8 +48,10 @@ public abstract class CustomerDto implements Serializable {
 
     protected EnumMangopayUserType type;
 
+    @Schema(description = "Wallet funds. Wallet data is updated when a new PayIn, Transfer or PayOut is created.")
     protected BigDecimal walletFunds;
 
+    @Schema(description = "Wallet last update. Wallet data is updated when a new PayIn, Transfer or PayOut is created.")
     protected ZonedDateTime walletFundsUpdatedOn;
 
 }

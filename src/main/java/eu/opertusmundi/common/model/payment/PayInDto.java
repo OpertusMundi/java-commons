@@ -40,16 +40,11 @@ public abstract class PayInDto {
     @Schema(description = "PayIn unique key")
     protected UUID key;
 
-    /**
-     * Identifier of the workflow definition used for processing this PayIn
-     * record
-     */
+    @Schema(hidden = true, description = "Identifier of the workflow definition used for processing this PayIn record")
     @JsonInclude(Include.NON_NULL)
     protected String processDefinition;
 
-    /**
-     * Identifier of the workflow instance processing this PayIn record
-     */
+    @Schema(hidden = true, description = "Identifier of the workflow instance processing this PayIn record")
     @JsonInclude(Include.NON_NULL)
     protected String processInstance;
 
@@ -101,15 +96,19 @@ public abstract class PayInDto {
     @Schema(description = "Platform reference number")
     protected String referenceNumber;
 
+    @Schema(hidden = true, description = "PayIn consumer customer")
     @JsonInclude(Include.NON_NULL)
     private CustomerDto consumer;
 
+    @Schema(hidden = true, description = "Payment provider identifier for PayIn")
     @JsonInclude(Include.NON_EMPTY)
     protected String providerPayIn;
 
+    @Schema(hidden = true, description = "Payment provider transaction result code")
     @JsonInclude(Include.NON_EMPTY)
     protected String providerResultCode;
 
+    @Schema(hidden = true, description = "Payment provider transaction result message")
     @JsonInclude(Include.NON_EMPTY)
     protected String providerResultMessage;
 

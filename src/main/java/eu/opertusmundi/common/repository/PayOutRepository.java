@@ -49,6 +49,10 @@ public interface PayOutRepository extends JpaRepository<PayOutEntity, Integer> {
     @Query("SELECT p FROM PayOut p WHERE p.payOut = :payOut")
     Optional<PayOutEntity> findOneByPayOutId(@Param("payOut") String payOut);
 
+
+    @Query("SELECT count(p) FROM PayOut p WHERE (p.status not in ('FAILED', 'SUCCEEDED')) and (p.provider.key = :userKey)")
+    long countProviderPendingPayOuts(@Param("userKey") UUID userKey);
+
     @Query("SELECT p FROM PayOut p WHERE (:status IS NULL or p.status = :status) and (p.provider.key = :userKey)")
     Page<PayOutEntity> findAllProviderPayOuts(
         @Param("userKey") UUID userKey, @Param("status") EnumTransactionStatus status, Pageable pageable

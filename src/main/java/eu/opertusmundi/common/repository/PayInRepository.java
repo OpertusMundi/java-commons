@@ -41,11 +41,11 @@ import io.jsonwebtoken.lang.Assert;
 @Transactional(readOnly = true)
 public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
 
-    @Query("SELECT o FROM Order o WHERE o.key = :key")
-    Optional<OrderEntity> findOrderByKey(UUID key);
-
     @Query("SELECT c FROM Cart c WHERE c.id = : id")
     Optional<CartEntity> findCartById(Integer id);
+
+    @Query("SELECT o FROM Order o WHERE o.key = :key")
+    Optional<OrderEntity> findOrderByKey(UUID key);
 
     @Query("SELECT p FROM PayIn p WHERE p.key = :key")
     Optional<PayInEntity> findOneEntityByKey(@Param("key") UUID key);
@@ -57,18 +57,57 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE i.order.key = key")
     Optional<PayInEntity> findOneByOrderKey(@Param("key") UUID key);
 
-    @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE p.key = :payInKey and p.consumer.id = :userId")
-    Optional<PayInEntity> findOneByAccountIdAndKey(@Param("userId") Integer userId, @Param("payInKey") UUID payInKey);
+    /**
+     * Find a consumer PayIn
+     *
+     * This method does not return PayIn records with payment method
+     * <b>CARD_DIRECT</b> which have status <b>CREATED</b>.
+     *
+     * @param userId
+     * @param payInKey
+     * @return
+     */
+    @Query("SELECT p FROM PayIn p JOIN FETCH p.items i "
+         + "WHERE  p.key = :payInKey and "
+         + "       p.consumer.id = :userId and "
+         + "       (p.status <> 'CREATED' or p.paymentMethod <> 'CARD_DIRECT')"
+    )
+    Optional<PayInEntity> findOneByConsumerIdAndKey(@Param("userId") Integer userId, @Param("payInKey") UUID payInKey);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE p.payIn = :payIn")
     Optional<PayInEntity> findOneByPayInId(@Param("payIn") String payIn);
 
+    @Query("SELECT i FROM PayInItem i WHERE i.payin.key = :payInKey and i.provider.id = :userId and i.index = :index")
+    Optional<PayInItemEntity> findOnePayInItemByProvider(
+        @Param("userId") Integer userId, @Param("payInKey") UUID payInKey, @Param("index") Integer index
+    );
+
     @Query("SELECT i FROM PayInItem i WHERE i.transfer = :transferId")
     Optional<PayInItemEntity> findOnePayInItemByTransferId(@Param("transferId") String transferId);
 
-    @Query("SELECT p FROM PayIn p WHERE (:status IS NULL or p.status = :status) and (p.consumer.key = :userKey)")
+    /**
+     * Query consumer PayIns
+     *
+     * This method does not return PayIn records with payment method
+     * <b>CARD_DIRECT</b> which have status <b>CREATED</b>.
+     *
+     * @param userKey
+     * @param status
+     * @param pageable
+     * @return
+     */
+    @Query("SELECT p FROM PayIn p "
+         + "WHERE (:status IS NULL or p.status = :status) and "
+         + "      (p.consumer.key = :userKey) and "
+         + "      (p.status <> 'CREATED' or p.paymentMethod <> 'CARD_DIRECT')"
+    )
     Page<PayInEntity> findAllConsumerPayIns(
+        @Param("userKey") UUID userKey, @Param("status") EnumTransactionStatus status, Pageable pageable
+    );
+
+    @Query("SELECT i FROM PayInItem i WHERE (:status IS NULL or i.payin.status = :status) and (i.provider.key = :userKey)")
+    Page<PayInItemEntity> findAllProviderPayInItems(
         @Param("userKey") UUID userKey, @Param("status") EnumTransactionStatus status, Pageable pageable
     );
 
@@ -126,7 +165,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
             pageable
         );
 
-        return page.map(i -> i.toDto(true));
+        return page.map(i -> i.toDto(true, true, true));
     }
 
     @Modifying

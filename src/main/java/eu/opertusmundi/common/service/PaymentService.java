@@ -19,9 +19,12 @@ import eu.opertusmundi.common.model.payment.CardDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationCommandDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationDto;
 import eu.opertusmundi.common.model.payment.ClientDto;
+import eu.opertusmundi.common.model.payment.EnumPayInItemSortField;
 import eu.opertusmundi.common.model.payment.EnumPayInSortField;
+import eu.opertusmundi.common.model.payment.EnumPayOutSortField;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PayInDto;
+import eu.opertusmundi.common.model.payment.PayInItemDto;
 import eu.opertusmundi.common.model.payment.PayOutCommandDto;
 import eu.opertusmundi.common.model.payment.PayOutDto;
 import eu.opertusmundi.common.model.payment.PaymentException;
@@ -158,13 +161,23 @@ public interface  PaymentService {
     String registerCard(CardRegistrationCommandDto command) throws PaymentException;
 
     /**
-     * Get PayIn by key
+     * Get consumer PayIn by key
      *
      * @param userId
      * @param payInKey
      * @return
      */
-    PayInDto getPayIn(Integer userId, UUID payInKey);
+    PayInDto getConsumerPayIn(Integer userId, UUID payInKey);
+
+    /**
+     * Get provider PayIn by key
+     *
+     * @param userId
+     * @param payInKey
+     * @param index
+     * @return
+     */
+    PayInItemDto getProviderPayInItem(Integer userId, UUID payInKey, Integer index);
 
     /**
      * Query payment provider service for PayIn transaction status
@@ -208,6 +221,21 @@ public interface  PaymentService {
      */
     PageResultDto<PayInDto> findAllConsumerPayIns(
         UUID userKey, EnumTransactionStatus status, int pageIndex, int pageSize, EnumPayInSortField orderBy, EnumSortingOrder order
+    );
+
+    /**
+     * Search provider PayIns
+     *
+     * @param userKey
+     * @param status
+     * @param pageIndex
+     * @param pageSize
+     * @param orderBy
+     * @param order
+     * @return
+     */
+    PageResultDto<PayInItemDto> findAllProviderPayInItems(
+        UUID userKey, EnumTransactionStatus status, int pageIndex, int pageSize, EnumPayInItemSortField orderBy, EnumSortingOrder order
     );
 
     /**
@@ -348,5 +376,29 @@ public interface  PaymentService {
      * @throws PaymentException
      */
     PayOutDto updatePayOutRefund(String refundId) throws PaymentException;
+
+    /**
+     * Get provider PayOut by key
+     *
+     * @param userId
+     * @param payOutKey
+     * @return
+     */
+    PayOutDto getProviderPayOut(Integer userId, UUID payOutKey);
+
+    /**
+     * Search provider PayOuts
+     *
+     * @param userKey
+     * @param status
+     * @param pageIndex
+     * @param pageSize
+     * @param orderBy
+     * @param order
+     * @return
+     */
+    PageResultDto<PayOutDto> findAllProviderPayOuts(
+        UUID userKey, EnumTransactionStatus status, int pageIndex, int pageSize, EnumPayOutSortField orderBy, EnumSortingOrder order
+    );
 
 }

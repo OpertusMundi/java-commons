@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import eu.opertusmundi.common.model.account.CustomerDto;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,12 +31,14 @@ public class PayOutDto {
      * Identifier of the workflow definition used for processing this PayIn
      * record
      */
+    @Hidden
     @JsonInclude(Include.NON_NULL)
     private String processDefinition;
 
     /**
      * Identifier of the workflow instance processing this PayIn record
      */
+    @Hidden
     @JsonInclude(Include.NON_NULL)
     private String processInstance;
 
@@ -66,34 +69,24 @@ public class PayOutDto {
     @Schema(description = "A custom reference that will appear on the user’s bank statement")
     private String bankwireRef;
 
+    @Hidden
     @JsonInclude(Include.NON_NULL)
     private CustomerDto provider;
 
+    @Hidden
     @JsonInclude(Include.NON_EMPTY)
     private String providerPayOut;
 
+    @Hidden
     @JsonInclude(Include.NON_EMPTY)
     private String providerResultCode;
 
+    @Hidden
     @JsonInclude(Include.NON_EMPTY)
     private String providerResultMessage;
 
-    @JsonInclude(Include.NON_EMPTY)
-    private String refund;
-
+    @Schema(description = "PayOut refund if the tranfer has failed e.g. the bank account is not active")
     @JsonInclude(Include.NON_NULL)
-    private ZonedDateTime refundCreatedOn;
-
-    @JsonInclude(Include.NON_NULL)
-    private ZonedDateTime refundExecutedOn;
-
-    @JsonInclude(Include.NON_NULL)
-    private EnumTransactionStatus refundStatus;
-
-    @JsonInclude(Include.NON_EMPTY)
-    private String refundReasonType;
-
-    @JsonInclude(Include.NON_EMPTY)
-    private String refundReasonMessage;
+    private RefundDto refund;
 
 }

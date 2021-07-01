@@ -90,13 +90,11 @@ public class OrderItemEntity {
     @Setter
     private String assetVersion;
 
-    @NotNull
     @Column(name = "`contract_template_id`")
     @Getter
     @Setter
     private Integer contractTemplateId;
 
-    @NotNull
     @Column(name = "`contract_template_version`")
     @Getter
     @Setter
@@ -157,9 +155,6 @@ public class OrderItemEntity {
 
         i.setAssetId(assetId);
         i.setAssetVersion(assetVersion);
-        i.setContractSignedOn(contractSignedOn);
-        i.setContractTemplateId(contractTemplateId);
-        i.setContractTemplateVersion(contractTemplateVersion);
         i.setDescription(description);
         i.setDiscountCode(discountCode);
         i.setId(id);
@@ -172,6 +167,9 @@ public class OrderItemEntity {
         i.setType(type);
 
         if (includeHelpdeskData) {
+            i.setContractSignedOn(contractSignedOn);
+            i.setContractTemplateId(contractTemplateId);
+            i.setContractTemplateVersion(contractTemplateVersion);
             i.setProvider(this.provider.getProvider().toDto());
         }
 

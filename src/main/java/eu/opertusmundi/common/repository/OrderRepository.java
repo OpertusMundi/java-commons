@@ -39,37 +39,160 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     @Query("SELECT c FROM Cart c WHERE c.id = :id")
     Optional<CartEntity> findCartById(@Param("id") Integer id);
 
-    @Query("SELECT p FROM PayIn p WHERE p.payIn = :payIn")
-    Optional<PayInEntity> findPayInById(@Param("payIn") String payIn);
-
     @Query("SELECT o FROM Order o WHERE o.key = :key")
     Optional<OrderEntity> findOrderEntityByKey(@Param("key") UUID key);
 
-    @Query("SELECT  o "
-         + "FROM    Order o "
-         + "WHERE   (:referenceNumber is null or o.referenceNumber like :referenceNumber) and"
+    /**
+     * Find a order created by a specific consumer
+     *
+     * This method does not return orders with status <b>CREATED</b>.
+     *
+     * @param consumerKey
+     * @param orderKey
+     * @return
+     */
+    @Query("SELECT o FROM Order o "
+         + "WHERE o.key = :orderKey and o.consumer.key = :consumerKey and o.status <> 'CREATED'"
+    )
+    Optional<OrderEntity> findOrderEntityByKeyAndConsumerKey(@Param("consumerKey") UUID consumerKey, @Param("orderKey") UUID orderKey);
+
+    /**
+     * Find an order linked to a specific provider.
+     *
+     * Orders support only a single item. Provider orders are the ones that
+     * reference an item with the same provider.
+     *
+     * This method does not return orders with status <b>CREATED</b>.
+     *
+     * @param providerKey
+     * @param orderKey
+     * @return
+     */
+    @Query("SELECT distinct i.order FROM OrderItem i "
+         + "WHERE i.order.key = :orderKey and i.provider.key = :providerKey and i.order.status <> 'CREATED'"
+    )
+    Optional<OrderEntity> findOrderEntityByKeyAndProviderKey(@Param("providerKey") UUID providerKey, @Param("orderKey") UUID orderKey);
+
+    @Query("SELECT  distinct o "
+         + "FROM    Order o INNER JOIN o.items i "
+         + "WHERE   (o.consumer.key = :consumerKey or cast(:consumerKey as org.hibernate.type.UUIDCharType) is null) and "
+         + "        (i.provider.key = :providerKey or cast(:providerKey as org.hibernate.type.UUIDCharType) is null) and "
+         + "        (:referenceNumber is null or o.referenceNumber like :referenceNumber) and "
          + "        (o.status in :status or :status is null)"
     )
-    Page<OrderEntity> findAllEntities(
+    Page<OrderEntity> findAll(
+        @Param("consumerKey") UUID consumerKey,
+        @Param("providerKey") UUID providerKey,
         @Param("referenceNumber")String referenceNumber,
         @Param("status") Set<EnumOrderStatus> status,
         Pageable pageable
     );
 
+    /**
+     * Query consumer orders
+     *
+     * This method does not return orders with status <b>CREATED</b>.
+     *
+     * @param consumerKey
+     * @param referenceNumber
+     * @param status
+     * @param pageable
+     * @return
+     */
+     @Query("SELECT  distinct o "
+          + "FROM    Order o "
+          + "WHERE   (o.consumer.key = :consumerKey) and "
+          + "        (:referenceNumber is null or o.referenceNumber like :referenceNumber) and "
+          + "        (o.status in :status or :status is null) and (o.status <> 'CREATED')"
+     )
+     Page<OrderEntity> findAllForConsumer(
+         @Param("consumerKey") UUID consumerKey,
+         @Param("referenceNumber")String referenceNumber,
+         @Param("status") Set<EnumOrderStatus> status,
+         Pageable pageable
+     );
+
+     /**
+      * Query provider orders
+      *
+      * Orders support only a single item. Provider orders are the ones that
+      * reference an item with the same provider.
+      *
+      * This method does not return orders with status <b>CREATED</b>.
+      *
+      * @param providerKey
+      * @param referenceNumber
+      * @param status
+      * @param pageable
+      * @return
+      */
+     @Query("SELECT  distinct o "
+          + "FROM    Order o INNER JOIN o.items i "
+          + "WHERE   (i.provider.key = :providerKey) and "
+          + "        (:referenceNumber is null or o.referenceNumber like :referenceNumber) and "
+          + "        (o.status in :status or :status is null) and (o.status <> 'CREATED')"
+     )
+     Page<OrderEntity> findAllForProvider(
+         @Param("providerKey") UUID providerKey,
+         @Param("referenceNumber")String referenceNumber,
+         @Param("status") Set<EnumOrderStatus> status,
+         Pageable pageable
+     );
+
+    @Query("SELECT p FROM PayIn p WHERE p.payIn = :payIn")
+    Optional<PayInEntity> findPayInById(@Param("payIn") String payIn);
+
     default Page<OrderDto> findAllObjects(
-        @Param("referenceNumber")String referenceNumber,
+        UUID consumerKey, UUID providerKey, String referenceNumber,
         @Param("status") Set<EnumOrderStatus> status,
-        Pageable pageable
+        Pageable pageable,
+        boolean includeDetails, boolean includeHelpdeskData
     ) {
-        return this.findAllEntities(
+        return this.findAll(
+            consumerKey,
+            providerKey,
             StringUtils.isBlank(referenceNumber) ? null : referenceNumber,
             status != null && status.size() > 0 ? status : null,
             pageable
-        ).map(e -> e.toDto(false, true));
+        ).map(e -> e.toDto(includeDetails, includeHelpdeskData));
+    }
+
+    default Page<OrderDto> findAllObjectsForConsumer(
+        UUID consumerKey, String referenceNumber, Set<EnumOrderStatus> status,
+        Pageable pageable,
+        boolean includeDetails, boolean includeHelpdeskData
+    ) {
+        return this.findAllForConsumer(
+            consumerKey,
+            StringUtils.isBlank(referenceNumber) ? null : referenceNumber,
+            status != null && status.size() > 0 ? status : null,
+            pageable
+        ).map(e -> e.toDto(includeDetails, includeHelpdeskData));
+    }
+
+    default Page<OrderDto> findAllObjectsForProvider(
+        UUID providerKey, String referenceNumber, Set<EnumOrderStatus> status,
+        Pageable pageable,
+        boolean includeDetails, boolean includeHelpdeskData
+    ) {
+        return this.findAllForProvider(
+            providerKey,
+            StringUtils.isBlank(referenceNumber) ? null : referenceNumber,
+            status != null && status.size() > 0 ? status : null,
+            pageable
+        ).map(e -> e.toDto(includeDetails, includeHelpdeskData));
     }
 
     default Optional<OrderDto> findOrderObjectByKey(UUID key) {
         return this.findOrderEntityByKey(key).map(o -> o.toDto(true, true));
+    }
+
+    default Optional<OrderDto> findOrderObjectByKeyAndConsumer(UUID consumerKey, UUID orderKey) {
+        return this.findOrderEntityByKeyAndConsumerKey(consumerKey, orderKey).map(o -> o.toDto(true, false));
+    }
+
+    default Optional<OrderDto> findOrderObjectByKeyAndProvider(UUID providerKey, UUID orderKey) {
+        return this.findOrderEntityByKeyAndProviderKey(providerKey, orderKey).map(o -> o.toDto(true, false));
     }
 
     @Transactional(readOnly = false)
