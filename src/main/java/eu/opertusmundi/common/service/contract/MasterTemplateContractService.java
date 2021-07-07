@@ -5,8 +5,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import eu.opertusmundi.common.model.contract.MasterContractQueryDto;
-import eu.opertusmundi.common.model.contract.MasterTemplateContractCommandDto;
-import eu.opertusmundi.common.model.contract.MasterTemplateContractDto;
+import eu.opertusmundi.common.model.contract.MasterContractCommandDto;
+import eu.opertusmundi.common.model.contract.MasterContractDto;
 import eu.opertusmundi.common.model.contract.PrintConsumerContractCommand;
 
 /**
@@ -20,7 +20,7 @@ public interface MasterTemplateContractService {
      * @param query
      * @return
      */
-    List<MasterTemplateContractDto> findAll(MasterContractQueryDto query);
+    List<MasterContractDto> findAll(MasterContractQueryDto query);
 
     /**
      * Get a contract by its identifier
@@ -28,7 +28,7 @@ public interface MasterTemplateContractService {
      * @param id
      * @return
      */
-    Optional<MasterTemplateContractDto> findOneById(int id);
+    Optional<MasterContractDto> findOneById(int id);
 
     /**
      * Get a contract by its unique key
@@ -36,14 +36,14 @@ public interface MasterTemplateContractService {
      * @param key
      * @return
      */
-    Optional<MasterTemplateContractDto> findOneByKey(UUID key);
+    Optional<MasterContractDto> findOneByKey(UUID key);
 
     /**
      * Update or create a contract
      *
      * @param command
      */
-    void update(MasterTemplateContractCommandDto command);
+    void update(MasterContractCommandDto command);
 
     /**
      * Mark a contract as inactive

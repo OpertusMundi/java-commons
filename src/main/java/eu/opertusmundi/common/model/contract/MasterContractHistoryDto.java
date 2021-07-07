@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.model.contract;
 
+import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -8,6 +9,7 @@ import javax.validation.constraints.NotEmpty;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import eu.opertusmundi.common.model.account.helpdesk.HelpdeskAccountDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -19,32 +21,33 @@ import lombok.Setter;
 @Data
 @Getter
 @Setter
-public class ProviderTemplateContractDto {
-    
+public class MasterContractHistoryDto implements Serializable {
+
+	private static final long serialVersionUID = 1L;
+	
 	private Integer id;
-	
+
     private UUID key;
+    
+	@JsonIgnore
+	private Integer parentId;
 	
-    private UUID providerKey;
-    
-    @JsonIgnore
-    private Integer parentId;
-    
-    private Integer masterContractId;
-    
-    private String masterContractVersion;
-    
 	@NotEmpty
 	private String title;
 	
+	
 	private String subtitle;
 	
+	private String state;
+	
 	private String version;
-
-	private List<ProviderTemplateSectionDto> sections;
+	
+	@JsonIgnore
+	private HelpdeskAccountDto account;
+	
+	private List<MasterSectionHistoryDto> sections;
 	
     private ZonedDateTime createdAt;
     
     private ZonedDateTime modifiedAt;
-
 }

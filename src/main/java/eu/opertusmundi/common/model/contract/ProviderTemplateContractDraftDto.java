@@ -19,8 +19,9 @@ import lombok.Setter;
 @Data
 @Getter
 @Setter
-public class ProviderTemplateContractDto {
-    
+public class ProviderTemplateContractDraftDto {
+
+	
 	private Integer id;
 	
     private UUID key;
@@ -46,5 +47,5 @@ public class ProviderTemplateContractDto {
     private ZonedDateTime createdAt;
     
     private ZonedDateTime modifiedAt;
-
+	
 }

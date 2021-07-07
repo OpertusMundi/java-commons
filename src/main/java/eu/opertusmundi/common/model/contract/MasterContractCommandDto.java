@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class MasterTemplateContractCommandDto {
+public class MasterContractCommandDto {
 
     @JsonIgnore
     private Integer id;
