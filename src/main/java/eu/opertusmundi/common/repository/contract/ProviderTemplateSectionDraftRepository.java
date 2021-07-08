@@ -10,14 +10,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import eu.opertusmundi.common.domain.MasterContractEntity;
-import eu.opertusmundi.common.domain.MasterSectionEntity;
 import eu.opertusmundi.common.domain.ProviderTemplateContractDraftEntity;
-import eu.opertusmundi.common.domain.ProviderTemplateContractEntity;
 import eu.opertusmundi.common.domain.ProviderTemplateSectionDraftEntity;
-import eu.opertusmundi.common.domain.ProviderTemplateSectionEntity;
-import eu.opertusmundi.common.model.contract.MasterSectionDraftDto;
-import eu.opertusmundi.common.model.contract.MasterSectionDto;
 import eu.opertusmundi.common.model.contract.ProviderTemplateSectionDraftDto;
 import eu.opertusmundi.common.model.contract.ProviderTemplateSectionDto;
 import eu.opertusmundi.common.model.ApplicationException;
@@ -62,7 +56,7 @@ public interface ProviderTemplateSectionDraftRepository extends JpaRepository<Pr
 		//final ContractEntity e = contractRepository.findById(s.getContract().getId()).get();
 		sectionEntity.setContract(this.findContract(s.getContract().getId()).get());
 		sectionEntity.setId(s.getId());
-		sectionEntity.setMasterSectionId(s.getMaster_section_id());
+		sectionEntity.setMasterSectionId(s.getMasterSectionId());
 		sectionEntity.setOptional(s.isOptional());
 		sectionEntity.setOption(s.getOption());
 		sectionEntity.setSuboption(s.getSuboption());
@@ -82,7 +76,7 @@ public interface ProviderTemplateSectionDraftRepository extends JpaRepository<Pr
 		
 		sectionEntity.setContract(ce);
 		sectionEntity.setId(s.getId());
-		sectionEntity.setMasterSectionId(s.getMaster_section_id());
+		sectionEntity.setMasterSectionId(s.getMasterSectionId());
 		sectionEntity.setOptional(s.isOptional());
 		sectionEntity.setOption(s.getOption());
 		sectionEntity.setSuboption(s.getSuboption());

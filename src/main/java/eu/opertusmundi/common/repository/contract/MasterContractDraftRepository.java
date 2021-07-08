@@ -14,7 +14,6 @@ import eu.opertusmundi.common.domain.MasterContractDraftEntity;
 import eu.opertusmundi.common.domain.MasterContractEntity;
 import eu.opertusmundi.common.domain.HelpdeskAccountEntity;
 import eu.opertusmundi.common.domain.MasterSectionDraftEntity;
-import eu.opertusmundi.common.domain.MasterSectionEntity;
 import eu.opertusmundi.common.model.contract.MasterContractDraftDto;
 import eu.opertusmundi.common.model.contract.MasterContractDto;
 import eu.opertusmundi.common.model.ApplicationException;
@@ -94,7 +93,7 @@ public interface MasterContractDraftRepository extends JpaRepository<MasterContr
 		contractEntity.setId(s.getId());
 		contractEntity.setParentId(s.getId());
 		contractEntity.setAccount(this.findAccountById(s.getAccount().getId()));
-		contractEntity.setState(s.getState());
+		contractEntity.setState("DRAFT");
 		contractEntity.setVersion(s.getVersion());
 		contractEntity.setModifiedAt(ZonedDateTime.now());
 		return saveAndFlush(contractEntity).toDto();

@@ -42,7 +42,9 @@ public class ProviderTemplateContractDraftDto {
 	
 	private String version;
 
-	private List<ProviderTemplateSectionDto> sections;
+	private Boolean active;
+	
+	private List<ProviderTemplateSectionDraftDto> sections;
 	
     private ZonedDateTime createdAt;
     

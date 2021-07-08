@@ -77,7 +77,7 @@ public class ProviderTemplateSectionDraftEntity{
     	ProviderTemplateSectionDraftDto s = new ProviderTemplateSectionDraftDto();
 
         s.setId(id);
-        s.setMaster_section_id(masterSectionId);
+        s.setMasterSectionId(masterSectionId);
         s.setOptional(optional);
         s.setOption(option);
         s.setSuboption(suboption);

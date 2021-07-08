@@ -11,17 +11,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import eu.opertusmundi.common.domain.MasterContractDraftEntity;
-import eu.opertusmundi.common.domain.MasterContractEntity;
-import eu.opertusmundi.common.domain.HelpdeskAccountEntity;
-import eu.opertusmundi.common.domain.MasterSectionDraftEntity;
-import eu.opertusmundi.common.domain.MasterSectionEntity;
 import eu.opertusmundi.common.domain.ProviderTemplateContractDraftEntity;
-import eu.opertusmundi.common.domain.ProviderTemplateContractEntity;
 import eu.opertusmundi.common.domain.ProviderTemplateSectionDraftEntity;
-import eu.opertusmundi.common.domain.ProviderTemplateSectionEntity;
-import eu.opertusmundi.common.model.contract.MasterContractDraftDto;
-import eu.opertusmundi.common.model.contract.MasterContractDto;
 import eu.opertusmundi.common.model.contract.ProviderTemplateContractDraftDto;
 import eu.opertusmundi.common.model.contract.ProviderTemplateContractDto;
 import eu.opertusmundi.common.model.ApplicationException;

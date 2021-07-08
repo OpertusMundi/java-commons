@@ -41,6 +41,8 @@ public class MasterContractHistoryDto implements Serializable {
 	private String state;
 	
 	private String version;
+
+	private Boolean active;
 	
 	@JsonIgnore
 	private HelpdeskAccountDto account;

@@ -3,6 +3,7 @@ package eu.opertusmundi.common.repository.contract;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -26,9 +27,15 @@ public interface MasterContractRepository extends JpaRepository<MasterContractEn
 
 	Optional<MasterContractEntity> findOneById(Integer id);
 	
+	@Query("SELECT s FROM Contract s WHERE s.key = :key")
+	Optional<MasterContractEntity> findByKey(UUID key);
+	
 	@Query("SELECT a FROM HelpdeskAccount a WHERE a.id = :id")
 	    HelpdeskAccountEntity findAccountById(
 			@Param("id") int id);
+	
+	@Query("SELECT c FROM Contract c")
+	List<MasterContractEntity> findAllContracts();
 	
 	@Query("SELECT s FROM Section s WHERE s.contract = :contract")
 	List<MasterSectionEntity> findSectionsByContract(
@@ -109,5 +116,6 @@ public interface MasterContractRepository extends JpaRepository<MasterContractEn
 
 		this.deleteById(id);
 	}
+	
 
 }

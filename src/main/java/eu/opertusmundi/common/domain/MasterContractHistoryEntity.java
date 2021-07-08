@@ -1,15 +1,19 @@
 package eu.opertusmundi.common.domain;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
@@ -17,6 +21,8 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.contract.MasterContractHistoryDto;
+import eu.opertusmundi.common.model.contract.MasterSectionDraftDto;
+import eu.opertusmundi.common.model.contract.MasterSectionHistoryDto;
 import lombok.Getter;
 
 
@@ -75,6 +81,10 @@ public class MasterContractHistoryEntity {
     @lombok.Setter
     String version;
 
+    @Column(name = "`active`")
+    @lombok.Getter()
+    @lombok.Setter()
+    Boolean active;
 
     @Column(name = "`created_at`")
     @lombok.Getter
@@ -87,14 +97,14 @@ public class MasterContractHistoryEntity {
     @lombok.Setter
     ZonedDateTime modifiedAt;
     
-   /*@OneToMany(
-        mappedBy = "contract", 
-        fetch = FetchType.LAZY,
-        targetEntity = SectionEntity.class
-    )
-    @lombok.Getter()
-    @lombok.Setter()
-    List<SectionEntity> sections = new ArrayList<>();*/
+	//    @OneToMany(
+	//            mappedBy = "contract", 
+	//            fetch = FetchType.LAZY,
+	//            targetEntity = MasterSectionHistoryEntity.class
+	//        )
+	//    @lombok.Getter()
+	//    @lombok.Setter()
+	//    List<MasterSectionHistoryEntity> sections = new ArrayList<>();
 
     public MasterContractHistoryDto toDto() {
     	MasterContractHistoryDto c = new MasterContractHistoryDto();
@@ -108,7 +118,6 @@ public class MasterContractHistoryEntity {
         c.setCreatedAt(this.createdAt);
         c.setModifiedAt(this.modifiedAt);
         c.setVersion(this.version);
-        //c.setSections(this.sections);
         
         return c;
     }

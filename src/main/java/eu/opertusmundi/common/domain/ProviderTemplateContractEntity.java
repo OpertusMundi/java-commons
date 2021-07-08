@@ -1,23 +1,25 @@
 package eu.opertusmundi.common.domain;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
 import org.hibernate.annotations.NaturalId;
 
-import eu.opertusmundi.common.model.contract.MasterContractDto;
 import eu.opertusmundi.common.model.contract.ProviderTemplateContractDto;
+import eu.opertusmundi.common.model.contract.ProviderTemplateSectionDto;
 import lombok.Getter;
 
 
@@ -79,6 +81,11 @@ public class ProviderTemplateContractEntity {
     @lombok.Setter
     String version;
 
+    @Column(name = "`active`")
+    @lombok.Getter()
+    @lombok.Setter()
+    Boolean active;
+
 
     @Column(name = "`created_at`")
     @lombok.Getter
@@ -91,6 +98,14 @@ public class ProviderTemplateContractEntity {
     @lombok.Setter
     ZonedDateTime modifiedAt;
     
+	//    @OneToMany(
+	//            mappedBy = "contract", 
+	//            fetch = FetchType.LAZY,
+	//            targetEntity = ProviderTemplateSectionEntity.class
+	//        )
+	//    @lombok.Getter()
+	//    @lombok.Setter()
+	//    List<ProviderTemplateSectionEntity> sections = new ArrayList<ProviderTemplateSectionEntity>();
 
     public ProviderTemplateContractDto toDto() {
     	ProviderTemplateContractDto c = new ProviderTemplateContractDto();
@@ -106,6 +121,7 @@ public class ProviderTemplateContractEntity {
         c.setCreatedAt(this.createdAt);
         c.setModifiedAt(this.modifiedAt);
         c.setVersion(this.version);
+        
         
         return c;
     }

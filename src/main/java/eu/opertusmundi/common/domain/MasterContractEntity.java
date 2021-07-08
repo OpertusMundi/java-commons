@@ -1,15 +1,19 @@
 package eu.opertusmundi.common.domain;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
@@ -17,6 +21,7 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.contract.MasterContractDto;
+import eu.opertusmundi.common.model.contract.MasterSectionDto;
 import lombok.Getter;
 
 
@@ -74,6 +79,10 @@ public class MasterContractEntity {
     @lombok.Setter
     String version;
 
+    @Column(name = "`active`")
+    @lombok.Getter()
+    @lombok.Setter()
+    Boolean active;
 
     @Column(name = "`created_at`")
     @lombok.Getter
@@ -86,14 +95,14 @@ public class MasterContractEntity {
     @lombok.Setter
     ZonedDateTime modifiedAt;
     
-   /*@OneToMany(
-        mappedBy = "contract", 
-        fetch = FetchType.LAZY,
-        targetEntity = SectionEntity.class
-    )
-    @lombok.Getter()
-    @lombok.Setter()
-    List<SectionEntity> sections = new ArrayList<>();*/
+	//   @OneToMany(
+	//        mappedBy = "contract", 
+	//        fetch = FetchType.LAZY,
+	//        targetEntity = MasterSectionEntity.class
+	//    )
+	//    @lombok.Getter()
+	//    @lombok.Setter()
+	//    List<MasterSectionEntity> sections = new ArrayList<MasterSectionEntity>();
 
     public MasterContractDto toDto() {
     	MasterContractDto c = new MasterContractDto();
@@ -107,7 +116,6 @@ public class MasterContractEntity {
         c.setCreatedAt(this.createdAt);
         c.setModifiedAt(this.modifiedAt);
         c.setVersion(this.version);
-        //c.setSections(this.sections);
         
         return c;
     }

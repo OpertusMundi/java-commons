@@ -76,7 +76,7 @@ public class ProviderTemplateSectionEntity{
     	ProviderTemplateSectionDto s = new ProviderTemplateSectionDto();
 
         s.setId(id);
-        s.setMaster_section_id(masterSectionId);
+        s.setMasterSectionId(masterSectionId);
         s.setOptional(optional);
         s.setOption(option);
         s.setSuboption(suboption);

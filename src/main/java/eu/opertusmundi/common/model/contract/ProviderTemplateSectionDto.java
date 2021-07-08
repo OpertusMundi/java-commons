@@ -19,7 +19,7 @@ public class ProviderTemplateSectionDto {
 	@NotNull
 	private ProviderTemplateContractDto contract;
 
-	private Integer master_section_id;
+	private Integer masterSectionId;
 	
 	private boolean optional;
 	

@@ -41,6 +41,8 @@ public class ProviderTemplateContractDto {
 	
 	private String version;
 
+	private Boolean active;
+	
 	private List<ProviderTemplateSectionDto> sections;
 	
     private ZonedDateTime createdAt;

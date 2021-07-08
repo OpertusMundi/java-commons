@@ -16,7 +16,6 @@ import eu.opertusmundi.common.domain.MasterContractHistoryEntity;
 import eu.opertusmundi.common.domain.HelpdeskAccountEntity;
 import eu.opertusmundi.common.domain.MasterSectionHistoryEntity;
 import eu.opertusmundi.common.model.contract.MasterContractHistoryDto;
-import eu.opertusmundi.common.domain.MasterContractEntity;
 import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.BasicMessageCode;
 

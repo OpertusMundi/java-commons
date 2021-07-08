@@ -42,7 +42,9 @@ public class ProviderTemplateContractHistoryDto {
 	
 	private String version;
 
-	private List<ProviderTemplateSectionDto> sections;
+	private Boolean active;
+	
+	private List<ProviderTemplateSectionHistoryDto> sections;
 	
     private ZonedDateTime createdAt;
     
