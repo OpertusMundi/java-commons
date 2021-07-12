@@ -7,8 +7,12 @@ import javax.persistence.ManyToOne;
 
 import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
 import eu.opertusmundi.common.model.payment.PayInItemDto;
-import eu.opertusmundi.common.model.payment.PaymentException;
-import eu.opertusmundi.common.model.payment.SubscriptionBillingPayInItemDto;
+import eu.opertusmundi.common.model.payment.consumer.ConsumerPayInItemDto;
+import eu.opertusmundi.common.model.payment.consumer.ConsumerSubscriptionBillingPayInItemDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInItemDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskSubscriptionBillingPayInItemDto;
+import eu.opertusmundi.common.model.payment.provider.ProviderPayInItemDto;
+import eu.opertusmundi.common.model.payment.provider.ProviderSubscriptionBillingPayInItemDto;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -28,19 +32,44 @@ public class PayInSubscriptionBillingItemEntity extends PayInItemEntity {
     @Setter
     private SubscriptionBillingEntity subscriptionBilling;
 
-    @Override
-    public PayInItemDto toDto(boolean includeDetails, boolean includeTransfer, boolean includeHelpdeskData) throws PaymentException {
-        final SubscriptionBillingPayInItemDto i = new SubscriptionBillingPayInItemDto();
-
+    public void updateDto(PayInItemDto i) {
         i.setId(id);
         i.setIndex(index);
-        i.setSubscriptionBilling(this.subscriptionBilling.toDto(includeDetails, includeHelpdeskData));
         i.setPayIn(payin.getKey());
         i.setType(type);
+    }
 
-        if (includeTransfer || includeHelpdeskData) {
-            i.setTransfer(this.toTransferDto(includeHelpdeskData));
-        }
+    @Override
+    public ConsumerPayInItemDto toConsumerDto(boolean includeDetails) {
+        final ConsumerSubscriptionBillingPayInItemDto i = new ConsumerSubscriptionBillingPayInItemDto();
+
+        this.updateDto(i);
+
+        i.setSubscriptionBilling(this.subscriptionBilling.toConsumerDto(includeDetails));
+
+        return i;
+    }
+
+    @Override
+    public ProviderPayInItemDto toProviderDto(boolean includeDetails) {
+        final ProviderSubscriptionBillingPayInItemDto i = new ProviderSubscriptionBillingPayInItemDto();
+
+        this.updateDto(i);
+
+        i.setSubscriptionBilling(this.subscriptionBilling.toProviderDto(includeDetails));
+        i.setTransfer(this.toTransferDto(false));
+
+        return i;
+    }
+
+    @Override
+    public HelpdeskPayInItemDto toHelpdeskDto(boolean includeDetails) {
+        final HelpdeskSubscriptionBillingPayInItemDto i = new HelpdeskSubscriptionBillingPayInItemDto();
+
+        this.updateDto(i);
+
+        i.setSubscriptionBilling(this.subscriptionBilling.toHelpdeskDto(includeDetails));
+        i.setTransfer(this.toTransferDto(true));
 
         return i;
     }

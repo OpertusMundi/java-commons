@@ -3,7 +3,7 @@ package eu.opertusmundi.common.model.asset;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
-import eu.opertusmundi.common.model.account.PublisherDto;
+import eu.opertusmundi.common.model.account.ProviderDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -57,7 +57,7 @@ public class AssetDraftDto {
     private ZonedDateTime modifiedOn;
     
     @Schema(description = "Publisher details")
-    private PublisherDto publisher;
+    private ProviderDto publisher;
     
     public ResourceDto getResourceByKey(UUID key) {
         return this.getCommand().getResources().stream()

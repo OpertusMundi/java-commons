@@ -32,7 +32,9 @@ import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.payment.EnumPaymentMethod;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
-import eu.opertusmundi.common.model.payment.PayInDto;
+import eu.opertusmundi.common.model.payment.consumer.ConsumerPayInDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
+import eu.opertusmundi.common.model.payment.provider.ProviderPayInDto;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -193,10 +195,10 @@ public abstract class PayInEntity {
     @Setter
     protected String resultMessage;
 
-    public PayInDto toDto() {
-        return this.toDto(true, false);
-    }
+    public abstract ConsumerPayInDto toConsumerDto(boolean includeDetails);
 
-    public abstract PayInDto toDto(boolean includeDetails, boolean includeHelpdeskData);
+    public abstract ProviderPayInDto toProviderDto(boolean includeDetails);
+
+    public abstract HelpdeskPayInDto toHelpdeskDto(boolean includeDetails);
 
 }

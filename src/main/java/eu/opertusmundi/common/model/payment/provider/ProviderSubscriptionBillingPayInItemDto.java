@@ -1,4 +1,4 @@
-package eu.opertusmundi.common.model.payment;
+package eu.opertusmundi.common.model.payment.provider;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -8,9 +8,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class SubscriptionBillingPayInItemDto extends PayInItemDto {
+public class ProviderSubscriptionBillingPayInItemDto extends ProviderPayInItemDto {
 
     @Schema(description = "PayIn subscription billing record")
-    protected SubscriptionBillingDto subscriptionBilling;
+    protected ProviderSubscriptionBillingDto subscriptionBilling;
 
 }

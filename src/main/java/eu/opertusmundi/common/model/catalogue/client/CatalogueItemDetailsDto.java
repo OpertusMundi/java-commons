@@ -9,7 +9,7 @@ import org.springframework.util.Assert;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 
-import eu.opertusmundi.common.model.account.PublisherDto;
+import eu.opertusmundi.common.model.account.ProviderDto;
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
 import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.model.asset.ResourceDto;
@@ -61,9 +61,9 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
     @Schema(description = "Publisher details")
     @JsonProperty(access = Access.READ_ONLY)
     @Getter
-    private PublisherDto publisher;
+    private ProviderDto publisher;
 
-    public void setPublisher(PublisherDto publisher) {
+    public void setPublisher(ProviderDto publisher) {
         Assert.isTrue(publisher.getKey().equals(this.publisherId), "Provider account key does not match publisher id");
 
         this.publisher = publisher;

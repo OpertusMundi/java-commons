@@ -9,10 +9,12 @@ import javax.persistence.DiscriminatorValue;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang3.StringUtils;
 
+import eu.opertusmundi.common.model.account.ConsumerDto;
 import eu.opertusmundi.common.model.account.ConsumerIndividualCommandDto;
 import eu.opertusmundi.common.model.account.CustomerCommandDto;
 import eu.opertusmundi.common.model.account.CustomerDto;
@@ -127,6 +129,11 @@ public class CustomerIndividualEntity extends CustomerEntity {
     @Setter
     private String occupation;
 
+    @Transient
+    public String getFullName() {
+        return StringUtils.joinWith(" ", lastName, firstName);
+    }
+
     @Override
     public void update(CustomerDraftEntity e) {
         final CustomerDraftIndividualEntity i = (CustomerDraftIndividualEntity) e;
@@ -193,6 +200,17 @@ public class CustomerIndividualEntity extends CustomerEntity {
         c.setType(this.type);
         c.setWalletFunds(this.walletFunds);
         c.setWalletFundsUpdatedOn(this.walletFundsUpdatedOn);
+
+        return c;
+    }
+
+    @Override
+    public ConsumerDto toConsumerDto() {
+        final ConsumerDto c = new ConsumerDto();
+
+        c.setCountry(countryOfResidence);
+        c.setKey(account.getKey());
+        c.setName(this.getFullName());
 
         return c;
     }

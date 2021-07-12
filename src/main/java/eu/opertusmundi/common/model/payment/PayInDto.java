@@ -2,20 +2,11 @@ package eu.opertusmundi.common.model.payment;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-import eu.opertusmundi.common.model.account.CustomerDto;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -25,37 +16,19 @@ import lombok.Setter;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @Setter
-@JsonTypeInfo(
-    use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "paymentMethod"
-)
-@JsonSubTypes({
-    @Type(name = "CARD_DIRECT", value = CardDirectPayInDto.class),
-    @Type(name = "BANKWIRE", value = BankwirePayInDto.class),
-})
 public abstract class PayInDto {
 
     @JsonIgnore
     protected Integer id;
 
+    /**
+     * The payment provider transaction unique identifier
+     */
+    @JsonIgnore
+    protected String payIn;
+
     @Schema(description = "PayIn unique key")
     protected UUID key;
-
-    @Schema(hidden = true, description = "Identifier of the workflow definition used for processing this PayIn record")
-    @JsonInclude(Include.NON_NULL)
-    protected String processDefinition;
-
-    @Schema(hidden = true, description = "Identifier of the workflow instance processing this PayIn record")
-    @JsonInclude(Include.NON_NULL)
-    protected String processInstance;
-
-    @ArraySchema(arraySchema = @Schema(
-        description = "PayIn payments. A PayIn may include a single order or multiple subscription billing records"),
-        minItems = 1,
-        uniqueItems = true,
-        schema = @Schema(oneOf = {OrderPayInItemDto.class, SubscriptionBillingPayInItemDto.class})
-    )
-    @JsonInclude(Include.NON_EMPTY)
-    protected List<PayInItemDto> items = new ArrayList<>();
 
     @Schema(description = "The total price of all PayIn items (the debited funds of the PayIn)")
     protected BigDecimal totalPrice;
@@ -87,33 +60,7 @@ public abstract class PayInDto {
     @Schema(description = "Payment method")
     protected EnumPaymentMethod paymentMethod;
 
-    /**
-     * The payment provider transaction unique identifier
-     */
-    @JsonIgnore
-    protected String payIn;
-
     @Schema(description = "Platform reference number")
     protected String referenceNumber;
-
-    @Schema(hidden = true, description = "PayIn consumer customer")
-    @JsonInclude(Include.NON_NULL)
-    private CustomerDto consumer;
-
-    @Schema(hidden = true, description = "Payment provider identifier for PayIn")
-    @JsonInclude(Include.NON_EMPTY)
-    protected String providerPayIn;
-
-    @Schema(hidden = true, description = "Payment provider transaction result code")
-    @JsonInclude(Include.NON_EMPTY)
-    protected String providerResultCode;
-
-    @Schema(hidden = true, description = "Payment provider transaction result message")
-    @JsonInclude(Include.NON_EMPTY)
-    protected String providerResultMessage;
-
-    public void addItem(PayInItemDto i) {
-        this.items.add(i);
-    }
 
 }

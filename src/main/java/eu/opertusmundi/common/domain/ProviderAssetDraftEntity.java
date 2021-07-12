@@ -138,7 +138,7 @@ public class ProviderAssetDraftEntity {
         a.setTitle(this.title);
         a.setVersion(this.version);
 
-        a.setPublisher(this.account.toPublisherDto());
+        a.setPublisher(this.account.getProvider().toProviderDto());
 
         return a;
     }

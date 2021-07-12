@@ -24,7 +24,6 @@ import eu.opertusmundi.common.model.payment.EnumPayInSortField;
 import eu.opertusmundi.common.model.payment.EnumPayOutSortField;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PayInDto;
-import eu.opertusmundi.common.model.payment.PayInItemDto;
 import eu.opertusmundi.common.model.payment.PayOutCommandDto;
 import eu.opertusmundi.common.model.payment.PayOutDto;
 import eu.opertusmundi.common.model.payment.PaymentException;
@@ -34,6 +33,8 @@ import eu.opertusmundi.common.model.payment.UserCommand;
 import eu.opertusmundi.common.model.payment.UserPaginationCommand;
 import eu.opertusmundi.common.model.payment.UserRegistrationCommand;
 import eu.opertusmundi.common.model.payment.WalletDto;
+import eu.opertusmundi.common.model.payment.consumer.ConsumerPayInDto;
+import eu.opertusmundi.common.model.payment.provider.ProviderPayInItemDto;
 
 public interface  PaymentService {
 
@@ -177,7 +178,7 @@ public interface  PaymentService {
      * @param index
      * @return
      */
-    PayInItemDto getProviderPayInItem(Integer userId, UUID payInKey, Integer index);
+    ProviderPayInItemDto getProviderPayInItem(Integer userId, UUID payInKey, Integer index);
 
     /**
      * Query payment provider service for PayIn transaction status
@@ -219,7 +220,7 @@ public interface  PaymentService {
      * @param order
      * @return
      */
-    PageResultDto<PayInDto> findAllConsumerPayIns(
+    PageResultDto<ConsumerPayInDto> findAllConsumerPayIns(
         UUID userKey, EnumTransactionStatus status, int pageIndex, int pageSize, EnumPayInSortField orderBy, EnumSortingOrder order
     );
 
@@ -234,7 +235,7 @@ public interface  PaymentService {
      * @param order
      * @return
      */
-    PageResultDto<PayInItemDto> findAllProviderPayInItems(
+    PageResultDto<ProviderPayInItemDto> findAllProviderPayInItems(
         UUID userKey, EnumTransactionStatus status, int pageIndex, int pageSize, EnumPayInItemSortField orderBy, EnumSortingOrder order
     );
 

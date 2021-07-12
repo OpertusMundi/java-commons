@@ -10,9 +10,14 @@ import javax.persistence.Table;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
-import eu.opertusmundi.common.model.payment.BankwirePayInDto;
 import eu.opertusmundi.common.model.payment.EnumPaymentMethod;
 import eu.opertusmundi.common.model.payment.PayInDto;
+import eu.opertusmundi.common.model.payment.consumer.ConsumerBankwirePayInDto;
+import eu.opertusmundi.common.model.payment.consumer.ConsumerPayInDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskBankwirePayInDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
+import eu.opertusmundi.common.model.payment.provider.ProviderBankwirePayInDto;
+import eu.opertusmundi.common.model.payment.provider.ProviderPayInDto;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -48,9 +53,7 @@ public class BankWirePayInEntity extends PayInEntity {
     @Setter
     private BankAccountEmbeddable bankAccount;
 
-    @Override
-    public PayInDto toDto(boolean includeDetails, boolean includeHelpdeskData) {
-        final BankwirePayInDto p = new BankwirePayInDto();
+    public void updateDto(PayInDto p) {
 
         p.setCreatedOn(createdOn);
         p.setCurrency(currency);
@@ -65,20 +68,61 @@ public class BankWirePayInEntity extends PayInEntity {
         p.setTotalPrice(totalPrice);
         p.setTotalPriceExcludingTax(totalPriceExcludingTax);
         p.setTotalTax(totalTax);
+    }
+
+    @Override
+    public ConsumerPayInDto toConsumerDto(boolean includeDetails) {
+        final ConsumerBankwirePayInDto p = new ConsumerBankwirePayInDto();
+
+        this.updateDto(p);
+
         p.setWireReference(wireReference);
 
         if (includeDetails) {
             p.setBankAccount(bankAccount.toDto());
 
-            this.items.stream().map(e -> e.toDto(includeDetails, includeHelpdeskData, includeHelpdeskData)).forEach(p::addItem);
+            this.items.stream().map(e -> e.toConsumerDto(includeDetails)).forEach(p::addItem);
         }
-        if (includeHelpdeskData) {
-            p.setConsumer(consumer.getProfile().getConsumer().toDto());
-            p.setProcessDefinition(processDefinition);
-            p.setProcessInstance(processInstance);
-            p.setProviderPayIn(payIn);
-            p.setProviderResultCode(resultCode);
-            p.setProviderResultMessage(resultMessage);
+
+        return p;
+    }
+
+    @Override
+    public ProviderPayInDto toProviderDto(boolean includeDetails) {
+        final ProviderBankwirePayInDto p = new ProviderBankwirePayInDto();
+
+        this.updateDto(p);
+
+        p.setConsumer(consumer.getConsumer().toConsumerDto());
+        p.setWireReference(wireReference);
+
+        if (includeDetails) {
+            p.setBankAccount(bankAccount.toDto());
+
+            this.items.stream().map(e -> e.toProviderDto(includeDetails)).forEach(p::addItem);
+        }
+
+        return p;
+    }
+
+    @Override
+    public HelpdeskPayInDto toHelpdeskDto(boolean includeDetails) {
+        final HelpdeskBankwirePayInDto p = new HelpdeskBankwirePayInDto();
+
+        this.updateDto(p);
+
+        p.setConsumer(consumer.getConsumer().toDto());
+        p.setProcessDefinition(processDefinition);
+        p.setProcessInstance(processInstance);
+        p.setProviderPayIn(payIn);
+        p.setProviderResultCode(resultCode);
+        p.setProviderResultMessage(resultMessage);
+        p.setWireReference(wireReference);
+
+        if (includeDetails) {
+            p.setBankAccount(bankAccount.toDto());
+
+            this.items.stream().map(e -> e.toHelpdeskDto(includeDetails)).forEach(p::addItem);
         }
 
         return p;

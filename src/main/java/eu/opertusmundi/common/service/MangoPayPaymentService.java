@@ -95,7 +95,6 @@ import eu.opertusmundi.common.model.order.OrderCommand;
 import eu.opertusmundi.common.model.order.OrderDto;
 import eu.opertusmundi.common.model.payment.BankwirePayInCommand;
 import eu.opertusmundi.common.model.payment.CardDirectPayInCommand;
-import eu.opertusmundi.common.model.payment.CardDirectPayInDto;
 import eu.opertusmundi.common.model.payment.CardDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationCommandDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationDto;
@@ -105,7 +104,6 @@ import eu.opertusmundi.common.model.payment.EnumPayInSortField;
 import eu.opertusmundi.common.model.payment.EnumPayOutSortField;
 import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
-import eu.opertusmundi.common.model.payment.OrderPayInItemDto;
 import eu.opertusmundi.common.model.payment.PayInDto;
 import eu.opertusmundi.common.model.payment.PayInItemDto;
 import eu.opertusmundi.common.model.payment.PayInStatusUpdateCommand;
@@ -120,6 +118,11 @@ import eu.opertusmundi.common.model.payment.UserCommand;
 import eu.opertusmundi.common.model.payment.UserPaginationCommand;
 import eu.opertusmundi.common.model.payment.UserRegistrationCommand;
 import eu.opertusmundi.common.model.payment.WalletDto;
+import eu.opertusmundi.common.model.payment.consumer.ConsumerCardDirectPayInDto;
+import eu.opertusmundi.common.model.payment.consumer.ConsumerPayInDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskOrderPayInItemDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
+import eu.opertusmundi.common.model.payment.provider.ProviderPayInItemDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.repository.AccountRepository;
@@ -667,14 +670,14 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     public PayInDto getConsumerPayIn(Integer userId, UUID payInKey) {
         final PayInEntity payIn = this.payInRepository.findOneByConsumerIdAndKey(userId, payInKey).orElse(null);
 
-        return payIn == null ? null : payIn.toDto();
+        return payIn == null ? null : payIn.toConsumerDto(true);
     }
 
     @Override
-    public PayInItemDto getProviderPayInItem(Integer userId, UUID payInKey, Integer index) {
+    public ProviderPayInItemDto getProviderPayInItem(Integer userId, UUID payInKey, Integer index) {
         final PayInItemEntity item = this.payInRepository.findOnePayInItemByProvider(userId, payInKey, index).orElse(null);
 
-        return item == null ? null : item.toDto(true, true, false);
+        return item == null ? null : item.toProviderDto(true);
     }
 
     @Override
@@ -760,7 +763,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     @Override
-    public PageResultDto<PayInDto> findAllConsumerPayIns(
+    public PageResultDto<ConsumerPayInDto> findAllConsumerPayIns(
         UUID userKey, EnumTransactionStatus status, int pageIndex, int pageSize, EnumPayInSortField orderBy, EnumSortingOrder order
     ) {
         final Direction direction = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
@@ -768,16 +771,16 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         final PageRequest       pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
         final Page<PayInEntity> page        = this.payInRepository.findAllConsumerPayIns(userKey, status, pageRequest);
 
-        final long           count   = page.getTotalElements();
-        final List<PayInDto> records = page.getContent().stream()
-            .map(p -> p.toDto(false, false))
+        final long                   count   = page.getTotalElements();
+        final List<ConsumerPayInDto> records = page.getContent().stream()
+            .map(p -> p.toConsumerDto(false))
             .collect(Collectors.toList());
 
         return PageResultDto.of(pageIndex, pageSize, records, count);
     }
 
     @Override
-    public PageResultDto<PayInItemDto> findAllProviderPayInItems(
+    public PageResultDto<ProviderPayInItemDto> findAllProviderPayInItems(
         UUID userKey, EnumTransactionStatus status, int pageIndex, int pageSize, EnumPayInItemSortField orderBy, EnumSortingOrder order
     ) {
         final Direction direction = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
@@ -785,9 +788,9 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         final PageRequest           pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
         final Page<PayInItemEntity> page        = this.payInRepository.findAllProviderPayInItems(userKey, status, pageRequest);
 
-        final long           count   = page.getTotalElements();
-        final List<PayInItemDto> records = page.getContent().stream()
-            .map(p -> p.toDto(false, false, false))
+        final long                       count   = page.getTotalElements();
+        final List<ProviderPayInItemDto> records = page.getContent().stream()
+            .map(p -> p.toProviderDto(false))
             .collect(Collectors.toList());
 
         return PageResultDto.of(pageIndex, pageSize, records, count);
@@ -811,7 +814,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             // Check payment
             final PayInEntity payIn = order.getPayin();
             if (payIn != null) {
-                return payIn.toDto();
+                return payIn.toConsumerDto(true);
             }
 
             // Update command with order properties
@@ -913,12 +916,12 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             }
 
             // Create database record
-            final PayInEntity  payIn  = order.getPayin();
-            CardDirectPayInDto result = null;
+            final PayInEntity          payIn  = order.getPayin();
+            ConsumerCardDirectPayInDto result = null;
             if (payIn != null) {
-                result = (CardDirectPayInDto) payIn.toDto();
+                result = (ConsumerCardDirectPayInDto) payIn.toConsumerDto(true);
             } else {
-                result = (CardDirectPayInDto) this.payInRepository.createCardDirectPayInForOrder(command);
+                result = (ConsumerCardDirectPayInDto) this.payInRepository.createCardDirectPayInForOrder(command);
 
                 // Link PayIn record to order
                 this.orderRepository.setPayIn(command.getOrderKey(), result.getPayIn(), account.getKey());
@@ -977,7 +980,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 .resultMessage(payInObject.getResultMessage())
                 .build();
 
-            final PayInDto result = this.payInRepository.updatePayInStatus(command);
+            final HelpdeskPayInDto result = this.payInRepository.updatePayInStatus(command);
 
             // Update history table only for succeeded PayIns
             if (result.getStatus() == EnumTransactionStatus.SUCCEEDED) {
@@ -992,7 +995,9 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             for (final PayInItemDto item : result.getItems()) {
                 if(item.getType() == EnumPaymentItemType.ORDER) {
                     this.orderRepository.setStatus(
-                        ((OrderPayInItemDto) item).getOrder().getKey(), result.getStatus().toOrderStatus(), ZonedDateTime.now()
+                        ((HelpdeskOrderPayInItemDto) item).getOrder().getKey(),
+                        result.getStatus().toOrderStatus(),
+                        ZonedDateTime.now()
                     );
                 }
             }
@@ -1402,7 +1407,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     private PayOut createPayOut(PayOutEntity payOut) {
-        final CustomerProfessionalEntity customer = (CustomerProfessionalEntity) payOut.getProvider().getProvider();
+        final CustomerProfessionalEntity customer = payOut.getProvider().getProvider();
 
         Assert.notNull(customer, "Expected a non-null provider");
 

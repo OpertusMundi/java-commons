@@ -20,10 +20,12 @@ import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.OrderItemEntity;
 import eu.opertusmundi.common.domain.OrderStatusEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
+import eu.opertusmundi.common.model.order.ConsumerOrderDto;
 import eu.opertusmundi.common.model.order.EnumOrderItemType;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
 import eu.opertusmundi.common.model.order.OrderCommand;
 import eu.opertusmundi.common.model.order.OrderDto;
+import eu.opertusmundi.common.model.order.ProviderOrderDto;
 import io.jsonwebtoken.lang.Assert;
 
 @Repository
@@ -154,23 +156,23 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
             StringUtils.isBlank(referenceNumber) ? null : referenceNumber,
             status != null && status.size() > 0 ? status : null,
             pageable
-        ).map(e -> e.toDto(includeDetails, includeHelpdeskData));
+        ).map(e -> e.toHelpdeskDto(includeDetails));
     }
 
-    default Page<OrderDto> findAllObjectsForConsumer(
+    default Page<ConsumerOrderDto> findAllObjectsForConsumer(
         UUID consumerKey, String referenceNumber, Set<EnumOrderStatus> status,
         Pageable pageable,
-        boolean includeDetails, boolean includeHelpdeskData
+        boolean includeDetails
     ) {
         return this.findAllForConsumer(
             consumerKey,
             StringUtils.isBlank(referenceNumber) ? null : referenceNumber,
             status != null && status.size() > 0 ? status : null,
             pageable
-        ).map(e -> e.toDto(includeDetails, includeHelpdeskData));
+        ).map(e -> e.toConsumerDto(includeDetails));
     }
 
-    default Page<OrderDto> findAllObjectsForProvider(
+    default Page<ProviderOrderDto> findAllObjectsForProvider(
         UUID providerKey, String referenceNumber, Set<EnumOrderStatus> status,
         Pageable pageable,
         boolean includeDetails, boolean includeHelpdeskData
@@ -180,19 +182,19 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
             StringUtils.isBlank(referenceNumber) ? null : referenceNumber,
             status != null && status.size() > 0 ? status : null,
             pageable
-        ).map(e -> e.toDto(includeDetails, includeHelpdeskData));
+        ).map(e -> e.toProviderDto(includeDetails));
     }
 
     default Optional<OrderDto> findOrderObjectByKey(UUID key) {
-        return this.findOrderEntityByKey(key).map(o -> o.toDto(true, true));
+        return this.findOrderEntityByKey(key).map(o -> o.toHelpdeskDto(true));
     }
 
-    default Optional<OrderDto> findOrderObjectByKeyAndConsumer(UUID consumerKey, UUID orderKey) {
-        return this.findOrderEntityByKeyAndConsumerKey(consumerKey, orderKey).map(o -> o.toDto(true, false));
+    default Optional<ConsumerOrderDto> findOrderObjectByKeyAndConsumer(UUID consumerKey, UUID orderKey) {
+        return this.findOrderEntityByKeyAndConsumerKey(consumerKey, orderKey).map(o -> o.toConsumerDto(true));
     }
 
-    default Optional<OrderDto> findOrderObjectByKeyAndProvider(UUID providerKey, UUID orderKey) {
-        return this.findOrderEntityByKeyAndProviderKey(providerKey, orderKey).map(o -> o.toDto(true, false));
+    default Optional<ProviderOrderDto> findOrderObjectByKeyAndProvider(UUID providerKey, UUID orderKey) {
+        return this.findOrderEntityByKeyAndProviderKey(providerKey, orderKey).map(o -> o.toProviderDto(true));
     }
 
     @Transactional(readOnly = false)
@@ -251,7 +253,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
         this.saveAndFlush(order);
 
-        return order.toDto();
+        return order.toConsumerDto(true);
     }
 
     @Transactional(readOnly = false)

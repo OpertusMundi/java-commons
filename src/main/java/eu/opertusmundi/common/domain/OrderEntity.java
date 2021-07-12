@@ -30,8 +30,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import eu.opertusmundi.common.model.catalogue.client.EnumDeliveryMethod;
+import eu.opertusmundi.common.model.order.ConsumerOrderDto;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
+import eu.opertusmundi.common.model.order.HelpdeskOrderDto;
 import eu.opertusmundi.common.model.order.OrderDto;
+import eu.opertusmundi.common.model.order.ProviderOrderDto;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -163,38 +166,63 @@ public class OrderEntity {
     @Setter
     private String referenceNumber;
 
-    public OrderDto toDto() {
-        return this.toDto(true, false);
-    }
-
-    public OrderDto toDto(boolean includeDetails, boolean includeHelpdeskData) {
-        final OrderDto o = new OrderDto();
-
+    private void updateDto(OrderDto o) {
         o.setCartId(cart);
         o.setCreatedOn(createdOn);
         o.setCurrency(currency);
         o.setDeliveryMethod(deliveryMethod);
         o.setId(id);
+        o.setKey(key);
         if (this.payin != null) {
             o.setPaymentMethod(this.payin.getPaymentMethod());
         }
-        o.setKey(key);
         o.setReferenceNumber(referenceNumber);
         o.setStatus(status);
         o.setStatusUpdatedOn(statusUpdatedOn);
         o.setTotalPrice(totalPrice);
         o.setTotalPriceExcludingTax(totalPriceExcludingTax);
         o.setTotalTax(totalTax);
+    }
+
+    public ConsumerOrderDto toConsumerDto(boolean includeDetails) {
+        final ConsumerOrderDto o = new ConsumerOrderDto();
+
+        this.updateDto(o);
 
         if (includeDetails) {
-            items.stream().map(i -> i.toDto(includeHelpdeskData)).forEach(o::addItem);
+            items.stream().map(OrderItemEntity::toConsumerDto).forEach(o::addItem);
         }
-        if (includeHelpdeskData) {
-            o.setConsumer(consumer.getProfile().getConsumer().toDto());
-            if (payin != null) {
-                o.setPayIn(payin.toDto(false, includeHelpdeskData));
-            }
 
+        return o;
+    }
+
+    public ProviderOrderDto toProviderDto(boolean includeDetails) {
+        final ProviderOrderDto o = new ProviderOrderDto();
+
+        this.updateDto(o);
+
+        o.setConsumer(consumer.getConsumer().toConsumerDto());
+
+        if (includeDetails) {
+            items.stream().map(OrderItemEntity::toProviderDto).forEach(o::addItem);
+        }
+
+        return o;
+    }
+
+    public HelpdeskOrderDto toHelpdeskDto(boolean includeDetails) {
+        final HelpdeskOrderDto o = new HelpdeskOrderDto();
+
+        this.updateDto(o);
+
+        o.setConsumer(consumer.getProfile().getConsumer().toDto());
+        if (payin != null) {
+            o.setPayIn(payin.toHelpdeskDto(false));
+        }
+
+
+        if (includeDetails) {
+            items.stream().map(OrderItemEntity::toHelpdeskDto).forEach(o::addItem);
             statusHistory.stream().map(OrderStatusEntity::toDto).forEach(o::addStatusHistory);
         }
 

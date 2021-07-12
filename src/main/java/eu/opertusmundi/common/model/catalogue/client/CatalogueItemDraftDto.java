@@ -7,7 +7,7 @@ import org.springframework.util.Assert;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 
-import eu.opertusmundi.common.model.account.PublisherDto;
+import eu.opertusmundi.common.model.account.ProviderDto;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -28,9 +28,9 @@ public class CatalogueItemDraftDto extends CatalogueItemDto implements Serializa
     @Schema(description = "Publisher details")
     @JsonProperty(access = Access.READ_ONLY)
     @Getter
-    private PublisherDto publisher;
+    private ProviderDto publisher;
 
-    public void setPublisher(PublisherDto publisher) {
+    public void setPublisher(ProviderDto publisher) {
         Assert.isTrue(publisher.getKey().equals(this.publisherId), "Provider account key does not match publisher id");
 
         this.publisher = publisher;

@@ -31,6 +31,7 @@ import javax.validation.constraints.NotNull;
 
 import org.hibernate.annotations.NaturalId;
 
+import eu.opertusmundi.common.model.account.ConsumerDto;
 import eu.opertusmundi.common.model.account.ConsumerIndividualCommandDto;
 import eu.opertusmundi.common.model.account.CustomerCommandDto;
 import eu.opertusmundi.common.model.account.CustomerDto;
@@ -170,6 +171,8 @@ public abstract class CustomerEntity {
     protected ZonedDateTime walletFundsUpdatedOn;
 
     public abstract CustomerDto toDto();
+
+    public abstract ConsumerDto toConsumerDto();
 
     public abstract void update(CustomerCommandDto command);
 

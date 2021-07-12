@@ -8,9 +8,14 @@ import javax.validation.constraints.NotEmpty;
 
 import org.hibernate.validator.constraints.Length;
 
-import eu.opertusmundi.common.model.payment.CardDirectPayInDto;
 import eu.opertusmundi.common.model.payment.EnumPaymentMethod;
 import eu.opertusmundi.common.model.payment.PayInDto;
+import eu.opertusmundi.common.model.payment.consumer.ConsumerCardDirectPayInDto;
+import eu.opertusmundi.common.model.payment.consumer.ConsumerPayInDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskCardDirectPayInDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
+import eu.opertusmundi.common.model.payment.provider.ProviderCardDirectPayInDto;
+import eu.opertusmundi.common.model.payment.provider.ProviderPayInDto;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -41,12 +46,7 @@ public class CardDirectPayInEntity extends PayInEntity {
     @Setter
     private String statementDescriptor;
 
-    @Override
-    public PayInDto toDto(boolean includeDetails, boolean includeHelpdeskData) {
-        final CardDirectPayInDto p = new CardDirectPayInDto();
-
-        p.setAlias(alias);
-        p.setCard(card);
+    public void updateDto(PayInDto p) {
         p.setCreatedOn(createdOn);
         p.setCurrency(currency);
         p.setExecutedOn(executedOn);
@@ -55,23 +55,66 @@ public class CardDirectPayInEntity extends PayInEntity {
         p.setPayIn(payIn);
         p.setPaymentMethod(paymentMethod);
         p.setReferenceNumber(referenceNumber);
-        p.setStatementDescriptor(statementDescriptor);
         p.setStatus(status);
         p.setStatusUpdatedOn(statusUpdatedOn);
         p.setTotalPrice(totalPrice);
         p.setTotalPriceExcludingTax(totalPriceExcludingTax);
         p.setTotalTax(totalTax);
+    }
+
+    @Override
+    public ConsumerPayInDto toConsumerDto(boolean includeDetails) {
+        final ConsumerCardDirectPayInDto p = new ConsumerCardDirectPayInDto();
+
+        this.updateDto(p);
+
+        p.setAlias(alias);
+        p.setCard(card);
+        p.setStatementDescriptor(statementDescriptor);
 
         if (includeDetails) {
-            this.items.stream().map(e -> e.toDto(includeDetails, includeHelpdeskData, includeHelpdeskData)).forEach(p::addItem);
+            this.items.stream().map(i -> i.toConsumerDto(includeDetails)).forEach(p::addItem);
         }
-        if (includeHelpdeskData) {
-            p.setConsumer(consumer.getProfile().getConsumer().toDto());
-            p.setProcessDefinition(processDefinition);
-            p.setProcessInstance(processInstance);
-            p.setProviderPayIn(payIn);
-            p.setProviderResultCode(resultCode);
-            p.setProviderResultMessage(resultMessage);
+
+        return p;
+    }
+
+    @Override
+    public ProviderPayInDto toProviderDto(boolean includeDetails) {
+        final ProviderCardDirectPayInDto p = new ProviderCardDirectPayInDto();
+
+        this.updateDto(p);
+        
+        p.setAlias(alias);
+        p.setCard(card);
+        p.setConsumer(consumer.getConsumer().toConsumerDto());
+        p.setStatementDescriptor(statementDescriptor);
+
+        if (includeDetails) {
+            this.items.stream().map(e -> e.toProviderDto(includeDetails)).forEach(p::addItem);
+        }
+
+        return p;
+    }
+
+    @Override
+    public HelpdeskPayInDto toHelpdeskDto(boolean includeDetails) {
+        final HelpdeskCardDirectPayInDto p = new HelpdeskCardDirectPayInDto();
+
+        this.updateDto(p);
+        
+        p.setAlias(alias);
+        p.setCard(card);
+        p.setConsumer(consumer.getProfile().getConsumer().toDto());
+        p.setProcessDefinition(processDefinition);
+        p.setProcessInstance(processInstance);
+        p.setProviderPayIn(payIn);
+        p.setProviderResultCode(resultCode);
+        p.setProviderResultMessage(resultMessage);
+        p.setStatementDescriptor(statementDescriptor);
+
+        if (includeDetails) {
+            this.items.stream().map(e -> e.toHelpdeskDto(includeDetails)).forEach(p::addItem);
         }
 
         return p;

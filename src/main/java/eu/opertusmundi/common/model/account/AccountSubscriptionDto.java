@@ -3,8 +3,6 @@ package eu.opertusmundi.common.model.account;
 import java.time.ZonedDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,7 +13,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class AccountSubscriptionDto {
+public abstract class AccountSubscriptionDto {
 
     @JsonIgnore
     private Integer id;
@@ -37,11 +35,5 @@ public class AccountSubscriptionDto {
 
     @Schema(description = "First asset topic category if any exist")
     private EnumTopicCategory segment;
-
-    @JsonInclude(Include.NON_NULL)
-    private CustomerDto consumer;
-
-    @JsonInclude(Include.NON_NULL)
-    private CustomerDto provider;
 
 }

@@ -13,7 +13,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Setter
 @Getter
-public class PublisherDto {
+public class ProviderDto {
 
     @Schema(description = "Publisher unique key")
     @JsonProperty("id")

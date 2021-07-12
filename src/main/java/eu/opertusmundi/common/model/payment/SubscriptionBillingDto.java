@@ -4,10 +4,7 @@ import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import eu.opertusmundi.common.model.account.AccountSubscriptionDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,13 +13,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class SubscriptionBillingDto {
+public abstract class SubscriptionBillingDto {
 
     @JsonIgnore
     private Integer id;
-
-    @JsonInclude(Include.NON_NULL)
-    private AccountSubscriptionDto subscription;
 
     @JsonIgnore
     private Integer subscriptionId;
@@ -51,22 +45,13 @@ public class SubscriptionBillingDto {
     @Schema(description = "Total calls used by purchased SKUs. This field is exclusive with field `skuTotalRows`")
     private Integer skuTotalCalls;
 
-    @Schema(
-        description = "Item total price ",
-        example = "1,24"
-    )
+    @Schema(description = "Item total price ", example = "1.24")
     private BigDecimal totalPrice;
 
-    @Schema(
-        description = "Item price excluding tax",
-        example = "1,00"
-    )
+    @Schema(description = "Item price excluding tax", example = "1.00")
     private BigDecimal totalPriceExcludingTax;
 
-    @Schema(
-        description = "Item tax ",
-        example = "0,24"
-    )
+    @Schema(description = "Item tax ", example = "0.24")
     private BigDecimal totalTax;
 
 }

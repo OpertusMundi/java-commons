@@ -27,9 +27,10 @@ import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
-import eu.opertusmundi.common.model.payment.PayInItemDto;
-import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.TransferDto;
+import eu.opertusmundi.common.model.payment.consumer.ConsumerPayInItemDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInItemDto;
+import eu.opertusmundi.common.model.payment.provider.ProviderPayInItemDto;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -133,10 +134,11 @@ public abstract class PayInItemEntity {
         this.transferStatus        = t.getStatus();
     }
 
-    public PayInItemDto toDto() throws PaymentException {
-        return this.toDto(false, false, false);
-    }
-    public abstract PayInItemDto toDto(boolean includeDetails, boolean incluedTransfer, boolean includeHelpdeskData);
+    public abstract ConsumerPayInItemDto toConsumerDto(boolean includeDetails);
+
+    public abstract ProviderPayInItemDto toProviderDto(boolean includeDetails);
+
+    public abstract HelpdeskPayInItemDto toHelpdeskDto(boolean includeDetails);
 
     public TransferDto toTransferDto(boolean includeHelpdeskData) {
         final TransferDto t = new TransferDto();

@@ -15,6 +15,9 @@ import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
 import eu.opertusmundi.common.model.payment.SubscriptionBillingDto;
+import eu.opertusmundi.common.model.payment.consumer.ConsumerSubscriptionBillingDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskSubscriptionBillingDto;
+import eu.opertusmundi.common.model.payment.provider.ProviderSubscriptionBillingDto;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -90,16 +93,9 @@ public class SubscriptionBillingEntity {
     @Setter
     private BigDecimal totalTax;
 
-    public SubscriptionBillingDto toDto() {
-        return this.toDto(false, false);
-    }
-
-    public SubscriptionBillingDto toDto(boolean includeDetails, boolean includeHelpDeskData) {
-        final SubscriptionBillingDto s = new SubscriptionBillingDto();
-
+    private void updateDto(SubscriptionBillingDto s) {
         s.setFromDate(fromDate);
         s.setId(id);
-        s.setSubscription(this.getSubscription().toDto(includeHelpDeskData));
         s.setSubscriptionId(this.getSubscription().getId());
         s.setService(this.getSubscription().getService());
         s.setSkuTotalCalls(skuTotalCalls);
@@ -110,6 +106,34 @@ public class SubscriptionBillingEntity {
         s.setTotalPriceExcludingTax(totalPriceExcludingTax);
         s.setTotalRows(skuTotalRows);
         s.setTotalTax(totalTax);
+    }
+
+    public ConsumerSubscriptionBillingDto toConsumerDto(boolean includeDetails) {
+        final ConsumerSubscriptionBillingDto s = new ConsumerSubscriptionBillingDto();
+
+        this.updateDto(s);
+
+        s.setSubscription(this.getSubscription().toConsumerDto());
+
+        return s;
+    }
+
+    public ProviderSubscriptionBillingDto toProviderDto(boolean includeDetails) {
+        final ProviderSubscriptionBillingDto s = new ProviderSubscriptionBillingDto();
+
+        this.updateDto(s);
+
+        s.setSubscription(this.getSubscription().toProviderDto());
+
+        return s;
+    }
+
+    public HelpdeskSubscriptionBillingDto toHelpdeskDto(boolean includeDetails) {
+        final HelpdeskSubscriptionBillingDto s = new HelpdeskSubscriptionBillingDto();
+
+        this.updateDto(s);
+
+        s.setSubscription(this.getSubscription().toHelpdeskDto());
 
         return s;
     }

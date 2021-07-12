@@ -1,4 +1,4 @@
-package eu.opertusmundi.common.model.payment;
+package eu.opertusmundi.common.model.payment.provider;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -16,7 +16,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class CardDirectPayInDto extends PayInDto {
+public class ProviderCardDirectPayInDto extends ProviderPayInDto {
 
     @JsonIgnore
     private String card;
@@ -30,9 +30,5 @@ public class CardDirectPayInDto extends PayInDto {
         externalDocs = @ExternalDocumentation(url = "https://docs.mangopay.com/guide/customising-bank-statement-references-direct-debit")
     )
     private String statementDescriptor;
-
-    @Schema(description = "Redirect URL if 3-D Secure validation is required")
-    @JsonInclude(Include.NON_NULL)
-    private String secureModeRedirectURL;
 
 }

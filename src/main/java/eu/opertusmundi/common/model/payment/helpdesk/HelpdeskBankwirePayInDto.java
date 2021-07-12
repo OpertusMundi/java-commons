@@ -1,4 +1,4 @@
-package eu.opertusmundi.common.model.payment;
+package eu.opertusmundi.common.model.payment.helpdesk;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -15,7 +15,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class BankwirePayInDto extends PayInDto {
+public class HelpdeskBankwirePayInDto extends HelpdeskPayInDto {
 
     @Schema(description = "The user has to proceed a Bank wire with this reference")
     private String wireReference;

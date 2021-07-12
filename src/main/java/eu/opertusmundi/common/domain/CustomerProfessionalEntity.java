@@ -17,11 +17,13 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.Type;
 
+import eu.opertusmundi.common.model.account.ConsumerDto;
 import eu.opertusmundi.common.model.account.CustomerCommandDto;
 import eu.opertusmundi.common.model.account.CustomerProfessionalDto;
 import eu.opertusmundi.common.model.account.EnumKycLevel;
 import eu.opertusmundi.common.model.account.EnumLegalPersonType;
 import eu.opertusmundi.common.model.account.EnumMangopayUserType;
+import eu.opertusmundi.common.model.account.ProviderDto;
 import eu.opertusmundi.common.model.account.ProviderProfessionalCommandDto;
 import lombok.Getter;
 import lombok.Setter;
@@ -302,6 +304,25 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         }
     }
 
+    public ProviderDto toProviderDto() {
+        final ProviderDto p = new ProviderDto();
+
+        p.setCity(headquartersAddress.getCity());
+        p.setCountry(headquartersAddress.getCountry());
+        p.setJoinedAt(createdAt);
+        p.setKey(this.account.getKey());
+        p.setLogoImage(logoImage);
+        p.setLogoImageMimeType(logoImageMimeType);
+        p.setName(name);
+        p.setRating(getRating());
+
+        if (emailVerified) {
+            p.setEmail(email);
+        }
+
+        return p;
+    }
+
     @Override
     public CustomerProfessionalDto toDto() {
         final CustomerProfessionalDto p = new CustomerProfessionalDto();
@@ -339,6 +360,17 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         p.setWalletFundsUpdatedOn(this.walletFundsUpdatedOn);
 
         return p;
+    }
+
+    @Override
+    public ConsumerDto toConsumerDto() {
+        final ConsumerDto c = new ConsumerDto();
+
+        c.setCountry(headquartersAddress.getCountry());
+        c.setKey(account.getKey());
+        c.setName(name);
+
+        return c;
     }
 
     public static CustomerProfessionalEntity from(CustomerDraftProfessionalEntity r) {

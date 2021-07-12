@@ -35,6 +35,8 @@ import eu.opertusmundi.common.model.payment.PayInDto;
 import eu.opertusmundi.common.model.payment.PayInItemDto;
 import eu.opertusmundi.common.model.payment.PayInStatusUpdateCommand;
 import eu.opertusmundi.common.model.payment.PaymentException;
+import eu.opertusmundi.common.model.payment.consumer.ConsumerPayInDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
 import io.jsonwebtoken.lang.Assert;
 
 @Repository
@@ -50,8 +52,8 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     @Query("SELECT p FROM PayIn p WHERE p.key = :key")
     Optional<PayInEntity> findOneEntityByKey(@Param("key") UUID key);
 
-    default Optional<PayInDto> findOneObjectByKey(UUID key, boolean includeHelpdeskData) {
-        return this.findOneEntityByKey(key).map(o -> o.toDto(true, includeHelpdeskData));
+    default Optional<PayInDto> findOneObjectByKey(UUID key) {
+        return this.findOneEntityByKey(key).map(o -> o.toHelpdeskDto(true));
     }
 
     @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE i.order.key = key")
@@ -125,7 +127,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         Pageable pageable
     );
 
-    default Page<PayInDto> findAllPayInObjects(
+    default Page<HelpdeskPayInDto> findAllPayInObjects(
         @Param("status") Set<EnumTransactionStatus> status,
         @Param("email") String email,
         @Param("referenceNumber") String referenceNumber,
@@ -138,7 +140,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
             pageable
         );
 
-        return page.map(e -> e.toDto(true, true));
+        return page.map(e -> e.toHelpdeskDto(true));
     }
 
     @Query(
@@ -165,7 +167,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
             pageable
         );
 
-        return page.map(i -> i.toDto(true, true, true));
+        return page.map(i -> i.toHelpdeskDto(true));
     }
 
     @Modifying
@@ -224,11 +226,11 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
 
         this.saveAndFlush(payin);
 
-        return payin.toDto();
+        return payin.toConsumerDto(true);
     }
 
     @Transactional(readOnly = false)
-    default PayInDto createCardDirectPayInForOrder(CardDirectPayInCommand command) throws Exception {
+    default ConsumerPayInDto createCardDirectPayInForOrder(CardDirectPayInCommand command) throws Exception {
         Assert.notNull(command, "Expected a non-null command");
         Assert.notNull(command.getOrderKey(), "Expected a non-null order key");
 
@@ -275,7 +277,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
 
         this.saveAndFlush(payin);
 
-        return payin.toDto();
+        return payin.toConsumerDto(true);
     }
 
     /**
@@ -288,12 +290,12 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
      * @throws PaymentException
      */
     @Transactional(readOnly = false)
-    default PayInDto updatePayInStatus(PayInStatusUpdateCommand command) throws PaymentException {
+    default HelpdeskPayInDto updatePayInStatus(PayInStatusUpdateCommand command) throws PaymentException {
         final PayInEntity payIn = this.findOneByPayInId(command.getProviderPayInId()).orElse(null);
 
         // Update only on status changes
         if (payIn.getStatus() == command.getStatus()) {
-            return payIn.toDto();
+            return payIn.toHelpdeskDto(true);
         }
 
         // Update PayIn
@@ -316,7 +318,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
 
         this.saveAndFlush(payIn);
 
-        return payIn.toDto();
+        return payIn.toHelpdeskDto(true);
     }
 
 }

@@ -19,6 +19,9 @@ import javax.validation.constraints.NotNull;
 import eu.opertusmundi.common.model.account.AccountSubscriptionDto;
 import eu.opertusmundi.common.model.account.EnumAssetSource;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
+import eu.opertusmundi.common.model.payment.consumer.ConsumerAccountSubscriptionDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskAccountSubscriptionDto;
+import eu.opertusmundi.common.model.payment.provider.ProviderAccountSubscriptionDto;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -85,13 +88,7 @@ public class AccountSubscriptionEntity {
     @Setter
     private EnumTopicCategory segment;
 
-    public AccountSubscriptionDto toDto() {
-        return this.toDto(false);
-    }
-
-    public AccountSubscriptionDto toDto(boolean includeHelpDeskData) {
-        final AccountSubscriptionDto s = new AccountSubscriptionDto();
-
+    public void updateDto(AccountSubscriptionDto s) {
         s.setAddedOn(addedOn);
         s.setId(id);
         s.setOrderId(order.getId());
@@ -99,11 +96,35 @@ public class AccountSubscriptionEntity {
         s.setService(service);
         s.setSource(source);
         s.setUpdatedOn(updatedOn);
+    }
 
-        if (includeHelpDeskData) {
-            s.setConsumer(this.consumer.getConsumer().toDto());
-            s.setProvider(this.provider.getProvider().toDto());
-        }
+    public ConsumerAccountSubscriptionDto toConsumerDto() {
+        final ConsumerAccountSubscriptionDto s = new ConsumerAccountSubscriptionDto();
+
+        this.updateDto(s);
+
+        s.setProvider(this.provider.getProvider().toProviderDto());
+
+        return s;
+    }
+
+    public ProviderAccountSubscriptionDto toProviderDto() {
+        final ProviderAccountSubscriptionDto s = new ProviderAccountSubscriptionDto();
+
+        this.updateDto(s);
+
+        s.setConsumer(this.consumer.getConsumer().toConsumerDto());
+
+        return s;
+    }
+
+    public HelpdeskAccountSubscriptionDto toHelpdeskDto() {
+        final HelpdeskAccountSubscriptionDto s = new HelpdeskAccountSubscriptionDto();
+
+        this.updateDto(s);
+
+        s.setConsumer(this.consumer.getConsumer().toDto());
+        s.setProvider(this.provider.getProvider().toDto());
 
         return s;
     }

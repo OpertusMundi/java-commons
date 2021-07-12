@@ -26,7 +26,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import brave.Span;
 import brave.Tracer;
-import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.AssetAdditionalResourceEntity;
 import eu.opertusmundi.common.domain.AssetResourceEntity;
 import eu.opertusmundi.common.feign.client.BpmServerFeignClient;
@@ -35,7 +34,7 @@ import eu.opertusmundi.common.model.PageRequestDto;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.RequestContext;
 import eu.opertusmundi.common.model.RestResponse;
-import eu.opertusmundi.common.model.account.PublisherDto;
+import eu.opertusmundi.common.model.account.ProviderDto;
 import eu.opertusmundi.common.model.analytics.AssetViewRecord;
 import eu.opertusmundi.common.model.analytics.EnumAssetViewSource;
 import eu.opertusmundi.common.model.asset.ResourceDto;
@@ -332,7 +331,7 @@ public class DefaultCatalogueService implements CatalogueService {
             }
 
             // Inject publisher details
-            final PublisherDto publisher = this.providerRepository.findOneByKey(item.getPublisherId()).toPublisherDto();
+            final ProviderDto publisher = this.providerRepository.findOneByKey(item.getPublisherId()).getProvider().toProviderDto();
 
             item.setPublisher(publisher);
 
@@ -626,7 +625,7 @@ public class DefaultCatalogueService implements CatalogueService {
         );
 
         // Get all publishers in the result
-        List<PublisherDto> publishers = null;
+        List<ProviderDto> publishers = null;
 
         if (includeProviders) {
             final Span span = this.tracer.nextSpan().name("database-publisher").start();
@@ -635,7 +634,7 @@ public class DefaultCatalogueService implements CatalogueService {
                 final UUID[] publisherKeys = items.stream().map(i -> i.getPublisherId()).distinct().toArray(UUID[]::new);
 
                 publishers = this.providerRepository.findAllByKey(publisherKeys).stream()
-                    .map(AccountEntity::toPublisherDto)
+                    .map(a -> a.getProvider().toProviderDto())
                     .filter(p -> p != null)
                     .collect(Collectors.toList());
 
@@ -717,7 +716,7 @@ public class DefaultCatalogueService implements CatalogueService {
             final CatalogueItemDraftDto item = new CatalogueItemDraftDto(catalogueResponse.getResult());
 
             // Inject publisher details
-            final PublisherDto publisher = this.providerRepository.findOneByKey(item.getPublisherId()).toPublisherDto();
+            final ProviderDto publisher = this.providerRepository.findOneByKey(item.getPublisherId()).getProvider().toProviderDto();
 
             item.setPublisher(publisher);
 

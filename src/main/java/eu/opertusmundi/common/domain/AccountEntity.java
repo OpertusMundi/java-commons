@@ -34,7 +34,6 @@ import eu.opertusmundi.common.model.account.AccountDto;
 import eu.opertusmundi.common.model.account.AccountProfileCommandDto;
 import eu.opertusmundi.common.model.account.EnumActivationStatus;
 import eu.opertusmundi.common.model.account.EnumCustomerType;
-import eu.opertusmundi.common.model.account.PublisherDto;
 import eu.opertusmundi.common.model.account.SimpleAccountDto;
 import lombok.Getter;
 import lombok.Setter;
@@ -262,37 +261,6 @@ public class AccountEntity {
     }
 
     /**
-     * Convert to a publisher DTO object
-     *
-     * @return a new {@link PublisherDto} instance
-     */
-    public PublisherDto toPublisherDto() {
-        // A provider must have the role ROLE_PROVIDER
-        if (!this.hasRole(EnumRole.ROLE_PROVIDER)) {
-            return null;
-        }
-
-        final PublisherDto publisher = new PublisherDto();
-
-        final CustomerProfessionalEntity provider = this.profile.getProvider();
-
-        publisher.setCity(provider.getHeadquartersAddress().getCity());
-        publisher.setCountry(provider.getHeadquartersAddress().getCountry());
-        publisher.setJoinedAt(provider.getCreatedAt());
-        publisher.setKey(this.key);
-        publisher.setLogoImage(provider.getLogoImage());
-        publisher.setLogoImageMimeType(provider.getLogoImageMimeType());
-        publisher.setName(provider.getName());
-        publisher.setRating(provider.getRating());
-
-        if(provider.isEmailVerified()) {
-            publisher.setEmail(provider.getEmail());
-        }
-
-        return publisher;
-    }
-
-    /**
      * Convert to a simple account DTO object
      *
      * @return a new {@link SimpleAccountDto} instance
@@ -338,7 +306,7 @@ public class AccountEntity {
         return this.profile != null ? this.profile.getConsumer() : null;
     }
 
-    public CustomerEntity getProvider() {
+    public CustomerProfessionalEntity getProvider() {
         return this.profile != null ? this.profile.getProvider() : null;
     }
 

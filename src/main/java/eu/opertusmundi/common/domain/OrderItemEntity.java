@@ -24,8 +24,11 @@ import org.hibernate.validator.constraints.Length;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
+import eu.opertusmundi.common.model.order.ConsumerOrderItemDto;
 import eu.opertusmundi.common.model.order.EnumOrderItemType;
+import eu.opertusmundi.common.model.order.HelpdeskOrderItemDto;
 import eu.opertusmundi.common.model.order.OrderItemDto;
+import eu.opertusmundi.common.model.order.ProviderOrderItemDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import lombok.Getter;
 import lombok.Setter;
@@ -98,7 +101,7 @@ public class OrderItemEntity {
     @Column(name = "`contract_template_version`")
     @Getter
     @Setter
-    private Integer contractTemplateVersion;
+    private String contractTemplateVersion;
 
     @Column(name = "`contract_signed_on`")
     @Getter
@@ -146,15 +149,10 @@ public class OrderItemEntity {
         return this.contractSignedOn != null;
     }
 
-    public OrderItemDto toDto() {
-        return this.toDto(false);
-    }
-
-    public OrderItemDto toDto(boolean includeHelpdeskData) {
-        final OrderItemDto i = new OrderItemDto();
-
+    public void updateDto(OrderItemDto i) {
         i.setAssetId(assetId);
         i.setAssetVersion(assetVersion);
+        i.setContractSignedOn(contractSignedOn);
         i.setDescription(description);
         i.setDiscountCode(discountCode);
         i.setId(id);
@@ -165,13 +163,37 @@ public class OrderItemEntity {
         i.setTotalPriceExcludingTax(totalPriceExcludingTax);
         i.setTotalTax(totalTax);
         i.setType(type);
+    }
 
-        if (includeHelpdeskData) {
-            i.setContractSignedOn(contractSignedOn);
-            i.setContractTemplateId(contractTemplateId);
-            i.setContractTemplateVersion(contractTemplateVersion);
-            i.setProvider(this.provider.getProvider().toDto());
-        }
+    public ConsumerOrderItemDto toConsumerDto() {
+        final ConsumerOrderItemDto i = new ConsumerOrderItemDto();
+
+        this.updateDto(i);
+
+        i.setProvider(this.provider.getProvider().toProviderDto());
+
+        return i;
+    }
+
+    public ProviderOrderItemDto toProviderDto() {
+        final ProviderOrderItemDto i = new ProviderOrderItemDto();
+
+        this.updateDto(i);
+
+        i.setContractTemplateId(contractTemplateId);
+        i.setContractTemplateVersion(contractTemplateVersion);
+
+        return i;
+    }
+
+    public HelpdeskOrderItemDto toHelpdeskDto() {
+        final HelpdeskOrderItemDto i = new HelpdeskOrderItemDto();
+
+        this.updateDto(i);
+
+        i.setContractTemplateId(contractTemplateId);
+        i.setContractTemplateVersion(contractTemplateVersion);
+        i.setProvider(this.provider.getProvider().toDto());
 
         return i;
     }
