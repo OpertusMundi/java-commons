@@ -10,7 +10,6 @@ import javax.validation.constraints.NotEmpty;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import eu.opertusmundi.common.model.account.helpdesk.HelpdeskAccountDto;
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -24,32 +23,32 @@ import lombok.Setter;
 @Setter
 public class MasterContractDto implements Serializable {
 
-	private static final long serialVersionUID = 1L;
-	
-	private Integer id;
-	
+    private static final long serialVersionUID = 1L;
+
+    private Integer id;
+
     private UUID key;
-	
+
     @JsonIgnore
     private Integer parentId;
-    
-	@NotEmpty
-	private String title;
-	
-	private String subtitle;
-	
-	private String state;
-	
-	private String version;
-	
-	private Boolean active;
 
-	@JsonIgnore
-	private HelpdeskAccountDto account;
+    @NotEmpty
+    private String title;
 
-	private List<MasterSectionDto> sections;
-	
+    private String subtitle;
+
+    private String state;
+
+    private String version;
+
+    private Boolean active;
+
+    @JsonIgnore
+    private HelpdeskAccountDto account;
+
+    private List<MasterSectionDto> sections;
+
     private ZonedDateTime createdAt;
-    
+
     private ZonedDateTime modifiedAt;
 }

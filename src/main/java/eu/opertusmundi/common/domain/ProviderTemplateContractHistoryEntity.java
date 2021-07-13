@@ -1,17 +1,13 @@
 package eu.opertusmundi.common.domain;
 
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
@@ -19,7 +15,6 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.contract.ProviderTemplateContractHistoryDto;
-import eu.opertusmundi.common.model.contract.ProviderTemplateSectionHistoryDto;
 import lombok.Getter;
 
 
@@ -28,7 +23,7 @@ import lombok.Getter;
     schema = "contract", name = "`provider_contract_history`"
 )
 public class ProviderTemplateContractHistoryEntity {
-	
+
     @Id
     @Column(name = "`id`", updatable = false)
     @SequenceGenerator(
@@ -49,7 +44,7 @@ public class ProviderTemplateContractHistoryEntity {
     @lombok.Getter
     @lombok.Setter
     UUID providerKey;
-    
+
     @Column(name = "`parent_id`")
     @lombok.Getter
     @lombok.Setter
@@ -59,12 +54,12 @@ public class ProviderTemplateContractHistoryEntity {
     @lombok.Getter
     @lombok.Setter
     Integer masterContractId;
-    
+
     @Column(name = "`master_contract_version`")
     @lombok.Getter
     @lombok.Setter
     String masterContractVersion;
-    
+
 
     @Column(name = "`title`")
     @lombok.Getter()
@@ -97,18 +92,9 @@ public class ProviderTemplateContractHistoryEntity {
     @lombok.Getter
     @lombok.Setter
     ZonedDateTime modifiedAt;
-    
-	//    @OneToMany(
-	//            mappedBy = "contract", 
-	//            fetch = FetchType.LAZY,
-	//            targetEntity = ProviderTemplateSectionHistoryEntity.class
-	//        )
-	//    @lombok.Getter()
-	//    @lombok.Setter()
-	//    List<ProviderTemplateSectionHistoryEntity> sections = new ArrayList<ProviderTemplateSectionHistoryEntity>();
 
     public ProviderTemplateContractHistoryDto toDto() {
-    	ProviderTemplateContractHistoryDto c = new ProviderTemplateContractHistoryDto();
+    	final ProviderTemplateContractHistoryDto c = new ProviderTemplateContractHistoryDto();
 
         c.setId(this.id);
         c.setKey(key);
@@ -121,7 +107,7 @@ public class ProviderTemplateContractHistoryEntity {
         c.setCreatedAt(this.createdAt);
         c.setModifiedAt(this.modifiedAt);
         c.setVersion(this.version);
-        
+
         return c;
     }
 

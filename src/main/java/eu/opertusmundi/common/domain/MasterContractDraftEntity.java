@@ -1,19 +1,15 @@
 package eu.opertusmundi.common.domain;
 
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
@@ -21,18 +17,14 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.contract.MasterContractDraftDto;
-import eu.opertusmundi.common.model.contract.MasterContractHistoryDto;
-import eu.opertusmundi.common.model.contract.MasterSectionDraftDto;
-import eu.opertusmundi.common.model.contract.MasterSectionDto;
 import lombok.Getter;
-
 
 @Entity(name = "ContractDraft")
 @Table(
     schema = "contract", name = "`master_contract_draft`"
 )
 public class MasterContractDraftEntity {
-	
+
     @Id
     @Column(name = "`id`", updatable = false)
     @SequenceGenerator(
@@ -42,13 +34,13 @@ public class MasterContractDraftEntity {
     @lombok.Setter()
     @lombok.Getter()
     Integer id ;
-    
+
     @NotNull
     @NaturalId
     @Column(name = "key", updatable = false, columnDefinition = "uuid")
     @Getter
     private final UUID key = UUID.randomUUID();
-    
+
     @Column(name = "`parent_id`")
     @lombok.Getter
     @lombok.Setter
@@ -97,18 +89,9 @@ public class MasterContractDraftEntity {
     @lombok.Getter
     @lombok.Setter
     ZonedDateTime modifiedAt;
-    
-	//   @OneToMany(
-	//        mappedBy = "contract", 
-	//        fetch = FetchType.LAZY,
-	//        targetEntity = MasterSectionDraftEntity.class
-	//    )
-	//    @lombok.Getter()
-	//    @lombok.Setter()
-	//    List<MasterSectionDraftEntity> sections = new ArrayList<>();
 
     public MasterContractDraftDto toDto() {
-    	MasterContractDraftDto c = new MasterContractDraftDto();
+        final MasterContractDraftDto c = new MasterContractDraftDto();
 
         c.setId(this.id);
         c.setParentId(this.getParentId());
@@ -119,7 +102,7 @@ public class MasterContractDraftEntity {
         c.setCreatedAt(this.createdAt);
         c.setModifiedAt(this.modifiedAt);
         c.setVersion(this.version);
-        
+
         return c;
     }
 

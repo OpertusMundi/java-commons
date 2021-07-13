@@ -1,19 +1,15 @@
 package eu.opertusmundi.common.domain;
 
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
@@ -21,16 +17,14 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.contract.MasterContractDto;
-import eu.opertusmundi.common.model.contract.MasterSectionDto;
 import lombok.Getter;
-
 
 @Entity(name = "Contract")
 @Table(
     schema = "contract", name = "`master_contract`"
 )
 public class MasterContractEntity {
-	
+
     @Id
     @Column(name = "`id`", updatable = false)
     @SequenceGenerator(
@@ -51,7 +45,7 @@ public class MasterContractEntity {
     @lombok.Getter
     @lombok.Setter
     Integer parentId;
-    
+
     @NotNull
     @ManyToOne
     @JoinColumn(name = "`account`", nullable = false)
@@ -94,18 +88,9 @@ public class MasterContractEntity {
     @lombok.Getter
     @lombok.Setter
     ZonedDateTime modifiedAt;
-    
-	//   @OneToMany(
-	//        mappedBy = "contract", 
-	//        fetch = FetchType.LAZY,
-	//        targetEntity = MasterSectionEntity.class
-	//    )
-	//    @lombok.Getter()
-	//    @lombok.Setter()
-	//    List<MasterSectionEntity> sections = new ArrayList<MasterSectionEntity>();
 
     public MasterContractDto toDto() {
-    	MasterContractDto c = new MasterContractDto();
+    	final MasterContractDto c = new MasterContractDto();
 
         c.setId(this.id);
         c.setParentId(this.getParentId());
@@ -116,7 +101,7 @@ public class MasterContractEntity {
         c.setCreatedAt(this.createdAt);
         c.setModifiedAt(this.modifiedAt);
         c.setVersion(this.version);
-        
+
         return c;
     }
 
