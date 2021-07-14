@@ -29,6 +29,8 @@ public interface ProviderTemplateContractRepository extends JpaRepository<Provid
 	@Query("SELECT c FROM ProviderContract c WHERE c.key = :key")
 	Optional<ProviderTemplateContractEntity> findByKey(UUID key);
 
+	@Query("SELECT c FROM ProviderContract c WHERE c.parentId = :parentId")
+	Optional<ProviderTemplateContractEntity> findByParentId(Integer parentId);
 	
 	
 	@Query("SELECT s FROM ProviderSection s WHERE s.contract = :contract")

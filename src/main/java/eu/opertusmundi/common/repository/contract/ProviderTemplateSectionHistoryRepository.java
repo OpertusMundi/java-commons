@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import eu.opertusmundi.common.domain.ProviderTemplateContractHistoryEntity;
 import eu.opertusmundi.common.domain.ProviderTemplateSectionHistoryEntity;
+import eu.opertusmundi.common.model.contract.ProviderTemplateSectionDraftDto;
 import eu.opertusmundi.common.model.contract.ProviderTemplateSectionDto;
 import eu.opertusmundi.common.model.contract.ProviderTemplateSectionHistoryDto;
 import eu.opertusmundi.common.model.ApplicationException;
@@ -72,6 +73,23 @@ public interface ProviderTemplateSectionHistoryRepository extends JpaRepository<
 			// Create a new entity
 			sectionEntity = new ProviderTemplateSectionHistoryEntity();
 		}
+		
+		sectionEntity.setContract(ce);
+		sectionEntity.setId(s.getId());
+		sectionEntity.setMasterSectionId(s.getMasterSectionId());
+		sectionEntity.setOptional(s.isOptional());
+		sectionEntity.setOption(s.getOption());
+		sectionEntity.setSuboption(s.getSuboption());
+		return saveAndFlush(sectionEntity).toDto();
+	}
+	
+	@Transactional(readOnly = false)
+	default ProviderTemplateSectionHistoryDto saveFrom(ProviderTemplateSectionDraftDto s, ProviderTemplateContractHistoryEntity ce) {
+
+		
+		// Create a new entity
+		ProviderTemplateSectionHistoryEntity sectionEntity = new ProviderTemplateSectionHistoryEntity();
+		
 		
 		sectionEntity.setContract(ce);
 		sectionEntity.setId(s.getId());

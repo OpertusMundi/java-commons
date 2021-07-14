@@ -23,10 +23,6 @@ public interface ProviderTemplateSectionDraftRepository extends JpaRepository<Pr
 
 	
 	Optional<ProviderTemplateSectionDraftEntity> findOneById(Integer id);
-	
-	//Optional<SectionEntity> findOneByNameAndIdNot(String name, Integer id);
-
-	//Page<SectionEntity> findAllByNameContains(Pageable pageable, String name);
 
 	@Query("SELECT o FROM ProviderSectionDraft o WHERE :sectionId IS NULL OR o.id = :sectionId")
 	List<ProviderTemplateSectionDraftEntity> findAll(
@@ -42,7 +38,9 @@ public interface ProviderTemplateSectionDraftRepository extends JpaRepository<Pr
 	default ProviderTemplateSectionDraftDto saveFrom(ProviderTemplateSectionDraftDto s) {
 
 		ProviderTemplateSectionDraftEntity sectionEntity = null;
-		sectionEntity = this.findById(s.getId()).orElse(null);
+		if(s.getId() != null) {
+			sectionEntity = this.findById(s.getId()).orElse(null);
+		}
 		if (sectionEntity == null) {
 			
 			// Create a new entity
