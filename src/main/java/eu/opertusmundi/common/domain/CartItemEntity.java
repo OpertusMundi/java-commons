@@ -37,7 +37,6 @@ public class CartItemEntity {
     @GeneratedValue(generator = "cart_item_id_seq", strategy = GenerationType.SEQUENCE)
     @Column(name = "`id`")
     @Getter
-    @Setter
     private Integer id;
 
     @NotNull

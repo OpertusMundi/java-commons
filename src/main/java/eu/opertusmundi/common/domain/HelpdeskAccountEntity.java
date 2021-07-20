@@ -28,6 +28,7 @@ import org.hibernate.annotations.Type;
 import eu.opertusmundi.common.model.account.helpdesk.EnumHelpdeskRole;
 import eu.opertusmundi.common.model.account.helpdesk.HelpdeskAccountDto;
 import eu.opertusmundi.common.model.account.helpdesk.HelpdeskProfileCommandDto;
+import eu.opertusmundi.common.model.account.helpdesk.SimpleHelpdeskAccountDto;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -46,7 +47,7 @@ public class HelpdeskAccountEntity {
     @Column(name = "`id`", updatable = false)
     @SequenceGenerator(sequenceName = "`admin.account_id_seq`", name = "admin_account_id_seq", allocationSize = 1)
     @GeneratedValue(generator = "admin_account_id_seq", strategy = GenerationType.SEQUENCE)
-    @lombok.Getter
+    @Getter
     Integer id ;
 
     @NotNull
@@ -127,14 +128,14 @@ public class HelpdeskAccountEntity {
 
     @NotNull
     @Column(name = "`created_on`")
-    @lombok.Getter
-    @lombok.Setter
+    @Getter
+    @Setter
     ZonedDateTime createdOn;
 
     @NotNull
     @Column(name = "`modified_on`")
-    @lombok.Getter
-    @lombok.Setter
+    @Getter
+    @Setter
     ZonedDateTime modifiedOn;
 
     @OneToMany(
@@ -237,5 +238,17 @@ public class HelpdeskAccountEntity {
 
 		return a;
 	}
+	
+    public SimpleHelpdeskAccountDto toSimpleDto() {
+        final SimpleHelpdeskAccountDto a = new SimpleHelpdeskAccountDto();
+
+        a.setEmail(this.email);
+        a.setFirstName(this.firstName);
+        a.setId(this.id);
+        a.setKey(this.key);
+        a.setLastName(this.lastName);
+
+        return a;
+    }
 
 }

@@ -1,110 +1,183 @@
 package eu.opertusmundi.common.repository.contract;
 
 import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import eu.opertusmundi.common.domain.AccountEntity;
+import eu.opertusmundi.common.domain.MasterContractHistoryEntity;
 import eu.opertusmundi.common.domain.ProviderTemplateContractDraftEntity;
+import eu.opertusmundi.common.domain.ProviderTemplateContractHistoryEntity;
 import eu.opertusmundi.common.domain.ProviderTemplateSectionDraftEntity;
-import eu.opertusmundi.common.model.contract.ProviderTemplateContractDraftDto;
-import eu.opertusmundi.common.model.contract.ProviderTemplateContractDto;
 import eu.opertusmundi.common.model.ApplicationException;
-import eu.opertusmundi.common.model.BasicMessageCode;
+import eu.opertusmundi.common.model.contract.ContractMessageCode;
+import eu.opertusmundi.common.model.contract.EnumContractStatus;
+import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractCommandDto;
+import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractDto;
+import eu.opertusmundi.common.model.contract.provider.ProviderTemplateSectionDto;
 
 @Repository
 @Transactional(readOnly = true)
 public interface ProviderTemplateContractDraftRepository extends JpaRepository<ProviderTemplateContractDraftEntity, Integer> {
 
-	Optional<ProviderTemplateContractDraftEntity> findOneById(Integer id);
-	
-	@Query("SELECT s FROM ProviderSectionDraft s WHERE s.contract = :contract")
-	List<ProviderTemplateSectionDraftEntity> findSectionsByContract(
-		@Param("contract") ProviderTemplateContractDraftEntity contract
-	);
-	
-	@Query("SELECT s FROM ProviderSectionDraft s WHERE s.contract = :contract")
-	List<ProviderTemplateSectionDraftEntity> findDraftSectionsByContract(
-		@Param("contract") ProviderTemplateContractDraftEntity contract
-	);
-	
-	@Query("SELECT id FROM ProviderSectionDraft s WHERE s.contract = :contract")
-	List<Integer> findSectionsIdsByContract(
-		@Param("contract") ProviderTemplateContractDraftEntity contract
-	);
-	
-	
-	@Query("SELECT c FROM ProviderContractDraft c WHERE c.providerKey = :providerKey")
-	List<ProviderTemplateContractDraftEntity> findContractsByProviderKey(
-		@Param("providerKey") UUID providerKey);
-	
+    @Query("SELECT a FROM Account a WHERE a.id = :id")
+    Optional<AccountEntity> findAccountById(
+        @Param("id") int id
+    );
+
+    @Query("SELECT c FROM ContractHistory c WHERE c.key = :contractKey and status = 'ACTIVE'")
+    Optional<MasterContractHistoryEntity> findActiveMasterContractByKey(UUID contractKey);
+
+    @Query("SELECT c FROM ProviderContractHistory c WHERE c.owner.key = :providerKey and c.key = :contractKey")
+    Optional<ProviderTemplateContractHistoryEntity> findProviderTemplateContractHistoryByKey(UUID providerKey, UUID contractKey);
+
+    @Query("SELECT c FROM ProviderContractDraft c WHERE c.owner.key = :providerKey and c.key = :draftKey")
+    Optional<ProviderTemplateContractDraftEntity> findOneByKey(UUID providerKey, UUID draftKey);
+
+    @Query("SELECT c FROM ProviderContractDraft c WHERE c.owner.id = :providerId and c.key = :draftKey")
+    Optional<ProviderTemplateContractDraftEntity> findOneByKey(Integer providerId, UUID draftKey);
+
+    @Query("SELECT  c FROM ProviderContractDraft c LEFT OUTER JOIN c.parent p LEFT OUTER JOIN c.template t WHERE c.owner.key = :providerKey")
+    Page<ProviderTemplateContractDraftEntity> findAll(UUID providerKey, Pageable pageable);
+
+    default Page<ProviderTemplateContractDto> findAllObjects(UUID providerKey, Pageable pageable) {
+        return this.findAll(providerKey, pageable).map(c -> c.toDto(false));
+    }
+
+    default Optional<ProviderTemplateContractDto> findOneObject(UUID providerKey, UUID draftKey) {
+        return this.findOneByKey(providerKey, draftKey).map(c -> c.toDto(true));
+    }
+
+    @Transactional(readOnly = false)
+    default ProviderTemplateContractDto deleteByKey(Integer providerId, UUID draftKey) throws ApplicationException {
+        final ProviderTemplateContractDraftEntity e = this.findOneByKey(providerId, draftKey).orElse(null);
+
+        if (e == null) {
+            throw ApplicationException.fromMessage(
+                ContractMessageCode.DRAFT_NOT_FOUND, "Record not found"
+            );
+        }
+
+        final ProviderTemplateContractDto result = e.toDto(true);
+
+        // Remove parent link
+        if (e.getParent() != null) {
+            e.getParent().setDraft(null);
+            e.setParent(null);
+        }
+
+        this.delete(e);
+
+        return result;
+    }
+
+    @Transactional(readOnly = false)
+    default ProviderTemplateContractDto createFromHistory(int ownerId, UUID providerKey, UUID templateKey) throws ApplicationException {
+        final ProviderTemplateContractHistoryEntity parent = this.findProviderTemplateContractHistoryByKey(
+            providerKey, templateKey
+        ).orElse(null);
+
+        if (parent == null) {
+            throw ApplicationException.fromMessage(
+                ContractMessageCode.HISTORY_NOT_FOUND, "Record not found"
+            );
+        }
+
+        if (parent.getStatus() == EnumContractStatus.HISTORY) {
+            throw ApplicationException.fromMessage(
+                ContractMessageCode.INVALID_STATUS,
+                "Found status [HISTORY]. Expected status in [ACTIVE, INACTIVE]"
+            );
+        }
+
+        if (parent.getDraft() != null) {
+            return parent.getDraft().toDto(true);
+        }
+
+        final ProviderTemplateContractDraftEntity e = ProviderTemplateContractDraftEntity.from(parent);
+
+        final AccountEntity owner = this.findAccountById(ownerId).orElse(null);
+        if (owner == null) {
+            throw ApplicationException.fromMessage(
+                ContractMessageCode.ACCOUNT_NOT_FOUND, "Record not found"
+            );
+        }
+        e.setOwner(owner);
+
+        return this.saveAndFlush(e).toDto(true);
+    }
+
 	@Transactional(readOnly = false)
-	default ProviderTemplateContractDraftDto saveFrom(ProviderTemplateContractDraftDto s) {
-		ProviderTemplateContractDraftEntity contractEntity = null;
-		if (s.getId() != null) {
-			// Retrieve entity from repository
-			contractEntity = this.findById(s.getId()).orElse(null);
+	default ProviderTemplateContractDto saveFrom(ProviderTemplateContractCommandDto c) throws ApplicationException {
+        ProviderTemplateContractDraftEntity e = null;
 
-			if (contractEntity == null) {
-				throw ApplicationException.fromMessage(
-					BasicMessageCode.RecordNotFound, 
-					"Record not found"
-				);
-			}
-		} else {
-			// Create a new entity
-			contractEntity = new ProviderTemplateContractDraftEntity();
-			contractEntity.setCreatedAt(ZonedDateTime.now());
-		}
-		contractEntity.setTitle(s.getTitle());
-		contractEntity.setSubtitle(s.getSubtitle());
-		contractEntity.setId(s.getId());
-		contractEntity.setMasterContractId(s.getMasterContractId());
-		contractEntity.setMasterContractVersion(s.getMasterContractVersion());
-		contractEntity.setProviderKey(s.getProviderKey());
-		contractEntity.setParentId(s.getParentId());
-		contractEntity.setVersion(s.getVersion());
-		contractEntity.setModifiedAt(ZonedDateTime.now());
-		return saveAndFlush(contractEntity).toDto();
+        if (c.getDraftKey() != null) {
+            e = this.findOneByKey(c.getUserId(), c.getDraftKey()).orElse(null);
+            if (e == null) {
+                throw ApplicationException.fromMessage(
+                    ContractMessageCode.DRAFT_NOT_FOUND, "Record not found"
+                );
+            }
+            e.setModifiedAt(ZonedDateTime.now());
+        } else {
+            e = new ProviderTemplateContractDraftEntity();
+            e.setCreatedAt(ZonedDateTime.now());
+            e.setModifiedAt(e.getCreatedAt());
+            e.setVersion("1");
+
+            final AccountEntity owner = this.findAccountById(c.getUserId()).orElse(null);
+            if (owner == null) {
+                throw ApplicationException.fromMessage(
+                    ContractMessageCode.ACCOUNT_NOT_FOUND, "Record not found"
+                );
+            }
+            e.setOwner(owner);
+
+            final MasterContractHistoryEntity template = this.findActiveMasterContractByKey(c.getTemplateKey()).orElse(null);
+            if (template == null) {
+                throw ApplicationException.fromMessage(
+                    ContractMessageCode.MASTER_CONTRACT_NOT_FOUND, "Record not found"
+                );
+            }
+            e.setTemplate(template);
+        }
+
+        e.setSubtitle(c.getSubtitle());
+        e.setTitle(c.getTitle());
+
+        // Add sections
+        e.getSections().clear();
+
+        for (final ProviderTemplateSectionDto s : c.getSections()) {
+            final ProviderTemplateSectionDraftEntity section = ProviderTemplateSectionDraftEntity.from(s);
+
+            section.setContract(e);
+
+            e.getSections().add(section);
+        }
+
+		return saveAndFlush(e).toDto(true);
 	}
-	
-	@Transactional(readOnly = false)
-	default ProviderTemplateContractDraftDto saveFrom(ProviderTemplateContractDto s) {
-		ProviderTemplateContractDraftEntity contractEntity = null;
-			contractEntity = new ProviderTemplateContractDraftEntity();
-			contractEntity.setCreatedAt(ZonedDateTime.now());
-		//}
-		contractEntity.setTitle(s.getTitle());
-		contractEntity.setSubtitle(s.getSubtitle());
-		contractEntity.setId(s.getId());
-		contractEntity.setMasterContractId(s.getMasterContractId());
-		contractEntity.setMasterContractVersion(s.getMasterContractVersion());
-		contractEntity.setProviderKey(s.getProviderKey());
-		contractEntity.setParentId(s.getParentId());
-		contractEntity.setVersion(s.getVersion());
-		contractEntity.setModifiedAt(ZonedDateTime.now());
-		return saveAndFlush(contractEntity).toDto();
-	}
 
-	@Transactional(readOnly = false)
-	default void remove(int id) {
+    @Transactional(readOnly = false)
+    default void remove(UUID providerKey, UUID draftKey) throws ApplicationException {
+        final ProviderTemplateContractDraftEntity e = this.findOneByKey(providerKey, draftKey).orElse(null);
 
-		ProviderTemplateContractDraftEntity ContractEntity = this.findById(id).orElse(null);
+        if (e == null) {
+            throw ApplicationException.fromMessage(
+                ContractMessageCode.DRAFT_NOT_FOUND, "Record not found"
+            );
+        }
 
-		if (ContractEntity == null) {
-			throw ApplicationException.fromMessage(
-				BasicMessageCode.RecordNotFound, 
-				"Record not found"
-			);
-		}
-
-		this.deleteById(id);
-	}
+        this.deleteById(e.getId());
+    }
 
 }

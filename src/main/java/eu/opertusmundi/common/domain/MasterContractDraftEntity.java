@@ -1,23 +1,31 @@
 package eu.opertusmundi.common.domain;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
 import org.hibernate.annotations.NaturalId;
 
-import eu.opertusmundi.common.model.contract.MasterContractDraftDto;
+import eu.opertusmundi.common.model.contract.helpdesk.MasterContractDto;
 import lombok.Getter;
+import lombok.Setter;
 
 @Entity(name = "ContractDraft")
 @Table(
@@ -28,12 +36,11 @@ public class MasterContractDraftEntity {
     @Id
     @Column(name = "`id`", updatable = false)
     @SequenceGenerator(
-        sequenceName = "contract.master_contract_id_seq", name = "master_contract_id_seq", allocationSize = 1
+        sequenceName = "contract.master_contract_draft_id_seq", name = "master_contract_draft_id_seq", allocationSize = 1
     )
-    @GeneratedValue(generator = "master_contract_id_seq", strategy = GenerationType.SEQUENCE)
-    @lombok.Setter()
-    @lombok.Getter()
-    Integer id ;
+    @GeneratedValue(generator = "master_contract_draft_id_seq", strategy = GenerationType.SEQUENCE)
+    @Getter
+    private Integer id ;
 
     @NotNull
     @NaturalId
@@ -41,69 +48,94 @@ public class MasterContractDraftEntity {
     @Getter
     private final UUID key = UUID.randomUUID();
 
-    @Column(name = "`parent_id`")
-    @lombok.Getter
-    @lombok.Setter
-    Integer parentId;
-
     @NotNull
-    @ManyToOne
-    @JoinColumn(name = "`account`", nullable = false)
-    @lombok.Getter
-    @lombok.Setter
-    HelpdeskAccountEntity account;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "`owner`", nullable = false)
+    @Getter
+    @Setter
+    private HelpdeskAccountEntity owner;
+    
+    @OneToOne(
+        optional = true, fetch = FetchType.LAZY, orphanRemoval = false
+    )
+    @JoinColumn(name = "`parent`")
+    @Getter
+    @Setter
+    private MasterContractHistoryEntity parent;
 
+    @OneToMany(
+        mappedBy = "contract", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true
+    )
+    @Getter
+    @Setter
+    private List<MasterSectionDraftEntity> sections = new ArrayList<>();
+    
     @Column(name = "`title`")
-    @lombok.Getter()
-    @lombok.Setter()
-    String title;
+    @Getter
+    @Setter
+    private String title;
 
     @Column(name = "`subtitle`")
-    @lombok.Getter
-    @lombok.Setter
-    String subtitle;
-
-    @Column(name = "`state`")
-    @lombok.Getter
-    @lombok.Setter
-    String state;
+    @Getter
+    @Setter
+    private String subtitle;
 
     @Column(name = "`version`")
-    @lombok.Getter
-    @lombok.Setter
-    String version;
-
-
-    @Column(name = "`active`")
-    @lombok.Getter()
-    @lombok.Setter()
-    Boolean active;
+    @Getter
+    @Setter
+    private String version;
 
     @Column(name = "`created_at`")
-    @lombok.Getter
-    @lombok.Setter
+    @Getter
+    @Setter
     ZonedDateTime createdAt;
 
-
     @Column(name = "`modified_at`")
-    @lombok.Getter
-    @lombok.Setter
-    ZonedDateTime modifiedAt;
+    @Getter
+    @Setter
+    private ZonedDateTime modifiedAt;
 
-    public MasterContractDraftDto toDto() {
-        final MasterContractDraftDto c = new MasterContractDraftDto();
+    public MasterContractDto toDto(boolean includeDetails) {
+        final MasterContractDto c = new MasterContractDto();
 
-        c.setId(this.id);
-        c.setParentId(this.getParentId());
-        c.setTitle(this.title);
-        c.setSubtitle(this.subtitle);
-        c.setState(this.state);
-        c.setAccount(this.account.toDto());
-        c.setCreatedAt(this.createdAt);
-        c.setModifiedAt(this.modifiedAt);
-        c.setVersion(this.version);
-
+        c.setCreatedAt(createdAt);
+        c.setId(id);
+        c.setKey(key);
+        c.setModifiedAt(modifiedAt);
+        c.setOwner(owner.toSimpleDto());
+        c.setSubtitle(subtitle);
+        c.setTitle(title);
+        c.setVersion(version);
+        
+        if (includeDetails) {
+            c.setContractParentId(parent == null ? null : parent.getId());
+            c.setContractRootId(parent == null ? null : parent.getContractRoot().getId());
+            
+            c.setSections(sections.stream()
+                .map(MasterSectionDraftEntity::toDto)
+                .collect(Collectors.toList())
+            );
+        }        
         return c;
+    }
+    
+    public static MasterContractDraftEntity from(MasterContractHistoryEntity h) {
+        final MasterContractDraftEntity e = new MasterContractDraftEntity();
+        
+        final Integer version = Integer.parseInt(h.getVersion()) + 1;
+        
+        e.setCreatedAt(ZonedDateTime.now());
+        e.setModifiedAt(e.getCreatedAt());
+        e.setOwner(h.getOwner());
+        e.setParent(h);
+        e.setSubtitle(h.getSubtitle());
+        e.setTitle(h.getTitle());
+        e.setVersion(version.toString());
+
+        e.setSections(h.getSections().stream().map(MasterSectionDraftEntity::from).collect(Collectors.toList()));
+        e.getSections().forEach(s -> s.setContract(e));
+
+        return e;
     }
 
 }

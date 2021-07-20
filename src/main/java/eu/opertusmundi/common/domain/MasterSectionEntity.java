@@ -23,7 +23,9 @@ import org.hibernate.annotations.TypeDef;
 import com.vladmihalcea.hibernate.type.array.ListArrayType;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 
-import eu.opertusmundi.common.model.contract.MasterSectionDto;
+import eu.opertusmundi.common.model.contract.helpdesk.MasterSectionDto;
+import lombok.Getter;
+import lombok.Setter;
 
 
 @TypeDef(name = "json", typeClass = JsonBinaryType.class)
@@ -35,124 +37,143 @@ import eu.opertusmundi.common.model.contract.MasterSectionDto;
 )
 @Entity(name = "Section")
 public class MasterSectionEntity {
-	
+
     @Id
     @Column(name = "`id`", updatable = false)
     @SequenceGenerator(
         sequenceName = "contract.master_section_id_seq", name = "master_section_id_seq", allocationSize = 1
     )
     @GeneratedValue(generator = "master_section_id_seq", strategy = GenerationType.SEQUENCE)
-    @lombok.Setter()
-    @lombok.Getter()
-    Integer id ;
+    @Getter
+    private Integer id ;
 
     @NotNull
     @ManyToOne(
 		fetch = FetchType.EAGER
 	)
     @JoinColumn(name = "`contract`", nullable = false)
-    @lombok.Getter
-    @lombok.Setter
-    MasterContractEntity contract;
-    
+    @Getter
+    @Setter
+    private MasterContractEntity contract;
+
     @Column(name = "`indent`")
-    @lombok.Getter()
-    @lombok.Setter()
-    Integer indent;
-    
+    @Getter
+    @Setter
+    private Integer indent;
+
     @NotNull
     @Size(max = 80)
     @Column(name = "`index`", updatable = true)
-    @lombok.Getter()
-    @lombok.Setter()
-    String index;
+    @Getter
+    @Setter
+    private String index;
 
     @Column(name = "`title`")
-    @lombok.Getter()
-    @lombok.Setter()
-    String title;
-    
+    @Getter
+    @Setter
+    private String title;
+
     @Column(name = "`variable`")
-    @lombok.Getter()
-    @lombok.Setter()
-    Boolean variable;
-    
+    @Getter
+    @Setter
+    private Boolean variable;
+
     @Column(name = "`optional`")
-    @lombok.Getter()
-    @lombok.Setter()
-    Boolean optional;
-    
+    @Getter
+    @Setter
+    private Boolean optional;
+
     @Column(name = "`dynamic`")
-    @lombok.Getter()
-    @lombok.Setter()
-    Boolean dynamic;
-    
+    @Getter
+    @Setter
+    private Boolean dynamic;
+
     @Type(type = "list-array")
     @Column(
         name = "options",
         columnDefinition = "text[]"
     )
-    @lombok.Getter()
-    @lombok.Setter()
-    List<String> options ;
-    
+    @Getter
+    @Setter
+    private List<String> options ;
+
     @Type(type = "list-array")
     @Column(
         name = "styled_options",
         columnDefinition = "text[]"
     )
-    @lombok.Getter()
-    @lombok.Setter()
-    List<String> styledOptions ;
-    
+    @Getter
+    @Setter
+    private List<String> styledOptions ;
+
     @Type(type = "json")
     @Column(
-        name = "suboptions"
+        name = "sub_options"
     )
-    @lombok.Getter()
-    @lombok.Setter()
-    Map<Integer, Object> suboptions =  new HashMap<Integer, Object>();
-    
+    @Getter
+    @Setter
+    private Map<Integer, Object> subOptions =  new HashMap<Integer, Object>();
+
     @Type(type = "list-array")
     @Column(
         name = "summary",
         columnDefinition = "text[]"
     )
-    @lombok.Getter()
-    @lombok.Setter()
-    List<String> summary ;
+    @Getter
+    @Setter
+    private List<String> summary ;
 
 
     @Type(type = "list-array")
     @Column(
     	name="icons",
     	columnDefinition = "text")
-    @lombok.Getter()
-    @lombok.Setter()
-    List <String> icons;
-    
+    @Getter
+    @Setter
+    private List <String> icons;
+
     @Column(name = "`description_of_change`")
-    @lombok.Getter()
-    @lombok.Setter()
-    String descriptionOfChange;
+    @Getter
+    @Setter
+    private String descriptionOfChange;
 
     public MasterSectionDto toDto() {
-    	MasterSectionDto s = new MasterSectionDto();
+        MasterSectionDto s = new MasterSectionDto();
 
-        s.setId(id);
-        s.setTitle(title);
-        s.setVariable(variable);
-        s.setOptional(optional);
+        s.setDescriptionOfChange(descriptionOfChange);
         s.setDynamic(dynamic);
-        s.setIndex(index);
+        s.setIcons(icons);
+        s.setId(id);
         s.setIndent(indent);
-        s.setSummary(summary);
+        s.setIndex(index);
+        s.setOptional(optional);
         s.setOptions(options);
         s.setStyledOptions(styledOptions);
-        s.setSuboptions(suboptions);
-        s.setIcons(icons);
-        s.setDescriptionOfChange(descriptionOfChange);
+        s.setSubOptions(subOptions);
+        s.setSummary(summary);
+        s.setTitle(title);
+        s.setVariable(variable);
+
         return s;
+    }
+
+    public static MasterSectionEntity from(MasterSectionHistoryEntity s) {
+        final MasterSectionEntity e = new MasterSectionEntity();
+
+        e.setDescriptionOfChange(s.getDescriptionOfChange());
+        e.setDynamic(s.getDynamic());
+        e.setIcons(s.getIcons());
+        e.setIndent(s.getIndent());
+        e.setIndex(s.getIndex());
+        e.setOptional(s.getOptional());
+        e.setOptions(s.getOptions());
+        e.setStyledOptions(s.getStyledOptions());
+        e.setSubOptions(s.getSubOptions());
+        e.setSummary(s.getSummary());
+        e.setTitle(s.getTitle());
+        e.setVariable(s.getVariable());
+
+        return e;
     }
 
 }

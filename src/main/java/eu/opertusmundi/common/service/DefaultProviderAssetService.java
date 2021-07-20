@@ -30,6 +30,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -74,6 +75,7 @@ import eu.opertusmundi.common.model.catalogue.client.DraftApiFromFileCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumType;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
+import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractHistoryDto;
 import eu.opertusmundi.common.model.file.FilePathCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.file.FileSystemMessageCode;
@@ -87,6 +89,7 @@ import eu.opertusmundi.common.repository.AssetFileTypeRepository;
 import eu.opertusmundi.common.repository.AssetMetadataPropertyRepository;
 import eu.opertusmundi.common.repository.AssetResourceRepository;
 import eu.opertusmundi.common.repository.DraftRepository;
+import eu.opertusmundi.common.repository.contract.ProviderTemplateContractHistoryRepository;
 import feign.FeignException;
 
 // TODO: Scheduler job for deleting orphaned resources
@@ -122,6 +125,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Autowired
     private AssetAdditionalResourceRepository assetAdditionalResourceRepository;
+
+    @Autowired
+    private ProviderTemplateContractHistoryRepository contractRepository;
 
     @Autowired
     private UserFileManager userFileManager;
@@ -622,6 +628,16 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         feature.setId(pid);
         feature.getProperties().setPublisherId(publisherKey);
+
+        // Set contract
+        final ProviderTemplateContractHistoryDto contract = this.contractRepository.findOneObjectByKey(
+            publisherKey, draft.getCommand().getContractTemplateKey()
+        );
+
+        Assert.notNull(contract, "Expected a non-null provider template contract");
+
+        feature.getProperties().setContractTemplateId(contract.getId());
+        feature.getProperties().setContractTemplateVersion(contract.getVersion());
 
         // Redirect draft metadata property links to asset ones before
         // publishing the asset to the catalogue

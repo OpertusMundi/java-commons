@@ -1,6 +1,8 @@
 package eu.opertusmundi.common.domain;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -20,125 +22,154 @@ import org.hibernate.annotations.TypeDef;
 
 import com.vladmihalcea.hibernate.type.array.ListArrayType;
 
-import eu.opertusmundi.common.model.contract.MasterSectionHistoryDto;
+import eu.opertusmundi.common.model.contract.helpdesk.MasterSectionDto;
+import lombok.Getter;
+import lombok.Setter;
 
 
 @TypeDef(
-	    name = "list-array",
-	    typeClass = ListArrayType.class)
+    name = "list-array",
+    typeClass = ListArrayType.class)
 @Table(
     schema = "contract", name = "`master_section_history`")
 @Entity(name = "SectionHistory")
 public class MasterSectionHistoryEntity {
-	
+
     @Id
     @Column(name = "`id`", updatable = false)
     @SequenceGenerator(
-        sequenceName = "contract.master_section_id_seq", name = "master_section_id_seq", allocationSize = 1
+        sequenceName = "contract.master_section_hist_id_seq", name = "master_section_hist_id_seq", allocationSize = 1
     )
-    @GeneratedValue(generator = "master_section_id_seq", strategy = GenerationType.SEQUENCE)
-    @lombok.Setter()
-    @lombok.Getter()
-    Integer id ;
+    @GeneratedValue(generator = "master_section_hist_id_seq", strategy = GenerationType.SEQUENCE)
+    @Getter
+    private Integer id ;
 
     @NotNull
     @ManyToOne(
 		fetch = FetchType.EAGER
 	)
     @JoinColumn(name = "`contract`", nullable = false)
-    @lombok.Getter
-    @lombok.Setter
-    MasterContractHistoryEntity contract;
-    
+    @Getter
+    @Setter
+    private MasterContractHistoryEntity contract;
+
     @Column(name = "`indent`")
-    @lombok.Getter()
-    @lombok.Setter()
-    Integer indent;
-    
+    @Getter
+    @Setter
+    private Integer indent;
+
     @NotNull
     @Size(max = 80)
     @Column(name = "`index`", updatable = true)
-    @lombok.Getter()
-    @lombok.Setter()
-    String index;
+    @Getter
+    @Setter
+    private String index;
 
     @Column(name = "`title`")
-    @lombok.Getter()
-    @lombok.Setter()
-    String title;
-    
+    @Getter
+    @Setter
+    private String title;
+
     @Column(name = "`variable`")
-    @lombok.Getter()
-    @lombok.Setter()
-    Boolean variable;
-    
+    @Getter
+    @Setter
+    private Boolean variable;
+
     @Column(name = "`optional`")
-    @lombok.Getter()
-    @lombok.Setter()
-    Boolean optional;
-    
+    @Getter
+    @Setter
+    private Boolean optional;
+
     @Column(name = "`dynamic`")
-    @lombok.Getter()
-    @lombok.Setter()
-    Boolean dynamic;
-    
+    @Getter
+    @Setter
+    private Boolean dynamic;
+
     @Type(type = "list-array")
     @Column(
         name = "options",
         columnDefinition = "text[]"
     )
-    @lombok.Getter()
-    @lombok.Setter()
-    List<String> options ;
-    
+    @Getter
+    @Setter
+    private List<String> options ;
+
     @Type(type = "list-array")
     @Column(
         name = "styled_options",
         columnDefinition = "text[]"
     )
-    @lombok.Getter()
-    @lombok.Setter()
-    List<String> styledOptions ;
-    
+    @Getter
+    @Setter
+    private List<String> styledOptions ;
+
+    @Type(type = "json")
+    @Column(
+        name = "sub_options"
+    )
+    @Getter
+    @Setter
+    private Map<Integer, Object> subOptions =  new HashMap<Integer, Object>();
 
     @Type(type = "list-array")
     @Column(
         name = "summary",
         columnDefinition = "text[]"
     )
-    @lombok.Getter()
-    @lombok.Setter()
-    List<String> summary ;
-    
+    @Getter
+    @Setter
+    private List<String> summary ;
+
     @Type(type = "list-array")
     @Column(
     	name="icons",
     	columnDefinition = "text")
-    @lombok.Getter()
-    @lombok.Setter()
-    List <String> icons;
-    
+    @Getter
+    @Setter
+    private List <String> icons;
+
     @Column(name = "`description_of_change`")
-    @lombok.Getter()
-    @lombok.Setter()
-    String descriptionOfChange;
+    @Getter
+    @Setter
+    private String descriptionOfChange;
 
-    public MasterSectionHistoryDto toDto() {
-    	MasterSectionHistoryDto s = new MasterSectionHistoryDto();
+    public MasterSectionDto toDto() {
+        MasterSectionDto s = new MasterSectionDto();
 
+        s.setDescriptionOfChange(descriptionOfChange);
+        s.setDynamic(dynamic);
+        s.setIcons(icons);
         s.setId(id);
+        s.setIndent(indent);
+        s.setIndex(index);
+        s.setOptional(optional);
+        s.setOptions(options);
+        s.setStyledOptions(styledOptions);
+        s.setSubOptions(subOptions);
+        s.setSummary(summary);
         s.setTitle(title);
         s.setVariable(variable);
-        s.setOptional(optional);
-        s.setDynamic(dynamic);
-        s.setIndex(index);
-        s.setIndent(indent);
-        s.setSummary(summary);
-        s.setOptions(options);
-        s.setIcons(icons);
-        s.setStyledOptions(styledOptions);
-        s.setDescriptionOfChange(descriptionOfChange);
+
         return s;
+    }
+
+    public static MasterSectionHistoryEntity from(MasterSectionDraftEntity d) {
+        final MasterSectionHistoryEntity e = new MasterSectionHistoryEntity();
+
+        e.setDescriptionOfChange(d.getDescriptionOfChange());
+        e.setDynamic(d.getDynamic());
+        e.setIcons(d.getIcons());
+        e.setIndent(d.getIndent());
+        e.setIndex(d.getIndex());
+        e.setOptional(d.getOptional());
+        e.setOptions(d.getOptions());
+        e.setStyledOptions(d.getStyledOptions());
+        e.setSubOptions(d.getSubOptions());
+        e.setSummary(d.getSummary());
+        e.setTitle(d.getTitle());
+        e.setVariable(d.getVariable());
+
+        return e;
     }
 
 }

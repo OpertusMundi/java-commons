@@ -1,10 +1,11 @@
-package eu.opertusmundi.common.model.contract;
+package eu.opertusmundi.common.model.contract.consumer;
 
 import java.nio.file.Path;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreType;
 
+import eu.opertusmundi.common.model.contract.EnumContract;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,7 +16,7 @@ import lombok.Setter;
 @Setter
 @Builder
 @JsonIgnoreType
-public class SignConsumerContractCommand {
+public class PrintConsumerContractCommand {
 
     private EnumContract type;
 
@@ -25,14 +26,6 @@ public class SignConsumerContractCommand {
 
     private Integer itemIndex;
 
-    /**
-     * Initial contract path. Path must exist and be a file
-     */
-    private Path sourcePath;
-
-    /**
-     * Signed contract path. Path must not exist.
-     */
-    private Path targetPath;
+    private Path path;
 
 }

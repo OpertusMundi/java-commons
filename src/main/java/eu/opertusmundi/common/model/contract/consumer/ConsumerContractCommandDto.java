@@ -1,4 +1,4 @@
-package eu.opertusmundi.common.model.contract;
+package eu.opertusmundi.common.model.contract.consumer;
 
 import java.util.UUID;
 

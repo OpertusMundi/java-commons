@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.util.Assert;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 
@@ -16,6 +17,7 @@ import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
+import eu.opertusmundi.common.model.contract.ContractDto;
 import eu.opertusmundi.common.model.openapi.schema.AssetEndpointTypes;
 import eu.opertusmundi.common.util.StreamUtils;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -36,9 +38,11 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
 
         final CatalogueFeatureProperties props = feature.getProperties();
 
-        this.statistics = props.getStatistics();
-        this.versions   = props.getVersions();
-        this.resources  = StreamUtils.from(props.getResources())
+        this.contractTemplateId      = props.getContractTemplateId();
+        this.contractTemplateVersion = props.getContractTemplateVersion();
+        this.statistics              = props.getStatistics();
+        this.versions                = props.getVersions();
+        this.resources               = StreamUtils.from(props.getResources())
             .map(ResourceDto::fromCatalogueResource)
             .collect(Collectors.toList());
 
@@ -57,6 +61,24 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
     )
     @Getter
     private List<AssetAdditionalResourceDto> additionalResources;
+
+    @JsonIgnore
+    private Integer contractTemplateId;
+
+    @JsonIgnore
+    private String contractTemplateVersion;
+
+    @Schema(description = "Contract details")
+    @JsonProperty(access = Access.READ_ONLY)
+    @Getter
+    private ContractDto contract;
+
+    public void setContract(ContractDto contract) {
+        Assert.isTrue(contract.getId().equals(this.contractTemplateId), "Contract identifier mismatch");
+        Assert.isTrue(contract.getVersion().equals(this.contractTemplateVersion), "Contract identifier mismatch");
+
+        this.contract = contract;
+    }
 
     @Schema(description = "Publisher details")
     @JsonProperty(access = Access.READ_ONLY)

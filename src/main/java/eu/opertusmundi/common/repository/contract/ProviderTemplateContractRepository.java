@@ -1,120 +1,37 @@
 package eu.opertusmundi.common.repository.contract;
 
-import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import eu.opertusmundi.common.domain.ProviderTemplateContractDraftEntity;
 import eu.opertusmundi.common.domain.ProviderTemplateContractEntity;
-import eu.opertusmundi.common.domain.ProviderTemplateSectionDraftEntity;
-import eu.opertusmundi.common.domain.ProviderTemplateSectionEntity;
-import eu.opertusmundi.common.model.contract.ProviderTemplateContractDraftDto;
-import eu.opertusmundi.common.model.contract.ProviderTemplateContractDto;
-import eu.opertusmundi.common.model.ApplicationException;
-import eu.opertusmundi.common.model.BasicMessageCode;
+import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractDto;
 
 @Repository
 @Transactional(readOnly = true)
 public interface ProviderTemplateContractRepository extends JpaRepository<ProviderTemplateContractEntity, Integer> {
 
-	Optional<ProviderTemplateContractEntity> findOneById(Integer id);
+    @Query("SELECT c FROM ProviderContract c WHERE c.owner.id = :providerId and c.key = :contractKey")
+    Optional<ProviderTemplateContractEntity> findOneByKey(Integer providerId, UUID contractKey);
 
-	@Query("SELECT c FROM ProviderContract c WHERE c.key = :key")
-	Optional<ProviderTemplateContractEntity> findByKey(UUID key);
+    @Query("SELECT c FROM ProviderContract c WHERE c.owner.key = :providerKey and c.key = :contractKey")
+    Optional<ProviderTemplateContractEntity> findOneByKey(UUID providerKey, UUID contractKey);
 
-	@Query("SELECT c FROM ProviderContract c WHERE c.parentId = :parentId")
-	Optional<ProviderTemplateContractEntity> findByParentId(Integer parentId);
-	
-	
-	@Query("SELECT s FROM ProviderSection s WHERE s.contract = :contract")
-	List<ProviderTemplateSectionEntity> findSectionsByContract(
-		@Param("contract") ProviderTemplateContractEntity contract
-	);
-	
-	@Query("SELECT s FROM ProviderSectionDraft s WHERE s.contract = :contract")
-	List<ProviderTemplateSectionDraftEntity> findDraftSectionsByContract(
-		@Param("contract") ProviderTemplateContractDraftEntity contract
-	);
-	
-	@Query("SELECT id FROM ProviderSection s WHERE s.contract = :contract")
-	List<Integer> findSectionsIdsByContract(
-		@Param("contract") ProviderTemplateContractEntity contract
-	);
-	
-	
-	@Query("SELECT c FROM ProviderContract c WHERE c.providerKey = :providerKey")
-	List<ProviderTemplateContractEntity> findContractsByProviderKey(
-		@Param("providerKey") UUID providerKey);
-	
-	@Transactional(readOnly = false)
-	default ProviderTemplateContractDto saveFrom(ProviderTemplateContractDto s) {
-		ProviderTemplateContractEntity contractEntity = null;
-		if (s.getId() != null) {
-			// Retrieve entity from repository
-			contractEntity = this.findById(s.getId()).orElse(null);
+    @Query("SELECT c FROM ProviderContract c INNER JOIN c.parent p WHERE c.owner.key = :providerKey")
+    Page<ProviderTemplateContractEntity> findAll(UUID providerKey, Pageable pageable);
 
-			if (contractEntity == null) {
-				throw ApplicationException.fromMessage(
-					BasicMessageCode.RecordNotFound, 
-					"Record not found"
-				);
-			}
-		} else {
-			// Create a new entity
-			contractEntity = new ProviderTemplateContractEntity();
-			contractEntity.setCreatedAt(ZonedDateTime.now());
-		}
-		contractEntity.setTitle(s.getTitle());
-		contractEntity.setSubtitle(s.getSubtitle());
-		contractEntity.setId(s.getId());
-		contractEntity.setMasterContractId(s.getMasterContractId());
-		contractEntity.setMasterContractVersion(s.getMasterContractVersion());
-		contractEntity.setProviderKey(s.getProviderKey());
-		contractEntity.setParentId(s.getParentId());
-		contractEntity.setVersion(s.getVersion());
-		contractEntity.setModifiedAt(ZonedDateTime.now());
-		return saveAndFlush(contractEntity).toDto();
-	}
-	
-	@Transactional(readOnly = false)
-	default ProviderTemplateContractDto saveFrom(ProviderTemplateContractDraftDto s) {
-		ProviderTemplateContractEntity contractEntity = null;
-			contractEntity = new ProviderTemplateContractEntity();
-			contractEntity.setCreatedAt(ZonedDateTime.now());
-		//}
-		contractEntity.setTitle(s.getTitle());
-		contractEntity.setSubtitle(s.getSubtitle());
-		contractEntity.setId(s.getId());
-		contractEntity.setMasterContractId(s.getMasterContractId());
-		contractEntity.setMasterContractVersion(s.getMasterContractVersion());
-		contractEntity.setProviderKey(s.getProviderKey());
-		contractEntity.setParentId(s.getParentId());
-		contractEntity.setVersion(s.getVersion());
-		contractEntity.setModifiedAt(ZonedDateTime.now());
-		return saveAndFlush(contractEntity).toDto();
-	}
+    default Page<ProviderTemplateContractDto> findAllObjects(UUID providerKey, Pageable pageable) {
+        return this.findAll(providerKey, pageable).map(c -> c.toDto(false));
+    }
 
-	@Transactional(readOnly = false)
-	default void remove(int id) {
-
-		ProviderTemplateContractEntity ContractEntity = this.findById(id).orElse(null);
-
-		if (ContractEntity == null) {
-			throw ApplicationException.fromMessage(
-				BasicMessageCode.RecordNotFound, 
-				"Record not found"
-			);
-		}
-
-		this.deleteById(id);
-	}
-
+    default Optional<ProviderTemplateContractDto> findOneObject(Integer providerId, UUID contractKey) {
+        return this.findOneByKey(providerId, contractKey).map(c -> c.toDto(true));
+    }
 
 }

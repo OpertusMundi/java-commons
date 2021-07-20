@@ -1,25 +1,14 @@
 package eu.opertusmundi.common.service.contract;
 
-import java.util.Optional;
-
-import eu.opertusmundi.common.model.contract.ConsumerContractCommandDto;
-import eu.opertusmundi.common.model.contract.ConsumerContractDto;
-import eu.opertusmundi.common.model.contract.PrintConsumerContractCommand;
-import eu.opertusmundi.common.model.contract.SignConsumerContractCommand;
+import eu.opertusmundi.common.model.contract.consumer.ConsumerContractCommandDto;
+import eu.opertusmundi.common.model.contract.consumer.ConsumerContractDto;
+import eu.opertusmundi.common.model.contract.consumer.PrintConsumerContractCommand;
+import eu.opertusmundi.common.model.contract.consumer.SignConsumerContractCommand;
 
 /**
  * Consumer contracts
  */
 public interface ConsumerContractService {
-
-    /**
-     * Find contract for an asset (file or subscription) linked to the user
-     * account
-     *
-     * @param id
-     * @return
-     */
-    Optional<ConsumerContractDto> findAssetContract(String id);
 
     /**
      * Create a new contract

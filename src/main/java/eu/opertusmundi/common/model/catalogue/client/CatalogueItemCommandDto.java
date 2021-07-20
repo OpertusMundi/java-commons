@@ -80,6 +80,9 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
     )
     private List<AssetAdditionalResourceDto> additionalResources;
 
+    @Schema(description = "Contract template key")
+    private UUID contractTemplateKey;
+
     @Schema(
         description = "True if the resource files should be imported into PostGIS database and published using WMS/WFS "
                     + "endpoints. Ingest operation is only supported for formats of category <b>VECTOR</b>",

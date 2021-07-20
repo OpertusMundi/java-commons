@@ -1,21 +1,31 @@
 package eu.opertusmundi.common.domain;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
 import org.hibernate.annotations.NaturalId;
 
-import eu.opertusmundi.common.model.contract.ProviderTemplateContractDraftDto;
+import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractDto;
 import lombok.Getter;
+import lombok.Setter;
 
 @Entity(name = "ProviderContractDraft")
 @Table(
@@ -26,12 +36,11 @@ public class ProviderTemplateContractDraftEntity {
     @Id
     @Column(name = "`id`", updatable = false)
     @SequenceGenerator(
-        sequenceName = "contract.provider_contract_id_seq", name = "provider_contract_id_seq", allocationSize = 1
+        sequenceName = "contract.provider_contract_draft_id_seq", name = "provider_contract_draft_id_seq", allocationSize = 1
     )
-    @GeneratedValue(generator = "provider_contract_id_seq", strategy = GenerationType.SEQUENCE)
-    @lombok.Setter()
-    @lombok.Getter()
-    Integer id ;
+    @GeneratedValue(generator = "provider_contract_draft_id_seq", strategy = GenerationType.SEQUENCE)
+    @Getter
+    private Integer id ;
 
     @NotNull
     @NaturalId
@@ -39,76 +48,104 @@ public class ProviderTemplateContractDraftEntity {
     @Getter
     private final UUID key = UUID.randomUUID();
 
-    @Column(name = "`provider_key`")
-    @lombok.Getter
-    @lombok.Setter
-    UUID providerKey;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "`owner`", nullable = false)
+    @Getter
+    @Setter
+    private AccountEntity owner;
 
-    @Column(name = "`parent_id`")
-    @lombok.Getter
-    @lombok.Setter
-    Integer parentId;
+    @OneToOne(
+        optional = true, fetch = FetchType.LAZY, orphanRemoval = false
+    )
+    @JoinColumn(name = "`parent`")
+    @Getter
+    @Setter
+    private ProviderTemplateContractHistoryEntity parent;
 
-    @Column(name = "`master_contract_id`")
-    @lombok.Getter
-    @lombok.Setter
-    Integer masterContractId;
+    @OneToOne(
+        optional = true, fetch = FetchType.LAZY, orphanRemoval = false
+    )
+    @JoinColumn(name = "`template`")
+    @Getter
+    @Setter
+    private MasterContractHistoryEntity template;
 
-    @Column(name = "`master_contract_version`")
-    @lombok.Getter
-    @lombok.Setter
-    String masterContractVersion;
-
+    @OneToMany(
+        mappedBy = "contract", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true
+    )
+    @Getter
+    @Setter
+    private List<ProviderTemplateSectionDraftEntity> sections = new ArrayList<>();
 
     @Column(name = "`title`")
-    @lombok.Getter()
-    @lombok.Setter()
-    String title;
+    @Getter
+    @Setter
+    private String title;
 
     @Column(name = "`subtitle`")
-    @lombok.Getter
-    @lombok.Setter
-    String subtitle;
+    @Getter
+    @Setter
+    private String subtitle;
 
     @Column(name = "`version`")
-    @lombok.Getter
-    @lombok.Setter
-    String version;
-
-    @Column(name = "`active`")
-    @lombok.Getter()
-    @lombok.Setter()
-    Boolean active;
-
+    @Getter
+    @Setter
+    private String version;
 
     @Column(name = "`created_at`")
-    @lombok.Getter
-    @lombok.Setter
-    ZonedDateTime createdAt;
-
+    @Getter
+    @Setter
+    private ZonedDateTime createdAt;
 
     @Column(name = "`modified_at`")
-    @lombok.Getter
-    @lombok.Setter
-    ZonedDateTime modifiedAt;
+    @Getter
+    @Setter
+    private ZonedDateTime modifiedAt;
 
-    public ProviderTemplateContractDraftDto toDto() {
-    	final ProviderTemplateContractDraftDto c = new ProviderTemplateContractDraftDto();
+    public ProviderTemplateContractDto toDto(boolean includeDetails) {
+        final ProviderTemplateContractDto c = new ProviderTemplateContractDto();
 
-        c.setId(this.id);
+        c.setCreatedAt(createdAt);
+        c.setId(id);
         c.setKey(key);
-        c.setProviderKey(this.providerKey);
-        c.setParentId(this.parentId);
-        c.setMasterContractId(masterContractId);
-        c.setMasterContractVersion(masterContractVersion);
-        c.setTitle(this.title);
-        c.setSubtitle(this.subtitle);
-        c.setCreatedAt(this.createdAt);
-        c.setModifiedAt(this.modifiedAt);
-        c.setVersion(this.version);
+        c.setModifiedAt(modifiedAt);
+        c.setSubtitle(subtitle);
+        c.setTemplateKey(template.getKey());
+        c.setTitle(subtitle);
+        c.setVersion(version);
 
+        if (includeDetails) {
+            c.setContractParentKey(parent == null ? null : parent.getKey());
+            c.setContractRootKey(parent == null ? null : parent.getContractRoot().getKey());
+
+            c.setSections(sections.stream()
+                .map(ProviderTemplateSectionDraftEntity::toDto)
+                .collect(Collectors.toList())
+            );
+        }
 
         return c;
+    }
+
+    public static ProviderTemplateContractDraftEntity from(ProviderTemplateContractHistoryEntity h) {
+        final ProviderTemplateContractDraftEntity e = new ProviderTemplateContractDraftEntity();
+
+        final Integer version = Integer.parseInt(h.getVersion()) + 1;
+
+        e.setCreatedAt(ZonedDateTime.now());
+        e.setModifiedAt(e.getCreatedAt());
+        e.setOwner(h.getOwner());
+        e.setParent(h);
+        e.setSubtitle(h.getSubtitle());
+        e.setTemplate(h.getTemplate());
+        e.setTitle(h.getTitle());
+        e.setVersion(version.toString());
+
+        e.setSections(h.getSections().stream().map(ProviderTemplateSectionDraftEntity::from).collect(Collectors.toList()));
+        e.getSections().forEach(s -> s.setContract(e));
+
+        return e;
     }
 
 }

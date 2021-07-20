@@ -1,109 +1,86 @@
 package eu.opertusmundi.common.domain;
 
 import java.time.ZonedDateTime;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import javax.persistence.Column;
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.SequenceGenerator;
+import javax.persistence.FetchType;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
-import javax.validation.constraints.NotNull;
 
-import org.hibernate.annotations.NaturalId;
-
-import eu.opertusmundi.common.model.contract.MasterContractHistoryDto;
+import eu.opertusmundi.common.model.contract.EnumContractStatus;
+import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryDto;
 import lombok.Getter;
+import lombok.Setter;
 
 @Entity(name = "ContractHistory")
-@Table(
-    schema = "contract", name = "`master_contract_history`"
-)
-public class MasterContractHistoryEntity {
+@Table(schema = "contract", name = "`master_contract_history`")
+public class MasterContractHistoryEntity extends MasterContractHistoryBaseEntity {
 
-    @Id
-    @Column(name = "`id`", updatable = false)
-    @SequenceGenerator(
-        sequenceName = "contract.master_contract_id_seq", name = "master_contract_id_seq", allocationSize = 1
-    )
-    @GeneratedValue(generator = "master_contract_id_seq", strategy = GenerationType.SEQUENCE)
-    @lombok.Setter()
-    @lombok.Getter()
-    Integer id ;
-
-    @NotNull
-    @NaturalId
-    @Column(name = "key", updatable = false, columnDefinition = "uuid")
+    @OneToOne(mappedBy = "parent", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Getter
-    private final UUID key = UUID.randomUUID();
+    @Setter
+    private MasterContractDraftEntity draft;
 
-    @NotNull
-    @Column(name = "`parent_id`")
-    @lombok.Getter
-    @lombok.Setter
-    Integer parentId;
+    @OneToOne(mappedBy = "parent", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @Getter
+    @Setter
+    private MasterContractEntity published;
 
-    @NotNull
-    @ManyToOne
-    @JoinColumn(name = "`account`", nullable = false)
-    @lombok.Getter
-    @lombok.Setter
-    HelpdeskAccountEntity account;
+    @OneToMany(
+        mappedBy = "contract", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true
+    )
+    @Getter
+    @Setter
+    private List<MasterSectionHistoryEntity> sections = new ArrayList<>();
 
-    @Column(name = "`title`")
-    @lombok.Getter()
-    @lombok.Setter()
-    String title;
+    public MasterContractHistoryDto toDto(boolean includeDetails) {
+        final MasterContractHistoryDto c = new MasterContractHistoryDto();
 
-    @Column(name = "`subtitle`")
-    @lombok.Getter
-    @lombok.Setter
-    String subtitle;
+        c.setCreatedAt(createdAt);
+        c.setId(id);
+        c.setKey(key);
+        c.setModifiedAt(modifiedAt);
+        c.setOwner(owner.toSimpleDto());
+        c.setStatus(status);
+        c.setSubtitle(subtitle);
+        c.setTitle(title);
+        c.setVersion(version);
 
-    @Column(name = "`state`")
-    @lombok.Getter
-    @lombok.Setter
-    String state;
+        if (includeDetails) {
+            c.setContractParentId(contractParent == null ? null : contractParent.getId());
+            c.setContractRootId(contractRoot == null ? null : contractRoot.getId());
 
-    @Column(name = "`version`")
-    @lombok.Getter
-    @lombok.Setter
-    String version;
-
-    @Column(name = "`active`")
-    @lombok.Getter()
-    @lombok.Setter()
-    Boolean active;
-
-    @Column(name = "`created_at`")
-    @lombok.Getter
-    @lombok.Setter
-    ZonedDateTime createdAt;
-
-
-    @Column(name = "`modified_at`")
-    @lombok.Getter
-    @lombok.Setter
-    ZonedDateTime modifiedAt;
-
-    public MasterContractHistoryDto toDto() {
-    	final MasterContractHistoryDto c = new MasterContractHistoryDto();
-
-        c.setId(this.id);
-        c.setParentId(this.getParentId());
-        c.setTitle(this.title);
-        c.setSubtitle(this.subtitle);
-        c.setState(this.state);
-        c.setAccount(this.account.toDto());
-        c.setCreatedAt(this.createdAt);
-        c.setModifiedAt(this.modifiedAt);
-        c.setVersion(this.version);
+            c.setSections(sections.stream()
+                .map(MasterSectionHistoryEntity::toDto)
+                .collect(Collectors.toList())
+            );
+        }
 
         return c;
+    }
+
+    public static MasterContractHistoryEntity from(MasterContractDraftEntity d) {
+        final MasterContractHistoryEntity e = new MasterContractHistoryEntity();
+
+        e.setContractParent(d.getParent());
+        e.setContractRoot(d.getParent() == null ? null : d.getParent().getContractRoot());
+        e.setCreatedAt(ZonedDateTime.now());
+        e.setModifiedAt(e.getCreatedAt());
+        e.setOwner(d.getOwner());
+        e.setSections(d.getSections().stream().map(MasterSectionHistoryEntity::from).collect(Collectors.toList()));
+        e.setStatus(EnumContractStatus.INACTIVE);
+        e.setSubtitle(d.getSubtitle());
+        e.setTitle(d.getTitle());
+        e.setVersion(d.getVersion());
+
+        e.getSections().forEach(s -> s.setContract(e));
+
+        return e;
     }
 
 }

@@ -56,12 +56,14 @@ import eu.opertusmundi.common.model.catalogue.elastic.ElasticServiceException;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueCollection;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueResponse;
+import eu.opertusmundi.common.model.contract.ContractDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.repository.AssetAdditionalResourceRepository;
 import eu.opertusmundi.common.repository.AssetResourceRepository;
 import eu.opertusmundi.common.repository.ProviderRepository;
+import eu.opertusmundi.common.repository.contract.ProviderTemplateContractHistoryRepository;
 import feign.FeignException;
 
 @Service
@@ -89,6 +91,9 @@ public class DefaultCatalogueService implements CatalogueService {
 
     @Autowired
     private AssetAdditionalResourceRepository assetAdditionalResourceRepository;
+
+    @Autowired
+    private ProviderTemplateContractHistoryRepository contractRepository;
 
     @Autowired
     private ObjectProvider<BpmServerFeignClient> bpmClient;
@@ -319,7 +324,8 @@ public class DefaultCatalogueService implements CatalogueService {
             }
 
             // Convert feature to catalogue item
-            final CatalogueItemDetailsDto item = new CatalogueItemDetailsDto(catalogueResponse.getResult());
+            final CatalogueFeature feature = catalogueResponse.getResult();
+            final CatalogueItemDetailsDto item = new CatalogueItemDetailsDto(feature);
 
             // Filter automated metadata
             if (!includeAutomatedMetadata) {
@@ -332,8 +338,15 @@ public class DefaultCatalogueService implements CatalogueService {
 
             // Inject publisher details
             final ProviderDto publisher = this.providerRepository.findOneByKey(item.getPublisherId()).getProvider().toProviderDto();
-
             item.setPublisher(publisher);
+
+            // Inject contract details
+            final ContractDto contract = this.contractRepository.findOneObjectByIdAndVersion(
+                item.getPublisherId(),
+                feature.getProperties().getContractTemplateId(),
+                feature.getProperties().getContractTemplateVersion()
+            );
+            item.setContract(contract);
 
             // Consolidate data from asset repository
             final List<AssetResourceEntity> resources = this.assetResourceRepository

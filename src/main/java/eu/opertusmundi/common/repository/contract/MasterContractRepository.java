@@ -1,121 +1,62 @@
 package eu.opertusmundi.common.repository.contract;
 
-import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import eu.opertusmundi.common.domain.MasterContractDraftEntity;
 import eu.opertusmundi.common.domain.MasterContractEntity;
-import eu.opertusmundi.common.domain.HelpdeskAccountEntity;
-import eu.opertusmundi.common.domain.MasterSectionDraftEntity;
-import eu.opertusmundi.common.domain.MasterSectionEntity;
-import eu.opertusmundi.common.model.contract.MasterContractDraftDto;
-import eu.opertusmundi.common.model.contract.MasterContractDto;
-import eu.opertusmundi.common.model.ApplicationException;
-import eu.opertusmundi.common.model.BasicMessageCode;
+import eu.opertusmundi.common.model.contract.helpdesk.MasterContractDto;
 
 @Repository
 @Transactional(readOnly = true)
 public interface MasterContractRepository extends JpaRepository<MasterContractEntity, Integer> {
 
-	Optional<MasterContractEntity> findOneById(Integer id);
-	
-	@Query("SELECT s FROM Contract s WHERE s.key = :key")
-	Optional<MasterContractEntity> findByKey(UUID key);
-	
-	@Query("SELECT a FROM HelpdeskAccount a WHERE a.id = :id")
-	    HelpdeskAccountEntity findAccountById(
-			@Param("id") int id);
-	
-	@Query("SELECT c FROM Contract c")
-	List<MasterContractEntity> findAllContracts();
-	
-	@Query("SELECT s FROM Section s WHERE s.contract = :contract")
-	List<MasterSectionEntity> findSectionsByContract(
-		@Param("contract") MasterContractEntity contract
-	);
-	
-	@Query("SELECT s FROM SectionDraft s WHERE s.contract = :contract")
-	List<MasterSectionDraftEntity> findDraftSectionsByContract(
-		@Param("contract") MasterContractDraftEntity contract
-	);
-	
-	@Query("SELECT id FROM Section s WHERE s.contract = :contract")
-	List<Integer> findSectionsIdsByContract(
-		@Param("contract") MasterContractEntity contract
-	);
-	
-	
-	@Query("SELECT c FROM Contract c WHERE c.account = :account")
-	List<MasterContractEntity> findContractsByAccount(
-		@Param("account") HelpdeskAccountEntity account);
-	
-	@Transactional(readOnly = false)
-	default MasterContractDto saveFrom(MasterContractDto s) {
-		MasterContractEntity contractEntity = null;
-		if (s.getId() != null) {
-			// Retrieve entity from repository
-			contractEntity = this.findById(s.getId()).orElse(null);
+    @Query("SELECT c FROM Contract c WHERE c.key = :key")
+    Optional<MasterContractEntity> findOneByKey(@Param("key") UUID key);
 
-			if (contractEntity == null) {
-				throw ApplicationException.fromMessage(
-					BasicMessageCode.RecordNotFound, 
-					"Record not found"
-				);
-			}
-		} else {
-			// Create a new entity
-			contractEntity = new MasterContractEntity();
-			contractEntity.setCreatedAt(ZonedDateTime.now());
-		}
-		contractEntity.setTitle(s.getTitle());
-		contractEntity.setSubtitle(s.getSubtitle());
-		contractEntity.setId(s.getId());
-		contractEntity.setAccount(this.findAccountById(s.getAccount().getId()));
-		contractEntity.setState(s.getState());
-		contractEntity.setVersion(s.getVersion());
-		contractEntity.setModifiedAt(ZonedDateTime.now());
-		return saveAndFlush(contractEntity).toDto();
-	}
-	
-	@Transactional(readOnly = false)
-	default MasterContractDto saveFrom(MasterContractDraftDto s) {
-		MasterContractEntity contractEntity = null;
-			contractEntity = new MasterContractEntity();
-			contractEntity.setCreatedAt(ZonedDateTime.now());
-		//}
-		contractEntity.setTitle(s.getTitle());
-		contractEntity.setSubtitle(s.getSubtitle());
-		contractEntity.setId(s.getId());
-		contractEntity.setParentId(s.getParentId());
-		contractEntity.setAccount(this.findAccountById(s.getAccount().getId()));
-		contractEntity.setState(s.getState());
-		contractEntity.setVersion(s.getVersion());
-		contractEntity.setModifiedAt(ZonedDateTime.now());
-		return saveAndFlush(contractEntity).toDto();
-	}
+    @Query("SELECT c FROM Contract c WHERE c.id = :id")
+    Optional<MasterContractEntity> findOneById(@Param("id") Integer id);
 
-	@Transactional(readOnly = false)
-	default void remove(int id) {
+    @Query("SELECT c FROM Contract c INNER JOIN c.parent p WHERE "
+         + "(c.title like :title or :title is null) "
+    )
+    Page<MasterContractEntity> findAll(String title, Pageable pageable);
 
-		MasterContractEntity ContractEntity = this.findById(id).orElse(null);
+    default Page<MasterContractDto> findAllObjects(String title, Pageable pageable) {
+        if (StringUtils.isBlank(title)) {
+            title = null;
+        } else {
+            if (!title.startsWith("%")) {
+                title = "%" + title;
+            }
+            if (!title.endsWith("%")) {
+                title = title + "%";
+            }
+        }
+        return this.findAll(title, pageable).map(c -> c.toDto(false));
+    }
 
-		if (ContractEntity == null) {
-			throw ApplicationException.fromMessage(
-				BasicMessageCode.RecordNotFound, 
-				"Record not found"
-			);
-		}
+    default Optional<MasterContractDto> findOneObject(int id) {
+        return this.findOneById(id).map(c -> c.toDto(true));
+    }
 
-		this.deleteById(id);
-	}
-	
+    default Optional<MasterContractDto> findOneObject(UUID key) {
+        return this.findOneByKey(key).map(c -> c.toDto(true));
+    }
+
+    @Transactional(readOnly = false)
+    default void delete(int id) {
+        final MasterContractEntity e = this.findOneById(id).orElse(null);
+
+        this.delete(e);
+    }
 
 }

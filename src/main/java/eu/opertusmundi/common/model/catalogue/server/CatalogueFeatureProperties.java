@@ -118,6 +118,12 @@ public class CatalogueFeatureProperties {
 
     private String conformity;
 
+    @JsonProperty("contract_template_id")
+    private Integer contractTemplateId;
+
+    @JsonProperty("contract_template_version")
+    private String contractTemplateVersion;
+
     @JsonProperty("creation_date")
     private String creationDate;
 

@@ -17,70 +17,81 @@ import org.hibernate.annotations.TypeDef;
 import com.vladmihalcea.hibernate.type.array.ListArrayType;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 
-import eu.opertusmundi.common.model.contract.ProviderTemplateSectionHistoryDto;
+import eu.opertusmundi.common.model.contract.provider.ProviderTemplateSectionDto;
+import lombok.Getter;
+import lombok.Setter;
 
 
 @TypeDef(name = "json", typeClass = JsonBinaryType.class)
 @TypeDef(
-	    name = "list-array",
-	    typeClass = ListArrayType.class)
+    name = "list-array",
+    typeClass = ListArrayType.class)
 @Table(
     schema = "contract", name = "`provider_section_history`"
 )
 @Entity(name = "ProviderSectionHistory")
 public class ProviderTemplateSectionHistoryEntity{
-	
-	
+
+
     @Id
     @Column(name = "`id`", updatable = false)
     @SequenceGenerator(
-        sequenceName = "contract.provider_section_id_seq", name = "provider_section_id_seq", allocationSize = 1
+        sequenceName = "contract.provider_section_hist_id_seq", name = "provider_section_hist_id_seq", allocationSize = 1
     )
-    @GeneratedValue(generator = "provider_section_id_seq", strategy = GenerationType.SEQUENCE)
-    @lombok.Setter()
-    @lombok.Getter()
-    Integer id ;
+    @GeneratedValue(generator = "provider_section_hist_id_seq", strategy = GenerationType.SEQUENCE)
+    @Getter
+    private Integer id ;
 
     @NotNull
     @ManyToOne(
 		fetch = FetchType.EAGER
 	)
     @JoinColumn(name = "`contract`", nullable = false)
-    @lombok.Getter
-    @lombok.Setter
-    ProviderTemplateContractHistoryEntity contract;
-    
-    @Column(name = "`master_section_id`", updatable = false)
-    @lombok.Setter()
-    @lombok.Getter()
-    Integer masterSectionId ;
-    
-    
-    @Column(name = "`optional`")
-    @lombok.Getter()
-    @lombok.Setter()
-    Boolean optional;
-    
-    @Column(name = "`option`", updatable = false)
-    @lombok.Setter()
-    @lombok.Getter()
-    Integer option ;
-    
-    @Column(name = "`suboption`", updatable = false)
-    @lombok.Setter()
-    @lombok.Getter()
-    Integer suboption ;
-    
+    @Getter
+    @Setter
+    private ProviderTemplateContractHistoryEntity contract;
 
-    public ProviderTemplateSectionHistoryDto toDto() {
-    	ProviderTemplateSectionHistoryDto s = new ProviderTemplateSectionHistoryDto();
+    @Column(name = "`master_section_id`", updatable = false)
+    @Setter
+    @Getter
+    private Integer masterSectionId ;
+
+    @Column(name = "`optional`")
+    @Getter
+    @Setter
+    private Boolean optional;
+
+    @Column(name = "`option`", updatable = false)
+    @Setter
+    @Getter
+    private Integer option ;
+
+    @Column(name = "`sub_option`", updatable = false)
+    @Setter
+    @Getter
+    private Integer subOption ;
+
+    public ProviderTemplateSectionDto toDto() {
+        final ProviderTemplateSectionDto s = new ProviderTemplateSectionDto();
 
         s.setId(id);
         s.setMasterSectionId(masterSectionId);
-        s.setOptional(optional);
         s.setOption(option);
-        s.setSuboption(suboption);
+        s.setOptional(optional);
+        s.setSubOption(subOption);
+
         return s;
+    }
+
+    public static ProviderTemplateSectionHistoryEntity from(ProviderTemplateSectionDraftEntity s) {
+        final ProviderTemplateSectionHistoryEntity e = new ProviderTemplateSectionHistoryEntity();
+
+        e.setMasterSectionId(s.getMasterSectionId());
+        e.setOption(s.getOption());
+        e.setOptional(s.getOptional());
+        e.setSubOption(s.getSubOption());
+
+        return e;
     }
 
 }

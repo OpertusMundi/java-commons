@@ -1,60 +1,83 @@
 package eu.opertusmundi.common.service.contract;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import eu.opertusmundi.common.model.contract.PrintConsumerContractCommand;
-import eu.opertusmundi.common.model.contract.ProviderTemplateContractCommandDto;
-import eu.opertusmundi.common.model.contract.ProviderTemplateContractDraftDto;
-import eu.opertusmundi.common.model.contract.ProviderTemplateContractDto;
-import eu.opertusmundi.common.model.contract.ProviderTemplateContractQuery;
+import eu.opertusmundi.common.model.ApplicationException;
+import eu.opertusmundi.common.model.EnumSortingOrder;
+import eu.opertusmundi.common.model.PageResultDto;
+import eu.opertusmundi.common.model.contract.consumer.PrintConsumerContractCommand;
+import eu.opertusmundi.common.model.contract.provider.EnumProviderContractSortField;
+import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractCommandDto;
+import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractDto;
+import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractQuery;
 
 /**
  * Provider template contracts
  */
 public interface ProviderTemplateContractService {
 
-	/**
-     * Create a new draft contract
+    /**
+     * Search drafts
      *
-     * @param contract dto
+     * @param providerKey
+     * @param page
+     * @param size
+     * @param orderBy
+     * @param order
      * @return
      */
-	ProviderTemplateContractDraftDto createDraft(ProviderTemplateContractDraftDto providerDraftDto);
-	
+    PageResultDto<ProviderTemplateContractDto> findAllDrafts(
+        UUID providerKey,
+        int page,
+        int size,
+        EnumProviderContractSortField orderBy,
+        EnumSortingOrder order
+    );
+
     /**
-     * Get all contracts
+     * Find draft by key
+     *
+     * @param providerKey
+     * @param draftKey
+     * @return
+     * @throws ApplicationException
+     */
+    ProviderTemplateContractDto findOneDraft(UUID providerKey, UUID draftKey) throws ApplicationException;
+
+    /**
+     * Create or update draft contract template
+     *
+     * @param command
+     */
+	ProviderTemplateContractDto updateDraft(ProviderTemplateContractCommandDto draftDto);
+
+	/**
+     * Delete draft contract template
+     *
+     * @param providerId
+     * @param draftKey
+     * @return
+     */
+    ProviderTemplateContractDto deleteDraft(Integer providerId, UUID draftKey);
+
+    /**
+     * Publish draft
+     *
+     * @param providerId
+     * @param draftKey
+     * @return
+     * @throws ApplicationException
+     */
+    ProviderTemplateContractDto publishDraft(Integer providerId, UUID draftKey) throws ApplicationException;
+
+    /**
+     * Get all active contract templates
      *
      * @param query
      * @return
      */
-    List<ProviderTemplateContractDto> findAll(ProviderTemplateContractQuery query);
-
-    /**
-     * Find all asset identifiers who are assigned a contract based on the
-     * specified template.
-     *
-     * @param id
-     * @return A list of asset PIDs
-     */
-    List<String> findAllAssignedAssets(int id);
-
-    /**
-     * Find contract template assigned to the specific asset
-     *
-     * @param id
-     * @return
-     */
-    Optional<ProviderTemplateContractDto> findOneByAsset(String id);
-
-    /**
-     * Get a contract by its identifier
-     *
-     * @param id
-     * @return
-     */
-    Optional<ProviderTemplateContractDto> findOneById(int id);
+    PageResultDto<ProviderTemplateContractDto> findAll(ProviderTemplateContractQuery query);
 
     /**
      * Get a contract by its unique key
@@ -62,21 +85,7 @@ public interface ProviderTemplateContractService {
      * @param key
      * @return
      */
-    Optional<ProviderTemplateContractDto> findOneByKey(UUID key);
-
-    /**
-     * Update or create a contract
-     *
-     * @param command
-     */
-    void update(ProviderTemplateContractCommandDto command);
-    
-    /**
-     * Update a draft contract
-     *
-     * @param command
-     */
-    void updateDraft(ProviderTemplateContractDraftDto draftDto);
+    Optional<ProviderTemplateContractDto> findOneByKey(Integer providerId, UUID templateKey);
 
     /**
      * Mark a contract as inactive
@@ -84,9 +93,21 @@ public interface ProviderTemplateContractService {
      * After a template becomes inactive, providers can not assign it to an
      * asset.
      *
-     * @param id
+     * @param providerId
+     * @param templateKey
+     * @return
      */
-    void deactivateBy(int id);
+    ProviderTemplateContractDto deactivate(Integer providerId, UUID templateKey);
+
+    /**
+     * Create a new draft from an existing template contract
+     *
+     * @param userId
+     * @param providerKey
+     * @param templateKey
+     * @return
+     */
+    ProviderTemplateContractDto createForTemplate(int userId, UUID providerKey, UUID templateKey) throws ApplicationException;
 
     /**
      * Print contract
@@ -95,26 +116,5 @@ public interface ProviderTemplateContractService {
      * @return
      */
     byte[] print(PrintConsumerContractCommand command);
-
-    /**
-     * Update a contract's state (DRAFT-PUBLISHED)
-     * @param id, state
-     * @return
-     */
-    void updateState(int id, String state);
-
-    /**
-     * Deletes a contract
-     * @param id
-     * @return
-     */
-	void delete(int id);
-
-	/**
-     * Deletes a draft contract
-     * @param id
-     * @return
-     */
-	void deleteDraft(int id);
 
 }

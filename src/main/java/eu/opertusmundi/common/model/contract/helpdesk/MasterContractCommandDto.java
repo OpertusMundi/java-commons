@@ -1,54 +1,47 @@
-package eu.opertusmundi.common.model.contract;
+package eu.opertusmundi.common.model.contract.helpdesk;
 
 import java.io.Serializable;
-import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.UUID;
 
 import javax.validation.constraints.NotEmpty;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import eu.opertusmundi.common.model.account.helpdesk.HelpdeskAccountDto;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @NoArgsConstructor
 @AllArgsConstructor(staticName = "of")
-@Data
 @Getter
 @Setter
-public class MasterContractDto implements Serializable {
+public class MasterContractCommandDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @JsonIgnore
     private Integer id;
 
-    private UUID key;
-
     @JsonIgnore
-    private Integer parentId;
+    private Integer userId;
 
+    @Schema(description = "Title")
     @NotEmpty
     private String title;
 
+    @Schema(description = "Subtitle")
     private String subtitle;
 
-    private String state;
-
-    private String version;
-
-    private Boolean active;
-
-    @JsonIgnore
-    private HelpdeskAccountDto account;
-
+    @Schema(description = "Sections")
+    @ArraySchema(
+        arraySchema = @Schema(
+            description = "Contract sections"
+        ),
+        minItems = 0
+    )
     private List<MasterSectionDto> sections;
 
-    private ZonedDateTime createdAt;
-
-    private ZonedDateTime modifiedAt;
 }
