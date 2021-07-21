@@ -8,6 +8,7 @@ public enum ContractMessageCode implements MessageCode {
     HISTORY_NOT_FOUND,
     CONTRACT_NOT_FOUND,
     MASTER_CONTRACT_NOT_FOUND,
+    MASTER_SECTION_NOT_FOUND,
     INVALID_STATUS,
     ;
 

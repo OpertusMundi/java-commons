@@ -3,6 +3,7 @@ package eu.opertusmundi.common.repository.contract;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
@@ -26,6 +27,9 @@ import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryDto;
 @Repository
 @Transactional(readOnly = true)
 public interface MasterContractHistoryRepository extends JpaRepository<MasterContractHistoryEntity, Integer> {
+
+    @Query("SELECT c FROM ContractHistory c WHERE c.key = :key")
+    Optional<MasterContractHistoryEntity> findByKey(UUID key);
 
     @Query("SELECT c FROM ContractDraft c WHERE c.id = :id")
     Optional<MasterContractDraftEntity> findDraftById(int id);
@@ -104,7 +108,7 @@ public interface MasterContractHistoryRepository extends JpaRepository<MasterCon
         }
 
         // Create history record
-        MasterContractHistoryEntity history = MasterContractHistoryEntity.from(draft);
+        final MasterContractHistoryEntity history = MasterContractHistoryEntity.from(draft);
         history.setStatus(EnumContractStatus.ACTIVE);
         this.saveAndFlush(history);
 

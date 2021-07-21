@@ -51,15 +51,17 @@ public class ProviderTemplateSectionEntity{
     @Setter
     private ProviderTemplateContractEntity contract;
 
-    @Column(name = "`master_section_id`", updatable = false)
-    @Setter
+    @NotNull
+    @ManyToOne(targetEntity = MasterSectionHistoryEntity.class)
+    @JoinColumn(name = "master_section", nullable = false, updatable = false)
     @Getter
-    private Integer masterSectionId ;
+    @Setter
+    private MasterSectionHistoryEntity masterSection;
 
     @Column(name = "`optional`")
     @Getter
     @Setter
-    private Boolean optional;
+    private boolean optional;
 
     @Column(name = "`option`", updatable = false)
     @Setter
@@ -75,7 +77,7 @@ public class ProviderTemplateSectionEntity{
         final ProviderTemplateSectionDto s = new ProviderTemplateSectionDto();
 
         s.setId(id);
-        s.setMasterSectionId(masterSectionId);
+        s.setMasterSectionId(masterSection.getId());
         s.setOption(option);
         s.setOptional(optional);
         s.setSubOption(subOption);
@@ -86,9 +88,9 @@ public class ProviderTemplateSectionEntity{
     public static ProviderTemplateSectionEntity from(ProviderTemplateSectionHistoryEntity s) {
         final ProviderTemplateSectionEntity e = new ProviderTemplateSectionEntity();
 
-        e.setMasterSectionId(s.getMasterSectionId());
+        e.setMasterSection(s.getMasterSection());
         e.setOption(s.getOption());
-        e.setOptional(s.getOptional());
+        e.setOptional(s.isOptional());
         e.setSubOption(s.getSubOption());
 
         return e;

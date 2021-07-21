@@ -14,6 +14,7 @@ public enum EnumValidatorError {
     OptionNotEnabled("The value for the property is allowed but it is not enabled"),
     OptionNotSupported("The value for the property is not supported in the current context"),
     OperationNotSupported("The operation described by the property is not supported"),
+    ReferenceNotFound("Reference record was not found"),
     ResourceNotFound("The resource referenced by the property does not exist"),
 
     NotEmpty("The value must not be null or empty"),

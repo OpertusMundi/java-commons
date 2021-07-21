@@ -107,7 +107,7 @@ public interface ProviderTemplateContractService {
      * @param templateKey
      * @return
      */
-    ProviderTemplateContractDto createForTemplate(int userId, UUID providerKey, UUID templateKey) throws ApplicationException;
+    ProviderTemplateContractDto createFromMasterContract(int userId, UUID providerKey, UUID templateKey) throws ApplicationException;
 
     /**
      * Print contract

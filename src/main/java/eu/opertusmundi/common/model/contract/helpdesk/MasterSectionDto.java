@@ -6,6 +6,7 @@ import java.util.Map;
 
 import javax.validation.constraints.NotEmpty;
 
+import eu.opertusmundi.common.model.contract.ContractSectionSubOptionDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -34,7 +35,7 @@ public class MasterSectionDto implements Serializable {
 
     private List<String> options;
 
-    private Map<Integer, Object> subOptions;
+    private Map<Integer, List<ContractSectionSubOptionDto>> subOptions;
 
     private List<String> styledOptions;
 

@@ -110,7 +110,7 @@ public class DefaultProviderTemplateContractService implements ProviderTemplateC
     }
 
     @Override
-    public ProviderTemplateContractDto createForTemplate(int userId, UUID providerKey, UUID templateKey) throws ApplicationException {
+    public ProviderTemplateContractDto createFromMasterContract(int userId, UUID providerKey, UUID templateKey) throws ApplicationException {
         final ProviderTemplateContractDto result = this.draftRepository.createFromHistory(
             userId, providerKey, templateKey
         );

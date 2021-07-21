@@ -118,11 +118,14 @@ public class ProviderTemplateContractDraftEntity {
         if (includeDetails) {
             c.setContractParentKey(parent == null ? null : parent.getKey());
             c.setContractRootKey(parent == null ? null : parent.getContractRoot().getKey());
+            c.setMasterContract(this.getTemplate().toDto(true));
 
             c.setSections(sections.stream()
                 .map(ProviderTemplateSectionDraftEntity::toDto)
                 .collect(Collectors.toList())
             );
+
+            c.getMasterContract().removeHelpdeskData();
         }
 
         return c;

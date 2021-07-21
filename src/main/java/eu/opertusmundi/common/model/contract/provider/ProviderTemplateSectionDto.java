@@ -16,7 +16,7 @@ public class ProviderTemplateSectionDto {
     private Integer masterSectionId;
 
     @Schema(description = "Optional")
-    private Boolean optional;
+    private boolean optional;
 
     @Schema(description = "Option identifier")
     private Integer option;

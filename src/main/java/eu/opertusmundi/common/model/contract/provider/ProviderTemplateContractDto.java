@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import eu.opertusmundi.common.model.account.SimpleAccountDto;
+import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryDto;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -74,6 +75,10 @@ public class ProviderTemplateContractDto implements Serializable {
     )
     @JsonInclude(Include.NON_EMPTY)
     protected List<ProviderTemplateSectionDto> sections;
+
+    @Schema(description = "Parent master contract")
+    @JsonInclude(Include.NON_NULL)
+    protected MasterContractHistoryDto masterContract;
 
     public void removeHelpdeskData() {
         this.owner = null;

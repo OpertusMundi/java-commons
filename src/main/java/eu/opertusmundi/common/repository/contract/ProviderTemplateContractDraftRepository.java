@@ -160,6 +160,12 @@ public interface ProviderTemplateContractDraftRepository extends JpaRepository<P
             final ProviderTemplateSectionDraftEntity section = ProviderTemplateSectionDraftEntity.from(s);
 
             section.setContract(e);
+            section.setMasterSection(e.getTemplate().findSectionById(s.getMasterSectionId()));
+            if (section.getMasterSection() == null) {
+                throw ApplicationException.fromMessage(
+                    ContractMessageCode.MASTER_SECTION_NOT_FOUND, "Record not found"
+                );
+            }
 
             e.getSections().add(section);
         }

@@ -38,6 +38,13 @@ public class MasterContractHistoryEntity extends MasterContractHistoryBaseEntity
     @Setter
     private List<MasterSectionHistoryEntity> sections = new ArrayList<>();
 
+    public MasterSectionHistoryEntity findSectionById(int id) {
+        return sections.stream()
+            .filter(s -> s.getId() == id)
+            .findFirst()
+            .orElse(null);
+    }
+    
     public MasterContractHistoryDto toDto(boolean includeDetails) {
         final MasterContractHistoryDto c = new MasterContractHistoryDto();
 

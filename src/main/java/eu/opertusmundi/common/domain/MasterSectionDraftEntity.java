@@ -23,6 +23,7 @@ import org.hibernate.annotations.TypeDef;
 import com.vladmihalcea.hibernate.type.array.ListArrayType;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 
+import eu.opertusmundi.common.model.contract.ContractSectionSubOptionDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterSectionDto;
 import lombok.Getter;
 import lombok.Setter;
@@ -71,20 +72,23 @@ public class MasterSectionDraftEntity {
     @Setter
     String title;
 
+    @NotNull
     @Column(name = "`variable`")
     @Getter
     @Setter
-    Boolean variable;
+    boolean variable;
 
+    @NotNull
     @Column(name = "`optional`")
     @Getter
     @Setter
-    Boolean optional;
+    boolean optional;
 
+    @NotNull
     @Column(name = "`dynamic`")
     @Getter
     @Setter
-    Boolean dynamic;
+    boolean dynamic;
 
     @Type(type = "list-array")
     @Column(
@@ -110,7 +114,7 @@ public class MasterSectionDraftEntity {
     )
     @Getter
     @Setter
-    Map<Integer, Object> subOptions =  new HashMap<Integer, Object>();
+    Map<Integer, List<ContractSectionSubOptionDto>> subOptions =  new HashMap<>();
 
     @Type(type = "list-array")
     @Column(
@@ -136,7 +140,7 @@ public class MasterSectionDraftEntity {
     String descriptionOfChange;
 
     public MasterSectionDto toDto() {
-        MasterSectionDto s = new MasterSectionDto();
+        final MasterSectionDto s = new MasterSectionDto();
 
         s.setDescriptionOfChange(descriptionOfChange);
         s.setDynamic(dynamic);
@@ -178,17 +182,17 @@ public class MasterSectionDraftEntity {
         final MasterSectionDraftEntity e = new MasterSectionDraftEntity();
 
         e.setDescriptionOfChange(s.getDescriptionOfChange());
-        e.setDynamic(s.getDynamic());
+        e.setDynamic(s.isDynamic());
         e.setIcons(s.getIcons());
         e.setIndent(s.getIndent());
         e.setIndex(s.getIndex());
-        e.setOptional(s.getOptional());
+        e.setOptional(s.isOptional());
         e.setOptions(s.getOptions());
         e.setStyledOptions(s.getStyledOptions());
         e.setSubOptions(s.getSubOptions());
         e.setSummary(s.getSummary());
         e.setTitle(s.getTitle());
-        e.setVariable(s.getVariable());
+        e.setVariable(s.isVariable());
 
         return e;
     }

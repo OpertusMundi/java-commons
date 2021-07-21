@@ -22,6 +22,7 @@ import org.hibernate.annotations.TypeDef;
 
 import com.vladmihalcea.hibernate.type.array.ListArrayType;
 
+import eu.opertusmundi.common.model.contract.ContractSectionSubOptionDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterSectionDto;
 import lombok.Getter;
 import lombok.Setter;
@@ -70,20 +71,23 @@ public class MasterSectionHistoryEntity {
     @Setter
     private String title;
 
+    @NotNull
     @Column(name = "`variable`")
     @Getter
     @Setter
-    private Boolean variable;
+    private boolean variable;
 
+    @NotNull
     @Column(name = "`optional`")
     @Getter
     @Setter
-    private Boolean optional;
+    private boolean optional;
 
+    @NotNull
     @Column(name = "`dynamic`")
     @Getter
     @Setter
-    private Boolean dynamic;
+    private boolean dynamic;
 
     @Type(type = "list-array")
     @Column(
@@ -109,7 +113,7 @@ public class MasterSectionHistoryEntity {
     )
     @Getter
     @Setter
-    private Map<Integer, Object> subOptions =  new HashMap<Integer, Object>();
+    private Map<Integer, List<ContractSectionSubOptionDto>> subOptions = new HashMap<>();
 
     @Type(type = "list-array")
     @Column(
@@ -133,8 +137,26 @@ public class MasterSectionHistoryEntity {
     @Setter
     private String descriptionOfChange;
 
+    public String findOptionByIndex(int index) {
+        if (index < 0 || index >= this.styledOptions.size()) {
+            return null;
+        }
+        return this.styledOptions.get(index);
+    }
+
+    public ContractSectionSubOptionDto findSubOptionByIndex(int oIndex, int sIndex) {
+        if (oIndex < 0 || oIndex >= this.styledOptions.size()) {
+            return null;
+        }
+        final List<ContractSectionSubOptionDto> subOptions = this.subOptions.get(oIndex);
+        if (sIndex < 0 || sIndex >= this.subOptions.size()) {
+            return null;
+        }
+        return subOptions.get(sIndex);
+    }
+
     public MasterSectionDto toDto() {
-        MasterSectionDto s = new MasterSectionDto();
+        final MasterSectionDto s = new MasterSectionDto();
 
         s.setDescriptionOfChange(descriptionOfChange);
         s.setDynamic(dynamic);
@@ -157,17 +179,17 @@ public class MasterSectionHistoryEntity {
         final MasterSectionHistoryEntity e = new MasterSectionHistoryEntity();
 
         e.setDescriptionOfChange(d.getDescriptionOfChange());
-        e.setDynamic(d.getDynamic());
+        e.setDynamic(d.isDynamic());
         e.setIcons(d.getIcons());
         e.setIndent(d.getIndent());
         e.setIndex(d.getIndex());
-        e.setOptional(d.getOptional());
+        e.setOptional(d.isOptional());
         e.setOptions(d.getOptions());
         e.setStyledOptions(d.getStyledOptions());
         e.setSubOptions(d.getSubOptions());
         e.setSummary(d.getSummary());
         e.setTitle(d.getTitle());
-        e.setVariable(d.getVariable());
+        e.setVariable(d.isVariable());
 
         return e;
     }
