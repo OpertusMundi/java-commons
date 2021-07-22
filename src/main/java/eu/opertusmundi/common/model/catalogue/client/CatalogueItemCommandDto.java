@@ -52,6 +52,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
         this.additionalResources = new ArrayList<>();
         this.pricingModels       = new ArrayList<>();
         this.resources           = new ArrayList<>();
+        this.visibility          = feature.getProperties().getVisibility();
     }
 
     /**
@@ -125,6 +126,15 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
     @Schema(description = "Version of the resource", required = true)
     @NotEmpty
     private String version;
+
+    @ArraySchema(
+        arraySchema = @Schema(
+            description = "Controls automated metadata property visibility"
+        ),
+        minItems = 0,
+        uniqueItems = true
+    )
+    private List<String> visibility = new ArrayList<>();
 
     @ArraySchema(
         arraySchema = @Schema(

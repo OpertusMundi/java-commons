@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.model.catalogue.server;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -76,6 +77,7 @@ public class CatalogueFeatureProperties {
         this.useOnlyForVas                = command.isUserOnlyForVas();
         this.version                      = command.getVersion();
         this.versions                     = Collections.emptyList();
+        this.visibility                   = command.getVisibility();
 
         this.resources = StreamUtils.from(command.getResources())
             .map(ResourceDto::toCatalogueResource)
@@ -246,6 +248,8 @@ public class CatalogueFeatureProperties {
     private String version;
 
     private List<String> versions;
+
+    private List<String> visibility = new ArrayList<>();
 
     @NoArgsConstructor
     @Getter

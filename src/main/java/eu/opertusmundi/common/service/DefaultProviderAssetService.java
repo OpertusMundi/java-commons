@@ -69,6 +69,7 @@ import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemProviderCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromAssetCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromFileCommandDto;
@@ -376,6 +377,14 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         // Consolidate file resources
         this.consolidateResources(draft);
+
+        return draft;
+    }
+
+    @Override
+    @Transactional
+    public AssetDraftDto updateDraft(CatalogueItemProviderCommandDto command) throws AssetDraftException {
+        final AssetDraftDto draft = this.draftRepository.update(command);
 
         return draft;
     }

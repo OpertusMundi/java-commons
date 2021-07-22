@@ -23,6 +23,8 @@ import org.springframework.util.Assert;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import brave.Span;
 import brave.Tracer;
@@ -330,6 +332,15 @@ public class DefaultCatalogueService implements CatalogueService {
             // Filter automated metadata
             if (!includeAutomatedMetadata) {
                 item.setAutomatedMetadata(null);
+                item.setVisibility(null);
+            } else if (item.getVisibility() != null) {
+                final ArrayNode metadataArray = (ArrayNode) item.getAutomatedMetadata();
+                for (int i = 0; i < metadataArray.size(); i++) {
+                    final ObjectNode metadata = (ObjectNode) metadataArray.get(i);
+                    for (final String prop : item.getVisibility()) {
+                        metadata.putNull(prop);
+                    }
+                }
             }
             // Filter ingestion information
             if (!item.getPublisherId().equals(publisherKey)) {

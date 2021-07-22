@@ -22,6 +22,7 @@ import eu.opertusmundi.common.model.asset.MetadataProperty;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemProviderCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
@@ -90,6 +91,16 @@ public interface ProviderAssetService {
     AssetDraftDto updateDraft(CatalogueItemCommandDto command) throws AssetDraftException;
 
     /**
+     * Set provider updates to a draft
+     *
+     * The status must be {@link EnumProviderAssetDraftStatus#PENDING_PROVIDER_REVIEW}
+     *
+     * @param draft
+     * @return
+     */
+    AssetDraftDto updateDraft(CatalogueItemProviderCommandDto command) throws AssetDraftException;
+
+    /**
      * Delete a draft
      *
      * The status must be one of:
@@ -97,7 +108,7 @@ public interface ProviderAssetService {
      * {@link EnumProviderAssetDraftStatus#HELPDESK_REJECTED}
      * {@link EnumProviderAssetDraftStatus#PROVIDER_REJECTED}
      *
-     * @param publisheKey
+     * @param publisherKey
      * @param draftKey
      */
     void deleteDraft(UUID publisherKey, UUID draftKey) throws AssetDraftException;
@@ -220,7 +231,7 @@ public interface ProviderAssetService {
 
     /**
      * Adds a service resource to the specified asset
-     * 
+     *
      * @param publisherKey
      * @param draftKey
      * @param resource

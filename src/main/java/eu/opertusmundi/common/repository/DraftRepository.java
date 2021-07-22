@@ -26,6 +26,7 @@ import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemProviderCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumType;
 import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
@@ -124,6 +125,32 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         draft.setStatus(status);
         draft.setTitle(command.getTitle());
         draft.setVersion(command.getVersion());
+
+        this.saveAndFlush(draft);
+
+        return draft.toDto();
+    }
+
+
+    @Transactional(readOnly = false)
+    default AssetDraftDto update(CatalogueItemProviderCommandDto command) throws AssetDraftException {
+        Assert.notNull(command, "Expected a non-null command");
+
+        final ZonedDateTime now = ZonedDateTime.now();
+
+        // Check draft
+        final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(command.getProviderKey(), command.getDraftKey()).orElse(null);
+        if (draft == null) {
+            throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
+        }
+        if (draft.getStatus() != EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW) {
+            throw new AssetDraftException(
+                AssetMessageCode.INVALID_STATE,
+                String.format("Expected status [PENDING_PROVIDER_REVIEW]. Found [%s]", draft.getStatus())
+            );
+        }
+        draft.getCommand().setVisibility(command.getVisibility());
+        draft.setModifiedOn(now);
 
         this.saveAndFlush(draft);
 
@@ -259,8 +286,8 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
                 String.format("Expected status is [%s]. Found [%s]", EnumProviderAssetDraftStatus.POST_PROCESSING, draft.getStatus())
             );
         }
-        
-        // Initialize ingestion data if needed 
+
+        // Initialize ingestion data if needed
         draft.getCommand().addServiceResource(resource);
         // NOTE: Workaround for updating ingestion data. Property command of entity
         // ProviderAssetDraftEntity is annotated with @Convert for serializing a

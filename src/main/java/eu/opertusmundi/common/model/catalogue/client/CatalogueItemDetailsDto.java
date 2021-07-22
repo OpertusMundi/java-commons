@@ -1,12 +1,15 @@
 package eu.opertusmundi.common.model.catalogue.client;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.util.Assert;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 
@@ -42,6 +45,7 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
         this.contractTemplateVersion = props.getContractTemplateVersion();
         this.statistics              = props.getStatistics();
         this.versions                = props.getVersions();
+        this.visibility              = props.getVisibility();
         this.resources               = StreamUtils.from(props.getResources())
             .map(ResourceDto::fromCatalogueResource)
             .collect(Collectors.toList());
@@ -111,5 +115,17 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
     @Getter
     @Setter
     private List<String> versions;
+
+    @ArraySchema(
+        arraySchema = @Schema(
+            description = "Controls automated metadata property visibility"
+        ),
+        minItems = 0,
+        uniqueItems = true
+    )
+    @Getter
+    @Setter
+    @JsonInclude(Include.NON_NULL)
+    private List<String> visibility = new ArrayList<>();
 
 }
