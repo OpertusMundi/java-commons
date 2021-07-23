@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.EnumSortingOrder;
@@ -138,9 +139,10 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
     }
 
     @Override
+    @Transactional
     public MasterContractDto publishDraft(int id) throws ApplicationException {
         final MasterContractDto result = this.historyRepository.publishDraft(id);
-
+        this.draftRepository.deleteById(id);
         return result;
     }
 

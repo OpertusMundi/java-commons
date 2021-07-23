@@ -2,11 +2,10 @@ package eu.opertusmundi.common.model.contract.helpdesk;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.Map;
 
 import javax.validation.constraints.NotEmpty;
 
-import eu.opertusmundi.common.model.contract.ContractSectionSubOptionDto;
+import eu.opertusmundi.common.model.contract.ContractSectionOptionDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -33,15 +32,7 @@ public class MasterSectionDto implements Serializable {
 
     private boolean dynamic;
 
-    private List<String> options;
-
-    private Map<Integer, List<ContractSectionSubOptionDto>> subOptions;
-
-    private List<String> styledOptions;
-
-    private List<String> summary;
-
-    private List<String> icons;
+    private List<ContractSectionOptionDto> options;
 
     private String descriptionOfChange;
 

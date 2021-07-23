@@ -125,9 +125,6 @@ public interface MasterContractHistoryRepository extends JpaRepository<MasterCon
             this.saveAndFlush(history);
         }
 
-        // Delete draft
-        this.deleteDraftById(id);
-
         // Delete parent published contract
         if (history.getContractParent().getPublished() != null) {
             history.getContractParent().getPublished().setParent(null);

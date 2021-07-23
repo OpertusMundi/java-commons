@@ -23,6 +23,7 @@ import org.hibernate.annotations.TypeDef;
 import com.vladmihalcea.hibernate.type.array.ListArrayType;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 
+import eu.opertusmundi.common.model.contract.ContractSectionOptionDto;
 import eu.opertusmundi.common.model.contract.ContractSectionSubOptionDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterSectionDto;
 import lombok.Getter;
@@ -92,49 +93,14 @@ public class MasterSectionEntity {
     @Setter
     private boolean dynamic;
 
-    @Type(type = "list-array")
-    @Column(
-        name = "options",
-        columnDefinition = "text[]"
-    )
-    @Getter
-    @Setter
-    private List<String> options ;
-
-    @Type(type = "list-array")
-    @Column(
-        name = "styled_options",
-        columnDefinition = "text[]"
-    )
-    @Getter
-    @Setter
-    private List<String> styledOptions ;
-
     @Type(type = "json")
     @Column(
-        name = "sub_options"
+        name = "options",
+        columnDefinition = "jsonb"
     )
     @Getter
     @Setter
-    private Map<Integer, List<ContractSectionSubOptionDto>> subOptions = new HashMap<>();
-
-    @Type(type = "list-array")
-    @Column(
-        name = "summary",
-        columnDefinition = "text[]"
-    )
-    @Getter
-    @Setter
-    private List<String> summary ;
-
-
-    @Type(type = "list-array")
-    @Column(
-    	name="icons",
-    	columnDefinition = "text")
-    @Getter
-    @Setter
-    private List <String> icons;
+    private List<ContractSectionOptionDto> options ;
 
     @Column(name = "`description_of_change`")
     @Getter
@@ -146,15 +112,11 @@ public class MasterSectionEntity {
 
         s.setDescriptionOfChange(descriptionOfChange);
         s.setDynamic(dynamic);
-        s.setIcons(icons);
         s.setId(id);
         s.setIndent(indent);
         s.setIndex(index);
         s.setOptional(optional);
         s.setOptions(options);
-        s.setStyledOptions(styledOptions);
-        s.setSubOptions(subOptions);
-        s.setSummary(summary);
         s.setTitle(title);
         s.setVariable(variable);
 
@@ -166,14 +128,10 @@ public class MasterSectionEntity {
 
         e.setDescriptionOfChange(s.getDescriptionOfChange());
         e.setDynamic(s.isDynamic());
-        e.setIcons(s.getIcons());
         e.setIndent(s.getIndent());
         e.setIndex(s.getIndex());
         e.setOptional(s.isOptional());
         e.setOptions(s.getOptions());
-        e.setStyledOptions(s.getStyledOptions());
-        e.setSubOptions(s.getSubOptions());
-        e.setSummary(s.getSummary());
         e.setTitle(s.getTitle());
         e.setVariable(s.isVariable());
 
