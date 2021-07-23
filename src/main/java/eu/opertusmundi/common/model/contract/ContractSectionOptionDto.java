@@ -1,6 +1,5 @@
 package eu.opertusmundi.common.model.contract;
 
-import java.io.Serializable;
 import java.util.List;
 
 import lombok.Getter;

@@ -56,7 +56,7 @@ public class MasterContractDraftEntity {
     private HelpdeskAccountEntity owner;
     
     @OneToOne(
-        optional = true, fetch = FetchType.LAZY, orphanRemoval = false
+        optional = false, fetch = FetchType.LAZY
     )
     @JoinColumn(name = "`parent`")
     @Getter

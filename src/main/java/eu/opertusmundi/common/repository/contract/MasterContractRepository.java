@@ -13,6 +13,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import eu.opertusmundi.common.domain.MasterContractEntity;
+import eu.opertusmundi.common.model.ApplicationException;
+import eu.opertusmundi.common.model.contract.ContractMessageCode;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractDto;
 
 @Repository
@@ -30,6 +32,25 @@ public interface MasterContractRepository extends JpaRepository<MasterContractEn
     )
     Page<MasterContractEntity> findAll(String title, Pageable pageable);
 
+    @Transactional(readOnly = false)
+    default void deleteById(Integer id) throws ApplicationException {
+        final MasterContractEntity e = this.findOneById(id).orElse(null);
+
+        if (e == null) {
+            throw ApplicationException.fromMessage(
+                ContractMessageCode.CONTRACT_NOT_FOUND, "Record not found"
+            );
+        }
+
+        // Remove parent link
+        if (e.getParent() != null) {
+            e.getParent().setPublished(null);
+            e.setParent(null);
+        }
+
+        this.delete(e);
+    }
+    
     default Page<MasterContractDto> findAllObjects(String title, Pageable pageable) {
         if (StringUtils.isBlank(title)) {
             title = null;
@@ -50,13 +71,6 @@ public interface MasterContractRepository extends JpaRepository<MasterContractEn
 
     default Optional<MasterContractDto> findOneObject(UUID key) {
         return this.findOneByKey(key).map(c -> c.toDto(true));
-    }
-
-    @Transactional(readOnly = false)
-    default void delete(int id) {
-        final MasterContractEntity e = this.findOneById(id).orElse(null);
-
-        this.delete(e);
     }
 
 }

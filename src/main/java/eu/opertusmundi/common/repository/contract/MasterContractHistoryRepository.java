@@ -9,7 +9,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,8 +20,9 @@ import eu.opertusmundi.common.domain.MasterContractHistoryViewEntity;
 import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.contract.ContractMessageCode;
 import eu.opertusmundi.common.model.contract.EnumContractStatus;
-import eu.opertusmundi.common.model.contract.helpdesk.MasterContractDto;
+import eu.opertusmundi.common.model.contract.helpdesk.DeactivateContractResult;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryDto;
+import eu.opertusmundi.common.model.contract.helpdesk.PublishContractResult;
 
 @Repository
 @Transactional(readOnly = true)
@@ -31,15 +31,11 @@ public interface MasterContractHistoryRepository extends JpaRepository<MasterCon
     @Query("SELECT c FROM ContractHistory c WHERE c.key = :key")
     Optional<MasterContractHistoryEntity> findByKey(UUID key);
 
-    @Query("SELECT c FROM ContractDraft c WHERE c.id = :id")
+    @Query("SELECT c FROM ContractDraft c JOIN FETCH c.sections WHERE c.id = :id")
     Optional<MasterContractDraftEntity> findDraftById(int id);
 
     @Query("SELECT c FROM ContractHistory c WHERE c.status = 'ACTIVE' and c.published.id = :id")
     Optional<MasterContractHistoryEntity> findHistoryByPublishedContractId(int id);
-
-    @Modifying
-    @Query("DELETE ContractDraft c WHERE c.id = :id")
-    int deleteDraftById(int id);
 
     @Query("SELECT c FROM ContractHistoryView c WHERE "
          + "(c.status in ('ACTIVE', 'INACTIVE', 'DRAFT')) and "
@@ -68,7 +64,7 @@ public interface MasterContractHistoryRepository extends JpaRepository<MasterCon
     }
 
     @Transactional(readOnly = false)
-    default MasterContractHistoryDto deactivate(int id) throws ApplicationException {
+    default DeactivateContractResult deactivate(int id) throws ApplicationException {
         // Get published contract
         final MasterContractHistoryEntity history = this.findById(id).orElse(null);
 
@@ -88,16 +84,13 @@ public interface MasterContractHistoryRepository extends JpaRepository<MasterCon
         history.setStatus(EnumContractStatus.INACTIVE);
         history.setModifiedAt(ZonedDateTime.now());
 
-        if (history.getPublished() != null) {
-            history.getPublished().setParent(null);
-            history.setPublished(null);
-        }
+        final Integer contractId = history.getPublished().getId();
 
-        return this.saveAndFlush(history).toDto(true);
+        return DeactivateContractResult.of(contractId, this.saveAndFlush(history).toDto(true));
     }
 
     @Transactional(readOnly = false)
-    default MasterContractDto publishDraft(int id) throws ApplicationException {
+    default PublishContractResult publishDraft(int id) throws ApplicationException {
         // Get draft
         final MasterContractDraftEntity draft = this.findDraftById(id).orElse(null);
 
@@ -111,24 +104,20 @@ public interface MasterContractHistoryRepository extends JpaRepository<MasterCon
         final MasterContractHistoryEntity history = MasterContractHistoryEntity.from(draft);
         history.setStatus(EnumContractStatus.ACTIVE);
         this.saveAndFlush(history);
-
-
+        
         // Archive parent contract
         if (history.getContractParent() != null && history.getContractParent() != history) {
             history.getContractParent().setStatus(EnumContractStatus.HISTORY);
         }
+        
+        // Get parent published contract identifier to delete
+        final MasterContractEntity parentContract = history.getContractParent() != null ? history.getContractParent().getPublished() : null;
 
         // Set parent links
         if (history.getContractParent() == null) {
             history.setContractParent(history);
             history.setContractRoot(history);
             this.saveAndFlush(history);
-        }
-
-        // Delete parent published contract
-        if (history.getContractParent().getPublished() != null) {
-            history.getContractParent().getPublished().setParent(null);
-            history.getContractParent().setPublished(null);
         }
 
         // Create published contract
@@ -138,7 +127,7 @@ public interface MasterContractHistoryRepository extends JpaRepository<MasterCon
         // Refresh data store and return the new published contract
         this.saveAndFlush(history);
 
-        return history.getPublished().toDto(true);
+        return PublishContractResult.of(parentContract == null ? null : parentContract.getId(), published.toDto(true));
     }
 
 }

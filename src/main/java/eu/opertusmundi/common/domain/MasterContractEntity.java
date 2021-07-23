@@ -58,7 +58,7 @@ public class MasterContractEntity {
 
     @NotNull
     @OneToOne(
-        optional = true, fetch = FetchType.LAZY, orphanRemoval = false
+        optional = false, fetch = FetchType.LAZY
     )
     @JoinColumn(name = "`parent`")
     @Getter
@@ -66,7 +66,7 @@ public class MasterContractEntity {
     private MasterContractHistoryEntity parent;
 
     @OneToMany(
-        mappedBy = "contract", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true
+        mappedBy = "contract", fetch = FetchType.EAGER, cascade = CascadeType.ALL
     )
     @Getter
     @Setter

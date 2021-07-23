@@ -102,9 +102,8 @@ public interface MasterTemplateContractService {
      * Delete draft
      *
      * @param id
-     * @return
      */
-    MasterContractDto deleteDraft(int id) throws ApplicationException;
+    void deleteDraft(int id) throws ApplicationException;
 
     /**
      * Publish draft

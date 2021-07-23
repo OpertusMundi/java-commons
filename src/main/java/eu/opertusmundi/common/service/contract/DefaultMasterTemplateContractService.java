@@ -17,11 +17,13 @@ import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.contract.consumer.PrintConsumerContractCommand;
+import eu.opertusmundi.common.model.contract.helpdesk.DeactivateContractResult;
 import eu.opertusmundi.common.model.contract.helpdesk.EnumMasterContractSortField;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractCommandDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractQueryDto;
+import eu.opertusmundi.common.model.contract.helpdesk.PublishContractResult;
 import eu.opertusmundi.common.repository.contract.MasterContractDraftRepository;
 import eu.opertusmundi.common.repository.contract.MasterContractHistoryRepository;
 import eu.opertusmundi.common.repository.contract.MasterContractRepository;
@@ -92,10 +94,13 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
     }
 
     @Override
+    @Transactional
     public MasterContractHistoryDto deactivate(int id) throws ApplicationException {
-        final MasterContractHistoryDto result = this.historyRepository.deactivate(id);
+        final DeactivateContractResult result = this.historyRepository.deactivate(id);
 
-        return result;
+        this.contractRepository.deleteById(result.getContractId());
+        
+        return result.getContract();
     }
 
     @Override
@@ -132,18 +137,21 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
     }
 
     @Override
-    public MasterContractDto deleteDraft(int id) throws ApplicationException {
-        final MasterContractDto result = draftRepository.deleteById(id);
-
-        return result;
+    public void deleteDraft(int id) throws ApplicationException {
+        this.draftRepository.deleteById(id);
     }
 
     @Override
     @Transactional
     public MasterContractDto publishDraft(int id) throws ApplicationException {
-        final MasterContractDto result = this.historyRepository.publishDraft(id);
+        final PublishContractResult result = this.historyRepository.publishDraft(id);
+
         this.draftRepository.deleteById(id);
-        return result;
+        if (result.getPreviousContractId() != null) {
+            this.contractRepository.deleteById(result.getPreviousContractId());
+        }
+
+        return result.getContract();
     }
 
     @Override

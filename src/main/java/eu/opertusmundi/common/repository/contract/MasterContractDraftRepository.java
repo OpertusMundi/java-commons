@@ -54,7 +54,7 @@ public interface MasterContractDraftRepository extends JpaRepository<MasterContr
     }
 
     @Transactional(readOnly = false)
-    default MasterContractDto deleteById(int id) throws ApplicationException {
+    default void deleteById(Integer id) throws ApplicationException {
         final MasterContractDraftEntity e = this.findOneById(id).orElse(null);
 
         if (e == null) {
@@ -63,8 +63,6 @@ public interface MasterContractDraftRepository extends JpaRepository<MasterContr
             );
         }
 
-        final MasterContractDto result = e.toDto(true);
-
         // Remove parent link
         if (e.getParent() != null) {
             e.getParent().setDraft(null);
@@ -72,8 +70,6 @@ public interface MasterContractDraftRepository extends JpaRepository<MasterContr
         }
 
         this.delete(e);
-
-        return result;
     }
 
     @Transactional(readOnly = false)

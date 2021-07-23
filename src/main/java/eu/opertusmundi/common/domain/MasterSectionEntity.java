@@ -1,8 +1,6 @@
 package eu.opertusmundi.common.domain;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -24,7 +22,6 @@ import com.vladmihalcea.hibernate.type.array.ListArrayType;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 
 import eu.opertusmundi.common.model.contract.ContractSectionOptionDto;
-import eu.opertusmundi.common.model.contract.ContractSectionSubOptionDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterSectionDto;
 import lombok.Getter;
 import lombok.Setter;
