@@ -14,20 +14,15 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
-import org.camunda.bpm.engine.rest.dto.message.CorrelationMessageDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
-import org.camunda.bpm.engine.rest.dto.runtime.StartProcessInstanceDto;
-import org.camunda.bpm.engine.rest.dto.task.CompleteTaskDto;
 import org.camunda.bpm.engine.rest.dto.task.TaskDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -44,7 +39,6 @@ import eu.opertusmundi.common.domain.AssetFileTypeEntity;
 import eu.opertusmundi.common.domain.AssetMetadataPropertyEntity;
 import eu.opertusmundi.common.domain.AssetResourceEntity;
 import eu.opertusmundi.common.domain.ProviderAssetDraftEntity;
-import eu.opertusmundi.common.feign.client.BpmServerFeignClient;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
@@ -91,6 +85,8 @@ import eu.opertusmundi.common.repository.AssetMetadataPropertyRepository;
 import eu.opertusmundi.common.repository.AssetResourceRepository;
 import eu.opertusmundi.common.repository.DraftRepository;
 import eu.opertusmundi.common.repository.contract.ProviderTemplateContractHistoryRepository;
+import eu.opertusmundi.common.util.BpmEngineUtils;
+import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
 import feign.FeignException;
 
 // TODO: Scheduler job for deleting orphaned resources
@@ -140,13 +136,13 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     private AssetFileManager assetFileManager;
 
     @Autowired
-    private ObjectProvider<BpmServerFeignClient> bpmClient;
-
-    @Autowired
     private CatalogueService catalogueService;
 
     @Autowired
     private PersistentIdentifierService pidService;
+
+    @Autowired
+    private BpmEngineUtils bpmEngine;
 
     @Override
     public PageResultDto<AssetDraftDto> findAllDraft(
@@ -426,25 +422,20 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             this.ensureDraftAndStatus(command.getPublisherKey(), command.getAssetKey(), EnumProviderAssetDraftStatus.DRAFT);
 
             // Check if workflow exists
-            ProcessInstanceDto instance = this.findInstance(command.getAssetKey());
+            ProcessInstanceDto instance = this.bpmEngine.findInstance(command.getAssetKey());
 
             if (instance == null) {
-                final StartProcessInstanceDto options = new StartProcessInstanceDto();
+                final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
+                    .variableAsString(EnumProcessInstanceVariable.START_USER_KEY.getValue(), command.getPublisherKey().toString())
+                    .variableAsString("draftKey", command.getAssetKey().toString())
+                    .variableAsString("publisherKey", command.getPublisherKey().toString())
+                    .variableAsString("type", command.getType().toString())
+                    .variableAsBoolean("ingested", command.isIngested())
+                    .build();
 
-                final Map<String, VariableValueDto> variables = new HashMap<String, VariableValueDto>();
-
-                // Set variables
-                this.setStringVariable(variables, EnumProcessInstanceVariable.START_USER_KEY.getValue(), command.getPublisherKey());
-                this.setStringVariable(variables, "draftKey", command.getAssetKey());
-                this.setStringVariable(variables, "publisherKey", command.getPublisherKey());
-                this.setStringVariable(variables, "type", command.getType().toString());
-                this.setBooleanVariable(variables, "ingested", command.isIngested());
-
-                options.setBusinessKey(command.getAssetKey().toString());
-                options.setVariables(variables);
-                options.setWithVariablesInReturn(true);
-
-                instance = this.bpmClient.getObject().startProcessDefinitionByKey(WORKFLOW_SELL_ASSET, options);
+                instance = this.bpmEngine.startProcessDefinitionByKey(
+                    WORKFLOW_SELL_ASSET, command.getAssetKey().toString(), variables, true
+                );
             }
 
             this.draftRepository.update(command, EnumProviderAssetDraftStatus.SUBMITTED, instance.getDefinitionId(), instance.getId());
@@ -477,19 +468,16 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     private void reviewHelpDesk(UUID publisherKey, UUID draftKey, boolean rejected, String reason) throws AssetDraftException {
         try {
             // Find workflow instance
-            final List<TaskDto> tasks = this.bpmClient.getObject().findTaskById(draftKey.toString(), TASK_REVIEW);
+            final TaskDto task = this.bpmEngine.findTaskById(draftKey.toString(), TASK_REVIEW).orElse(null);
 
-            if (tasks.size() == 1) {
+            if (task != null) {
                 // Complete task
-                final CompleteTaskDto               options   = new CompleteTaskDto();
-                final Map<String, VariableValueDto> variables = new HashMap<String, VariableValueDto>();
+                final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
+                    .variableAsBoolean("helpdeskAccept", !rejected)
+                    .variableAsString("helpdeskRejectReason", reason)
+                    .build();
 
-                this.setBooleanVariable(variables, "helpdeskAccept", !rejected);
-                this.setStringVariable(variables, "helpdeskRejectReason", reason);
-
-                options.setVariables(variables);
-
-                this.bpmClient.getObject().completeTask(tasks.get(0).getId(), options);
+                this.bpmEngine.completeTask(task.getId(), variables);
             }
 
             // Update draft
@@ -551,19 +539,12 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     private void reviewProviderSendMessage(UUID draftKey, boolean rejected, String reason) throws AssetDraftException {
         try {
-            final CorrelationMessageDto         message   = new CorrelationMessageDto();
-            final Map<String, VariableValueDto> variables = new HashMap<String, VariableValueDto>();
+            final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
+                .variableAsBoolean("providerAccept", !rejected)
+                .variableAsString("providerRejectReason", reason)
+                .build();
 
-            this.setBooleanVariable(variables, "providerAccept", !rejected);
-            this.setStringVariable(variables, "providerRejectReason", reason);
-
-            message.setMessageName(MESSAGE_PROVIDER_REVIEW);
-            message.setBusinessKey(draftKey.toString());
-            message.setProcessVariables(variables);
-            message.setVariablesInResultEnabled(true);
-            message.setResultEnabled(true);
-
-            this.bpmClient.getObject().correlateMessage(message);
+            this.bpmEngine.correlateMessage(draftKey.toString(), MESSAGE_PROVIDER_REVIEW, variables);
         } catch (final FeignException fex) {
             logger.error("Operation has failed", fex);
 
@@ -962,40 +943,6 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         }
 
         return MetadataProperty.of(property.getType(), path);
-    }
-
-    private ProcessInstanceDto findInstance(UUID businessKey) {
-        try {
-            final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstances(businessKey.toString());
-
-            return instances.stream().findFirst().orElse(null);
-        } catch (final FeignException fex) {
-            logger.error("Operation has failed", fex);
-
-            // Handle 404 errors as valid responses
-            if (fex.status() == HttpStatus.NOT_FOUND.value()) {
-                return null;
-            }
-
-            throw new AssetDraftException(AssetMessageCode.BPM_SERVICE, "Operation on BPM server failed", fex);
-        }
-    }
-
-    private void setBooleanVariable(Map<String, VariableValueDto> variables, String name, Object value) {
-        this.setVariable(variables, "Boolean", name, value);
-    }
-
-    private void setStringVariable(Map<String, VariableValueDto> variables, String name, Object value) {
-        this.setVariable(variables, "String", name, value);
-    }
-
-    private void setVariable(Map<String, VariableValueDto> variables, String type, String name, Object value) {
-        final VariableValueDto v = new VariableValueDto();
-
-        v.setValue(value);
-        v.setType(type);
-
-        variables.put(name, v);
     }
 
     public EnumAssetSourceType mapFormatToSourceType(String format) throws AssetDraftException {

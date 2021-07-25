@@ -1,13 +1,11 @@
 package eu.opertusmundi.common.service;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
-import org.camunda.bpm.engine.rest.dto.runtime.StartProcessInstanceDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +20,7 @@ import eu.opertusmundi.common.model.analytics.ProfileRecord;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.ActivationTokenRepository;
+import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
 
 @Service
 public class DefaultConsumerRegistrationService extends AbstractCustomerRegistrationService implements ConsumerRegistrationService {
@@ -58,25 +57,20 @@ public class DefaultConsumerRegistrationService extends AbstractCustomerRegistra
         final UUID       registrationKey = account.getProfile().getConsumer().getDraft().getKey();
 
         // Check if workflow exists
-        ProcessInstanceDto instance = this.findInstance(registrationKey);
+        ProcessInstanceDto instance = this.bpmEngine.findInstance(registrationKey.toString());
 
         if (instance == null) {
-            final StartProcessInstanceDto options = new StartProcessInstanceDto();
+            final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
+                .variableAsString(EnumProcessInstanceVariable.START_USER_KEY.getValue(), userKey.toString())
+                .variableAsString("userKey", userKey.toString())
+                .variableAsString("registrationKey", registrationKey.toString())
+                .variableAsBoolean("isUpdate", isUpdate)
+                .variableAsBoolean("isReviewRequired", true)
+                .build();
 
-            final Map<String, VariableValueDto> variables = new HashMap<String, VariableValueDto>();
-
-            // Set variables
-            this.setStringVariable(variables, EnumProcessInstanceVariable.START_USER_KEY.getValue(), userKey);
-            this.setStringVariable(variables, "userKey", userKey);
-            this.setStringVariable(variables, "registrationKey", registrationKey);
-            this.setBooleanVariable(variables, "isUpdate", isUpdate);
-            this.setBooleanVariable(variables, "isReviewRequired", true);
-
-            options.setBusinessKey(registrationKey.toString());
-            options.setVariables(variables);
-            options.setWithVariablesInReturn(true);
-
-            instance = this.bpmClient.getObject().startProcessDefinitionByKey(WORKFLOW_CONSUMER_REGISTRATION, options);
+            instance = this.bpmEngine.startProcessDefinitionByKey(
+                WORKFLOW_CONSUMER_REGISTRATION, registrationKey.toString(), variables, true
+            );
         }
 
         return account;

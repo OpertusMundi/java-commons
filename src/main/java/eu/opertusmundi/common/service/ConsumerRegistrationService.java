@@ -23,7 +23,6 @@ public interface ConsumerRegistrationService {
      */
     AccountDto submitRegistration(CustomerCommandDto command);
 
-
     /**
      * Cancel pending consumer registration request
      *
