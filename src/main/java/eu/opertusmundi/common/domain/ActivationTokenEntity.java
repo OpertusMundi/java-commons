@@ -7,9 +7,12 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.Email;
@@ -31,10 +34,14 @@ public class ActivationTokenEntity {
     @Getter
     Integer id;
 
-    @Column(name = "`account`", nullable = false, updatable = false)
+    @NotNull
+    @OneToOne(
+        optional = false, fetch = FetchType.EAGER
+    )
+    @JoinColumn(name = "`account`", nullable = false, updatable = false)
     @Getter
     @Setter
-    private Integer account;
+    private AccountEntity account;
 
     @NotNull
     @Email
@@ -89,7 +96,7 @@ public class ActivationTokenEntity {
     public ActivationTokenDto toDto() {
         final ActivationTokenDto o = new ActivationTokenDto();
 
-        o.setAccount(this.account);
+        o.setAccount(this.account.getId());
         o.setCreatedAt(this.createdAt);
         o.setDuration(this.duration);
         o.setEmail(this.email);

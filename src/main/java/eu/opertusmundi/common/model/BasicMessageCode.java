@@ -34,6 +34,9 @@ public enum BasicMessageCode implements MessageCode {
     TokenNotFound,
     TokenIsExpired,
 
+    // BPM Engine
+    BpmServiceError,
+
     // Mail
     SendFailed,
 

@@ -59,6 +59,22 @@ public class AccountEntity {
     @Getter
     private final UUID key = UUID.randomUUID();
 
+    /**
+     * Account registration workflow definition
+     */
+    @Column(name = "`registration_process_definition`")
+    @Getter
+    @Setter
+    private String processDefinition;
+
+    /**
+     * Account registration workflow process instance
+     */
+    @Column(name = "`registration_process_instance`")
+    @Getter
+    @Setter
+    private String processInstance;
+
     @OneToOne(mappedBy = "account", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     @Getter
     @Setter
@@ -157,13 +173,7 @@ public class AccountEntity {
 
     @Transient
     public String getFullName() {
-        if (!StringUtils.isBlank(this.firstName)) {
-            if (!StringUtils.isBlank(this.lastName)) {
-                return this.firstName + " " + this.lastName;
-            }
-            return this.firstName;
-        }
-        return "";
+        return String.format("%s %s", this.firstName, this.lastName).trim();
     }
 
     @Transient
@@ -231,12 +241,17 @@ public class AccountEntity {
         }
     }
 
+    public AccountDto toDto() {
+        return this.toDto(false);
+    }
+
     /**
      * Convert to a DTO object
      *
+     * @param includeHelpdeskData
      * @return a new {@link AccountDto} instance
      */
-    public AccountDto toDto() {
+    public AccountDto toDto(boolean includeHelpdeskData) {
         final AccountDto a = new AccountDto();
 
         a.setActivatedAt(this.activatedAt);
@@ -255,6 +270,11 @@ public class AccountEntity {
 
         if (this.profile != null) {
             a.setProfile(this.profile.toDto());
+        }
+
+        if (includeHelpdeskData) {
+            a.setProcessDefinition(this.processDefinition);
+            a.setProcessInstance(this.processInstance);
         }
 
         return a;

@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -103,6 +104,15 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     Page<AccountEntity> findAllProviders(
         @Param("email")String email,
         Pageable pageable
+    );
+
+    @Modifying
+    @Transactional(readOnly = false)
+    @Query("UPDATE Account a SET a.processDefinition = :processDefinition, a.processInstance = :processInstance WHERE a.id = :id")
+    void setRegistrationWorkflowInstance(
+        @Param("id")                Integer id,
+        @Param("processDefinition") String processDefinition,
+        @Param("processInstance")   String processInstance
     );
 
     @Transactional(readOnly = false)

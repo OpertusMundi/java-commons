@@ -9,6 +9,8 @@ import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import eu.opertusmundi.common.model.EnumAuthProvider;
 import eu.opertusmundi.common.model.EnumRole;
@@ -24,6 +26,14 @@ import lombok.Setter;
 public class AccountDto extends AccountBaseDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    @Schema(hidden = true, description = "Identifier of the workflow definition used for processing the account registration")
+    @JsonInclude(Include.NON_NULL)
+    protected String processDefinition;
+
+    @Schema(hidden = true, description = "Identifier of the workflow instance processing the account registration")
+    @JsonInclude(Include.NON_NULL)
+    protected String processInstance;
 
     @Schema(description = "Date of account activation. Activation occurs when the user email is verified")
     private ZonedDateTime activatedAt;

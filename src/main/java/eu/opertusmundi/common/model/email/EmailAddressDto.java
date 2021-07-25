@@ -28,6 +28,12 @@ public class EmailAddressDto {
         this.name    = name;
     }
 
+    public static EmailAddressDto of(String address) {
+        final EmailAddressDto a = new EmailAddressDto();
+        a.address = address;
+        return a;
+    }
+
     public static EmailAddressDto of(String address, String name) {
         final EmailAddressDto a = new EmailAddressDto();
         a.address = address;

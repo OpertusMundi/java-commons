@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.ActivationTokenEntity;
@@ -21,11 +22,17 @@ import eu.opertusmundi.common.model.account.EnumActivationTokenType;
 @Transactional(readOnly = true)
 public interface ActivationTokenRepository extends JpaRepository<ActivationTokenEntity, Integer> {
 
+    @Query("SELECT a FROM Account a WHERE a.id = :id")
+    Optional<AccountEntity> findAccountById(@Param("id") Integer id);
+
     @Query("SELECT t FROM ActivationToken t WHERE t.account = :id and t.valid = true")
     List<ActivationTokenEntity> findAllByAccountId(Integer id);
 
     @Query("SELECT t FROM ActivationToken t WHERE t.token = :token and t.valid = true")
-    Optional<ActivationTokenEntity> findOneByToken(UUID token);
+    Optional<ActivationTokenEntity> findOneByKey(UUID token);
+
+    @Query("SELECT t FROM ActivationToken t WHERE t.account.key = :key and t.valid = true and t.redeemedAt IS NULL")
+    Optional<ActivationTokenEntity> findOneActiveByAccountKey(UUID key);
 
     @Modifying
     @Query("UPDATE ActivationToken t SET t.valid = false WHERE t.redeemedAt IS NULL and t.email = :email")
@@ -41,8 +48,11 @@ public interface ActivationTokenRepository extends JpaRepository<ActivationToken
 
         // Create new token
         final ActivationTokenEntity token   = new ActivationTokenEntity();
+        final AccountEntity         account = this.findAccountById(accountId).orElse(null);
 
-        token.setAccount(accountId);
+        Assert.notNull(account, "Expected a non-null account");
+
+        token.setAccount(account);
         token.setDuration(duration);
         token.setEmail(email);
         token.setType(type);
