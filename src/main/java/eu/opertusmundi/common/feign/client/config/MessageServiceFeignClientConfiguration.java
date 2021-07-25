@@ -3,11 +3,9 @@ package eu.opertusmundi.common.feign.client.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import eu.opertusmundi.common.util.JwtUtils;
 
-@Configuration
 public class MessageServiceFeignClientConfiguration {
 
     @Autowired
