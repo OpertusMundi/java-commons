@@ -106,7 +106,7 @@ public class ProviderTemplateContractEntity {
         c.setModifiedAt(modifiedAt);
         c.setSubtitle(subtitle);
         c.setTemplateKey(parent.getTemplate().getKey());
-        c.setTitle(subtitle);
+        c.setTitle(title);
         c.setVersion(version);
 
         if (includeDetails) {
