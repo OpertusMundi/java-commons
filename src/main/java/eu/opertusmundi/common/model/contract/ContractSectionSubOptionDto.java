@@ -7,7 +7,7 @@ import lombok.Setter;
 @Setter
 public class ContractSectionSubOptionDto {
 
-    private int id;
-
     private String body;
+    
+    private String bodyHtml;
 }
