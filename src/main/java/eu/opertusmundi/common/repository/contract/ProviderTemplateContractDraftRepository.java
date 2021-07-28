@@ -140,7 +140,7 @@ public interface ProviderTemplateContractDraftRepository extends JpaRepository<P
                 );
             }
             e.setOwner(owner);
-
+            
             final MasterContractHistoryEntity template = this.findActiveMasterContractByKey(c.getTemplateKey()).orElse(null);
             if (template == null) {
                 throw ApplicationException.fromMessage(
