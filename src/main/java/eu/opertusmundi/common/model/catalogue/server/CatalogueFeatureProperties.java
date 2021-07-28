@@ -149,54 +149,68 @@ public class CatalogueFeatureProperties {
 
     private List<Keyword> keywords;
 
+    @JsonInclude(Include.NON_EMPTY)
     private String language;
 
+    @JsonInclude(Include.NON_EMPTY)
     private String license;
 
+    @JsonInclude(Include.NON_EMPTY)
     private String lineage;
 
     @JsonProperty("metadata_date")
+    @JsonInclude(Include.NON_EMPTY)
     private String metadataDate;
 
     @JsonProperty("metadata_language")
+    @JsonInclude(Include.NON_EMPTY)
     private String metadataLanguage;
 
     @JsonProperty("metadata_point_of_contact_email")
+    @JsonInclude(Include.NON_EMPTY)
     private String metadataPointOfContactEmail;
 
     @JsonProperty("metadata_point_of_contact_name")
+    @JsonInclude(Include.NON_EMPTY)
     private String metadataPointOfContactName;
 
     @JsonProperty("open_dataset")
     private boolean openDataset;
 
     @JsonProperty("parent_id")
+    @JsonInclude(Include.NON_EMPTY)
     private String parentId;
 
     @JsonProperty("pricing_models")
     private List<BasePricingModelCommandDto> pricingModels;
 
     @JsonProperty("public_access_limitations")
+    @JsonInclude(Include.NON_EMPTY)
     private String publicAccessLimitations;
 
     @JsonProperty("publication_date")
+    @JsonInclude(Include.NON_EMPTY)
     private String publicationDate;
 
     @JsonProperty("publisher_email")
+    @JsonInclude(Include.NON_EMPTY)
     private String publisherEmail;
 
     @JsonProperty("publisher_id")
     private UUID publisherId;
 
     @JsonProperty("publisher_name")
+    @JsonInclude(Include.NON_EMPTY)
     private String publisherName;
 
     @JsonProperty("reference_system")
+    @JsonInclude(Include.NON_EMPTY)
     private String referenceSystem;
 
     private List<CatalogueResource> resources;
 
     @JsonProperty("resource_locator")
+    @JsonInclude(Include.NON_EMPTY)
     private String resourceLocator;
 
     @JsonProperty("responsible_party")
@@ -204,6 +218,7 @@ public class CatalogueFeatureProperties {
     private List<ResponsibleParty> responsibleParty;
 
     @JsonProperty("revision_date")
+    @JsonInclude(Include.NON_EMPTY)
     private String revisionDate;
 
     private List<Scale> scales;
@@ -211,11 +226,11 @@ public class CatalogueFeatureProperties {
     private String status;
 
     @JsonProperty("spatial_data_service_type")
-    @JsonInclude(Include.NON_NULL)
+    @JsonInclude(Include.NON_EMPTY)
     private String spatialDataServiceType;
 
     @JsonProperty("spatial_data_service_version")
-    @JsonInclude(Include.NON_NULL)
+    @JsonInclude(Include.NON_EMPTY)
     private String spatialDataServiceVersion;
 
     @JsonProperty("spatial_data_service_operations")
@@ -227,9 +242,11 @@ public class CatalogueFeatureProperties {
     private List<String> spatialDataServiceQueryables;
 
     @JsonProperty("spatial_resolution")
+    @JsonInclude(Include.NON_NULL)
     private Integer spatialResolution;
 
     @JsonProperty("statistics")
+    @JsonInclude(Include.NON_NULL)
     private CatalogueItemStatistics statistics;
 
     @JsonProperty("suitable_for")
