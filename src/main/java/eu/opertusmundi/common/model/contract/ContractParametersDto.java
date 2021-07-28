@@ -1,8 +1,5 @@
 package eu.opertusmundi.common.model.contract;
 
-import java.nio.file.Path;
-import java.util.UUID;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,7 +17,7 @@ public class ContractParametersDto {
 		private String professionalAddress;
 		private String contactEmail;
 		private String contactPerson;
-		private String copmanyRegistrationNumber;
+		private String companyRegistrationNumber;
 		private String euVatNumber;
 	};
 
@@ -34,7 +31,7 @@ public class ContractParametersDto {
 		private String professionalAddress;
 		private String contactEmail;
 		private String contactPerson;
-		private String copmanyRegistrationNumber;
+		private String companyRegistrationNumber;
 		private String euVatNumber;
 	};
 
