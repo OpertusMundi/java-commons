@@ -20,13 +20,13 @@ public class DefaultConsumerContractService implements ConsumerContractService {
 
 	@Autowired
 	private PdfContractGeneratorService pdfService;
-	
+
 	@Autowired
 	private ContractFileManager contractFileManager;
-	
+
 	@Autowired
 	private ContractOrderInformationService contractOrderInformationService;
-	
+
     @Override
     public ConsumerContractDto createContract(ConsumerContractCommandDto command) {
         // TODO Auto-generated method stub
@@ -36,35 +36,35 @@ public class DefaultConsumerContractService implements ConsumerContractService {
     @Override
     public ConsumerContractDto print(PrintConsumerContractCommand command) {
     	try {
-    		ContractParametersDto contractParameterDto	=	new ContractParametersDto();
+    		final ContractParametersDto contractParameterDto	=	new ContractParametersDto();
 //    		ContractParametersDto.Provider provider		= 	contractOrderInformationService.getProviderInformation(command.getOrderKey());
 //    		ContractParametersDto.Consumer consumer		= 	contractOrderInformationService.getConsumerInformation(command.getOrderKey());
 //    		ContractParametersDto.Product product		=	contractOrderInformationService.getProductInformation(command.getOrderKey());
-    		
-    		ContractParametersDto.Provider provider 	= 	new ContractParametersDto.Provider("Adaptas", "736 Jim Rosa Lane, San Francisco, CA 94108", "richardmsteffen@armyspy.com", "Richard M. Steffen", "012345678", "098765432");
-    		ContractParametersDto.Consumer consumer 	= 	new ContractParametersDto.Consumer("Life's Gold", "51, rue Adolphe Wurtz, 97420 LE PORT", "paulmstamper@teleworm.us", "Paul M. Stamper", "012345678", "632769332");
-    		ContractParametersDto.Product  product 		= 	new ContractParametersDto.Product("bdb87e25-4ac9-4a1e-85be-df4dced3d286", "Lakes of Greece", "Vector dataset with complete collection of the lakes in Greece", "Yes", "Yes", "Immediate", "csv file, digital download", "0%");
-    		
+
+    		final ContractParametersDto.Provider provider 	= 	new ContractParametersDto.Provider("Adaptas", "736 Jim Rosa Lane, San Francisco, CA 94108", "richardmsteffen@armyspy.com", "Richard M. Steffen", "012345678", "098765432");
+    		final ContractParametersDto.Consumer consumer 	= 	new ContractParametersDto.Consumer("Life's Gold", "51, rue Adolphe Wurtz, 97420 LE PORT", "paulmstamper@teleworm.us", "Paul M. Stamper", "012345678", "632769332");
+    		final ContractParametersDto.Product  product 		= 	new ContractParametersDto.Product("bdb87e25-4ac9-4a1e-85be-df4dced3d286", "Lakes of Greece", "Vector dataset with complete collection of the lakes in Greece", "Yes", "Yes", "Immediate", "csv file, digital download", "0%");
+
     		contractParameterDto.setProvider(provider);
     		contractParameterDto.setConsumer(consumer);
     		contractParameterDto.setProduct(product);
-    		
-			Path path = contractFileManager.resolvePath(
-					command.getUserId(), 
-					command.getOrderKey(), 
+
+			final Path path = contractFileManager.resolvePath(
+					command.getUserId(),
+					command.getOrderKey(),
 					command.getItemIndex(),
-					false, 
+					false,
 					false);
-			
+
 			final String filePath = path.toString();
 
 			if (!path.toFile().exists()) {
-				pdfService.init();
-				pdfService.renderPDF(contractParameterDto, command, filePath);
+			    command.setPath(path);
+				pdfService.renderPDF(contractParameterDto, command);
 			} else {
 				Files.readAllBytes(path);
 			}
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			e.printStackTrace();
 		}
     	return null;
