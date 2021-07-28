@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.context.MessageSource;
 import org.springframework.util.Assert;
 
@@ -179,4 +180,10 @@ public class ApplicationException extends RuntimeException {
     public Message toError() {
         return new Message(this.code, this.message);
     }
+
+    public Throwable getRootCause() {
+        final Throwable result = ExceptionUtils.getRootCause(this);
+        return result == null ? this : result;
+    }
+
 }

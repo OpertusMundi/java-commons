@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.model;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
+
 import lombok.Getter;
 
 public class ServiceException extends RuntimeException {
@@ -8,7 +10,7 @@ public class ServiceException extends RuntimeException {
 
     @Getter
     protected boolean logEntryRequired = true;
-    
+
     @Getter
     private final MessageCode code;
 
@@ -34,6 +36,11 @@ public class ServiceException extends RuntimeException {
         super(message, cause);
 
         this.code = code;
+    }
+
+    public Throwable getRootCause() {
+        final Throwable result = ExceptionUtils.getRootCause(this);
+        return result == null ? this : result;
     }
 
 }
