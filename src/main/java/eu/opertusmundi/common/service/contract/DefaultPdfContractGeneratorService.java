@@ -1,7 +1,6 @@
 package eu.opertusmundi.common.service.contract;
 
 import java.awt.Color;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -48,7 +47,6 @@ import eu.opertusmundi.common.model.contract.EnumContract;
 import eu.opertusmundi.common.model.contract.consumer.PrintConsumerContractCommand;
 import eu.opertusmundi.common.repository.OrderRepository;
 import eu.opertusmundi.common.repository.contract.ProviderTemplateContractHistoryRepository;
-import eu.opertusmundi.common.model.contract.EnumContractFontStyle;
 import io.jsonwebtoken.lang.Assert;
 import lombok.Getter;
 import lombok.NonNull;
@@ -68,6 +66,10 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     private static Color color                   = Color.BLACK;
     private static Color color2                  = Color.BLUE;
     private static float textLeading             = 1.5f * textFontSize;
+    
+    private static String bold				 = "BOLD";
+    private static String italic			 = "ITALIC";
+    private static String underline			 = "UNDERLINE";
 
     @Value("${opertusmundi.contract.logo}")
     private String logoFilename;
@@ -237,16 +239,6 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
         return myString.substring(start, Math.min(start + length, myString.length()));
     }
 
-    private float HorizontalOffset(String move, float stringWidth, float pageWidth) {
-        float offset = 0;
-        if (move.equals("left")) {
-            offset = -pageWidth / 2 + stringWidth;
-        } else if (move.equals("right")) {
-            offset = +pageWidth / 2 - stringWidth;
-        }
-        return offset;
-    }
-
 	private Map<String, String> createKeywordMapping() {
 		final Map<String, String> keywords = new HashMap<>();
 
@@ -328,13 +320,13 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             final String text       = line.text;
             float        size;
 
-            if (font.equals(EnumContractFontStyle.BOLD.getValue()) || (font.contains(EnumContractFontStyle.BOLD.getValue()) && font.contains(EnumContractFontStyle.UNDERLINE.getValue()))) {
+            if (font.equals(bold) || (font.contains(bold) && font.contains(underline))) {
                 size = textFontSize * ctx.getFonts().getTextBold().getStringWidth(text) / 1000;
 
-            } else if (font.equals(EnumContractFontStyle.ITALIC.getValue()) || (font.contains(EnumContractFontStyle.ITALIC.getValue()) && font.contains(EnumContractFontStyle.UNDERLINE.getValue()))) {
+            } else if (font.equals(italic) || (font.contains(italic) && font.contains(underline))) {
                 size = textFontSize * ctx.getFonts().getTextItalic().getStringWidth(text) / 1000;
 
-            } else if (font.contains(EnumContractFontStyle.BOLD.getValue()) && font.contains(EnumContractFontStyle.ITALIC.getValue())) {
+            } else if (font.contains(bold) && font.contains(italic)) {
                 size = textFontSize * ctx.getFonts().getTextBoldItalic().getStringWidth(text) / 1000;
 
             } else {
@@ -428,11 +420,11 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             float  currentSize      = 0;
             String currentSubstring = subStringUsingLength(text, offset, length);
 
-            if (style.contains(EnumContractFontStyle.BOLD.getValue()) || (style.contains(EnumContractFontStyle.BOLD.getValue()) && style.contains(EnumContractFontStyle.UNDERLINE.getValue()))) {
+            if (style.contains(bold) || (style.contains(bold) && style.contains(underline))) {
                 currentSize = textFontSize * fonts.getTextBold().getStringWidth(currentSubstring) / 1000;
-            } else if (style.contains(EnumContractFontStyle.ITALIC.getValue()) || (style.contains(EnumContractFontStyle.ITALIC.getValue()) && style.contains(EnumContractFontStyle.UNDERLINE.getValue()))) {
+            } else if (style.contains(italic) || (style.contains(italic) && style.contains(underline))) {
                 currentSize = textFontSize * fonts.getTextItalic().getStringWidth(currentSubstring) / 1000;
-            } else if (style.contains(EnumContractFontStyle.BOLD.getValue()) && style.contains(EnumContractFontStyle.ITALIC.getValue())) {
+            } else if (style.contains(bold) && style.contains(italic)) {
                 currentSize = textFontSize * fonts.getTextBoldItalic().getStringWidth(currentSubstring) / 1000;
             } else {
                 currentSize = textFontSize * fonts.getText().getStringWidth(currentSubstring) / 1000;
@@ -474,11 +466,11 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
                     /* Calculate the size of the current word */
                     float currentWordSize = 0;
-                    if (style.contains(EnumContractFontStyle.BOLD.getValue()) || (style.contains(EnumContractFontStyle.BOLD.getValue()) && style.contains(EnumContractFontStyle.UNDERLINE.getValue()))) {
+                    if (style.contains(bold) || (style.contains(bold) && style.contains(underline))) {
                         currentWordSize = textFontSize * fonts.getTextBold().getStringWidth(currentWord) / 1000;
-                    } else if (style.contains(EnumContractFontStyle.ITALIC.getValue()) || (style.contains(EnumContractFontStyle.ITALIC.getValue()) && style.contains(EnumContractFontStyle.UNDERLINE.getValue()))) {
+                    } else if (style.contains(italic) || (style.contains(italic) && style.contains(underline))) {
                         currentWordSize = textFontSize * fonts.getTextItalic().getStringWidth(currentWord) / 1000;
-                    } else if (style.contains(EnumContractFontStyle.BOLD.getValue()) && style.contains(EnumContractFontStyle.ITALIC.getValue())) {
+                    } else if (style.contains(bold) && style.contains(italic)) {
                         currentWordSize = textFontSize * fonts.getTextBoldItalic().getStringWidth(currentWord) / 1000;
                     } else {
                         currentWordSize = textFontSize * fonts.getText().getStringWidth(currentWord) / 1000;
@@ -494,11 +486,11 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                 		/* Keep the substring until the last space until now (Exclude the last word that does not fit in the line)*/
                         currentWord = currentSubstring.substring(0, lastSpace);
                         /* Calculate the size of the current word */
-                        if (style.contains(EnumContractFontStyle.BOLD.getValue()) || (style.contains(EnumContractFontStyle.BOLD.getValue()) && style.contains(EnumContractFontStyle.UNDERLINE.getValue()))) {
+                        if (style.contains(bold) || (style.contains(bold) && style.contains(underline))) {
                             currentWordSize = textFontSize * fonts.getTextBold().getStringWidth(currentWord) / 1000;
-                        } else if (style.contains(EnumContractFontStyle.ITALIC.getValue()) || (style.contains(EnumContractFontStyle.ITALIC.getValue()) && style.contains(EnumContractFontStyle.UNDERLINE.getValue()))) {
+                        } else if (style.contains(italic) || (style.contains(italic) && style.contains(underline))) {
                             currentWordSize = textFontSize * fonts.getTextItalic().getStringWidth(currentWord) / 1000;
-                        } else if (style.contains(EnumContractFontStyle.BOLD.getValue()) && style.contains(EnumContractFontStyle.ITALIC.getValue())) {
+                        } else if (style.contains(bold) && style.contains(italic)) {
                             currentWordSize = textFontSize * fonts.getTextBoldItalic().getStringWidth(currentWord) / 1000;
                         } else {
                             currentWordSize = textFontSize * fonts.getText().getStringWidth(currentWord) / 1000;
@@ -583,13 +575,13 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 	    		for (int j = 0 ; j < block.getBlockStyles().size() ; j++) {
 
 	    			/* If the block contains a bold-underlined part which is a master template contract keyword*/
-	    			if (block.getBlockStyles().get(j).style.contains(EnumContractFontStyle.BOLD.getValue()) &&
-	    				block.getBlockStyles().get(j).style.contains(EnumContractFontStyle.UNDERLINE.getValue())) {
+	    			if (block.getBlockStyles().get(j).style.contains(bold) &&
+	    				block.getBlockStyles().get(j).style.contains(underline)) {
 	    				for (final String key : keywords.keySet()) {
 	    					if (block.getText().contains(key)) {
 
 	    						/* Set style as BOLD for the words that the keywords will be replaced with*/
-	    						block.getBlockStyles().get(j).style = EnumContractFontStyle.BOLD.getValue();
+	    						block.getBlockStyles().get(j).style = bold;
 	    						final int initialLength	= block.text.length();
 
 	    						/* Replace the keyword with the appropriate final word from the Hash<ap with the keywords*/
@@ -803,7 +795,6 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
         } else {
             offsetY = ctx.getCurrentOffset();
         }
-        final float offsetX = 0;
 
     	/* Set starting position and text leading*/
         content.beginText();
@@ -867,7 +858,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
     		/* Calculate the width of the of the current text
     		 * This information is needed for the cases where a line contains words with different fonts*/
-   	       	if (currentFont.equals(EnumContractFontStyle.BOLD.getValue()) || (currentFont.contains(EnumContractFontStyle.BOLD.getValue()) && currentFont.contains(EnumContractFontStyle.UNDERLINE.getValue()))) {
+   	       	if (currentFont.equals(bold) || (currentFont.contains(bold) && currentFont.contains(underline))) {
    	       		if (justify && !blockIsOneLine) {
    	       			size = (textFontSize*fonts.getTextBold().getStringWidth(currentText)/1000)+(currentText.length()*charSpacing);
    	       		}
@@ -876,7 +867,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
    	       		}
    	       		content.setFont(fonts.getTextBold(), textFontSize);
    	       	}
-        	else if (currentFont.equals(EnumContractFontStyle.ITALIC.getValue()) || (currentFont.contains(EnumContractFontStyle.ITALIC.getValue()) && currentFont.contains(EnumContractFontStyle.UNDERLINE.getValue()))) {
+        	else if (currentFont.equals(italic) || (currentFont.contains(italic) && currentFont.contains(underline))) {
         		if (justify && !blockIsOneLine) {
         			size = (textFontSize*fonts.getTextItalic().getStringWidth(currentText)/1000)+(currentText.length()*charSpacing);
         		}
@@ -885,7 +876,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
         		}
         		content.setFont(fonts.getTextItalic(), textFontSize);
         	}
-        	else if (currentFont.contains(EnumContractFontStyle.BOLD.getValue()) && currentFont.contains(EnumContractFontStyle.ITALIC.getValue())) {
+        	else if (currentFont.contains(bold) && currentFont.contains(italic)) {
         		if (justify && !blockIsOneLine) {
         			size = (textFontSize*fonts.getTextBoldItalic().getStringWidth(currentText)/1000)+(currentText.length()*charSpacing);
         		}
@@ -907,7 +898,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		content.showText(currentText);
 
     		/* Underline if needed*/
-    		if (currentFont.contains(EnumContractFontStyle.UNDERLINE.getValue())) {
+    		if (currentFont.contains(underline)) {
     			content.endText();
     			underlineWord(content, currentText, size, 0.5f, marginX+totalOffsetXOfLine, offsetY, -2);
     		   	content.beginText();
@@ -944,13 +935,13 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                 content.beginText();
 
     			/* Set font, starting position and text leading*/
-       	       	if (currentFont.equals(EnumContractFontStyle.BOLD.getValue()) || (currentFont.contains(EnumContractFontStyle.BOLD.getValue()) && currentFont.contains(EnumContractFontStyle.UNDERLINE.getValue()))) {
+       	       	if (currentFont.equals(bold) || (currentFont.contains(bold) && currentFont.contains(underline))) {
        	       		content.setFont(fonts.getTextBold(), textFontSize);
        	       	}
-            	else if (currentFont.equals(EnumContractFontStyle.ITALIC.getValue()) || (currentFont.contains(EnumContractFontStyle.ITALIC.getValue()) && currentFont.contains(EnumContractFontStyle.UNDERLINE.getValue()))) {
+            	else if (currentFont.equals(italic) || (currentFont.contains(italic) && currentFont.contains(underline))) {
             		content.setFont(fonts.getTextItalic(), textFontSize);
             	}
-            	else if (currentFont.contains(EnumContractFontStyle.BOLD.getValue()) && currentFont.contains(EnumContractFontStyle.ITALIC.getValue())) {
+            	else if (currentFont.contains(bold) && currentFont.contains(italic)) {
             		content.setFont(fonts.getTextBoldItalic(), textFontSize);
             	}
             	else {
@@ -1129,7 +1120,6 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
 			/* Calculate the widths off all header and footer texts, needed for the calculation of their positions in the page*/
 		    final float stringWidthFooter 	= fonts.getFooter().getStringWidth((currentPage+1) + " / " + document.getNumberOfPages())*footerFontSize/1000f;
-		    final float stringWidthFooter2 	= fonts.getFooter().getStringWidth(contractTitle)*footerFontSize/1000f;
 			final float stringWidthHeader 	= fonts.getHeader().getStringWidth(headerText)*headerFontSize/1000f;
 
 		    /* Get the width and height of the page*/
@@ -1137,11 +1127,9 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             final float pageHeight = pageSize.getHeight();
 
             /* Calculate the center of the page based on header */
-            final float centerXHeader = (pageWidth - stringWidthHeader) / 2f;
             final float centerYHeader = pageHeight / 2f;
 
             /* Calculate the center of the page based on footer */
-            final float centerXFooter = (pageWidth - stringWidthFooter) / 2f;
             final float centerYFooter = pageHeight / 2f;
 
 		    /* Append the content to the existing stream*/
@@ -1319,6 +1307,8 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		/* Get contract*/
         	final ProviderTemplateContractHistoryEntity contract = contractRepository.findByIdAndVersion(provider.getKey(), contractId, contractVersion).get();
 
+//        	ProviderTemplateContractHistoryEntity contract = contractRepository.findById(2).get();
+        	
         	/* Get title and subtitles*/
         	final String title 	= contract.getTitle();
         	final String subtitle = contract.getSubtitle();
@@ -1456,11 +1446,8 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		addHeaderAndFooter(ctx, title);
 
     		/* Save the document*/
-    		ctx.close();
+			ctx.close();
     		document.save(command.getPath().toString());
-            try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
-                document.save(byteArrayOutputStream);
-            }
     		/* Close the document*/
     		document.close();
 
