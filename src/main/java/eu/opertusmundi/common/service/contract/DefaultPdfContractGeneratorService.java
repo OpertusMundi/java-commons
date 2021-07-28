@@ -681,9 +681,9 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                     info.offset =
                         block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
                       + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = prov.getCopmanyRegistrationNumber().length();
+                    info.length = prov.getCompanyRegistrationNumber().length();
                     info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + prov.getCopmanyRegistrationNumber();
+                    block.text  = block.text.trim() + ": " + prov.getCompanyRegistrationNumber();
                     block.getBlockStyles().add(info);
                 } else if (initialText.contains("[sellerVAT]")) {
                     info.offset =
@@ -728,9 +728,9 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                 } else if (initialText.contains("[clientCompanyRegNumber]")) {
                     info.offset = block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
                             + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = cons.getCopmanyRegistrationNumber().length();
+                    info.length = cons.getCompanyRegistrationNumber().length();
                     info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + cons.getCopmanyRegistrationNumber();
+                    block.text  = block.text.trim() + ": " + cons.getCompanyRegistrationNumber();
                     block.getBlockStyles().add(info);
                 } else if (initialText.contains("[clientVAT]")) {
                     info.offset =

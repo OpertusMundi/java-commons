@@ -50,13 +50,11 @@ public class DefaultConsumerContractService implements ConsumerContractService {
     		contractParameterDto.setProduct(product);
 
 			final Path path = contractFileManager.resolvePath(
-					command.getUserId(),
-					command.getOrderKey(),
-					command.getItemIndex(),
-					false,
-					false);
-
-			final String filePath = path.toString();
+				command.getUserId(),
+				command.getOrderKey(),
+				command.getItemIndex(),
+				false,
+				false);
 
 			if (!path.toFile().exists()) {
 			    command.setPath(path);
