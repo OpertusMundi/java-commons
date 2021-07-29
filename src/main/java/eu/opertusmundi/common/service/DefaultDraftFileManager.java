@@ -99,7 +99,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
                 ), ex
             );
 
-            throw new AssetRepositoryException("An unknown error has occurred");
+            throw new AssetRepositoryException("An unknown error has occurred", ex);
         }
     }
 
@@ -150,7 +150,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
-            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred");
+            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
     }
 
@@ -187,7 +187,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
-            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred");
+            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
     }
 
@@ -215,7 +215,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
         } catch (final Exception ex) {
             logger.warn("Failed to resolve metadata path. [fileName={}, draftKey={}]", fileName, draftKey);
 
-            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred");
+            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
     }
 
@@ -245,7 +245,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
         } catch (final Exception ex) {
             logger.warn("Failed to resolve metadata path. [fileName={}, draftKey={}]", fileName, draftKey);
 
-            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred");
+            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
     }
 
@@ -284,7 +284,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
-            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred");
+            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
     }
 
@@ -300,7 +300,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
-            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred");
+            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
     }
 
@@ -315,7 +315,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
-            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred");
+            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
     }
 
@@ -353,7 +353,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
-            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred");
+            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
     }
 

@@ -111,7 +111,7 @@ public class DefaultDataProfilerService implements DataProfilerService{
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 
-            throw new DataProfilerServiceException(DataProfilerServiceMessageCode.UNKNOWN);
+            throw new DataProfilerServiceException(DataProfilerServiceMessageCode.UNKNOWN, ex);
         }
     }
 
@@ -126,7 +126,7 @@ public class DefaultDataProfilerService implements DataProfilerService{
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 
-            throw new DataProfilerServiceException(DataProfilerServiceMessageCode.UNKNOWN);
+            throw new DataProfilerServiceException(DataProfilerServiceMessageCode.UNKNOWN, ex);
         }
     }
 
@@ -141,7 +141,7 @@ public class DefaultDataProfilerService implements DataProfilerService{
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 
-            throw new DataProfilerServiceException(DataProfilerServiceMessageCode.UNKNOWN);
+            throw new DataProfilerServiceException(DataProfilerServiceMessageCode.UNKNOWN, ex);
         }
     }
 

@@ -68,13 +68,13 @@ public class DefaultCartService implements CartService {
         } catch (final CartException ex) {
             throw ex;
         } catch (final CatalogueServiceException ex) {
-            throw new CartException(CartMessageCode.CATALOGUE, "Failed to load asset");
+            throw new CartException(CartMessageCode.CATALOGUE, "Failed to load asset", ex);
         } catch (final QuotationException ex) {
             throw ex;
         } catch (final Exception ex) {
             logger.error("Failed to create cart item", ex);
 
-            throw new CartException(CartMessageCode.ERROR, "Failed to create cart item");
+            throw new CartException(CartMessageCode.ERROR, "Failed to create cart item", ex);
         }
     }
 

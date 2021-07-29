@@ -6,9 +6,9 @@ public class IngestServiceException extends ServiceException {
 
 	private static final long serialVersionUID = 1L;
 
-	public IngestServiceException(IngestServiceMessageCode code) {
-		super(code, "[Ingest Service] Operation has failed");
-	}
+    public IngestServiceException(IngestServiceMessageCode code, Throwable cause) {
+        super(code, "[Ingest Service] Operation has failed", cause);
+    }
 
 	public IngestServiceException(IngestServiceMessageCode code, String message) {
 		super(code, message);

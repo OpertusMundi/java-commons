@@ -296,7 +296,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 } catch(final Exception ex) {
                     throw new AssetDraftException(
                         AssetMessageCode.API_COMMAND_RESOURCE_COPY,
-                        String.format("Failed to copy resource file [%s]", r.getFileName())
+                        String.format("Failed to copy resource file [%s]", r.getFileName()), ex
                     );
                 }
             }
@@ -352,7 +352,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             } catch(final Exception ex) {
                 throw new AssetDraftException(
                     AssetMessageCode.API_COMMAND_RESOURCE_COPY,
-                    String.format("Failed to copy resource file [%s]", command.getPath())
+                    String.format("Failed to copy resource file [%s]", command.getPath()), ex
                 );
             }
 
@@ -745,7 +745,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         } catch (final JsonProcessingException ex) {
             throw new AssetDraftException(
                 AssetMessageCode.METADATA_SERIALIZATION,
-                String.format("Failed to serialize automated metadata for asset [%s]", draftKey)
+                String.format("Failed to serialize automated metadata for asset [%s]", draftKey), ex
             );
         } catch (final FeignException fex) {
             logger.error(String.format("Operation has failed for asset. [draftKey=%s]", draftKey), fex);

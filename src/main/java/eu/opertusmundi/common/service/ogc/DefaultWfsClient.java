@@ -49,7 +49,9 @@ public class DefaultWfsClient implements WfsClient {
     private XmlMapper xmlMapper;
 
     @Override
-    public ServiceResourceDto GetMetadata(String endpoint, String workspace, String typeName, String userName, String password) throws OgcServiceClientException {
+    public ServiceResourceDto GetMetadata(
+        String endpoint, String workspace, String typeName, String userName, String password
+    ) throws OgcServiceClientException {
         try {
             final ServiceResourceDto resource = new ServiceResourceDto();
 
@@ -65,7 +67,9 @@ public class DefaultWfsClient implements WfsClient {
         return null;
     }
 
-    private void getServiceMetadata(String endpoint, String workspace, String typeName, String userName, String password, ServiceResourceDto resource) throws Exception {
+    private void getServiceMetadata(
+        String endpoint, String workspace, String typeName, String userName, String password, ServiceResourceDto resource
+    ) throws Exception {
         final URI uri = new URIBuilder(endpoint)
                 .clearParameters()
                 .addParameter("SERVICE", "WFS")
@@ -194,18 +198,18 @@ public class DefaultWfsClient implements WfsClient {
     private void handleException(Exception ex) {
         if (ex instanceof URISyntaxException) {
             logger.error("The input is not a valid URI", ex);
-            throw ApplicationException.fromPattern(ex, OgcServiceMessageCode.URI_SYNTAX_ERROR);
+            throw new OgcServiceClientException(OgcServiceMessageCode.URI_SYNTAX_ERROR, ex);
         }
         if (ex instanceof ClientProtocolException) {
             logger.error("An HTTP protocol error has occurred", ex);
-            throw ApplicationException.fromPattern(ex, OgcServiceMessageCode.HTTP_ERROR);
+            throw new OgcServiceClientException(OgcServiceMessageCode.HTTP_ERROR, ex);
         }
         if (ex instanceof IOException) {
             logger.error("An I/O exception has occurred or the connection was aborted", ex);
-            throw ApplicationException.fromPattern(ex, OgcServiceMessageCode.IO_ERROR);
+            throw new OgcServiceClientException(OgcServiceMessageCode.IO_ERROR, ex);
         }
 
-        throw ApplicationException.fromPattern(OgcServiceMessageCode.UNKNOWN);
+        throw new OgcServiceClientException(OgcServiceMessageCode.IO_ERROR, ex);
     }
 
 }
