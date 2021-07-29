@@ -10,6 +10,10 @@ public class TransformServiceException extends ServiceException {
         super(code, "[Transform Service] Operation has failed");
     }
 
+    public TransformServiceException(TransformServiceMessageCode code, Throwable cause) {
+        super(code, "[Transform Service] Operation has failed", cause);
+    }
+
     public TransformServiceException(TransformServiceMessageCode code, String message) {
         super(code, message);
     }

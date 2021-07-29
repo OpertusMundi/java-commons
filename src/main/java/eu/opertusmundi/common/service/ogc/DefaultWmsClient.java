@@ -81,7 +81,7 @@ public class DefaultWmsClient implements WmsClient {
                 .findFirst()
                 .orElse(null);
         } catch (final Exception ex) {
-            throw new OgcServiceClientException(OgcServiceMessageCode.UNKNOWN);
+            throw new OgcServiceClientException(OgcServiceMessageCode.UNKNOWN, ex);
         }
     }
 

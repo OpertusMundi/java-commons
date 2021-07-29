@@ -10,8 +10,8 @@ public class AssetRepositoryException extends ServiceException {
         super(code, "An I/O error has occurred");
     }
 
-    public AssetRepositoryException(String message) {
-        super(AssetMessageCode.IO_ERROR, message);
+    public AssetRepositoryException(String message, Throwable cause) {
+        super(AssetMessageCode.IO_ERROR, message, cause);
     }
 
     public AssetRepositoryException(AssetMessageCode code, String message) {

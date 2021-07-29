@@ -63,7 +63,7 @@ public class DefaultUserFileManager implements UserFileManager {
         } catch (final Exception ex) {
             logger.error(String.format("Failed to load files. [userId=%d, path=%s]", command.getUserId(), command.getPath()), ex);
 
-            throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "An unknown error has occurred");
+            throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
     }
 
@@ -94,7 +94,7 @@ public class DefaultUserFileManager implements UserFileManager {
         } catch (final Exception ex) {
             logger.error(String.format("Failed to create path. [userId=%d, path=%s]", command.getUserId(), command.getPath()), ex);
 
-            throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "An unknown error has occurred");
+            throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
     }
 
@@ -148,7 +148,7 @@ public class DefaultUserFileManager implements UserFileManager {
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
-            throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "An unknown error has occurred");
+            throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
     }
 
@@ -177,7 +177,7 @@ public class DefaultUserFileManager implements UserFileManager {
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
-            throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "An unknown error has occurred");
+            throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
     }
 
@@ -207,7 +207,7 @@ public class DefaultUserFileManager implements UserFileManager {
         } catch (final Exception ex) {
             logger.warn("Failed to resolve path. [userId={}, path={}]", command.getUserId(), command.getPath());
 
-            throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "An unknown error has occurred");
+            throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
     }
 

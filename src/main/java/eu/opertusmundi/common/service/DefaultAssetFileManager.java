@@ -75,7 +75,7 @@ public class DefaultAssetFileManager implements AssetFileManager {
         } catch (final Exception ex) {
             logger.error("Failed to load resource files. [pid={}, relativePath={}, message={}]", pid, relativePath, ex.getMessage());
 
-            throw new AssetRepositoryException("An unknown error has occurred");
+            throw new AssetRepositoryException("An unknown error has occurred", ex);
         }
     }
 
@@ -97,7 +97,7 @@ public class DefaultAssetFileManager implements AssetFileManager {
         } catch (final Exception ex) {
             assetRepositoryLogger.warn("[FileSystem] Failed to resolve metadata path [{}] for asset [{}]", fileName, pid);
 
-            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred");
+            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
     }
 
@@ -126,7 +126,7 @@ public class DefaultAssetFileManager implements AssetFileManager {
         } catch (final Exception ex) {
             assetRepositoryLogger.warn("[FileSystem] Failed to resolve path [{}] for asset [{}]", fileName, pid);
 
-            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred");
+            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
     }
 

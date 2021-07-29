@@ -46,7 +46,7 @@ public class DefaultContractFileManager implements ContractFileManager {
             throw ex;
         } catch (final Exception ex) {
             logger.error(String.format("Failed to resolve path [userId=%d, orderKey=%s, itemIndex=%d]", userId, orderKey, itemIndex), ex);
-            throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "Failed to resolve contract path");
+            throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "Failed to resolve contract path", ex);
         }
     }
 

@@ -9,6 +9,10 @@ public class DataProfilerServiceException extends ServiceException {
 	public DataProfilerServiceException(DataProfilerServiceMessageCode code) {
 		super(code, "[Data Profiler Service] Operation has failed");
 	}
+	
+   public DataProfilerServiceException(DataProfilerServiceMessageCode code, Throwable cause) {
+        super(code, "[Data Profiler Service] Operation has failed", cause);
+    }
 
 	public DataProfilerServiceException(DataProfilerServiceMessageCode code, String message) {
 		super(code, message);

@@ -145,7 +145,7 @@ public class DefaultCatalogueService implements CatalogueService {
 
             logger.error("Operation has failed", fex);
 
-            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage(), fex);
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 
@@ -191,7 +191,7 @@ public class DefaultCatalogueService implements CatalogueService {
 
             logger.error("Operation has failed", fex);
 
-            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage(), fex);
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 
@@ -263,7 +263,7 @@ public class DefaultCatalogueService implements CatalogueService {
         } catch (final FeignException fex) {
             logger.error("[Feign Client][Catalogue] Operation has failed", fex);
 
-            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage(), fex);
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 
@@ -304,7 +304,7 @@ public class DefaultCatalogueService implements CatalogueService {
 
             logger.error("Operation has failed", fex);
 
-            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage(), fex);
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 
@@ -405,7 +405,7 @@ public class DefaultCatalogueService implements CatalogueService {
 
             logger.error("Operation has failed", fex);
 
-            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage(), fex);
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 
@@ -435,7 +435,7 @@ public class DefaultCatalogueService implements CatalogueService {
 
             logger.error("Operation has failed", fex);
 
-            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage(), fex);
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 
@@ -465,7 +465,7 @@ public class DefaultCatalogueService implements CatalogueService {
 
             logger.error("Operation has failed", fex);
 
-            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage(), fex);
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 
@@ -546,7 +546,7 @@ public class DefaultCatalogueService implements CatalogueService {
 
             logger.error("Operation has failed", fex);
 
-            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage(), fex);
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 
@@ -756,7 +756,7 @@ public class DefaultCatalogueService implements CatalogueService {
 
             logger.error("Operation has failed", fex);
 
-            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage());
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage(), fex);
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 

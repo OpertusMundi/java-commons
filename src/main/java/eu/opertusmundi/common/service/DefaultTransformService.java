@@ -80,7 +80,7 @@ public class DefaultTransformService implements TransformService {
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 
-            throw new TransformServiceException(TransformServiceMessageCode.UNKNOWN);
+            throw new TransformServiceException(TransformServiceMessageCode.UNKNOWN, ex);
         }
     }
 
@@ -111,7 +111,7 @@ public class DefaultTransformService implements TransformService {
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 
-            throw new TransformServiceException(TransformServiceMessageCode.UNKNOWN);
+            throw new TransformServiceException(TransformServiceMessageCode.UNKNOWN, ex);
         }
     }
 
@@ -126,7 +126,7 @@ public class DefaultTransformService implements TransformService {
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 
-            throw new TransformServiceException(TransformServiceMessageCode.UNKNOWN);
+            throw new TransformServiceException(TransformServiceMessageCode.UNKNOWN, ex);
         }
     }
 
@@ -175,7 +175,7 @@ public class DefaultTransformService implements TransformService {
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 
-            throw new TransformServiceException(TransformServiceMessageCode.UNKNOWN);
+            throw new TransformServiceException(TransformServiceMessageCode.UNKNOWN, ex);
         }
     }
 
