@@ -18,7 +18,7 @@ public class AddressDto implements Serializable {
     private String line1;
 
     private String line2;
-    
+
     private String city;
 
     private String region;
@@ -30,8 +30,8 @@ public class AddressDto implements Serializable {
         externalDocs = @ExternalDocumentation(url = "https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2")
     )
     private String country;
-    
-    
+
+
     public static AddressDto from(Address a) {
         final AddressDto result = new AddressDto();
 
@@ -44,4 +44,12 @@ public class AddressDto implements Serializable {
 
         return result;
     }
+
+    @Override
+    public String toString() {
+        final String lines = String.format("%s %s", line1, line2).trim();
+
+        return String.format("%s, %s, %s, %s", lines, postalCode, region, city).trim();
+    }
+
 }

@@ -3,6 +3,7 @@ package eu.opertusmundi.common.model.contract;
 import eu.opertusmundi.common.model.MessageCode;
 
 public enum ContractMessageCode implements MessageCode {
+    ERROR,
     ACCOUNT_NOT_FOUND,
     DRAFT_NOT_FOUND,
     HISTORY_NOT_FOUND,

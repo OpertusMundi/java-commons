@@ -744,25 +744,25 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                     info.offset =
                         block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
                       + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = prod.getProductID().length();
+                    info.length = prod.getId().length();
                     info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + prod.getProductID();
+                    block.text  = block.text.trim() + ": " + prod.getId();
                     block.getBlockStyles().add(info);
                 } else if (initialText.contains("[ProductName]")) {
                     info.offset =
                         block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
                       + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = prod.getProductName().length();
+                    info.length = prod.getName().length();
                     info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + prod.getProductName();
+                    block.text  = block.text.trim() + ": " + prod.getName();
                     block.getBlockStyles().add(info);
                 } else if (initialText.contains("[ProductDescription]")) {
                     info.offset =
                         block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
                       + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = prod.getProductDescription().length();
+                    info.length = prod.getDescription().length();
                     info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + prod.getProductDescription();
+                    block.text  = block.text.trim() + ": " + prod.getDescription();
                     block.getBlockStyles().add(info);
                 } else if (initialText.contains("[PastVersionsIncluded]")) {
                     info.offset =

@@ -23,6 +23,7 @@ import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.model.order.ConsumerOrderDto;
 import eu.opertusmundi.common.model.order.EnumOrderItemType;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
+import eu.opertusmundi.common.model.order.HelpdeskOrderDto;
 import eu.opertusmundi.common.model.order.OrderCommand;
 import eu.opertusmundi.common.model.order.OrderDto;
 import eu.opertusmundi.common.model.order.ProviderOrderDto;
@@ -185,7 +186,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
         ).map(e -> e.toProviderDto(includeDetails));
     }
 
-    default Optional<OrderDto> findOrderObjectByKey(UUID key) {
+    default Optional<HelpdeskOrderDto> findOrderObjectByKey(UUID key) {
         return this.findOrderEntityByKey(key).map(o -> o.toHelpdeskDto(true));
     }
 
