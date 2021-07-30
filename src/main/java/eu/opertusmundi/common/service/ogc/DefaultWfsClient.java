@@ -33,7 +33,6 @@ import org.w3c.dom.NodeList;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
-import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 
