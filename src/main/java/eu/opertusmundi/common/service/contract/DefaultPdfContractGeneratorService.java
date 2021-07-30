@@ -23,17 +23,18 @@ import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.apache.pdfbox.util.Matrix;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.MasterSectionHistoryEntity;
@@ -47,7 +48,6 @@ import eu.opertusmundi.common.model.contract.EnumContract;
 import eu.opertusmundi.common.model.contract.consumer.PrintConsumerContractCommand;
 import eu.opertusmundi.common.repository.OrderRepository;
 import eu.opertusmundi.common.repository.contract.ProviderTemplateContractHistoryRepository;
-import io.jsonwebtoken.lang.Assert;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -88,6 +88,9 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
     @Autowired
     private ResourceLoader resourceLoader;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     private OrderRepository orderRepository;
@@ -1223,29 +1226,29 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
         }
     }
 
-    private List<Block> getOptionSuboptionBody(JSONArray blocks) throws JsonMappingException, JsonProcessingException {
+    private List<Block> getOptionSuboptionBody(ArrayNode blocks) throws JsonMappingException, JsonProcessingException {
         final ArrayList<Block> allBlocks = new ArrayList<Block>();
 
-        for (int i = 0, size = blocks.length(); i < size; i++) {
-            int              position   = 0;
-            Block            block      = null;
-            boolean          isListItem = false;
-            final JSONObject jobj       = blocks.getJSONObject(i);
+        for (int i = 0, size = blocks.size(); i < size; i++) {
+            int            position   = 0;
+            Block          block      = null;
+            boolean        isListItem = false;
+            final JsonNode jobj       = blocks.get(i);
 
             /* Get type of the current block */
-            final String type = jobj.getString("type");
+            final String type = jobj.get("type").asText();
 
             /* Delete characters that cannot been written in the PDF */
             if (type.equals("unordered-list-item")) {
-                block      = new Block("\u2022" + " " + jobj.getString("text").replace("\n", "").replace("\r", "").replace("\u00A0", ""));
+                block      = new Block("\u2022" + " " + jobj.get("text").asText().replace("\n", "").replace("\r", "").replace("\u00A0", ""));
                 isListItem = true;
             } else {
-                block = new Block(jobj.getString("text").replace("\n", "").replace("\r", "").replace("\u00A0", "").replace("“", "\"")
+                block = new Block(jobj.get("text").asText().replace("\n", "").replace("\r", "").replace("\u00A0", "").replace("“", "\"")
                         .replace("”", "\""));
             }
 
             /* Get styles of the current block */
-            final JSONArray styles = jobj.getJSONArray("inlineStyleRanges");
+            final ArrayNode styles = (ArrayNode) jobj.get("inlineStyleRanges");
 
             /* If there is no style for the current text */
             if (styles.isEmpty()) {
@@ -1254,30 +1257,31 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                 position = position + blockStyle1.getLength();
             } else {
                 /* For all styles of the current block */
-                for (int j = 0, length = styles.length(); j < length; j++) {
-                    final JSONObject style = styles.getJSONObject(j);
+                for (int j = 0, length = styles.size(); j < length; j++) {
+                    final JsonNode style = styles.get(j);
 
                     /* Ignore styles. We always use the default ones */
-                    if (style.getString("style").contains("fontsize") || style.getString("style").contains("color")
-                            || style.getString("style").contains("fontfamily")) {
+                    if (style.get("style").asText().contains("fontsize") ||
+                        style.get("style").asText().contains("color")    ||
+                        style.get("style").asText().contains("fontfamily")) {
                         continue;
-                    } else if (style.getInt("offset") == position) {
+                    } else if (style.get("offset").asInt() == position) {
                         final ObjectMapper m           = new ObjectMapper();
                         final BlockStyle   blockStyle1 = m.readValue(style.toString(), BlockStyle.class);
                         block.addBlockStyle(blockStyle1);
                         position = position + blockStyle1.getLength();
-                    } else if (style.getInt("offset") > position) {
+                    } else if (style.get("offset").asInt() > position) {
                         /* First add/create normal style */
-                        BlockStyle blockStyle1 = new BlockStyle(position, style.getInt("offset") - position, "NORMAL");
+                        BlockStyle blockStyle1 = new BlockStyle(position, style.get("offset").asInt() - position, "NORMAL");
                         block.addBlockStyle(blockStyle1);
-                        position = style.getInt("offset");
+                        position = style.get("offset").asInt();
 
                         final ObjectMapper m = new ObjectMapper();
                         blockStyle1 = m.readValue(style.toString(), BlockStyle.class);
                         block.addBlockStyle(blockStyle1);
                         position = position + blockStyle1.getLength();
 
-                    } else if (style.getInt("offset") < position) {
+                    } else if (style.get("offset").asInt() < position) {
                         /*
                          * We need to add style before without changing position
                          */
@@ -1405,17 +1409,17 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                 optionJson = masterSection.getOptions().get(section.getOption()).getBody();
                 List<ContractSectionSubOptionDto> suboptions = new ArrayList<ContractSectionSubOptionDto>();
                 suboptions = masterSection.getOptions().get(section.getOption()).getSubOptions();
-                JSONObject obj = new JSONObject(optionJson);
+                JsonNode obj = objectMapper.readTree(optionJson);
 
                 /* Get blocks */
-                JSONArray blocks = obj.getJSONArray("blocks");
+                ArrayNode blocks = (ArrayNode) obj.get("blocks");
                 allBlocks = getOptionSuboptionBody(blocks);
 
                 /* Add sub option block separately if any exists */
                 if (section.getSubOption() != null) {
                     subOptionJson = suboptions.get(section.getSubOption()).getBody();
-                    obj           = new JSONObject(subOptionJson);
-                    blocks        = obj.getJSONArray("blocks");
+                    obj           = objectMapper.readTree(subOptionJson);
+                    blocks        = (ArrayNode) obj.get("blocks");
                     final List<Block> suboptionBlocks = getOptionSuboptionBody(blocks);
                     allBlocks.addAll(suboptionBlocks);
                 }
