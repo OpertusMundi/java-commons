@@ -2,7 +2,9 @@ package eu.opertusmundi.common.domain;
 
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -25,6 +27,10 @@ import javax.validation.constraints.Pattern;
 import org.hibernate.annotations.NaturalId;
 import org.hibernate.annotations.Type;
 
+import eu.opertusmundi.common.model.EnumRole;
+import eu.opertusmundi.common.model.account.AccountDto;
+import eu.opertusmundi.common.model.account.AccountProfileDto;
+import eu.opertusmundi.common.model.account.EnumActivationStatus;
 import eu.opertusmundi.common.model.account.helpdesk.EnumHelpdeskRole;
 import eu.opertusmundi.common.model.account.helpdesk.HelpdeskAccountDto;
 import eu.opertusmundi.common.model.account.helpdesk.HelpdeskProfileCommandDto;
@@ -238,7 +244,44 @@ public class HelpdeskAccountEntity {
 
 		return a;
 	}
-	
+
+    public AccountDto toMarketplaceAccountDto() {
+        final AccountDto a = new AccountDto();
+
+        // Account
+        a.setActivatedAt(this.createdOn);
+        a.setActivationStatus(EnumActivationStatus.COMPLETED);
+        a.setActive(this.active);
+        a.setBlocked(this.blocked);
+        a.setEmail(this.email);
+        a.setEmailVerified(this.emailVerified);
+        a.setEmailVerifiedAt(this.emailVerifiedOn);
+        a.setId(this.id);
+        a.setIdpName(null);
+        a.setKey(this.key);
+        a.setPassword(this.password);
+        a.setRegisteredAt(this.createdOn);
+        a.setRoles(new HashSet<EnumRole>(Arrays.asList(EnumRole.ROLE_HELPDESK)));
+
+        // Profile
+        final AccountProfileDto profile = new AccountProfileDto();
+
+        profile.setCreatedOn(this.createdOn);
+        profile.setFirstName(this.firstName);
+        profile.setImage(this.image);
+        profile.setImageMimeType(this.imageMimeType);
+        profile.setLastName(this.lastName);
+        profile.setLocale(this.locale);
+        profile.setMobile(this.mobile);
+        profile.setModifiedOn(this.modifiedOn);
+        profile.setPhone(this.phone);
+
+        a.setProfile(profile);
+
+        return a;
+
+    }
+
     public SimpleHelpdeskAccountDto toSimpleDto() {
         final SimpleHelpdeskAccountDto a = new SimpleHelpdeskAccountDto();
 
