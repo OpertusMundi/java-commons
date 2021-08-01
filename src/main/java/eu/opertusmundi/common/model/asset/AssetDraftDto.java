@@ -55,10 +55,10 @@ public class AssetDraftDto {
 
     @Schema(description = "Date of lat update in ISO format")
     private ZonedDateTime modifiedOn;
-    
+
     @Schema(description = "Publisher details")
     private ProviderDto publisher;
-    
+
     public ResourceDto getResourceByKey(UUID key) {
         return this.getCommand().getResources().stream()
             .filter(r -> r.getId().equals(key))

@@ -67,9 +67,13 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
     private List<AssetAdditionalResourceDto> additionalResources;
 
     @JsonIgnore
+    @Getter
+    @Setter
     private Integer contractTemplateId;
 
     @JsonIgnore
+    @Getter
+    @Setter
     private String contractTemplateVersion;
 
     @Schema(description = "Contract details")

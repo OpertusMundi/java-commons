@@ -64,6 +64,15 @@ public interface ProviderAssetService {
     AssetDraftDto findOneDraft(UUID publisherKey, UUID draftKey);
 
     /**
+     * Get one draft by key
+     *
+     * @param publisherKey
+     * @param draftKey
+     * @return
+     */
+    AssetDraftDto findOneDraft(UUID draftKey);
+
+    /**
      * Create API draft
      *
      * @param command

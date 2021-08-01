@@ -63,6 +63,9 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         @Param("publisherKey") UUID publisherKey, @Param("key") UUID assetKey
     );
 
+    @Query("SELECT a FROM ProviderAssetDraft a WHERE a.key = :key")
+    Optional<ProviderAssetDraftEntity> findOneByKey(@Param("key") UUID assetKey);
+
     @Transactional(readOnly = false)
     default AssetDraftDto update(CatalogueItemCommandDto command) throws AssetDraftException {
         return this.update(command, EnumProviderAssetDraftStatus.DRAFT, null, null);

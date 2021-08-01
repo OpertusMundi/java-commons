@@ -180,6 +180,15 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Override
+    public AssetDraftDto findOneDraft(UUID draftKey) {
+        final ProviderAssetDraftEntity e = this.draftRepository.findOneByKey(draftKey).orElse(null);
+
+        final AssetDraftDto draft = e != null ? e.toDto() : null;
+
+        return draft;
+    }
+
+    @Override
     @Transactional
     public AssetDraftDto createApiDraft(DraftApiCommandDto command) throws AssetDraftException {
         switch (command.getType()) {
