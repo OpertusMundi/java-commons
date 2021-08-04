@@ -93,6 +93,21 @@ public interface CatalogueService {
     ) throws CatalogueServiceException;
 
     /**
+     * Find one published item by its unique PID and version
+     *
+     * @param ctx
+     * @param id
+     * @param version
+     * @param publisherKey
+     * @param includeAutomatedMetadata
+     * @return
+     * @throws CatalogueServiceException
+     */
+    CatalogueItemDetailsDto findOne(
+        RequestContext ctx, String id, String version, @Nullable UUID publisherKey, boolean includeAutomatedMetadata
+    ) throws CatalogueServiceException;
+
+    /**
      * Find one catalogue feature item by its unique PID
      *
      * @param id

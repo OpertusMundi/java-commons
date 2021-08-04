@@ -311,7 +311,6 @@ public class DefaultCatalogueService implements CatalogueService {
             throw CatalogueServiceException.wrap(ex);
         }
     }
-
     @Override
     public CatalogueItemDetailsDto findOne(
         RequestContext ctx, String id, UUID publisherKey, boolean includeAutomatedMetadata
@@ -321,80 +320,13 @@ public class DefaultCatalogueService implements CatalogueService {
 
             final CatalogueResponse<CatalogueFeature> catalogueResponse = e.getBody();
 
-            if(!catalogueResponse.isSuccess()) {
+            if (!catalogueResponse.isSuccess()) {
                 throw CatalogueServiceException.fromService(catalogueResponse.getMessage());
             }
 
             // Convert feature to catalogue item
-            final CatalogueFeature feature = catalogueResponse.getResult();
-            final CatalogueItemDetailsDto item = new CatalogueItemDetailsDto(feature);
-
-            // Filter automated metadata
-            if (!includeAutomatedMetadata) {
-                item.setAutomatedMetadata(null);
-                item.setVisibility(null);
-            } else if (item.getVisibility() != null) {
-                final ArrayNode metadataArray = (ArrayNode) item.getAutomatedMetadata();
-                for (int i = 0; i < metadataArray.size(); i++) {
-                    final ObjectNode metadata = (ObjectNode) metadataArray.get(i);
-                    for (final String prop : item.getVisibility()) {
-                        metadata.putNull(prop);
-                    }
-                }
-            }
-            // Filter ingestion information
-            if (!item.getPublisherId().equals(publisherKey)) {
-                item.setIngestionInfo(null);
-            }
-
-            // Inject publisher details
-            final ProviderDto publisher = this.providerRepository.findOneByKey(item.getPublisherId()).getProvider().toProviderDto();
-            item.setPublisher(publisher);
-
-            // Inject contract details
-            final ContractDto contract = this.contractRepository.findOneObjectByIdAndVersion(
-                item.getPublisherId(),
-                feature.getProperties().getContractTemplateId(),
-                feature.getProperties().getContractTemplateVersion()
-            );
-            item.setContract(contract);
-
-            // Consolidate data from asset repository
-            final List<AssetResourceEntity> resources = this.assetResourceRepository
-                .findAllResourcesByAssetPid(item.getId());
-
-            resources.stream()
-                .forEach(r -> {
-                    final ResourceDto resource = item.getResources().stream()
-                        .filter(r1 -> r1.getId().equals(r.getKey()))
-                        .findFirst()
-                        .orElse(null);
-
-                    if (resource != null) {
-                        // TODO: Check that resource file exists ...
-                    }
-                });
-
-            final List<AssetAdditionalResourceEntity> additionalResources = this.assetAdditionalResourceRepository
-                .findAllResourcesByAssetPid(item.getId());
-
-            additionalResources.stream()
-                .forEach(r -> {
-                    final ResourceDto resource = item.getResources().stream()
-                        .filter(r1 -> r1.getId().equals(r.getKey()))
-                        .findFirst()
-                        .orElse(null);
-
-                    if (resource != null) {
-                        // TODO: Check that resource file exists ...
-                    }
-                });
-
-            // Compute effective pricing models
-            this.refreshPricingModels(item);
-
-            // Log asset views
-            this.logView(ctx,  item, null, EnumAssetViewSource.VIEW);
+            final CatalogueFeature        feature = catalogueResponse.getResult();
+            final CatalogueItemDetailsDto item    = this.featureToItem(ctx, feature, publisherKey, includeAutomatedMetadata);
 
             return item;
         } catch (final FeignException fex) {
@@ -411,6 +343,115 @@ public class DefaultCatalogueService implements CatalogueService {
 
             throw CatalogueServiceException.wrap(ex);
         }
+    }
+
+    @Override
+    public CatalogueItemDetailsDto findOne(
+        RequestContext ctx, String id, String version, UUID publisherKey, boolean includeAutomatedMetadata
+    ) throws CatalogueServiceException {
+        try {
+            final ResponseEntity<CatalogueResponse<CatalogueFeature>> e = this.catalogueClient.getObject().findOneByIdAndVersion(id, version);
+
+            final CatalogueResponse<CatalogueFeature> catalogueResponse = e.getBody();
+
+            if (!catalogueResponse.isSuccess()) {
+                throw CatalogueServiceException.fromService(catalogueResponse.getMessage());
+            }
+
+            // Convert feature to catalogue item
+            final CatalogueFeature        feature = catalogueResponse.getResult();
+            final CatalogueItemDetailsDto item    = this.featureToItem(ctx, feature, publisherKey, includeAutomatedMetadata);
+
+            return item;
+        } catch (final FeignException fex) {
+            // Convert 404 errors to empty results
+            if (fex.status() == HttpStatus.NOT_FOUND.value()) {
+                return null;
+            }
+
+            logger.error("Operation has failed", fex);
+
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage(), fex);
+        } catch (final Exception ex) {
+            logger.error("Operation has failed", ex);
+
+            throw CatalogueServiceException.wrap(ex);
+        }
+    }
+
+    private CatalogueItemDetailsDto featureToItem(
+        RequestContext ctx, CatalogueFeature feature, UUID publisherKey, boolean includeAutomatedMetadata
+    ) {
+        final CatalogueItemDetailsDto item = new CatalogueItemDetailsDto(feature);
+
+        // Filter automated metadata
+        if (!includeAutomatedMetadata) {
+            item.setAutomatedMetadata(null);
+            item.setVisibility(null);
+        } else if (item.getVisibility() != null) {
+            final ArrayNode metadataArray = (ArrayNode) item.getAutomatedMetadata();
+            for (int i = 0; i < metadataArray.size(); i++) {
+                final ObjectNode metadata = (ObjectNode) metadataArray.get(i);
+                for (final String prop : item.getVisibility()) {
+                    metadata.putNull(prop);
+                }
+            }
+        }
+        // Filter ingestion information
+        if (!item.getPublisherId().equals(publisherKey)) {
+            item.setIngestionInfo(null);
+        }
+
+        // Inject publisher details
+        final ProviderDto publisher = this.providerRepository.findOneByKey(item.getPublisherId()).getProvider().toProviderDto();
+        item.setPublisher(publisher);
+
+        // Inject contract details
+        final ContractDto contract = this.contractRepository.findOneObjectByIdAndVersion(
+            item.getPublisherId(),
+            feature.getProperties().getContractTemplateId(),
+            feature.getProperties().getContractTemplateVersion()
+        );
+        item.setContract(contract);
+
+        // Consolidate data from asset repository
+        final List<AssetResourceEntity> resources = this.assetResourceRepository
+            .findAllResourcesByAssetPid(item.getId());
+
+        resources.stream()
+            .forEach(r -> {
+                final ResourceDto resource = item.getResources().stream()
+                    .filter(r1 -> r1.getId().equals(r.getKey()))
+                    .findFirst()
+                    .orElse(null);
+
+                if (resource != null) {
+                    // TODO: Check that resource file exists ...
+                }
+            });
+
+        final List<AssetAdditionalResourceEntity> additionalResources = this.assetAdditionalResourceRepository
+            .findAllResourcesByAssetPid(item.getId());
+
+        additionalResources.stream()
+            .forEach(r -> {
+                final ResourceDto resource = item.getResources().stream()
+                    .filter(r1 -> r1.getId().equals(r.getKey()))
+                    .findFirst()
+                    .orElse(null);
+
+                if (resource != null) {
+                    // TODO: Check that resource file exists ...
+                }
+            });
+
+        // Compute effective pricing models
+        this.refreshPricingModels(item);
+
+        // Log asset views
+        this.logView(ctx,  item, null, EnumAssetViewSource.VIEW);
+
+        return item;
     }
 
     @Override

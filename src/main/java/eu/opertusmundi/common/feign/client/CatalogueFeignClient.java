@@ -71,6 +71,18 @@ public interface CatalogueFeignClient {
     ResponseEntity<CatalogueResponse<CatalogueFeature>> findOneById(@PathVariable("id") String id);
 
     /**
+     * Get an item by id and version
+     *
+     * @param id The item unique identifier.
+     * @param version The selected version
+     * @return An instance of {@link CatalogueFeature}
+     */
+    @GetMapping(value = "/api/history/get", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<CatalogueResponse<CatalogueFeature>> findOneByIdAndVersion(
+        @RequestParam("id") String id, @RequestParam("version") String version
+    );
+
+    /**
      * Delete a published asset
      *
      * @param id The identifier of the asset to update
