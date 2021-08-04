@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -512,12 +513,15 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                         } else {
                             currentWordSize = textFontSize * fonts.getText().getStringWidth(currentWord) / 1000;
                         }
+
                         if (totalSize + currentWordSize <= width) {
                             /* Append the current line */
                             currentLine += currentWord;
                             totalSize   += currentWordSize;
                             final ParsedLine parsedLine = new ParsedLine(lineCounter, currentLine, style, currentWordSize);
-                            lines.add(parsedLine);
+	                		if (!parsedLine.text.equals("")) {
+	                			lines.add(parsedLine);
+	                		}
                             /*
                              * Initialize variables for the remaining part that
                              * has not been parsed and will be written in the
@@ -559,7 +563,9 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                         currentLine += currentWord;
                         totalSize   += currentWordSize;
                         final ParsedLine parsedLine = new ParsedLine(lineCounter, currentLine, style, currentWordSize);
-                        lines.add(parsedLine);
+                		if (!parsedLine.text.equals("")) {
+                			lines.add(parsedLine);
+                		}
                         /* Initialize variables for next loop (not needed) */
                         currentLine = "";
                         if (totalSize == width) {
@@ -585,235 +591,200 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     }
 
     private List<Section> addOrderInformation(
-        List<Section> allSections, ContractParametersDto contractParametersDto, Map<String, String> keywords
-    ) {
-        /*
-         * Replaces all automated keywords with the provider, consumer and
-         * product info while rendering
-         */
+            List<Section> allSections, ContractParametersDto contractParametersDto, Map<String, String> keywords
+        ) {
+        	/* Replaces all automated keywords with the provider, consumer and product info while rendering*/
+        	/* For all sections and all blocks*/
+            for (final Section section : allSections) {
+                for (final Block block : section.getBlocks()) {
+    	    		final String initialText 	= block.text;
 
-        /* For all sections and all blocks */
-        for (final Section section : allSections) {
-            for (final Block block : section.getBlocks()) {
-                final String initialText = block.text;
+    	    		for (int j = 0 ; j < block.getBlockStyles().size() ; j++) {
+    	    			/* If the block contains a bold-underlined part which is a master template contract keyword*/
+    	    			if (block.getBlockStyles().get(j).style.contains(BOLD) &&
+    	    				block.getBlockStyles().get(j).style.contains(UNDERLINE)) {
+    	    				for (final String key : keywords.keySet()) {
+    	    					if (block.getText().contains(key)) {
 
-                for (int j = 0; j < block.getBlockStyles().size(); j++) {
+    	    						/* Set style as BOLD for the words that the keywords will be replaced with*/
+    	    						block.getBlockStyles().get(j).style = BOLD;
+    	    						final int initialLength	= block.text.trim().length();
 
-                    /*
-                     * If the block contains a bold-underlined part which is a
-                     * master template contract keyword
-                     */
-                    if (block.getBlockStyles().get(j).style.contains(BOLD) && block.getBlockStyles().get(j).style.contains(UNDERLINE)) {
-                        for (final String key : keywords.keySet()) {
-                            if (block.getText().contains(key)) {
-                                /*
-                                 * Set style as BOLD for the words that the
-                                 * keywords will be replaced with
-                                 */
-                                block.getBlockStyles().get(j).style = BOLD;
-                                final int initialLength = block.text.length();
+    	    						/* Replace the keyword with the appropriate final word from the Hash<ap with the keywords*/
+    	    						block.text = block.getText().replace(key, keywords.get(key));
+    	    						block.text = block.text.trim();
 
-                                /*
-                                 * Replace the keyword with the appropriate
-                                 * final word from the Hash<ap with the keywords
-                                 */
-                                block.text = block.getText().replace(key, keywords.get(key));
+    	    						final int newLength 	= block.text.length();
+    	    						final int charDiff 		= initialLength - newLength;
 
-                                final int newLength = block.text.length();
-                                final int charDiff  = initialLength - newLength;
+    	    						/* Set new offset and length for the block style that describes the new words*/
+    	    						for (int l = j ; l < block.getBlockStyles().size() ; l++) {
+    	    							if (l != j) {
+    	    								block.getBlockStyles().get(l).offset -= (charDiff);
+    	    							}
+    	    							else {
+    	    								block.getBlockStyles().get(l).length -= (charDiff);
+    	    							}
+    	    						}
+    	    					}
+    	    				}
+    	    			}
+    	    		}
 
-                                /*
-                                 * Set new offset and length for the block style
-                                 * that describes the new words
-                                 */
-                                for (int l = j; l < block.getBlockStyles().size(); l++) {
-                                    if (l != j) {
-                                        block.getBlockStyles().get(l).offset -= (charDiff);
-                                    } else {
-                                        block.getBlockStyles().get(l).length -= (charDiff);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+    				final BlockStyle info = new BlockStyle();
 
-                final BlockStyle info = new BlockStyle();
+    				/*Get provider, consumer and product info*/
+    				final ContractParametersDto.Provider prov = contractParametersDto.getProvider();
+    				final ContractParametersDto.Consumer cons = contractParametersDto.getConsumer();
+    				final ContractParametersDto.Product  prod = contractParametersDto.getProduct();
 
-                /* Get provider, consumer and product info */
-                final ContractParametersDto.Provider prov = contractParametersDto.getProvider();
-                final ContractParametersDto.Consumer cons = contractParametersDto.getConsumer();
-                final ContractParametersDto.Product  prod = contractParametersDto.getProduct();
+    				/* Append all keyword blocks with the corresponding information and update their blockstyles accordingly */
+    				if (initialText.contains("[sellerName]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= prov.getCorporateName().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+prov.getCorporateName();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[sellerAddress]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= prov.getProfessionalAddress().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+prov.getProfessionalAddress();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[sellerEmail]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= prov.getContactEmail().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+prov.getContactEmail();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[sellerContactPerson]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= prov.getContactPerson().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+prov.getContactPerson();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[sellerCompanyRegNumber]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= prov.getCompanyRegistrationNumber().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+prov.getCompanyRegistrationNumber();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[sellerVAT]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= prov.getEuVatNumber().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+prov.getEuVatNumber();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[clientName]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= cons.getCorporateName().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+cons.getCorporateName();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[clientAddress]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= cons.getProfessionalAddress().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+cons.getProfessionalAddress();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[clientEmail]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= cons.getContactEmail().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+cons.getContactEmail();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[clientContactPerson]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= cons.getContactPerson().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+cons.getContactPerson();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[clientCompanyRegNumber]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= cons.getCompanyRegistrationNumber().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+cons.getCompanyRegistrationNumber();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[clientVAT]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= cons.getEuVatNumber().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+cons.getEuVatNumber();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[ProductId]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= prod.getId().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+prod.getId();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[ProductName]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= prod.getName().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+prod.getName();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[ProductDescription]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= prod.getDescription().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+prod.getDescription();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[PastVersionsIncluded]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= prod.getPastVersionIncluded().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+prod.getPastVersionIncluded();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[UpdatesIncluded]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= prod.getUpdatesIncluded().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+prod.getUpdatesIncluded();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[EstimatedDeliveryDate]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= prod.getEstimatedDeliveryDate().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+prod.getEstimatedDeliveryDate();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[DeliveryMediaFormat]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= prod.getMediaAndFormatOfDelivery().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+prod.getMediaAndFormatOfDelivery();
+    					block.getBlockStyles().add(info);
+    				}
+    				else if (initialText.contains("[ApplicableFees]")) {
+    					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
+    					info.length	= prod.getApplicableFees().length()+2;
+    					info.style 	= "NORMAL";
+    					block.text = block.text.trim()+": "+prod.getApplicableFees();
+    					block.getBlockStyles().add(info);
+    				}
+    			}
+    	    }
 
-                /*
-                 * Append all keyword blocks with the corresponding information
-                 * and update their block styles accordingly
-                 */
-                if (initialText.contains("[sellerName]")) {
-                    info.offset =
-                        block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                      + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = prov.getCorporateName().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + prov.getCorporateName();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[sellerAddress]")) {
-                    info.offset =
-                        block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                      + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = prov.getProfessionalAddress().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + prov.getProfessionalAddress();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[sellerEmail]")) {
-                    info.offset =
-                        block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                      + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = prov.getContactEmail().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + prov.getContactEmail();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[sellerContactPerson]")) {
-                    info.offset = block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                            + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = prov.getContactPerson().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + prov.getContactPerson();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[sellerCompanyRegNumber]")) {
-                    info.offset =
-                        block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                      + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = prov.getCompanyRegistrationNumber().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + prov.getCompanyRegistrationNumber();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[sellerVAT]")) {
-                    info.offset =
-                        block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                      + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = prov.getEuVatNumber().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + prov.getEuVatNumber();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[clientName]")) {
-                    info.offset =
-                        block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                      + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = cons.getCorporateName().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + cons.getCorporateName();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[clientAddress]")) {
-                    info.offset =
-                        block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                      + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = cons.getProfessionalAddress().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + cons.getProfessionalAddress();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[clientEmail]")) {
-                    info.offset =
-                        block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                      + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = cons.getContactEmail().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + cons.getContactEmail();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[clientContactPerson]")) {
-                    info.offset =
-                        block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                      + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = cons.getContactPerson().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + cons.getContactPerson();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[clientCompanyRegNumber]")) {
-                    info.offset = block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                            + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = cons.getCompanyRegistrationNumber().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + cons.getCompanyRegistrationNumber();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[clientVAT]")) {
-                    info.offset =
-                        block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                      + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = cons.getEuVatNumber().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + cons.getEuVatNumber();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[ProductId]")) {
-                    info.offset =
-                        block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                      + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = prod.getId().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + prod.getId();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[ProductName]")) {
-                    info.offset =
-                        block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                      + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = prod.getName().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + prod.getName();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[ProductDescription]")) {
-                    info.offset =
-                        block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                      + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = prod.getDescription().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + prod.getDescription();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[PastVersionsIncluded]")) {
-                    info.offset =
-                        block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                      + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = prod.getPastVersionIncluded().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + prod.getPastVersionIncluded();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[UpdatesIncluded]")) {
-                    info.offset =
-                        block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                      + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = prod.getUpdatesIncluded().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + prod.getUpdatesIncluded();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[EstimatedDeliveryDate]")) {
-                    info.offset =
-                        block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                      + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = prod.getEstimatedDeliveryDate().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + prod.getEstimatedDeliveryDate();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[DeliveryMediaFormat]")) {
-                    info.offset =
-                        block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                      + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = prod.getMediaAndFormatOfDelivery().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + prod.getMediaAndFormatOfDelivery();
-                    block.getBlockStyles().add(info);
-                } else if (initialText.contains("[ApplicableFees]")) {
-                    info.offset =
-                        block.getBlockStyles().get(block.getBlockStyles().size() - 1).length
-                      + block.getBlockStyles().get(block.getBlockStyles().size() - 1).offset;
-                    info.length = prod.getApplicableFees().length();
-                    info.style  = "NORMAL";
-                    block.text  = block.text.trim() + ": " + prod.getApplicableFees();
-                    block.getBlockStyles().add(info);
-                }
-            }
+        	/* Return the final sections that should be written*/
+        	return allSections;
         }
-
-        /* Return the final sections that should be written */
-        return allSections;
-    }
 
     private void addBlock(
         RenderContext ctx, Block block, boolean justify, boolean newPage, boolean endOfSection, int blockNo
@@ -1017,16 +988,17 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             }
         }
 
-        /* When the entire text is written close the open contentStream */
-        content.endText();
-
-        if (endOfSection == true) {
-            ctx.setCurrentOffset(offsetY - 32);
-        } else if (currentBlockisListItem) {
-            ctx.setCurrentOffset(offsetY - 7);
-        } else {
-            ctx.setCurrentOffset(offsetY - textLeading / 3);
-        }
+    	/* When the entire text is written close the open contentStream*/
+    	content.endText();
+		if (endOfSection == true) {
+			ctx.setCurrentOffset(offsetY-20);
+		}
+		else if (currentBlockisListItem) {
+		    ctx.setCurrentOffset(offsetY-7);
+		}
+		else {
+		    ctx.setCurrentOffset(offsetY-textLeading/3);
+		}
     }
 
     private void addTitle(RenderContext ctx, String type, String title, boolean justify, boolean newPage) throws IOException {
@@ -1312,7 +1284,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                 }
                 final BlockStyle bulletBlockStyle = new BlockStyle(0, 2, "NORMAL");
                 block.getBlockStyles().add(0, bulletBlockStyle);
-                block.getBlockStyles().remove(block.getBlockStyles().size() - 1);
+//                block.getBlockStyles().remove(block.getBlockStyles().size() - 1);
             }
 
             allBlocks.add(block);
@@ -1320,9 +1292,27 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
         }
         return allBlocks;
     }
+	
+    public List<BlockStyle> getBlockStylesSorted(List<BlockStyle> blockstyles) {
+    	return blockstyles.stream().sorted((b1,b2) -> {
+    		/* Get index of each section*/
+    		int offset1	=	b1.getOffset();
+    		int offset2	=	b2.getOffset();
+    		
+    		if (offset1 > offset2) {
+    			return 1;
+    		}
+    		else if (offset1 < offset2) {
+    			return -1;
+    		}
+    		return 0;
+    	}).collect(Collectors.toList());
+    }
 
-    @Override
-    public byte[] renderPDF(ContractParametersDto contractParametersDto, PrintConsumerContractCommand command) throws IOException {
+	@Override
+    public byte[] renderPDF(
+        ContractParametersDto contractParametersDto, PrintConsumerContractCommand command
+    ) throws IOException {
         // Initialize all variables that are related to the PDF formatting
         final PDDocument          document = new PDDocument();
         final Map<String, String> keywords = this.createKeywordMapping();
@@ -1360,8 +1350,8 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             final ProviderTemplateContractHistoryEntity contract = contractRepository
                     .findByIdAndVersion(provider.getKey(), contractId, contractVersion).get();
 
-            // ProviderTemplateContractHistoryEntity contract =
-            // contractRepository.findById(2).get();
+//             ProviderTemplateContractHistoryEntity contract =
+//             contractRepository.findById(4).get();
 
             /* Get title and subtitles */
             final String title    = contract.getTitle();
@@ -1430,6 +1420,13 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                 prevIndex = sectionIndex;
             }
 
+            for (final Section section  : allSections) {
+                for (final Block block : section.getBlocks()) {
+                	ArrayList<BlockStyle> sortedBlockStyles = (ArrayList<BlockStyle>) getBlockStylesSorted(block.getBlockStyles());
+                	block.setBlockStyles(sortedBlockStyles);
+                }
+            }
+        	
             /* Create the combined fonts */
             for (final Section section : allSections) {
                 for (final Block block : section.getBlocks()) {
