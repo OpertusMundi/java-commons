@@ -536,7 +536,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 && draft.getStatus() != EnumProviderAssetDraftStatus.POST_PROCESSING
                 && draft.getStatus() != EnumProviderAssetDraftStatus.PROVIDER_REJECTED) {
             throw new AssetDraftException(AssetMessageCode.INVALID_STATE, String.format(
-                    "Expected status in [PENDING_PROVIDER_REVIEW, POST_PROCESSING, PROVIDER_REJECTED]. Found [%s]", draft.getStatus()));
+                "Expected status in [PENDING_PROVIDER_REVIEW, POST_PROCESSING, PROVIDER_REJECTED]. Found [%s]", draft.getStatus()
+            ));
         }
 
         if (rejected) {
@@ -640,44 +641,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         // Redirect draft metadata property links to asset ones before
         // publishing the asset to the catalogue
-        for (final ResourceDto r : draft.getCommand().getResources()) {
-            if (r.getType() != EnumResourceType.FILE) {
-                continue;
-            }
-            final FileResourceDto                   fr            = (FileResourceDto) r;
-            final EnumAssetSourceType               source        = mapFormatToSourceType(fr.getFormat());
-            final List<AssetMetadataPropertyEntity> properties    = this.assetMetadataPropertyRepository.findAllByAssetType(source);
-            final ArrayNode                         metadataArray = (ArrayNode) feature.getProperties().getAutomatedMetadata();
-            ObjectNode                              metadata      = null;
-
-            for (int i = 0; i < metadataArray.size(); i++) {
-                if (metadataArray.get(i).get("key").asText().equals(r.getId().toString())) {
-                    metadata = (ObjectNode) metadataArray.get(i);
-                    break;
-                }
-            }
-
-            if (metadata == null || metadata.isNull()) {
-                continue;
-            }
-
-            for(final AssetMetadataPropertyEntity p: properties) {
-                final String   propertyName = p.getName();
-                final JsonNode propertyNode = metadata.get(propertyName);
-
-                // Ignore undefined or null nodes
-                if (propertyNode == null || propertyNode.isNull()) {
-                    continue;
-                }
-
-                final String uri = String.format(
-                    "/action/assets/%s/resources/%s/metadata/%s",
-                    pid, r.getId(), propertyName
-                );
-
-                metadata.put(propertyName, uri);
-            }
-        }
+        this.updateMetadataPropertyLinks(
+            pid, draft.getCommand().getResources(), feature.getProperties().getAutomatedMetadata(), draft.getStatus()
+        );
 
         return feature;
     }
@@ -976,8 +942,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         }
 
         if (status != null && draft.getStatus() != status) {
-            throw new AssetDraftException(AssetMessageCode.INVALID_STATE,
-                    String.format("Expected status is [%s]. Found [%s]", status, draft.getStatus()));
+            throw new AssetDraftException(
+                AssetMessageCode.INVALID_STATE,
+                String.format("Expected status is [%s]. Found [%s]", status, draft.getStatus())
+            );
         }
 
         return draft;
@@ -1044,6 +1012,61 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
 
         return assetAdditionalResourceRepository.delete(draftKey, resourceKey);
+    }
+
+    @Override
+    public void updateMetadataPropertyLinks(
+        String id, List<ResourceDto> resources, JsonNode metadata, EnumProviderAssetDraftStatus status
+    ) throws AssetDraftException {
+        String urlTemplate = "";
+
+        switch (status) {
+            case POST_PROCESSING :
+                urlTemplate = "/action/assets/%s/resources/%s/metadata/%s";
+                break;
+            case PENDING_HELPDESK_REVIEW :
+                urlTemplate = "/action/helpdesk-drafts/%s/resources/%s/metadata/%s";
+                break;
+            default :
+                throw new AssetDraftException(AssetMessageCode.INVALID_STATE, String.format(
+                    "Expected status in [POST_PROCESSING, PENDING_PROVIDER_REVIEW]. Found [%s]", status
+                ));
+        }
+
+        for (final ResourceDto r : resources) {
+            if (r.getType() != EnumResourceType.FILE) {
+                continue;
+            }
+            final FileResourceDto                   fr         = (FileResourceDto) r;
+            final EnumAssetSourceType               source     = mapFormatToSourceType(fr.getFormat());
+            final List<AssetMetadataPropertyEntity> properties = this.assetMetadataPropertyRepository.findAllByAssetType(source);
+            ObjectNode                              current    = null;
+
+            for (int i = 0; i < metadata.size(); i++) {
+                if (metadata.get(i).get("key").asText().equals(r.getId().toString())) {
+                    current = (ObjectNode) metadata.get(i);
+                    break;
+                }
+            }
+
+            if (current == null || current.isNull()) {
+                continue;
+            }
+
+            for(final AssetMetadataPropertyEntity p: properties) {
+                final String   propertyName = p.getName();
+                final JsonNode propertyNode = current.get(propertyName);
+
+                // Ignore undefined or null nodes
+                if (propertyNode == null || propertyNode.isNull()) {
+                    continue;
+                }
+
+                final String uri = String.format(urlTemplate, id, r.getId(), propertyName);
+
+                current.put(propertyName, uri);
+            }
+        }
     }
 
     private String getMetadataPropertyFileName(UUID resourceKey, String propertyName, EnumMetadataPropertyType propertyType) {

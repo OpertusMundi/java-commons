@@ -2,6 +2,7 @@ package eu.opertusmundi.common.service;
 
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -19,6 +20,7 @@ import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftSortField;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.MetadataProperty;
+import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
@@ -320,5 +322,18 @@ public interface ProviderAssetService {
     MetadataProperty resolveDraftMetadataProperty(
         UUID publisherKey, UUID draftKey, UUID resourceKey, String propertyName
     ) throws FileSystemException, AssetRepositoryException;
+
+    /**
+     * Update metadata property links
+     *
+     * @param id
+     * @param resources
+     * @param metadata
+     * @param status
+     * @throws AssetDraftException
+     */
+    void updateMetadataPropertyLinks(
+        String id, List<ResourceDto> resources, JsonNode metadata, EnumProviderAssetDraftStatus status
+    ) throws AssetDraftException;
 
 }
