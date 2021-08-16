@@ -68,6 +68,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     private static Color color2                  = Color.BLUE;
     private static float textLeading             = 1.5f * textFontSize;
 
+    private static final String NORMAL    = "NORMAL";
     private static final String BOLD      = "BOLD";
     private static final String ITALIC    = "ITALIC";
     private static final String UNDERLINE = "UNDERLINE";
@@ -267,9 +268,19 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
         keywords.put("[EstimatedDeliveryDate]", "Estimated delivery date");
         keywords.put("[DeliveryMediaFormat]", "Media and format of delivery");
         keywords.put("[ApplicableFees]", "Applicable fees");
-        keywords.put("[INSERT HYPERLINK TO TOPIO’S T&CS]", "https://beta.topio.market/");
+        keywords.put("[INSERT HYPERLINK TOWARDS TOPIO’S T&CS LATEST VERSION]", "https://beta.topio.market/terms");
         keywords.put("[Date]", new SimpleDateFormat("dd MMM yyyy").format(new Date()));
         keywords.put("[Years]", "2" + " Years");
+        keywords.put("[PricingModelPrice]", "300"); 	
+        keywords.put("[PricingModelYears]", "2"); 
+        keywords.put("[PricingModelMonths]", "6"); 
+        keywords.put("[PricingModelAreaOfInterest]", "asd"); 
+        keywords.put("[PricingModelPricePerRows]", "3"); 
+        keywords.put("[PricingModelDiscount]", "6"); 
+        keywords.put("[PricingModelDue]", "6"); 
+        keywords.put("[PricingModelPricePerPeople]", "10");
+        keywords.put("[PricingModelVersionsFrom]",  new SimpleDateFormat("dd MMM yyyy").format(new Date()));
+        keywords.put("[PricingModelVersionsYear]", "10");
 
         return keywords;
     }
@@ -534,11 +545,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                              * Update the current substring and remove the
                              * parsed part of it
                              */
-                            if (i != block.getBlockStyles().size() - 1 && !style.equals(block.getBlockStyles().get(i + 1).style)) {
-                                currentSubstring = currentSubstring.substring(lastSpace);
-                            } else {
-                                currentSubstring = currentSubstring.substring(lastSpace).trim();
-                            }
+                            currentSubstring = currentSubstring.substring(lastSpace).stripLeading();
                             lastSpace = -1;
                         } else {
                             currentLine = currentWord;
@@ -626,6 +633,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     	    								block.getBlockStyles().get(l).length -= (charDiff);
     	    							}
     	    						}
+    	    						break;
     	    					}
     	    				}
     	    			}
@@ -642,140 +650,140 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     				if (initialText.contains("[sellerName]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= prov.getCorporateName().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+prov.getCorporateName();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[sellerAddress]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= prov.getProfessionalAddress().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+prov.getProfessionalAddress();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[sellerEmail]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= prov.getContactEmail().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+prov.getContactEmail();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[sellerContactPerson]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= prov.getContactPerson().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+prov.getContactPerson();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[sellerCompanyRegNumber]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= prov.getCompanyRegistrationNumber().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+prov.getCompanyRegistrationNumber();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[sellerVAT]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= prov.getEuVatNumber().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+prov.getEuVatNumber();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[clientName]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= cons.getCorporateName().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+cons.getCorporateName();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[clientAddress]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= cons.getProfessionalAddress().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+cons.getProfessionalAddress();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[clientEmail]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= cons.getContactEmail().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+cons.getContactEmail();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[clientContactPerson]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= cons.getContactPerson().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+cons.getContactPerson();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[clientCompanyRegNumber]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= cons.getCompanyRegistrationNumber().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+cons.getCompanyRegistrationNumber();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[clientVAT]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= cons.getEuVatNumber().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+cons.getEuVatNumber();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[ProductId]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= prod.getId().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+prod.getId();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[ProductName]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= prod.getName().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+prod.getName();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[ProductDescription]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= prod.getDescription().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+prod.getDescription();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[PastVersionsIncluded]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= prod.getPastVersionIncluded().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+prod.getPastVersionIncluded();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[UpdatesIncluded]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= prod.getUpdatesIncluded().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+prod.getUpdatesIncluded();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[EstimatedDeliveryDate]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= prod.getEstimatedDeliveryDate().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+prod.getEstimatedDeliveryDate();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[DeliveryMediaFormat]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= prod.getMediaAndFormatOfDelivery().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+prod.getMediaAndFormatOfDelivery();
     					block.getBlockStyles().add(info);
     				}
     				else if (initialText.contains("[ApplicableFees]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= prod.getApplicableFees().length()+2;
-    					info.style 	= "NORMAL";
+    					info.style 	= NORMAL;
     					block.text = block.text.trim()+": "+prod.getApplicableFees();
     					block.getBlockStyles().add(info);
     				}
@@ -785,6 +793,273 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
         	/* Return the final sections that should be written*/
         	return allSections;
         }
+    
+    private Block generateSingleStylePricingModelBlock(
+    		String text, String style) {
+		Block block = new Block(text);   		
+		int offset 	= 0;
+		int length	= text.length();
+		BlockStyle blockStyle = new BlockStyle(offset, length, style);
+		block.getBlockStyles().add(blockStyle);    		
+		return block;
+    }
+    
+    private Block generateMultiStylePricingModelBlock(
+    		String text) {
+    	Block block = new Block(text); 
+    	int offset	 	= 0;
+    	int length 		= 0;
+    	String style 	= null;
+    	BlockStyle blockStyle = null;
+
+		int loopCounter = 0;
+		for (int index1 = text.indexOf("["), index2 = text.indexOf("]") ; index1 >= 0 && index2 >= 0 ; index1 = text.indexOf("[", index1+1), index2 = text.indexOf("]", index2+1)) {
+			if (loopCounter == 0) {
+				offset = 0;
+			} else {
+				offset += length;
+			}
+			length	= index1-offset;
+			style	= NORMAL;
+			blockStyle = new BlockStyle(offset, length, style);
+			block.getBlockStyles().add(blockStyle);    
+			
+			if (loopCounter == 0) {
+				offset = index1;
+			} else {
+				offset += length;
+			}
+			length	= index2-index1+1;
+			blockStyle = new BlockStyle(offset, length, BOLD);
+			block.getBlockStyles().add(blockStyle); 
+			
+			blockStyle = new BlockStyle(offset, length, UNDERLINE);
+			block.getBlockStyles().add(blockStyle); 
+			
+			if (text.indexOf("[", index1+1) < 0) {
+				offset 	= index2+1;
+				length	= text.length()-index2-1;
+				style	= NORMAL;
+				blockStyle = new BlockStyle(offset, length, style);
+				block.getBlockStyles().add(blockStyle);  	
+			}
+	
+			loopCounter++;
+		}
+		
+		return block;
+    }
+    
+    private Section generatePricingModelSection(
+            int pricingModel, String sectionTitle
+        ) {
+    	
+    	Section section = new Section(sectionTitle);
+    	
+    	String partPrice 	= "APPLICABLE PRICE";
+    	String partDelivery	= "DELIVERY";
+    	String partTerm		= "TERM";	
+    	
+    	if (pricingModel == 1) {
+    		/* Add applicable price*/
+    		Block block = generateSingleStylePricingModelBlock(partPrice, BOLD);   		 		
+    		section.getBlocks().add(block);
+    		
+    		String text = "Latest version, no updates included: Price [PricingModelPrice] Euros.";
+    		block = generateMultiStylePricingModelBlock(text);
+    		section.getBlocks().add(block);  		
+    		
+    		/* Add Delivery*/
+    		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);  		
+    		section.getBlocks().add(block);
+    		
+    		text = "Delivery will take place within three (3) working days following a proof of payment of the applicable price above:";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);
+    		section.getBlocks().add(block);
+    		
+    		text = "-" + " Via TOPIO.";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL); 		
+    		section.getBlocks().add(block);
+    		
+    		text = "-" + " Digital delivery directly by Supplier.";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);  		
+    		section.getBlocks().add(block);
+    		
+    		text = "-" + " Physical media delivered directly by Supplier.";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);		
+    		section.getBlocks().add(block);
+    		
+    		/* Add term*/
+    		block = generateSingleStylePricingModelBlock(partTerm, BOLD);		
+    		section.getBlocks().add(block);
+    		
+    		text = "-" + " No restrictions.";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);		
+    		section.getBlocks().add(block);
+    		
+    		text = "- " + "[PricingModelYears] Years.";
+    		block = generateMultiStylePricingModelBlock(text);			
+    		section.getBlocks().add(block);
+    		
+    		text = "- " + "[PricingModelMonths] Months.";
+    		block = generateMultiStylePricingModelBlock(text);			
+    		section.getBlocks().add(block);  			
+    	}
+    	else if (pricingModel == 2) {
+    		/* Add applicable price*/
+    		Block block = generateSingleStylePricingModelBlock(partPrice, BOLD);   		 		
+    		section.getBlocks().add(block);
+    		
+    		String text = "All versions since [PricingModelVersionsFrom] and new versions for [PricingModelVersionsYear] years.";
+    		block = generateMultiStylePricingModelBlock(text);  	
+    		section.getBlocks().add(block);
+    		
+    		text = "Price [PricingModelPrice] Euros.";
+    		block = generateMultiStylePricingModelBlock(text);
+    		section.getBlocks().add(block);
+    		
+    		/* Add Delivery*/
+    		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);  		
+    		section.getBlocks().add(block);
+    		
+    		text = "Delivery will take place within three (3) working days following a proof of payment of the applicable price; updates will be delivered within three (3) working days from their release date:";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);
+    		section.getBlocks().add(block);
+    		
+    		text = "-" + " Via TOPIO.";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL); 		
+    		section.getBlocks().add(block);
+    		
+    		text = "-" + " Digital delivery directly by Supplier.";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);  		
+    		section.getBlocks().add(block);
+    		
+    		text = "-" + " Physical media delivered directly by Supplier.";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);		
+    		section.getBlocks().add(block);
+    		
+    		/* Add term*/
+    		block = generateSingleStylePricingModelBlock(partTerm, BOLD);		
+    		section.getBlocks().add(block);
+    		
+    		text = "-" + " No restrictions.";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);		
+    		section.getBlocks().add(block);
+    		
+    		text = "- " + "[PricingModelYears] Years.";
+    		block = generateMultiStylePricingModelBlock(text);			
+    		section.getBlocks().add(block);
+    		
+    		text = "- " + "[PricingModelMonths] Months.";
+    		block = generateMultiStylePricingModelBlock(text);			
+    		section.getBlocks().add(block);
+    	}
+    	else if (pricingModel == 3) {
+    		/* Add applicable price*/
+    		Block block = generateSingleStylePricingModelBlock(partPrice, BOLD);   		 		
+    		section.getBlocks().add(block);
+    		
+    		String text = "Subset per row, no updates included.";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);  	
+    		section.getBlocks().add(block);
+    		
+    		text = "- " + "Area of interest: [PricingModelAreaOfInterest].";
+    		block = generateMultiStylePricingModelBlock(text);
+    		section.getBlocks().add(block);
+    		
+    		text = "- " + "Price per 1000 rows: [PricingModelPricePerRows] Euros.";
+    		block = generateMultiStylePricingModelBlock(text);
+    		section.getBlocks().add(block);
+    		
+    		text = "- " + "Discount rate applied: [PricingModelDiscount] %.";
+    		block = generateMultiStylePricingModelBlock(text);
+    		section.getBlocks().add(block);
+    		
+    		text = "- " + "Price due: [PricingModelDue] Euros.";
+    		block = generateMultiStylePricingModelBlock(text);
+    		section.getBlocks().add(block);
+    		
+    		/* Add Delivery*/
+    		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);  		
+    		section.getBlocks().add(block);
+    		
+    		text = "Delivery will take place via TOPIO within three (3) working days following a proof of payment of the applicable price.";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);
+    		section.getBlocks().add(block);
+    		
+    		/* Add term*/
+    		block = generateSingleStylePricingModelBlock(partTerm, BOLD);		
+    		section.getBlocks().add(block);
+    		
+    		text = "-" + " No restrictions.";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);		
+    		section.getBlocks().add(block);
+    		
+    		text = "- " + "[PricingModelYears] Years.";
+    		block = generateMultiStylePricingModelBlock(text);			
+    		section.getBlocks().add(block);
+    		
+    		text = "- " + "[PricingModelMonths] Months.";
+    		block = generateMultiStylePricingModelBlock(text);			
+    		section.getBlocks().add(block);    		
+    	}
+    	else if (pricingModel == 4) {
+    		/* Add applicable price*/
+    		Block block = generateSingleStylePricingModelBlock(partPrice, BOLD);   		 		
+    		section.getBlocks().add(block);
+    		
+    		String text = "Subset per population*, no updates included.";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);  	
+    		section.getBlocks().add(block);
+    		
+    		text = "- " + "Area of interest: [PricingModelAreaOfInterest].";
+    		block = generateMultiStylePricingModelBlock(text);
+    		section.getBlocks().add(block);
+    		
+    		text = "- " + "Price per 10.000 people: [PricingModelPricePerPeople] Euros.";
+    		block = generateMultiStylePricingModelBlock(text);
+    		section.getBlocks().add(block);
+    		
+    		text = "- " + "Discount rate applied: [PricingModelDiscount] %.";
+    		block = generateMultiStylePricingModelBlock(text);
+    		section.getBlocks().add(block);
+    		
+    		text = "- " + "Price due: [PricingModelDue] Euros.";
+    		block = generateMultiStylePricingModelBlock(text);
+    		section.getBlocks().add(block);
+    		
+       		text = "* The density of the population is calculated based on the most recent Eurostat census data (2011), the geographical coverage of the subset, and the geographical area selected by the Customer.";
+    		block = generateSingleStylePricingModelBlock(text, ITALIC);  	
+    		section.getBlocks().add(block);   
+    		
+    		/* Add Delivery*/
+    		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);  		
+    		section.getBlocks().add(block);
+    		
+    		text = "Delivery will take place via TOPIO within three (3) working days following a proof of payment of the applicable price.";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);
+    		section.getBlocks().add(block);
+    		
+    		/* Add term*/
+    		block = generateSingleStylePricingModelBlock(partTerm, BOLD);		
+    		section.getBlocks().add(block);
+    		
+    		text = "-" + " No restrictions.";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);		
+    		section.getBlocks().add(block);
+    		
+    		text = "- " + "[PricingModelYears] Years.";
+    		block = generateMultiStylePricingModelBlock(text);			
+    		section.getBlocks().add(block);
+    		
+    		text = "- " + "[PricingModelMonths] Months.";
+    		block = generateMultiStylePricingModelBlock(text);			
+    		section.getBlocks().add(block);		
+    	}
+    	
+    	return section;
+    	
+    }
 
     private void addBlock(
         RenderContext ctx, Block block, boolean justify, boolean newPage, boolean endOfSection, int blockNo
@@ -957,7 +1232,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             }
 
             /* In case of the current page is full */
-            if (offsetY <= 82 && !(i < parsedLines.size() - 1 && currentLineNo == parsedLines.get(i + 1).lineNumber)) {
+            if (offsetY <= 72 && !(i < parsedLines.size() - 1 && currentLineNo == parsedLines.get(i + 1).lineNumber)) {
 
                 /* Close the contentStream of the current page */
                 content.endText();
@@ -1034,7 +1309,11 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
         /* Initialize the offset that keeps the page's free space */
         float offsetY;
         if (newPage || type.equals("Title")) {
-            offsetY = startY - 70;
+        	if (type.equals("Title")) {
+        		offsetY = startY - 70;
+        	} else {
+        		offsetY = startY;
+        	}
         } else {
             offsetY = ctx.getCurrentOffset();
         }
@@ -1118,9 +1397,9 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
         } else if (type.equals("Subtitle")) {
             ctx.setCurrentOffset(offsetY - marginY);
         } else if (type.equals("Sectiontitle")) {
-            ctx.setCurrentOffset(offsetY - 12);
+            ctx.setCurrentOffset(offsetY - 6);
         } else if (type.equals("SectionSubTitle")) {
-            ctx.setCurrentOffset(offsetY - 12);
+            ctx.setCurrentOffset(offsetY - 6);
         }
     }
 
@@ -1224,7 +1503,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
             /* If there is no style for the current text */
             if (styles.isEmpty()) {
-                final BlockStyle blockStyle1 = new BlockStyle(0, block.getText().length(), "NORMAL");
+                final BlockStyle blockStyle1 = new BlockStyle(0, block.getText().length(), NORMAL);
                 block.addBlockStyle(blockStyle1);
                 position = position + blockStyle1.getLength();
             } else {
@@ -1244,7 +1523,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                         position = position + blockStyle1.getLength();
                     } else if (style.get("offset").asInt() > position) {
                         /* First add/create normal style */
-                        BlockStyle blockStyle1 = new BlockStyle(position, style.get("offset").asInt() - position, "NORMAL");
+                        BlockStyle blockStyle1 = new BlockStyle(position, style.get("offset").asInt() - position, NORMAL);
                         block.addBlockStyle(blockStyle1);
                         position = style.get("offset").asInt();
 
@@ -1262,10 +1541,14 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                         block.addBlockStyle(blockStyle1);
                     }
                 }
+                
+                if (isListItem) {
+                	position += 2;
+                }
 
                 /* If there is more normal text at the end */
-                if (block.getText().length() > position) {
-                    final BlockStyle blockStyle1 = new BlockStyle(position, block.getText().length() - position, "NORMAL");
+                if (block.getText().trim().length() > position) {
+                    final BlockStyle blockStyle1 = new BlockStyle(position, block.getText().length() - position, NORMAL);
                     block.addBlockStyle(blockStyle1);
                 }
             }
@@ -1277,18 +1560,16 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             if (isListItem) {
                 for (int j = 0; j < block.getBlockStyles().size(); j++) {
                     final int        newOffset     = block.getBlockStyles().get(j).getOffset() + 2;
-                    final int        newLength     = block.getBlockStyles().get(j).getLength() + 2;
+                    final int        newLength     = block.getBlockStyles().get(j).getLength()/* + 2*/;
                     final String     style         = block.getBlockStyles().get(j).getStyle();
                     final BlockStyle newBlockStyle = new BlockStyle(newOffset, newLength, style);
                     block.getBlockStyles().set(j, newBlockStyle);
                 }
-                final BlockStyle bulletBlockStyle = new BlockStyle(0, 2, "NORMAL");
+                final BlockStyle bulletBlockStyle = new BlockStyle(0, 2, NORMAL);
                 block.getBlockStyles().add(0, bulletBlockStyle);
-//                block.getBlockStyles().remove(block.getBlockStyles().size() - 1);
             }
 
             allBlocks.add(block);
-            // providerSection.setBlocks(allBlocks);
         }
         return allBlocks;
     }
@@ -1394,6 +1675,19 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                 } else {
                     providerSection = new Section("Section " + sectionIndex);
                 }
+                
+                if (sectionTitle != null && !sectionTitle.isEmpty() && sectionTitle.toUpperCase().contains("PRICING MODEL")) {
+//                	providerSection = generatePricingModelSection(1, "Section " + sectionIndex + " - " + sectionTitle);
+//                  allSections.add(providerSection);
+//                	providerSection = generatePricingModelSection(2, "Section " + sectionIndex + " - " + sectionTitle);
+//                  allSections.add(providerSection);
+                	providerSection = generatePricingModelSection(3, "Section " + sectionIndex + " - " + sectionTitle);
+                    allSections.add(providerSection);
+//                	providerSection = generatePricingModelSection(4, "Section " + sectionIndex + " - " + sectionTitle);
+//                  allSections.add(providerSection);
+                    prevIndex = sectionIndex;
+                	continue;
+                }
 
                 String optionJson, subOptionJson;
                 optionJson = masterSection.getOptions().get(section.getOption()).getBody();
@@ -1463,12 +1757,21 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
                 /* Add section title */
                 final String sectionTitle = section.getSectionTitle();
-
+                
                 final int occurrenceOfDots = StringUtils.countOccurrencesOf(sectionTitle, ".");
                 if (occurrenceOfDots == 0) {
-                    addTitle(ctx, "Sectiontitle", sectionTitle, true, false);
+                	if (ctx.getCurrentOffset() <= 72) {
+                		addTitle(ctx, "Sectiontitle", sectionTitle, true, true);
+                	} else {
+                		addTitle(ctx, "Sectiontitle", sectionTitle, true, false);
+                	}
+                
                 } else {
-                    addTitle(ctx, "SectionSubTitle", sectionTitle, true, false);
+                	if (ctx.getCurrentOffset() <= 72) {
+                		addTitle(ctx, "SectionSubTitle", sectionTitle, true, true);
+                	} else {
+                		addTitle(ctx, "SectionSubTitle", sectionTitle, true, false);
+                	}
                 }
 
                 /* Add blocks */
