@@ -109,6 +109,7 @@ import eu.opertusmundi.common.model.catalogue.elastic.CreateIndexCommand;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQuery;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQueryResult;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticServiceException;
+import eu.opertusmundi.common.model.catalogue.elastic.EnumElasticSearchDatasetSize;
 import eu.opertusmundi.common.model.catalogue.elastic.EnumElasticSearchSortField;
 import eu.opertusmundi.common.model.catalogue.elastic.PipelineDefinition;
 import eu.opertusmundi.common.model.catalogue.elastic.TransformDefinition;
@@ -559,11 +560,16 @@ public class DefaultElasticSearchService implements ElasticSearchService {
                 : assetQuery.getTopic().stream().map(EnumTopicCategory::getValue).collect(Collectors.toList());
             final Integer      minScale    = assetQuery.getMinScale();
             final Integer      maxScale    = assetQuery.getMaxScale();
-            final Coordinate   topLeft     = assetQuery.topLeftToCoordinate();
-            final Coordinate   bottomRight = assetQuery.bottomRightToCoordinate();
+            final ShapeRelation spatialOperation 	= assetQuery.getSpatialOperation() == null 
+            	? ShapeRelation.INTERSECTS 
+            	: assetQuery.getSpatialOperation();
+            final Coordinate   topLeft     			= assetQuery.topLeftToCoordinate();
+            final Coordinate   bottomRight 			= assetQuery.bottomRightToCoordinate();
             final List<String> attribute   = assetQuery.getAttribute();
             final List<String> license     = assetQuery.getLicense();
             final List<String> publisher   = assetQuery.getPublisher();
+            final List<String> 	languageList 							= assetQuery.getLanguage();
+            final List<EnumElasticSearchDatasetSize> datasetSizeList	= assetQuery.getSizeOfDataset();
             final String       orderBy     = assetQuery.getOrderBy() == null
                 ? EnumElasticSearchSortField.SCORE.getValue()
                 : assetQuery.getOrderBy().getValue();
@@ -735,7 +741,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             if (topLeft != null && bottomRight != null) {
                 final Rectangle geometry = new EnvelopeBuilder(topLeft, bottomRight).buildGeometry();
 
-                query.must(QueryBuilders.geoShapeQuery("geometry", geometry).relation(ShapeRelation.INTERSECTS));
+                query.must(QueryBuilders.geoShapeQuery("geometry", geometry).relation(spatialOperation));
             }
 
             // Check asset format
@@ -813,6 +819,40 @@ public class DefaultElasticSearchService implements ElasticSearchService {
                 }
                 final BoolQueryBuilder tempBool = QueryBuilders.boolQuery();
                 for (final QueryBuilder currentQuery : publisherQueries) {
+                    tempBool.should(currentQuery);
+                }
+                query.must(tempBool);
+            }
+            
+    		// Check language
+            List<QueryBuilder> languageQueries = null;
+            if (languageList != null && !languageList.isEmpty()) {
+            	languageQueries = new ArrayList<QueryBuilder>();
+                for (int i = 0; i < languageList.size(); i++) {
+                	languageQueries.add(QueryBuilders.matchQuery("properties.language", languageList.get(i)));
+                }
+                final BoolQueryBuilder tempBool = QueryBuilders.boolQuery();
+                for (final QueryBuilder currentQuery : languageQueries) {
+                    tempBool.should(currentQuery);
+                }
+                query.must(tempBool);
+            }
+            
+    		// Check dataset size
+            List<QueryBuilder> datasetSizeQueries = null;
+            if (datasetSizeList != null && !datasetSizeList.isEmpty()) {
+            	datasetSizeQueries = new ArrayList<QueryBuilder>();
+                for (int i = 0; i < datasetSizeList.size(); i++) {
+                	if (datasetSizeList.get(i) == EnumElasticSearchDatasetSize.SMALL) {
+                		datasetSizeQueries.add(QueryBuilders.boolQuery().must(QueryBuilders.rangeQuery("properties.automated_metadata.featureCount").lt(datasetSizeList.get(i).getMax())));
+                	} else if (datasetSizeList.get(i) == EnumElasticSearchDatasetSize.MEDIUM) {
+                		datasetSizeQueries.add(QueryBuilders.boolQuery().must(QueryBuilders.rangeQuery("properties.automated_metadata.featureCount").lte(datasetSizeList.get(i).getMax()).gte(datasetSizeList.get(i).getMin())));
+                	} else if (datasetSizeList.get(i) == EnumElasticSearchDatasetSize.LARGE) {
+                		datasetSizeQueries.add(QueryBuilders.boolQuery().must(QueryBuilders.rangeQuery("properties.automated_metadata.featureCount").gt(datasetSizeList.get(i).getMin())));
+                	}
+                }
+                final BoolQueryBuilder tempBool = QueryBuilders.boolQuery();
+                for (final QueryBuilder currentQuery : datasetSizeQueries) {
                     tempBool.should(currentQuery);
                 }
                 query.must(tempBool);
