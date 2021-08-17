@@ -19,6 +19,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.AccountProfileEntity;
@@ -188,6 +189,15 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
         return account.toDto();
     }
 
+    default void cancelAccountRegistration(UUID key) {
+        final AccountEntity e = this.findOneByKey(key).orElse(null);
+
+        Assert.notNull(e, "Expected a non-null account");
+        Assert.isTrue(e.getActivationStatus() == EnumActivationStatus.PENDING, "Expected account status to be PENDING");
+
+        this.delete(e);
+    }
+    
     @Transactional(readOnly = false)
     default AccountDto updateConsumerRegistration(CustomerCommandDto command)  throws IllegalArgumentException {
         return this.updateConsumerRegistration(command, EnumCustomerRegistrationStatus.DRAFT);
