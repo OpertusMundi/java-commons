@@ -560,9 +560,9 @@ public class DefaultElasticSearchService implements ElasticSearchService {
                 : assetQuery.getTopic().stream().map(EnumTopicCategory::getValue).collect(Collectors.toList());
             final Integer      minScale    = assetQuery.getMinScale();
             final Integer      maxScale    = assetQuery.getMaxScale();
-            final ShapeRelation spatialOperation 	= assetQuery.getSpatialOperation() == null 
-            	? ShapeRelation.INTERSECTS 
-            	: assetQuery.getSpatialOperation();
+            final ShapeRelation spatialOperation 	= assetQuery.getSpatialOperation() == null
+            	? ShapeRelation.INTERSECTS
+            	: assetQuery.getSpatialOperation().toShapeRelation();
             final Coordinate   topLeft     			= assetQuery.topLeftToCoordinate();
             final Coordinate   bottomRight 			= assetQuery.bottomRightToCoordinate();
             final List<String> attribute   = assetQuery.getAttribute();
@@ -823,7 +823,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
                 }
                 query.must(tempBool);
             }
-            
+
     		// Check language
             List<QueryBuilder> languageQueries = null;
             if (languageList != null && !languageList.isEmpty()) {
@@ -837,7 +837,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
                 }
                 query.must(tempBool);
             }
-            
+
     		// Check dataset size
             List<QueryBuilder> datasetSizeQueries = null;
             if (datasetSizeList != null && !datasetSizeList.isEmpty()) {

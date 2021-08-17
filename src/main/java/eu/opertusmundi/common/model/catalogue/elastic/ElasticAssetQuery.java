@@ -3,7 +3,6 @@ package eu.opertusmundi.common.model.catalogue.elastic;
 import java.util.List;
 import java.util.Optional;
 
-import org.elasticsearch.common.geo.ShapeRelation;
 import org.locationtech.jts.geom.Coordinate;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -80,11 +79,11 @@ public class ElasticAssetQuery {
 
     @Schema(description = "Name of an entity responsible for making the resource available")
     private List<String> publisher;
-    
+
     @Schema(description = "Language of asset file")
     private List<String> language;
-    
-    @Schema(description = "Size of dataset (SMALL, MEDIUM, LARGE)")
+
+    @Schema(description = "Size of dataset")
     private List<EnumElasticSearchDatasetSize> sizeOfDataset;
 
     @Schema(description = "Sorting field", defaultValue = "SCORE")
@@ -98,9 +97,9 @@ public class ElasticAssetQuery {
 
     @Schema(description = "Pagination page size", defaultValue = "10")
     private Optional<Integer> size;
-    
-    @Schema(description = "Mode of coverage search (INTERSECTS, DISJOINT, WITHIN, CONTAINS)")
-    private ShapeRelation spatialOperation;
+
+    @Schema(description = "Mode of coverage search")
+    private EnumSpatialOperation spatialOperation;
 
     @Schema(description = "Bounding box top left longitude")
     private Double topLeftX;
