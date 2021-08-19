@@ -2,6 +2,7 @@ package eu.opertusmundi.common.service;
 
 import java.time.ZonedDateTime;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,6 +11,7 @@ import com.mangopay.core.enumerations.EventType;
 
 import eu.opertusmundi.common.model.kyc.UpdateKycLevelCommand;
 import eu.opertusmundi.common.model.payment.PaymentException;
+import eu.opertusmundi.common.model.payment.PaymentMessageCode;
 
 @Service
 @Transactional
@@ -22,6 +24,11 @@ public class MangoPayWebhookHandler {
     private CustomerVerificationService customerVerificationService;
 
     public void handleWebHook(String eventType, String resourceId, ZonedDateTime date) throws PaymentException {
+        // Ignore empty requests (requests may originate from web hook registration)
+        if (StringUtils.isBlank(resourceId)) {
+            return;
+        }
+
         switch (EventType.valueOf(eventType)) {
             case PAYIN_NORMAL_SUCCEEDED :
             case PAYIN_NORMAL_FAILED :
@@ -40,7 +47,6 @@ public class MangoPayWebhookHandler {
                 // Update PayOut refund
                 this.paymentService.updatePayOutRefund(resourceId);
                 break;
-
 
             case TRANSFER_NORMAL_CREATED:
             case TRANSFER_NORMAL_FAILED:
@@ -66,8 +72,8 @@ public class MangoPayWebhookHandler {
                 break;
 
             default :
-                // No operation
-                break;
+                // Fail on unknown (not registered) web hooks
+                throw new PaymentException(PaymentMessageCode.WEB_HOOK_NOT_SUPPORTED);
         }
     }
 

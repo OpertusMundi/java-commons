@@ -16,6 +16,7 @@ public enum PaymentMessageCode implements MessageCode {
     ENUM_MEMBER_NOT_SUPPORTED,
     PAYIN_ITEM_TYPE_NOT_SUPPORTED,
     VALIDATION_ERROR,
+    WEB_HOOK_NOT_SUPPORTED,
     ;
 
     @Override
