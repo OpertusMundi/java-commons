@@ -1735,42 +1735,11 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     private PaymentException wrapException(String operation, Exception ex) {
-        return this.wrapException(operation, ex, null);
+        return super.wrapException(operation, ex, null, logger);
     }
-
-    /**
-     * Wraps an exception with {@link PaymentException}
-     *
-     * @param operation
-     * @param ex
-     * @return
-     */
-    private PaymentException wrapException(String operation, Exception ex, Object command) {
-        final String commandText = command == null ? "-" : command.toString();
-
-        // Ignore service exceptions
-        if (ex instanceof PaymentException) {
-            return (PaymentException) ex;
-        }
-
-        // MANGOPAY exceptions
-        if (ex instanceof ResponseException) {
-            final String message = String.format(
-                "MANGOPAY operation has failed. [operation=%s, apiMessage=%s, command=[%s]]",
-                operation, ((ResponseException) ex).getApiMessage(), commandText
-            );
-
-            logger.error(message, ex);
-
-            return new PaymentException(PaymentMessageCode.API_ERROR, message, ex);
-        }
-
-        // Global exception handler
-        final String message = String.format("[MANGOPAY] %s [%s]", operation, commandText);
-
-        logger.error(message, ex);
-
-        return new PaymentException(PaymentMessageCode.SERVER_ERROR, message, ex);
+    
+    protected PaymentException wrapException(String operation, Exception ex, Object command) {
+        return super.wrapException(operation, ex, command, logger);
     }
 
     // TODO: Move to new service
