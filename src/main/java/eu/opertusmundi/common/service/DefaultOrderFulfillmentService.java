@@ -236,7 +236,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
      * @return
      */
     private ProcessInstanceDto findRunningInstance(String businessKey) {
-        final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstances(businessKey);
+        final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstances(null, businessKey);
 
         return instances.stream()
             .filter(i -> !i.isEnded())

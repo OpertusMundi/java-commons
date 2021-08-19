@@ -37,7 +37,7 @@ public class BpmEngineUtils {
 
     public ProcessInstanceDto findInstance(String businessKey) throws ApplicationException {
         try {
-            final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstances(businessKey);
+            final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstances(null, businessKey);
 
             return instances.stream().findFirst().orElse(null);
         } catch (final FeignException fex) {

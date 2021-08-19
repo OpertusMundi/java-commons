@@ -144,7 +144,7 @@ public class DefaultPayOutService implements PayOutService {
      * @return
      */
     private ProcessInstanceDto findRunningInstance(String businessKey) {
-        final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstances(businessKey);
+        final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstances(null, businessKey);
 
         return instances.stream()
             .filter(i -> !i.isEnded())

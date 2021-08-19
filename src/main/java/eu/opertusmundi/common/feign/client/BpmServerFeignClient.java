@@ -88,9 +88,10 @@ public interface BpmServerFeignClient {
      *
      * @see https://docs.camunda.org/manual/latest/reference/rest/process-instance/get/
      */
-    @PostMapping(value = "/process-instance", consumes = "application/json")
+    @GetMapping(value = "/process-instance", consumes = "application/json")
     List<ProcessInstanceDto> getProcessInstances(
-        @PathVariable("businessKey") String businessKey
+        @RequestParam("processDefinitionKey") String processDefinitionKey,
+        @RequestParam("businessKey") String businessKey
     );
 
     /**
@@ -101,6 +102,7 @@ public interface BpmServerFeignClient {
      */
     @GetMapping(value = "/history/process-instance", consumes = "application/json")
     List<HistoricProcessInstanceDto> getHistoryProcessInstances(
+        @RequestParam(name = "processDefinitionKey", required = false) String processDefinitionKey,
         @RequestParam(name = "processInstanceBusinessKey", required = false) String businessKey,
         @RequestParam(name = "processInstanceId", required = false) String processInstanceId
     );
