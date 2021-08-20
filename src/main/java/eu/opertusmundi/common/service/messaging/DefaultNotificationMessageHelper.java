@@ -25,7 +25,7 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
 
     @Autowired
     private NotificationTemplateRepository templateRepository;
-       
+
     @Override
     public String composeNotificationText(EnumNotificationType type, Map<String, Object> variables) throws ServiceException {
         Assert.isTrue(type != null, "Expected a non-null notification type");
@@ -36,6 +36,7 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
         }
 
         switch (type) {
+            case CATALOGUE_ASSET_UNPUBLISHED :
             case CATALOGUE_HARVEST_COMPLETED :
                 return MessageFormat.format(template.getText(), variables);
         }
@@ -47,9 +48,15 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
     public JsonNode collectNotificationData(EnumNotificationType type, Map<String, Object> variables) {
         Assert.isTrue(type != null, "Expected a non-null notification type");
 
+        final ObjectNode data = objectMapper.createObjectNode();
+
         switch (type) {
+            case CATALOGUE_ASSET_UNPUBLISHED :
+                data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
+                data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+                return data;
+
             case CATALOGUE_HARVEST_COMPLETED :
-                final ObjectNode data = objectMapper.createObjectNode();
                 data.put("catalogueUrl", this.checkAndGetVariable(variables, "catalogueUrl"));
                 data.put("catalogueType", this.checkAndGetVariable(variables, "catalogueType"));
                 return data;
