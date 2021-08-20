@@ -61,14 +61,17 @@ import eu.opertusmundi.common.model.asset.MetadataProperty;
 import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
+import eu.opertusmundi.common.model.catalogue.CatalogueServiceMessageCode;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemProviderCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromAssetCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromFileCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumType;
+import eu.opertusmundi.common.model.catalogue.client.UnpublishAssetCommand;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractHistoryDto;
 import eu.opertusmundi.common.model.file.FilePathCommand;
@@ -97,6 +100,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     private static final Logger logger = LoggerFactory.getLogger(DefaultProviderAssetService.class);
 
     private static final String WORKFLOW_SELL_ASSET = "workflow-provider-publish-asset";
+    
+    private static final String WORKFLOW_UNPUBLISH_ASSET = "workflow-provider-remove-asset";
 
     private static final String TASK_REVIEW = "task-review";
 
@@ -1066,6 +1071,35 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
                 current.put(propertyName, uri);
             }
+        }
+    }
+    
+    @Override
+    public void unpublishAsset(UnpublishAssetCommand command) throws CatalogueServiceException {
+        final CatalogueItemDetailsDto item = this.catalogueService.findOne(
+            null, command.getPid(), command.getPublisherKey(), false
+        );
+        if (item == null) {
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.ITEM_NOT_FOUND);
+        }
+
+        final String businessKey = String.format("%s:%s:unpublish", command.getPublisherKey(), command.getPid());
+
+        // Check if workflow exists
+        ProcessInstanceDto instance = this.bpmEngine.findInstance(businessKey);
+
+        if (instance == null) {
+            final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
+                .variableAsString(EnumProcessInstanceVariable.START_USER_KEY.getValue(), command.getUserKey().toString())
+                .variableAsString("assetId", command.getPid().toString())
+                .variableAsString("assetName", item.getTitle())
+                .variableAsString("assetVersion", item.getVersion())
+                .variableAsString("publisherKey", command.getPublisherKey().toString())
+                .build();
+
+            instance = this.bpmEngine.startProcessDefinitionByKey(
+                WORKFLOW_UNPUBLISH_ASSET, businessKey, variables, true
+            );
         }
     }
 

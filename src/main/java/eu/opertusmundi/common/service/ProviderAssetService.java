@@ -22,10 +22,12 @@ import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.MetadataProperty;
 import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
+import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemProviderCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.UnpublishAssetCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestResultResponseDto;
@@ -335,5 +337,13 @@ public interface ProviderAssetService {
     void updateMetadataPropertyLinks(
         String id, List<ResourceDto> resources, JsonNode metadata, EnumProviderAssetDraftStatus status
     ) throws AssetDraftException;
+    
+    /**
+     * Unpublish asset
+     * 
+     * @param command
+     * @throws CatalogueServiceException
+     */
+    void unpublishAsset(UnpublishAssetCommand command) throws CatalogueServiceException;
 
 }

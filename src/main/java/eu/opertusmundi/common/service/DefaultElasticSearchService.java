@@ -21,7 +21,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.ingest.DeletePipelineRequest;
 import org.elasticsearch.action.ingest.GetPipelineRequest;
@@ -536,6 +541,45 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             client.index(request, RequestOptions.DEFAULT);
         } catch (final Exception ex) {
             throw new ElasticServiceException("Failed to add asset to index", ex);
+        }
+    }
+    
+    public CatalogueFeature findAsset(String id) throws ElasticServiceException {
+        try {
+            final String     indexName = this.configuration.getAssetIndex().getName();
+            final GetRequest request   = new GetRequest(indexName, id);
+
+            final GetResponse response = client.get(request, RequestOptions.DEFAULT);
+            if (response.isExists()) {
+                final CatalogueFeature feature = objectMapper.convertValue(response.getSourceAsMap(), CatalogueFeature.class);
+
+                return feature;
+            }
+
+            return null;
+        } catch (final Exception ex) {
+            throw new ElasticServiceException("Failed to query index ", ex);
+        }
+    }
+
+    @Override
+    public void removeAsset(String pid) throws ElasticServiceException {
+        try {
+            final String        indexName = this.configuration.getAssetIndex().getName();
+            final DeleteRequest request   = new DeleteRequest(indexName);
+
+            request.id(pid);
+
+            final DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
+
+            if (response.getResult() != DocWriteResponse.Result.DELETED) {
+                logger.warn(
+                    "Failed to remove asset from index [index={}, id={}, result={}]",
+                    indexName, pid, response.getResult()
+                );
+            }
+        } catch (final Exception ex) {
+            throw new ElasticServiceException("Failed to remove asset from index", ex);
         }
     }
 

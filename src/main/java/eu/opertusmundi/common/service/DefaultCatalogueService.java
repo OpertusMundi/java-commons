@@ -596,9 +596,28 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     @Override
-    public void deleteAsset(String pid) {
+    public void unpublish(UUID publisherKey, String pid) throws CatalogueServiceException {
         try {
-            this.catalogueClient.getObject().deletePublished(pid);
+            // Remove asset from Elasticsearch
+            if (this.elasticSearchService != null) {
+                final CatalogueFeature feature = this.elasticSearchService.findAsset(pid);
+
+                if (feature != null) {
+                    if (!feature.getProperties().getPublisherId().equals(publisherKey)) {
+                        throw new CatalogueServiceException(CatalogueServiceMessageCode.PUBLISHER_ASSET_OWNERSHIP);
+                    }
+
+                    this.elasticSearchService.removeAsset(pid);
+                }
+            }
+
+            // Remove asset from the catalogue
+            final CatalogueItemDetailsDto item = this.findOne(null, pid, publisherKey, false);
+            if (item != null) {
+                this.catalogueClient.getObject().deletePublished(pid);
+            }
+        } catch (final CatalogueServiceException ex) {
+            throw ex;
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 

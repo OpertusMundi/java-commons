@@ -84,6 +84,23 @@ public interface ElasticSearchService {
     void addAsset(String content) throws ElasticServiceException;
 
     /**
+     * Searches for a single asset
+     * 
+     * @param pid
+     * @return
+     * @throws ElasticServiceException
+     */
+    CatalogueFeature findAsset(String pid) throws ElasticServiceException;
+    
+    /**
+     * Remove asset
+     *
+     * @param pid
+     * @throws ElasticServiceException
+     */
+    void removeAsset(String pid) throws ElasticServiceException;
+
+    /**
      * Create a pipeline
      *
      * @param def The pipeline definition

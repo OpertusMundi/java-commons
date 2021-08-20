@@ -140,14 +140,6 @@ public interface CatalogueService {
     void harvestCatalogue(CatalogueHarvestCommandDto command) throws CatalogueServiceException;
 
     /**
-     * Delete published asset with the given PID
-     *
-     * @param pid
-     * @throws CatalogueServiceException
-     */
-    void deleteAsset(String pid);
-
-    /**
      * Publish feature to catalogue
      *
      * @param feature
@@ -155,4 +147,12 @@ public interface CatalogueService {
      */
     void publish(CatalogueFeature feature) throws CatalogueServiceException;
 
+    /**
+     * Delete a published asset with the given PID
+     *
+     * @param publisherKey
+     * @param pid
+     * @throws CatalogueServiceException
+     */
+    void unpublish(UUID publisherKey, String pid) throws CatalogueServiceException;
 }
