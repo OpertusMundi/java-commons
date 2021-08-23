@@ -1,7 +1,6 @@
 package eu.opertusmundi.common.model.contract;
 
 import java.util.ArrayList;
-import java.util.Currency;
 import java.util.List;
 
 import com.ibm.icu.text.DecimalFormat;
@@ -38,7 +37,6 @@ public class ContractParametersDto {
 
         public static Provider from(CustomerProfessionalDto c) {
             final Provider result = new Provider();
-
 
             result.companyRegistrationNumber = c.getCompanyNumber();
             result.contactEmail              = c.getEmail();
@@ -133,7 +131,7 @@ public class ContractParametersDto {
         private String updatesIncluded;
 
     }
-	
+
 	@AllArgsConstructor
     @Getter
     public static class PricingModel {
@@ -145,60 +143,60 @@ public class ContractParametersDto {
         public static PricingModel from(EffectivePricingModelDto c) {
             final PricingModel 	result 	= new PricingModel();
             final DecimalFormat df    	= new DecimalFormat("#,##0.00");
-            
+
             result.pricingModelType		= c.getModel().getType();
-            
+
             if (result.pricingModelType == EnumPricingModel.FIXED) {
-            	final FixedPricingModelCommandDto fixedPricingModelCommandDto = (FixedPricingModelCommandDto) c.getModel();
-            	result.yearsOfUpdates		= fixedPricingModelCommandDto.getYearsOfUpdates();
-            	result.pricePerRows 		= null;
-            	result.pricePerPopulation	= null;
-            	result.discountRates		= null;
+                final FixedPricingModelCommandDto fixedPricingModelCommandDto = (FixedPricingModelCommandDto) c.getModel();
+                result.yearsOfUpdates     = fixedPricingModelCommandDto.getYearsOfUpdates();
+                result.pricePerRows       = null;
+                result.pricePerPopulation = null;
+                result.discountRates      = null;
             } else if (result.pricingModelType == EnumPricingModel.FIXED_PER_ROWS) {
-            	final FixedRowPricingModelCommandDto fixedRowPricingModelCommandDto = (FixedRowPricingModelCommandDto) c.getModel();
-            	result.yearsOfUpdates		= null;
-            	result.pricePerRows 		= df.format(fixedRowPricingModelCommandDto.getPrice());
-            	result.pricePerPopulation	= null;
-            	result.discountRates		= fixedRowPricingModelCommandDto.getDiscountRates();       	
+                final FixedRowPricingModelCommandDto fixedRowPricingModelCommandDto = (FixedRowPricingModelCommandDto) c.getModel();
+                result.yearsOfUpdates     = null;
+                result.pricePerRows       = df.format(fixedRowPricingModelCommandDto.getPrice());
+                result.pricePerPopulation = null;
+                result.discountRates      = fixedRowPricingModelCommandDto.getDiscountRates();
             } else if (result.pricingModelType == EnumPricingModel.FIXED_FOR_POPULATION) {
-            	final FixedPopulationPricingModelCommandDto fixedPopulationPricingModelCommandDto = (FixedPopulationPricingModelCommandDto) c.getModel();
-            	result.yearsOfUpdates		= null;
-            	result.pricePerRows 		= null;
-            	result.pricePerPopulation	= df.format(fixedPopulationPricingModelCommandDto.getPrice());
-            	result.discountRates		= fixedPopulationPricingModelCommandDto.getDiscountRates();
+                final FixedPopulationPricingModelCommandDto fixedPopulationPricingModelCommandDto = (FixedPopulationPricingModelCommandDto) c.getModel();
+                result.yearsOfUpdates     = null;
+                result.pricePerRows       = null;
+                result.pricePerPopulation = df.format(fixedPopulationPricingModelCommandDto.getPrice());
+                result.discountRates      = fixedPopulationPricingModelCommandDto.getDiscountRates();
             }
-            result.consumerRestrictionContinents	= c.getModel().getConsumerRestrictionContinents();
-            result.consumerRestrictionCountries		= c.getModel().getConsumerRestrictionCountries();
-            result.coverageRestrictionContinents	= c.getModel().getCoverageRestrictionContinents();
-            result.coverageRestrictionCountries		= c.getModel().getCoverageRestrictionCountries();
-            result.domainRestrictions				= c.getModel().getDomainRestrictions();         
-            result.nuts								= (ArrayList<String>) c.getParameters().getNuts();
-            result.totalPrice						= df.format(c.getQuotation().getTotalPrice());
-            result.totalPriceExcludingTax			= df.format(c.getQuotation().getTotalPriceExcludingTax());
+            result.consumerRestrictionContinents = c.getModel().getConsumerRestrictionContinents();
+            result.consumerRestrictionCountries  = c.getModel().getConsumerRestrictionCountries();
+            result.coverageRestrictionContinents = c.getModel().getCoverageRestrictionContinents();
+            result.coverageRestrictionCountries  = c.getModel().getCoverageRestrictionCountries();
+            result.domainRestrictions            = c.getModel().getDomainRestrictions();
+            result.nuts                          = (ArrayList<String>) c.getParameters().getNuts();
+            result.totalPrice                    = df.format(c.getQuotation().getTotalPrice());
+            result.totalPriceExcludingTax        = df.format(c.getQuotation().getTotalPriceExcludingTax());
 
             return result;
         }
 
-        private EnumPricingModel 		pricingModelType;	
-        private EnumContinent[]			consumerRestrictionContinents;
-        private String[]				consumerRestrictionCountries;
-        private EnumContinent[]			coverageRestrictionContinents;
-        private String[]				coverageRestrictionCountries;
-        private String[]				domainRestrictions;
-        private ArrayList<String> 		nuts;
-        private String					totalPrice;
-        private String					totalPriceExcludingTax;
-        private Integer 				yearsOfUpdates;
-        private String					pricePerRows;
-        private String					pricePerPopulation;
-        private List<DiscountRateDto>	discountRates;
+        private EnumPricingModel      pricingModelType;
+        private EnumContinent[]       consumerRestrictionContinents;
+        private String[]              consumerRestrictionCountries;
+        private EnumContinent[]       coverageRestrictionContinents;
+        private String[]              coverageRestrictionCountries;
+        private String[]              domainRestrictions;
+        private ArrayList<String>     nuts;
+        private String                totalPrice;
+        private String                totalPriceExcludingTax;
+        private Integer               yearsOfUpdates;
+        private String                pricePerRows;
+        private String                pricePerPopulation;
+        private List<DiscountRateDto> discountRates;
 
     }
 
-    private Consumer 		consumer;
-    private Provider 		provider;
-    private Product  		product;
-    private PricingModel 	pricingModel;
+    private Consumer     consumer;
+    private Provider     provider;
+    private Product      product;
+    private PricingModel pricingModel;
 
     public ContractParametersDto() {
 
