@@ -23,6 +23,7 @@ import org.hibernate.annotations.NaturalId;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.converter.CatalogueItemCommandAttributeConverter;
 import lombok.Getter;
 import lombok.Setter;
@@ -74,6 +75,18 @@ public class ProviderAssetDraftEntity {
     @Getter
     @Setter
     private String version;
+
+    @Column(name = "`type`", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Getter
+    @Setter
+    private eu.opertusmundi.common.model.catalogue.client.EnumType type;
+
+    @Column(name = "`service_type`", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Getter
+    @Setter
+    private EnumSpatialDataServiceType serviceType;
 
     @Column(name = "`data`")
     @Convert(converter = CatalogueItemCommandAttributeConverter.class)
@@ -134,8 +147,10 @@ public class ProviderAssetDraftEntity {
         a.setKey(this.key);
         a.setModifiedOn(this.modifiedOn);
         a.setProviderRejectionReason(this.providerRejectionReason);
+        a.setServiceType(this.serviceType);
         a.setStatus(this.status);
         a.setTitle(this.title);
+        a.setType(this.type);
         a.setVersion(this.version);
 
         a.setPublisher(this.account.getProvider().toProviderDto());

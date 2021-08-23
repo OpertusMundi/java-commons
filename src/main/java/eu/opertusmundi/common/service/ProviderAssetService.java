@@ -27,6 +27,8 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportComma
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemProviderCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
+import eu.opertusmundi.common.model.catalogue.client.EnumType;
 import eu.opertusmundi.common.model.catalogue.client.UnpublishAssetCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
@@ -39,6 +41,8 @@ public interface ProviderAssetService {
      *
      * @param publisherKey
      * @param status
+     * @param type
+     * @param serviceType
      * @param pageIndex
      * @param pageSize
      * @param orderBy
@@ -46,15 +50,20 @@ public interface ProviderAssetService {
      * @return
      */
     PageResultDto<AssetDraftDto> findAllDraft(
-        UUID publisherKey, Set<EnumProviderAssetDraftStatus> status, int pageIndex, int pageSize,
+        UUID publisherKey,
+        Set<EnumProviderAssetDraftStatus> status, Set<EnumType> type, Set<EnumSpatialDataServiceType> serviceType,
+        int pageIndex, int pageSize,
         EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order
     );
 
     default PageResultDto<AssetDraftDto> findAllDraft(
-        UUID publisherKey, Set<EnumProviderAssetDraftStatus> status, int pageIndex, int pageSize
+        UUID publisherKey,
+        Set<EnumProviderAssetDraftStatus> status, Set<EnumType> type, Set<EnumSpatialDataServiceType> serviceType,
+        int pageIndex, int pageSize
     ) {
         return this.findAllDraft(
-            publisherKey, status, pageIndex, pageSize, EnumProviderAssetDraftSortField.MODIFIED_ON, EnumSortingOrder.DESC
+            publisherKey, status, type, serviceType, pageIndex, pageSize,
+            EnumProviderAssetDraftSortField.MODIFIED_ON, EnumSortingOrder.DESC
         );
     }
 
@@ -337,10 +346,10 @@ public interface ProviderAssetService {
     void updateMetadataPropertyLinks(
         String id, List<ResourceDto> resources, JsonNode metadata, EnumProviderAssetDraftStatus status
     ) throws AssetDraftException;
-    
+
     /**
      * Unpublish asset
-     * 
+     *
      * @param command
      * @throws CatalogueServiceException
      */

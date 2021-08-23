@@ -41,11 +41,17 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
     Optional<AccountEntity> findAccountByKey(@Param("key") UUID key);
 
     @Query("SELECT a FROM ProviderAssetDraft a WHERE "
+           + "(a.account.key = :publisherKey or :publisherKey is null) and "
            + "(a.status in :status or :status is null) and "
-           + "(a.account.key = :publisherKey or :publisherKey is null)"
+           + "(a.type in :type or :type is null) and "
+           + "(a.serviceType in :serviceType or :serviceType is null) "
     )
     Page<ProviderAssetDraftEntity> findAllByPublisherAndStatus(
-        @Param("publisherKey") UUID publisherKey, @Param("status") Set<EnumProviderAssetDraftStatus> status, Pageable pageable
+        @Param("publisherKey") UUID publisherKey,
+        @Param("status") Set<EnumProviderAssetDraftStatus> status,
+        @Param("type") Set<EnumType> type,
+        @Param("serviceType") Set<EnumSpatialDataServiceType> serviceType,
+        Pageable pageable
     );
 
     @Query("SELECT a FROM ProviderAssetDraft a WHERE a.account.key = :publisherKey")
@@ -125,8 +131,10 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         if (processInstance != null) {
             draft.setProcessInstance(processInstance);
         }
+        draft.setServiceType(command.getSpatialDataServiceType());
         draft.setStatus(status);
         draft.setTitle(command.getTitle());
+        draft.setType(command.getType());
         draft.setVersion(command.getVersion());
 
         this.saveAndFlush(draft);

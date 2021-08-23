@@ -100,7 +100,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     private static final Logger logger = LoggerFactory.getLogger(DefaultProviderAssetService.class);
 
     private static final String WORKFLOW_SELL_ASSET = "workflow-provider-publish-asset";
-    
+
     private static final String WORKFLOW_UNPUBLISH_ASSET = "workflow-provider-remove-asset";
 
     private static final String TASK_REVIEW = "task-review";
@@ -151,23 +151,27 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     public PageResultDto<AssetDraftDto> findAllDraft(
-        UUID publisherKey, Set<EnumProviderAssetDraftStatus> status, int pageIndex,
-        int pageSize, EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order
+        UUID publisherKey,
+        Set<EnumProviderAssetDraftStatus> status, Set<EnumType> type, Set<EnumSpatialDataServiceType> serviceType,
+        int pageIndex, int pageSize,
+        EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order
     ) {
-        final Direction direction = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
+        final Direction   direction   = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
+        final PageRequest pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
 
-        final PageRequest   pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
-        Page<AssetDraftDto> page;
-
-        if (status != null && !status.isEmpty() && publisherKey != null) {
-            page = this.draftRepository.findAllByPublisherAndStatus(publisherKey, status, pageRequest).map(ProviderAssetDraftEntity::toDto);
-        } else if (publisherKey != null) {
-            page = this.draftRepository.findAllByPublisher(publisherKey, pageRequest).map(ProviderAssetDraftEntity::toDto);
-        } else if (status != null && !status.isEmpty()) {
-            page = this.draftRepository.findAllByStatus(status, pageRequest).map(ProviderAssetDraftEntity::toDto);
-        } else {
-            page = this.draftRepository.findAll(pageRequest).map(ProviderAssetDraftEntity::toDto);
+        if (status != null && status.isEmpty()) {
+            status = null;
         }
+        if (type != null && type.isEmpty()) {
+            type = null;
+        }
+        if (serviceType != null && serviceType.isEmpty()) {
+            serviceType = null;
+        }
+
+        final Page<AssetDraftDto> page = this.draftRepository.findAllByPublisherAndStatus(
+            publisherKey, status, type, serviceType, pageRequest
+        ).map(ProviderAssetDraftEntity::toDto);
 
         final long                count   = page.getTotalElements();
         final List<AssetDraftDto> records = page.getContent();
@@ -1073,7 +1077,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             }
         }
     }
-    
+
     @Override
     public void unpublishAsset(UnpublishAssetCommand command) throws CatalogueServiceException {
         final CatalogueItemDetailsDto item = this.catalogueService.findOne(

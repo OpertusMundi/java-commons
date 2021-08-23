@@ -9,6 +9,8 @@ public enum EnumProviderAssetDraftSortField {
     STATUS("status"),
     TITLE("title"),
     VERSION("version"),
+    TYPE("type"),
+    SERVICE_TYPE("serviceType"),
     ;
 
     @Getter
