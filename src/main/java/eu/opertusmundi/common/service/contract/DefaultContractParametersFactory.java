@@ -1,5 +1,9 @@
 package eu.opertusmundi.common.service.contract;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +15,10 @@ import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.contract.ContractParametersDto;
 import eu.opertusmundi.common.model.order.HelpdeskOrderDto;
 import eu.opertusmundi.common.model.order.HelpdeskOrderItemDto;
+import eu.opertusmundi.common.model.pricing.DiscountRateDto;
+import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
+import eu.opertusmundi.common.model.pricing.EnumContinent;
+import eu.opertusmundi.common.model.pricing.EnumPricingModel;
 import eu.opertusmundi.common.repository.OrderRepository;
 import eu.opertusmundi.common.service.CatalogueService;
 
@@ -25,17 +33,19 @@ public class DefaultContractParametersFactory implements ContractParametersFacto
 
     @Override
     public ContractParametersDto create(UUID orderKey) {
-        final HelpdeskOrderDto        order    = orderRepository.findOrderObjectByKey(orderKey).get();
-        final HelpdeskOrderItemDto    item     = order.getItems().get(0);
-        final CustomerDto             consumer = order.getConsumer();
-        final CustomerProfessionalDto provider = item.getProvider();
-        final CatalogueFeature        feature  = catalogueService.findOneFeature(item.getAssetId());
-
+        final HelpdeskOrderDto        	order    		= orderRepository.findOrderObjectByKey(orderKey).get();
+        final HelpdeskOrderItemDto    	item     		= order.getItems().get(0);
+        final CustomerDto             	consumer 		= order.getConsumer();
+        final CustomerProfessionalDto 	provider 		= item.getProvider();
+        final CatalogueFeature        	feature  		= catalogueService.findOneFeature(item.getAssetId());     
+        final EffectivePricingModelDto 	pricingModel 	= item.getPricingModel();
+    	
         final ContractParametersDto params = ContractParametersDto.builder()
-            .consumer(ContractParametersDto.Consumer.from(consumer))
-            .provider(ContractParametersDto.Provider.from(provider))
-            .product(ContractParametersDto.Product.from(item, feature))
-            .build();
+        		.consumer(ContractParametersDto.Consumer.from(consumer))
+        		.provider(ContractParametersDto.Provider.from(provider))
+        		.product(ContractParametersDto.Product.from(item, feature))
+        		.pricingModel(ContractParametersDto.PricingModel.from(pricingModel))
+        		.build();
 
         return params;
     }
