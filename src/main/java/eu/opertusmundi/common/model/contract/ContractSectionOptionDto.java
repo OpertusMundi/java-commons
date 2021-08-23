@@ -27,5 +27,10 @@ public class ContractSectionOptionDto{
 
 	@Getter
 	@Setter
-	private String icon;
+	private byte[] icon;
+	
+	@Getter
+	@Setter
+    private String shortDescription;
+
 }
