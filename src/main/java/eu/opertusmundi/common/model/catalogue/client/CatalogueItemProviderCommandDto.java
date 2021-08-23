@@ -27,6 +27,7 @@ public final class CatalogueItemProviderCommandDto implements Serializable {
     private UUID draftKey;
 
     @Schema(description = "Resource key")
+    @NotNull
     private UUID resourceKey;
 
     @ArraySchema(
