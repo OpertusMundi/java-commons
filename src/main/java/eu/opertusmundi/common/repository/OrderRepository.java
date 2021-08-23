@@ -229,6 +229,8 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
         final OrderItemEntity item = new OrderItemEntity();
         item.setAssetId(command.getAsset().getId());
         item.setAssetVersion(command.getAsset().getVersion());
+        item.setContractTemplateId(command.getAsset().getContractTemplateId());
+        item.setContractTemplateVersion(command.getAsset().getContractTemplateVersion());
         item.setDescription(command.getAsset().getTitle());
         item.setIndex(1);
         item.setOrder(order);

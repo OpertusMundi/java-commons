@@ -2,7 +2,7 @@ package eu.opertusmundi.common.model.order;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreType;
 
-import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumDeliveryMethod;
 import eu.opertusmundi.common.model.location.Location;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
@@ -25,7 +25,7 @@ public class OrderCommand {
 
     private Integer cartId;
 
-    private CatalogueItemDto asset;
+    private CatalogueItemDetailsDto asset;
 
     private EffectivePricingModelDto quotation;
 
