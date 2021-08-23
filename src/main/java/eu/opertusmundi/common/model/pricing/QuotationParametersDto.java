@@ -17,13 +17,13 @@ import lombok.ToString;
 @Setter
 @ToString
 public class QuotationParametersDto extends QuotationParametersCommandDto {
-    
+
     /**
      * Tax percent set automatically by the platform
      */
     @JsonIgnore
     protected BigDecimal taxPercent;
-    
+
     @Schema(description = "System parameters")
     @JsonInclude(Include.NON_NULL)
     private SystemParameters systemParams;
@@ -34,17 +34,17 @@ public class QuotationParametersDto extends QuotationParametersCommandDto {
     @Setter
     @ToString
     public static class SystemParameters {
-        
+
         @Schema(description = "System-defined parameter of the number of rows selected. If the pricing model does not support "
                             + "number of rows parameter, this property is not set")
         @JsonInclude(Include.NON_NULL)
         private Long rows;
-        
+
         @Schema(description = "System-defined parameter of the size of selected population. If the pricing model does not "
                             + "support population size parameter, this property is not set")
         @JsonInclude(Include.NON_NULL)
         private Long population;
-        
+
         @Schema(description = "System-defined parameter of the selected percent of total population. If the pricing model does not "
                             + "support population size parameter, this property is not set")
         @JsonInclude(Include.NON_NULL)
@@ -63,12 +63,12 @@ public class QuotationParametersDto extends QuotationParametersCommandDto {
             return p;
         }
     }
-    
+
     public static QuotationParametersDto from(QuotationParametersCommandDto command) {
         final QuotationParametersDto p = new QuotationParametersDto();
         p.nuts        = command.getNuts();
         p.prePaidTier = command.getPrePaidTier();
         return p;
     }
-    
+
 }

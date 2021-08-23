@@ -22,7 +22,7 @@ public class CallBlockRatePricingModelCommandDto extends BasePricingModelCommand
         super(EnumPricingModel.PER_CALL_WITH_BLOCK_RATE);
     }
 
-    @Schema(description = "The price per call")
+    @Schema(description = "The default price per call")
     @NotNull
     @DecimalMin(value = "0.000", inclusive = false)
     @Digits(integer = 3, fraction = 3)
@@ -32,8 +32,8 @@ public class CallBlockRatePricingModelCommandDto extends BasePricingModelCommand
 
     @ArraySchema(
         arraySchema = @Schema(
-            description = "Discount rates based on the number of service calls. Each element (except for the first one) "
-                        + "must have a `count` property with a value greater than the previous one"
+            description = "Discount rates based on the number of service calls. Each element must have "
+                        + "a `count` property with a value greater than the previous one (if one exists)"
         ),
         minItems = 0,
         maxItems = 3,
@@ -46,6 +46,7 @@ public class CallBlockRatePricingModelCommandDto extends BasePricingModelCommand
     @Setter
     private List<DiscountRateDto> discountRates;
 
+    @Override
     public void validate() throws QuotationException {
         if (this.discountRates != null) {
             for (int i = 1; i < this.discountRates.size(); i++) {
@@ -57,7 +58,7 @@ public class CallBlockRatePricingModelCommandDto extends BasePricingModelCommand
                         "Value of property count for each discount rate must be in increasing order"
                     );
                 }
-                if (prev.getDiscount().compareTo(curr.getDiscount()) == 1) {
+                if (prev.getDiscount().compareTo(curr.getDiscount()) >= 0) {
                     throw new QuotationException(
                         QuotationMessageCode.DISCOUNT_RATE_DISCOUNT_ORDER,
                         "Value of property discount for each discount rate must be in increasing order"
@@ -67,10 +68,12 @@ public class CallBlockRatePricingModelCommandDto extends BasePricingModelCommand
         }
     }
 
+    @Override
     public void validate(QuotationParametersDto params) throws QuotationException {
         // No validation is required
     }
 
+    @Override
     public  EffectivePricingModelDto compute(QuotationParametersDto params) {
         final EffectivePricingModelDto result = EffectivePricingModelDto.from(this, params);
 

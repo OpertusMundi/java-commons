@@ -33,7 +33,7 @@ public class CallPrePaidPricingModelCommandDto extends BasePricingModelCommandDt
 
     @ArraySchema(
         arraySchema = @Schema(
-            description = "Prepaid tiers using service calls as units. Each element (except for the first one) "
+            description = "Prepaid tiers using service calls as units. Each element "
                         + "must have a `count` property with a value greater than the previous one"
         ),
         minItems = 0,
@@ -47,6 +47,7 @@ public class CallPrePaidPricingModelCommandDto extends BasePricingModelCommandDt
     @Setter
     private List<PrePaidTierDto> prePaidTiers;
 
+    @Override
     public void validate() throws QuotationException {
         if (this.prePaidTiers != null) {
             for (int i = 1; i < this.prePaidTiers.size(); i++) {
@@ -68,6 +69,7 @@ public class CallPrePaidPricingModelCommandDto extends BasePricingModelCommandDt
         }
     }
 
+    @Override
     public void validate(QuotationParametersDto params) throws QuotationException {
         final Integer tier = params.getPrePaidTier();
 
@@ -80,6 +82,7 @@ public class CallPrePaidPricingModelCommandDto extends BasePricingModelCommandDt
         }
     }
 
+    @Override
     public  EffectivePricingModelDto compute(QuotationParametersDto params) {
         final EffectivePricingModelDto result = EffectivePricingModelDto.from(this, params);
 
