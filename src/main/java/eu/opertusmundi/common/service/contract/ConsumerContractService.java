@@ -1,7 +1,6 @@
 package eu.opertusmundi.common.service.contract;
 
 import eu.opertusmundi.common.model.contract.ContractServiceException;
-import eu.opertusmundi.common.model.contract.consumer.ConsumerContractDto;
 import eu.opertusmundi.common.model.contract.consumer.PrintConsumerContractCommand;
 import eu.opertusmundi.common.model.contract.consumer.SignConsumerContractCommand;
 
@@ -22,9 +21,8 @@ public interface ConsumerContractService {
      * Sign contract
      *
      * @param command
-     * @return
      * @throws ContractServiceException
      */
-    ConsumerContractDto sign(SignConsumerContractCommand command) throws ContractServiceException;
+    void sign(SignConsumerContractCommand command) throws ContractServiceException;
 
 }
