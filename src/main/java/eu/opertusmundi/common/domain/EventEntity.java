@@ -79,6 +79,7 @@ public class EventEntity {
         e.setCreatedOn(this.generated);
         e.setException(this.throwable);
         e.setLevel(this.level);
+        e.setLogger(this.logger);
         e.setMessage(this.message);
         e.setApplication(this.application);
         e.setUserName(this.userName);
