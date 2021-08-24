@@ -25,7 +25,8 @@ import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
-import eu.opertusmundi.common.model.catalogue.client.CatalogueItemProviderCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemSamplesCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemVisibilityCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumType;
@@ -107,20 +108,30 @@ public interface ProviderAssetService {
      *
      * The status must be {@link EnumProviderAssetDraftStatus#DRAFT}
      *
-     * @param draft
+     * @param command
      * @return
      */
     AssetDraftDto updateDraft(CatalogueItemCommandDto command) throws AssetDraftException;
 
     /**
-     * Set provider updates to a draft
+     * Set draft metadata property visibility
      *
      * The status must be {@link EnumProviderAssetDraftStatus#PENDING_PROVIDER_REVIEW}
      *
-     * @param draft
+     * @param command
      * @return
      */
-    AssetDraftDto updateDraft(CatalogueItemProviderCommandDto command) throws AssetDraftException;
+    AssetDraftDto updateDraftMetadataVisibility(CatalogueItemVisibilityCommandDto command) throws AssetDraftException;
+
+    /**
+     * Set draft metadata samples
+     *
+     * The status must be {@link EnumProviderAssetDraftStatus#PENDING_PROVIDER_REVIEW}
+     *
+     * @param command
+     * @return
+     */
+    AssetDraftDto updateDraftMetadataSamples(CatalogueItemSamplesCommandDto command) throws AssetDraftException;
 
     /**
      * Delete a draft

@@ -76,13 +76,13 @@ public class ProviderAssetDraftEntity {
     @Setter
     private String version;
 
-    @Column(name = "`type`", nullable = false)
+    @Column(name = "`type`")
     @Enumerated(EnumType.STRING)
     @Getter
     @Setter
     private eu.opertusmundi.common.model.catalogue.client.EnumType type;
 
-    @Column(name = "`service_type`", nullable = false)
+    @Column(name = "`service_type`")
     @Enumerated(EnumType.STRING)
     @Getter
     @Setter

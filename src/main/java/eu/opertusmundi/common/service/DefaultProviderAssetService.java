@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.service;
 
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
@@ -65,7 +67,8 @@ import eu.opertusmundi.common.model.catalogue.CatalogueServiceMessageCode;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
-import eu.opertusmundi.common.model.catalogue.client.CatalogueItemProviderCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemSamplesCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemVisibilityCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromAssetCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromFileCommandDto;
@@ -397,10 +400,48 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     @Transactional
-    public AssetDraftDto updateDraft(CatalogueItemProviderCommandDto command) throws AssetDraftException {
+    public AssetDraftDto updateDraftMetadataVisibility(CatalogueItemVisibilityCommandDto command) throws AssetDraftException {
         final AssetDraftDto draft = this.draftRepository.update(command);
 
         return draft;
+    }
+
+    @Override
+    @Transactional
+    public AssetDraftDto updateDraftMetadataSamples(CatalogueItemSamplesCommandDto command) throws AssetDraftException {
+        // Check draft and owner
+        final ProviderAssetDraftEntity draft = this.draftRepository.findOneByPublisherAndKey(
+            command.getProviderKey(), command.getDraftKey()
+        ).orElse(null);
+
+        if (draft == null) {
+            throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND, "Draft not found");
+        }
+        // Check resource
+        final ResourceDto resource = draft.getCommand().getResources().stream()
+            .filter(r -> r.getId().equals(command.getResourceKey()))
+            .findFirst()
+            .orElse(null);
+
+        if (resource == null) {
+            throw new AssetDraftException(AssetMessageCode.RESOURCE_NOT_FOUND, "Resource not found");
+        }
+
+        final String fileName = this.getMetadataPropertyFileName(
+            command.getResourceKey(), "samples", EnumMetadataPropertyType.JSON
+        );
+        final Path   path     = this.draftFileManager.resolveMetadataPropertyPath(
+            command.getProviderKey(), command.getDraftKey(), fileName
+        );
+
+        try {
+            final String content = this.objectMapper.writeValueAsString(command.getData());
+            FileUtils.writeStringToFile(path.toFile(), content, Charset.forName("UTF-8"));
+        } catch (final Exception ex) {
+            throw new AssetDraftException(AssetMessageCode.IO_ERROR, "Failed to serialize and persist samples");
+        }
+
+        return draft.toDto();
     }
 
     @Override

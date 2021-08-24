@@ -26,7 +26,7 @@ import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
-import eu.opertusmundi.common.model.catalogue.client.CatalogueItemProviderCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemVisibilityCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumType;
 import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
@@ -41,8 +41,8 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
     Optional<AccountEntity> findAccountByKey(@Param("key") UUID key);
 
     @Query("SELECT a FROM ProviderAssetDraft a WHERE "
-           + "(a.account.key = :publisherKey or :publisherKey is null) and "
            + "(a.status in :status or :status is null) and "
+           + "(a.account.key = :publisherKey or CAST(:publisherKey as org.hibernate.type.UUIDCharType) is null) and "
            + "(a.type in :type or :type is null) and "
            + "(a.serviceType in :serviceType or :serviceType is null) "
     )
@@ -144,7 +144,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
 
 
     @Transactional(readOnly = false)
-    default AssetDraftDto update(CatalogueItemProviderCommandDto command) throws AssetDraftException {
+    default AssetDraftDto update(CatalogueItemVisibilityCommandDto command) throws AssetDraftException {
         Assert.notNull(command, "Expected a non-null command");
 
         final ZonedDateTime now = ZonedDateTime.now();
