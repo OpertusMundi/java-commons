@@ -106,7 +106,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
     @Autowired
     private ProviderTemplateContractHistoryRepository contractRepository;
-	
+
     private Map<String, String> keywords;
 
     @RequiredArgsConstructor(staticName = "of")
@@ -543,7 +543,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                              * Update the current substring and remove the
                              * parsed part of it
                              */
-                            currentSubstring = currentSubstring.substring(lastSpace).stripLeading();
+                            currentSubstring = StringUtils.trimLeadingWhitespace(currentSubstring.substring(lastSpace));
                             lastSpace = -1;
                         } else {
                             currentLine = currentWord;
@@ -598,15 +598,15 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     private List<Section> addOrderInformation(
             List<Section> allSections, ContractParametersDto contractParametersDto, Map<String, String> keywords
         ) {
-    	
-    		/* 
+
+    		/*
     		 * Helper variable to handle special case
     		 * The first [sellerEmail] should be replaced with the "Contact Email" string.
     		 * In all other cases it should be replaced with the actual e-mail value.
     		 * */
     		int occuranceOfSellerEmail = 0;
     		keywords.put("[SELLEREMAIL]", contractParametersDto.getProvider().getContactEmail());
-    	
+
         	/* Replaces all automated keywords with the provider, consumer and product info while rendering*/
         	/* For all sections and all blocks*/
             for (final Section section : allSections) {
@@ -619,9 +619,9 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     	    				block.getBlockStyles().get(j).style.contains(UNDERLINE)) {
     	    				for (String key : keywords.keySet()) {
     	    					if (block.getText().contains(key)) {
-    	    						
+
     	    						/* Special case*/
-    	    						if (block.getText().contains("[sellerEmail]") && occuranceOfSellerEmail == 0) {  	    							
+    	    						if (block.getText().contains("[sellerEmail]") && occuranceOfSellerEmail == 0) {
     	    							occuranceOfSellerEmail++;
     	    						} else if (block.getText().contains("[sellerEmail]") && occuranceOfSellerEmail != 0) {
     	    							block.text 	= block.getText().replace("[sellerEmail]", "[SELLEREMAIL]");
@@ -631,7 +631,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
     	    						/* Set style as BOLD for the words that the keywords will be replaced with*/
     	    						block.getBlockStyles().get(j).style = BOLD;
-    	    						final int initialLength	= block.text.trim().length();    						
+    	    						final int initialLength	= block.text.trim().length();
 
     	    						/* Replace the keyword with the appropriate final word from the Hash<ap with the keywords*/
     	    						block.text = block.getText().replace(key, keywords.get(key));
@@ -810,20 +810,20 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
         	/* Return the final sections that should be written*/
         	return allSections;
         }
-    
+
     private Block generateSingleStylePricingModelBlock(
     		String text, String style) {
-		Block block = new Block(text);   		
+		Block block = new Block(text);
 		int offset 	= 0;
 		int length	= text.length();
 		BlockStyle blockStyle = new BlockStyle(offset, length, style);
-		block.getBlockStyles().add(blockStyle);    		
+		block.getBlockStyles().add(blockStyle);
 		return block;
     }
-    
+
     private Block generateMultiStylePricingModelBlock(
     		String text) {
-    	Block block = new Block(text); 
+    	Block block = new Block(text);
     	int offset	 	= 0;
     	int length 		= 0;
     	String style 	= null;
@@ -839,8 +839,8 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 			length	= index1-offset;
 			style	= NORMAL;
 			blockStyle = new BlockStyle(offset, length, style);
-			block.getBlockStyles().add(blockStyle);    
-			
+			block.getBlockStyles().add(blockStyle);
+
 			if (loopCounter == 0) {
 				offset = index1;
 			} else {
@@ -848,25 +848,25 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 			}
 			length	= index2-index1+1;
 			blockStyle = new BlockStyle(offset, length, BOLD);
-			block.getBlockStyles().add(blockStyle); 
-			
+			block.getBlockStyles().add(blockStyle);
+
 			blockStyle = new BlockStyle(offset, length, UNDERLINE);
-			block.getBlockStyles().add(blockStyle); 
-			
+			block.getBlockStyles().add(blockStyle);
+
 			if (text.indexOf("[", index1+1) < 0) {
 				offset 	= index2+1;
 				length	= text.length()-index2-1;
 				style	= NORMAL;
 				blockStyle = new BlockStyle(offset, length, style);
-				block.getBlockStyles().add(blockStyle);  	
+				block.getBlockStyles().add(blockStyle);
 			}
-	
+
 			loopCounter++;
 		}
-		
+
 		return block;
     }
-    
+
     private static String restrictionsToString(final Object[] oArray) {
     	String string = "";
     	if (oArray instanceof EnumContinent[]) {
@@ -893,7 +893,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     	}
     	return string;
     }
-    
+
     private static String ratesToString(List<DiscountRateDto> discountRates, String units) {
     	String string 	= "";
     	final DecimalFormat df 	= new DecimalFormat("#,##0.00");
@@ -904,11 +904,11 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     			string += df.format(discountRates.get(i).getDiscount()) + " % " + "(" + discountRates.get(i).getCount().toString() + " " + units + ")";
     		} else {
     			string += df.format(discountRates.get(i).getDiscount()) + " % " + "(" + discountRates.get(i).getCount().toString() + " " + units + "), ";
-    		}    		
+    		}
     	}
     	return string;
     }
-    
+
     private Section generatePricingModelRestrictions(Section section, Block block, PricingModel pricingModel) {
     	String text = "";
 		if (pricingModel.getDomainRestrictions() 			== null &&
@@ -917,180 +917,180 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     			pricingModel.getCoverageRestrictionContinents()	== null &&
     			pricingModel.getCoverageRestrictionCountries()	== null) {
         		text = "-" + " No restrictions.";
-        		block = generateSingleStylePricingModelBlock(text, NORMAL);		
+        		block = generateSingleStylePricingModelBlock(text, NORMAL);
         		section.getBlocks().add(block);
     	} else {
     		if (pricingModel.getDomainRestrictions() != null) {
     			keywords.put("[DomainRestrictions]", restrictionsToString(pricingModel.getDomainRestrictions()));
     	   		text = "-" + " Domain restrictions: " + "[DomainRestrictions].";
-    	   		block = generateMultiStylePricingModelBlock(text);			
+    	   		block = generateMultiStylePricingModelBlock(text);
     	   		section.getBlocks().add(block);
     		}
     		if (pricingModel.getConsumerRestrictionContinents()	!= null && pricingModel.getConsumerRestrictionCountries() != null) {
     			keywords.put("[ConsumerRestrictions]", restrictionsToString(pricingModel.getConsumerRestrictionContinents()) + ", " + restrictionsToString(pricingModel.getConsumerRestrictionCountries()));
         		text = "-" + " Consumer restrictions: " + "[ConsumerRestrictions].";
-        		block = generateMultiStylePricingModelBlock(text);			
-        		section.getBlocks().add(block);    				
+        		block = generateMultiStylePricingModelBlock(text);
+        		section.getBlocks().add(block);
     		} else if (pricingModel.getConsumerRestrictionContinents() != null) {
     			keywords.put("[ConsumerRestrictions]", restrictionsToString(pricingModel.getConsumerRestrictionContinents()));
         		text = "-" + " Consumer restrictions: " + "[ConsumerRestrictions].";
-        		block = generateMultiStylePricingModelBlock(text);			
-        		section.getBlocks().add(block);     				
+        		block = generateMultiStylePricingModelBlock(text);
+        		section.getBlocks().add(block);
     		} else if (pricingModel.getConsumerRestrictionCountries() != null) {
     			keywords.put("[ConsumerRestrictions]", restrictionsToString(pricingModel.getConsumerRestrictionCountries()));
         		text = "-" + " Consumer restrictions: " + "[ConsumerRestrictions].";
-        		block = generateMultiStylePricingModelBlock(text);			
-        		section.getBlocks().add(block);      				
+        		block = generateMultiStylePricingModelBlock(text);
+        		section.getBlocks().add(block);
     		}
     		if (pricingModel.getCoverageRestrictionContinents()	!= null && pricingModel.getCoverageRestrictionCountries() != null) {
     			keywords.put("[CoverageRestrictions]", restrictionsToString(pricingModel.getCoverageRestrictionContinents()) + ", " + restrictionsToString(pricingModel.getCoverageRestrictionCountries()));
         		text = "-" + " Coverage restrictions: " + "[CoverageRestrictions].";
-        		block = generateMultiStylePricingModelBlock(text);			
-        		section.getBlocks().add(block);     				
+        		block = generateMultiStylePricingModelBlock(text);
+        		section.getBlocks().add(block);
     		} else if (pricingModel.getCoverageRestrictionContinents()	!= null) {
     			keywords.put("[CoverageRestrictions]", restrictionsToString(pricingModel.getCoverageRestrictionContinents()));
         		text = "-" + " Coverage restrictions: " + "[CoverageRestrictions].";
-        		block = generateMultiStylePricingModelBlock(text);			
-        		section.getBlocks().add(block);       				
+        		block = generateMultiStylePricingModelBlock(text);
+        		section.getBlocks().add(block);
     		} else if (pricingModel.getCoverageRestrictionCountries() != null) {
     			keywords.put("[CoverageRestrictions]", restrictionsToString(pricingModel.getCoverageRestrictionCountries()));
         		text = "-" + " Coverage restrictions: " + "[CoverageRestrictions].";
-        		block = generateMultiStylePricingModelBlock(text);			
-        		section.getBlocks().add(block);      				
+        		block = generateMultiStylePricingModelBlock(text);
+        		section.getBlocks().add(block);
     		}
-    	}	
+    	}
 		return section;
     }
-    
+
     private Section generatePricingModelSection(
     		PricingModel pricingModel, EnumDeliveryMethod deliveryMethod, String sectionTitle
         ) {
-    	
+
     	Section section = new Section(sectionTitle);
-    	
+
     	String partPrice 		= "APPLICABLE PRICE";
     	String partDelivery		= "DELIVERY";
-    	String partRestriction	= "RESTICTIONS";	
-    	
+    	String partRestriction	= "RESTICTIONS";
+
     	/* Fixed with and without updates updates*/
     	if (pricingModel.getPricingModelType() == EnumPricingModel.FIXED) {
     		/* Add applicable price*/
-    		Block block = generateSingleStylePricingModelBlock(partPrice, BOLD);   		 		
+    		Block block = generateSingleStylePricingModelBlock(partPrice, BOLD);
     		section.getBlocks().add(block);
-    		
+
     		String text = pricingModel.getPricingModelDescription();
     		block = generateSingleStylePricingModelBlock(text, NORMAL);
-    		section.getBlocks().add(block);  	
-    		
+    		section.getBlocks().add(block);
+
     		keywords.put("[PricingModelPrice]", pricingModel.getTotalPrice());
     		text = "-" +" Price: [PricingModelPrice] Euros.";
     		block = generateMultiStylePricingModelBlock(text);
     		section.getBlocks().add(block);
-    		
+
     		/* Add Delivery*/
-    		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);  		
+    		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);
     		section.getBlocks().add(block);
-    		
+
     		if (deliveryMethod == EnumDeliveryMethod.DIGITAL_PLATFORM) {
 	    		text = "Delivery will take place via TOPIO within three (3) working days following a proof of payment of the applicable price.";
-	    		block = generateSingleStylePricingModelBlock(text, NORMAL); 		
+	    		block = generateSingleStylePricingModelBlock(text, NORMAL);
 	    		section.getBlocks().add(block);
     		} else if (deliveryMethod == EnumDeliveryMethod.DIGITAL_PROVIDER) {
 	    		text = "Delivery will take place via digital delivery directly by Supplier within three (3) working days following a proof of payment of the applicable price.";
-	    		block = generateSingleStylePricingModelBlock(text, NORMAL);  		
+	    		block = generateSingleStylePricingModelBlock(text, NORMAL);
 	    		section.getBlocks().add(block);
-    		} else if (deliveryMethod == EnumDeliveryMethod.PHYSICAL_PROVIDER) {   		
+    		} else if (deliveryMethod == EnumDeliveryMethod.PHYSICAL_PROVIDER) {
 	    		text = "Delivery will take place via physical media delivery directly by Supplier within three (3) working days following a proof of payment of the applicable price.";
-	    		block = generateSingleStylePricingModelBlock(text, NORMAL);		
+	    		block = generateSingleStylePricingModelBlock(text, NORMAL);
 	    		section.getBlocks().add(block);
-    		}		
-    		
+    		}
+
     		/* Add restrictions*/
-    		block = generateSingleStylePricingModelBlock(partRestriction, BOLD);		
+    		block = generateSingleStylePricingModelBlock(partRestriction, BOLD);
     		section.getBlocks().add(block);
-    		section = generatePricingModelRestrictions(section, block, pricingModel);			
+    		section = generatePricingModelRestrictions(section, block, pricingModel);
     	}
-    	
+
     	/* Fixed per rows*/
     	else if (pricingModel.getPricingModelType() == EnumPricingModel.FIXED_PER_ROWS) {
     		/* Add applicable price*/
-    		Block block = generateSingleStylePricingModelBlock(partPrice, BOLD);   		 		
+    		Block block = generateSingleStylePricingModelBlock(partPrice, BOLD);
     		section.getBlocks().add(block);
-    		
+
     		String text = pricingModel.getPricingModelDescription();;
-    		block = generateSingleStylePricingModelBlock(text, NORMAL);  	
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);
     		section.getBlocks().add(block);
-    		
+
     		keywords.put("[PricingModelPricePerRows]", pricingModel.getPricePerRows());
     		text = "-" + " Price per 1000 rows: [PricingModelPricePerRows] Euros.";
     		block = generateMultiStylePricingModelBlock(text);
     		section.getBlocks().add(block);
-    		
+
     		keywords.put("[PricingModelDiscount]", ratesToString(pricingModel.getDiscountRates(), "rows"));
     		text = "-" + " Discount rate applied: [PricingModelDiscount].";
     		block = generateMultiStylePricingModelBlock(text);
     		section.getBlocks().add(block);
-    		
+
     		keywords.put("[PricingModelPrice]", pricingModel.getTotalPrice());
     		text = "-" + " Price: [PricingModelPrice] Euros.";
     		block = generateMultiStylePricingModelBlock(text);
     		section.getBlocks().add(block);
-    		
+
     		/* Add Delivery*/
-    		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);  		
+    		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);
     		section.getBlocks().add(block);
-    		
+
     		text = "Delivery will take place via TOPIO within three (3) working days following a proof of payment of the applicable price.";
     		block = generateSingleStylePricingModelBlock(text, NORMAL);
     		section.getBlocks().add(block);
-    		
+
     		/* Add restrictions*/
-    		block = generateSingleStylePricingModelBlock(partRestriction, BOLD);		
+    		block = generateSingleStylePricingModelBlock(partRestriction, BOLD);
     		section.getBlocks().add(block);
-    		section = generatePricingModelRestrictions(section, block, pricingModel);  		
+    		section = generatePricingModelRestrictions(section, block, pricingModel);
     	}
-    	
+
     	/* Fixed for population*/
-    	else if (pricingModel.getPricingModelType() == EnumPricingModel.FIXED_FOR_POPULATION) {		
+    	else if (pricingModel.getPricingModelType() == EnumPricingModel.FIXED_FOR_POPULATION) {
     		/* Add applicable price*/
-    		Block block = generateSingleStylePricingModelBlock(partPrice, BOLD);   		 		
+    		Block block = generateSingleStylePricingModelBlock(partPrice, BOLD);
     		section.getBlocks().add(block);
-    		
+
     		String text = pricingModel.getPricingModelDescription();
-    		block = generateSingleStylePricingModelBlock(text, NORMAL);  	
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);
     		section.getBlocks().add(block);
-    		
+
     		keywords.put("[PricingModelPricePerPeople]", pricingModel.getPricePerPopulation());
     		text = "-" + " Price per 10.000 people: [PricingModelPricePerPeople] Euros.";
     		block = generateMultiStylePricingModelBlock(text);
     		section.getBlocks().add(block);
-    		
+
     		keywords.put("[PricingModelDiscount]", ratesToString(pricingModel.getDiscountRates(), "people"));
     		text = "-" + " Discount rate applied: [PricingModelDiscount].";
     		block = generateMultiStylePricingModelBlock(text);
     		section.getBlocks().add(block);
-    		
+
     		keywords.put("[PricingModelPrice]", pricingModel.getTotalPrice());
     		text = "-" + " Price: [PricingModelPrice] Euros.";
     		block = generateMultiStylePricingModelBlock(text);
     		section.getBlocks().add(block);
-    		
+
     		/* Add Delivery*/
-    		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);  		
+    		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);
     		section.getBlocks().add(block);
-    		
+
     		text = "Delivery will take place via TOPIO within three (3) working days following a proof of payment of the applicable price.";
     		block = generateSingleStylePricingModelBlock(text, NORMAL);
     		section.getBlocks().add(block);
-    		
+
     		/* Add restrictions*/
-    		block = generateSingleStylePricingModelBlock(partRestriction, BOLD);		
+    		block = generateSingleStylePricingModelBlock(partRestriction, BOLD);
     		section.getBlocks().add(block);
-    		section = generatePricingModelRestrictions(section, block, pricingModel);				
+    		section = generatePricingModelRestrictions(section, block, pricingModel);
     	}
-    	
+
     	return section;
-    	
+
     }
 
     private void addBlock(
@@ -1601,13 +1601,13 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
         }
         return allBlocks;
     }
-	
+
     public List<BlockStyle> getBlockStylesSorted(List<BlockStyle> blockstyles) {
     	return blockstyles.stream().sorted((b1,b2) -> {
     		/* Get index of each section*/
     		int offset1	=	b1.getOffset();
     		int offset2	=	b2.getOffset();
-    		
+
     		if (offset1 > offset2) {
     			return 1;
     		}
@@ -1705,7 +1705,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                 } else {
                     providerSection = new Section("Section " + sectionIndex);
                 }
-                
+
                 if (sectionTitle != null && !sectionTitle.isEmpty() && sectionTitle.toUpperCase().contains("PRICING MODEL")) {
                 	providerSection = generatePricingModelSection(contractParametersDto.getPricingModel(), deliveryMethod, "Section " + sectionIndex + " - " + sectionTitle);
                     allSections.add(providerSection);
@@ -1744,7 +1744,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                 	block.setBlockStyles(sortedBlockStyles);
                 }
             }
-        	
+
             /* Create the combined fonts */
             for (final Section section : allSections) {
                 for (final Block block : section.getBlocks()) {
@@ -1781,7 +1781,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
                 /* Add section title */
                 final String sectionTitle = section.getSectionTitle();
-                
+
                 final int occurrenceOfDots = StringUtils.countOccurrencesOf(sectionTitle, ".");
                 if (occurrenceOfDots == 0) {
                 	if (ctx.getCurrentOffset() <= 72) {
@@ -1789,7 +1789,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                 	} else {
                 		addTitle(ctx, "Sectiontitle", sectionTitle, true, false);
                 	}
-                
+
                 } else {
                 	if (ctx.getCurrentOffset() <= 72) {
                 		addTitle(ctx, "SectionSubTitle", sectionTitle, true, true);
