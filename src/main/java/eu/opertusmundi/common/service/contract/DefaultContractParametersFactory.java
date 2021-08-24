@@ -39,6 +39,7 @@ public class DefaultContractParametersFactory implements ContractParametersFacto
         		.product(ContractParametersDto.Product.from(item, feature))
         		.pricingModel(ContractParametersDto.PricingModel.from(pricingModel))
         		.build();
+        
 
         return params;
     }

@@ -148,49 +148,60 @@ public class ContractParametersDto {
 
             if (result.pricingModelType == EnumPricingModel.FIXED) {
                 final FixedPricingModelCommandDto fixedPricingModelCommandDto = (FixedPricingModelCommandDto) c.getModel();
-                result.yearsOfUpdates     = fixedPricingModelCommandDto.getYearsOfUpdates();
-                result.pricePerRows       = null;
-                result.pricePerPopulation = null;
-                result.discountRates      = null;
+                final Integer yearsOfUpdates	= fixedPricingModelCommandDto.getYearsOfUpdates();
+                
+                if (yearsOfUpdates == null || yearsOfUpdates == 0) {
+                	result.pricingModelDescription = "The product includes only the current version, with no access to updates. ";
+                } else {
+                	result.pricingModelDescription = "The product includes previous versions, the current one and access to updates for "
+                									 + yearsOfUpdates 
+                									 + " years.";
+                }
+            	result.pricePerRows 		= null;
+            	result.pricePerPopulation	= null;
+            	result.discountRates		= null;
+                
             } else if (result.pricingModelType == EnumPricingModel.FIXED_PER_ROWS) {
                 final FixedRowPricingModelCommandDto fixedRowPricingModelCommandDto = (FixedRowPricingModelCommandDto) c.getModel();
-                result.yearsOfUpdates     = null;
-                result.pricePerRows       = df.format(fixedRowPricingModelCommandDto.getPrice());
-                result.pricePerPopulation = null;
-                result.discountRates      = fixedRowPricingModelCommandDto.getDiscountRates();
+                result.pricingModelDescription = "The product includes a subset per row of the current version of the asset"
+                								 + ", based on the defined area of interest"
+                								 + ", with no access to updates.";
+            	result.pricePerRows 		= df.format(fixedRowPricingModelCommandDto.getPrice());
+            	result.pricePerPopulation	= null;
+            	result.discountRates		= fixedRowPricingModelCommandDto.getDiscountRates();  
+            	
             } else if (result.pricingModelType == EnumPricingModel.FIXED_FOR_POPULATION) {
                 final FixedPopulationPricingModelCommandDto fixedPopulationPricingModelCommandDto = (FixedPopulationPricingModelCommandDto) c.getModel();
-                result.yearsOfUpdates     = null;
-                result.pricePerRows       = null;
-                result.pricePerPopulation = df.format(fixedPopulationPricingModelCommandDto.getPrice());
-                result.discountRates      = fixedPopulationPricingModelCommandDto.getDiscountRates();
+                result.pricingModelDescription = "The product includes a subset per population coverage of the current version of the asset"
+                								 + ", based on the defined area of interest"
+                								 + ", with no access to updates.";
+            	result.pricePerRows 		= null;
+            	result.pricePerPopulation	= df.format(fixedPopulationPricingModelCommandDto.getPrice());
+            	result.discountRates		= fixedPopulationPricingModelCommandDto.getDiscountRates();
             }
-            result.consumerRestrictionContinents = c.getModel().getConsumerRestrictionContinents();
-            result.consumerRestrictionCountries  = c.getModel().getConsumerRestrictionCountries();
-            result.coverageRestrictionContinents = c.getModel().getCoverageRestrictionContinents();
-            result.coverageRestrictionCountries  = c.getModel().getCoverageRestrictionCountries();
-            result.domainRestrictions            = c.getModel().getDomainRestrictions();
-            result.nuts                          = (ArrayList<String>) c.getParameters().getNuts();
+            
+            result.consumerRestrictionContinents	= c.getModel().getConsumerRestrictionContinents();
+            result.consumerRestrictionCountries		= c.getModel().getConsumerRestrictionCountries();
+            result.coverageRestrictionContinents	= c.getModel().getCoverageRestrictionContinents();
+            result.coverageRestrictionCountries		= c.getModel().getCoverageRestrictionCountries();
             result.totalPrice                    = df.format(c.getQuotation().getTotalPrice());
             result.totalPriceExcludingTax        = df.format(c.getQuotation().getTotalPriceExcludingTax());
 
             return result;
         }
-
-        private EnumPricingModel      pricingModelType;
-        private EnumContinent[]       consumerRestrictionContinents;
-        private String[]              consumerRestrictionCountries;
-        private EnumContinent[]       coverageRestrictionContinents;
-        private String[]              coverageRestrictionCountries;
-        private String[]              domainRestrictions;
-        private ArrayList<String>     nuts;
-        private String                totalPrice;
-        private String                totalPriceExcludingTax;
-        private Integer               yearsOfUpdates;
-        private String                pricePerRows;
-        private String                pricePerPopulation;
-        private List<DiscountRateDto> discountRates;
-
+        
+        private EnumPricingModel 		pricingModelType;	
+        private String					pricingModelDescription;
+        private EnumContinent[]			consumerRestrictionContinents;
+        private String[]				consumerRestrictionCountries;
+        private EnumContinent[]			coverageRestrictionContinents;
+        private String[]				coverageRestrictionCountries;
+        private String[]				domainRestrictions;
+        private String					totalPrice;
+        private String					totalPriceExcludingTax;
+        private String					pricePerRows;
+        private String					pricePerPopulation;
+        private List<DiscountRateDto>	discountRates;
     }
 
     private Consumer     consumer;
