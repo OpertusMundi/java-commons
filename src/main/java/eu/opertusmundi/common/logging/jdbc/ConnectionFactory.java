@@ -77,17 +77,21 @@ public class ConnectionFactory {
             props.load(in);
         }
 
-        final String profile = props.getProperty("spring.profiles.active", "development");
-        try (InputStream in = cls.getResourceAsStream("/config/application-" + profile + ".properties")) {
-            props.load(in);
+        final String[] profiles = props.getProperty("spring.profiles.active", "development").split(",");
+        for (final String profile : profiles) {
+            try (InputStream in = cls.getResourceAsStream("/config/application-" + profile + ".properties")) {
+                props.load(in);
+            }
         }
 
         // Load properties from working directory
-
-        try (InputStream in = new FileInputStream("config/application-" + profile + ".properties")) {
-            props.load(in);
-        } catch (final FileNotFoundException ex) {
-            /* no-op */ }
+        for (final String profile : profiles) {
+            try (InputStream in = new FileInputStream("config/application-" + profile + ".properties")) {
+                props.load(in);
+            } catch (final FileNotFoundException ex) {
+                /* no-op */
+            }
+        }
 
         // Read properties for connecting to our JDBC backend.
         // Use Spring's datasource properties as defaults for connection-related
