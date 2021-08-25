@@ -81,6 +81,8 @@ public class ConnectionFactory {
         for (final String profile : profiles) {
             try (InputStream in = cls.getResourceAsStream("/config/application-" + profile + ".properties")) {
                 props.load(in);
+            } catch (final Exception ex) {
+                /* no-op */
             }
         }
 
