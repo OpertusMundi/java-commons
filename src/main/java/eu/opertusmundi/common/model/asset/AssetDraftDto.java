@@ -64,6 +64,9 @@ public class AssetDraftDto {
     @Schema(description = "Date of lat update in ISO format")
     private ZonedDateTime modifiedOn;
 
+    @Schema(description = "Draft parent asset PID")
+    private String parentId;
+
     @Schema(description = "Publisher details")
     private ProviderDto publisher;
 

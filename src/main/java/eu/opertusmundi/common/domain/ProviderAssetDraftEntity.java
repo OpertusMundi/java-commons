@@ -64,6 +64,11 @@ public class ProviderAssetDraftEntity {
     @Setter
     private String processInstance;
 
+    @Column(name = "`parent_id`")
+    @Getter
+    @Setter
+    private String parentId;
+
     @NotNull
     @Column(name = "`title`", nullable = false)
     @Getter
@@ -146,6 +151,7 @@ public class ProviderAssetDraftEntity {
         a.setIngested(this.ingested);
         a.setKey(this.key);
         a.setModifiedOn(this.modifiedOn);
+        a.setParentId(this.parentId);
         a.setProviderRejectionReason(this.providerRejectionReason);
         a.setServiceType(this.serviceType);
         a.setStatus(this.status);
