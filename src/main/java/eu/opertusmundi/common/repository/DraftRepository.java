@@ -136,6 +136,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         if (processInstance != null) {
             draft.setProcessInstance(processInstance);
         }
+        draft.setParentId(command.getParentId());
         draft.setServiceType(command.getSpatialDataServiceType());
         draft.setStatus(status);
         draft.setTitle(command.getTitle());
