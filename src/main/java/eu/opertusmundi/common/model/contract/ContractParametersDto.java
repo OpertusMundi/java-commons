@@ -1,6 +1,5 @@
 package eu.opertusmundi.common.model.contract;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.ibm.icu.text.DecimalFormat;

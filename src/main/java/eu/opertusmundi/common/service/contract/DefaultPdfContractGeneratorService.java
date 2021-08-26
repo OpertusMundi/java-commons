@@ -51,7 +51,6 @@ import eu.opertusmundi.common.model.contract.ContractSectionSubOptionDto;
 import eu.opertusmundi.common.model.contract.EnumContract;
 import eu.opertusmundi.common.model.contract.consumer.PrintConsumerContractCommand;
 import eu.opertusmundi.common.model.pricing.DiscountRateDto;
-import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.pricing.EnumContinent;
 import eu.opertusmundi.common.model.pricing.EnumPricingModel;
 import eu.opertusmundi.common.repository.OrderRepository;
@@ -661,7 +660,6 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     				final ContractParametersDto.Provider 		prov = contractParametersDto.getProvider();
     				final ContractParametersDto.Consumer 		cons = contractParametersDto.getConsumer();
     				final ContractParametersDto.Product  		prod = contractParametersDto.getProduct();
-    				final ContractParametersDto.PricingModel  	prmd = contractParametersDto.getPricingModel();
 
     				/* Append all keyword blocks with the corresponding information and update their blockstyles accordingly */
     				if (initialText.contains("[sellerName]")) {
