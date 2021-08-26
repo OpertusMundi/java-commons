@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
 
@@ -75,9 +76,20 @@ public class ConnectionFactory {
 
         try (InputStream in = cls.getResourceAsStream("/config/application.properties")) {
             props.load(in);
+        } catch (final Exception ex) {
+            /* no-op */
         }
 
-        final String[] profiles = props.getProperty("spring.profiles.active", "development").split(",");
+        String profilesValue = System.getProperty("spring.profiles.active", "");
+
+        if (StringUtils.isBlank(profilesValue)) {
+            // Property is not set in the command line arguments (using a
+            // non-empty default)
+            profilesValue = props.getProperty("spring.profiles.active", "development");
+        }
+
+        final String[] profiles = profilesValue.split(",");
+
         for (final String profile : profiles) {
             try (InputStream in = cls.getResourceAsStream("/config/application-" + profile + ".properties")) {
                 props.load(in);
