@@ -44,7 +44,7 @@ import eu.opertusmundi.common.model.account.ProviderProfessionalCommandDto;
 public interface AccountRepository extends JpaRepository<AccountEntity, Integer> {
 
     @Query("SELECT a FROM Account a LEFT OUTER JOIN FETCH a.profile p WHERE a.key in :keys")
-    List<AccountEntity> findAllByKey(@Param("keys") UUID[] keys);
+    List<AccountEntity> findAllByKey(@Param("keys") List<UUID> keys);
 
     @Query("SELECT a FROM Account a "
          + "LEFT OUTER JOIN FETCH a.profile p "

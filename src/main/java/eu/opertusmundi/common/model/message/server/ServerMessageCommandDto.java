@@ -20,6 +20,6 @@ public class ServerMessageCommandDto extends ServerBaseMessageCommandDto {
 
     private UUID sender;
 
-    private UUID message;
+    private UUID thread;
 
 }

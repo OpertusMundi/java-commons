@@ -1,7 +1,9 @@
 package eu.opertusmundi.common.repository;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.persistence.EntityNotFoundException;
 
@@ -41,6 +43,9 @@ public interface HelpdeskAccountRepository extends JpaRepository<HelpdeskAccount
 		@Param("email")String email,
 		Pageable pageable
 	);
+
+    @Query("SELECT a FROM HelpdeskAccount a WHERE a.key in :keys")
+    List<HelpdeskAccountEntity> findAllByKey(@Param("keys") List<UUID> keys);
 
 	@Modifying
 	@Query("UPDATE HelpdeskAccount a SET a.active = :active WHERE a.id = :id")

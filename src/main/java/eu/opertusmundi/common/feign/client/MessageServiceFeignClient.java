@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.feign.client;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.cloud.openfeign.FeignClient;
@@ -30,7 +31,27 @@ import eu.opertusmundi.common.model.message.server.ServerNotificationDto;
 public interface MessageServiceFeignClient {
 
     /**
-     * Find messages
+     * Get helpdesk unassigned messages
+     *
+     * @param pageIndex
+     * @param pageSize
+     * @param dateFrom
+     * @param dateTo
+     * @param read
+     *
+     * @return An instance of {@link MessageEndPointTypes.MessageListResponseDto}
+     */
+    @GetMapping(value = "/v1/messages/helpdesk")
+    ResponseEntity<RestResponse<PageResultDto<ServerMessageDto>>> getHelpdeskInbox(
+        @RequestParam(name = "page",      required = false) Integer       pageIndex,
+        @RequestParam(name = "size",      required = false) Integer       pageSize,
+        @RequestParam(name = "date-from", required = false) ZonedDateTime dateFrom,
+        @RequestParam(name = "date-to",   required = false) ZonedDateTime dateTo,
+        @RequestParam(name = "read",      required = false) Boolean       read
+    );
+
+    /**
+     * Find user messages
      *
      * @param pageIndex
      * @param pageSize
@@ -41,11 +62,11 @@ public interface MessageServiceFeignClient {
      *
      * @return An instance of {@link MessageEndPointTypes.MessageListResponseDto}
      */
-    @GetMapping(value = "/v1/messages")
+    @GetMapping(value = "/v1/messages/user/{userKey}")
     ResponseEntity<RestResponse<PageResultDto<ServerMessageDto>>> findMessages(
+        @PathVariable(name = "userKey")                     UUID          userKey,
         @RequestParam(name = "page",      required = false) Integer       pageIndex,
         @RequestParam(name = "size",      required = false) Integer       pageSize,
-        @RequestParam(name = "user",      required = true)  UUID          userKey,
         @RequestParam(name = "date-from", required = false) ZonedDateTime dateFrom,
         @RequestParam(name = "date-to",   required = false) ZonedDateTime dateTo,
         @RequestParam(name = "read",      required = false) Boolean       read
@@ -60,7 +81,7 @@ public interface MessageServiceFeignClient {
      * @return An instance of {@link BaseResponse}
      */
     @PostMapping(value = "/v1/messages")
-    ResponseEntity<BaseResponse> sendMessage(
+    ResponseEntity<RestResponse<ServerMessageDto>> sendMessage(
         @RequestBody(required = true) ServerMessageCommandDto command
     );
 
@@ -72,9 +93,37 @@ public interface MessageServiceFeignClient {
      * @return An instance of {@link BaseResponse}
      */
     @PutMapping(value = "/v1/messages/user/{owner}/message/{key}")
-    ResponseEntity<BaseResponse> readMessage(
+    ResponseEntity<RestResponse<ServerMessageDto>> readMessage(
         @PathVariable(name = "owner", required = true) UUID owner,
         @PathVariable(name = "key", required = true) UUID key
+    );
+
+    /**
+     * Assign message to Helpdesk account
+     *
+     * @param messageKey The message unique key
+     * @param recipientKey The recipient account unique key
+     *
+     * @return An instance of {@link BaseResponse}
+     */
+    @PutMapping(value = "/v1/messages/{messageKey}/recipient/{recipientKey}")
+    ResponseEntity<RestResponse<ServerMessageDto>> assignMessage(
+        @PathVariable(name = "messageKey", required = true) UUID messageKey,
+        @PathVariable(name = "recipientKey", required = true) UUID recipientKey
+    );
+
+    /**
+     * Get a message thread
+     *
+     * @param userKey The owner of the message
+     * @param messageKey The key of any message from the thread
+     *
+     * @return An instance of {@link BaseResponse}
+     */
+    @GetMapping(value = "/v1/messages/thread/{threadKey}/sender/{ownerKey}")
+    ResponseEntity<RestResponse<List<ServerMessageDto>>> getMessageThread(
+        @PathVariable(name = "threadKey", required = true) UUID threadKey,
+        @PathVariable(name = "ownerKey", required = true) UUID ownerKey
     );
 
     /**

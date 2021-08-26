@@ -48,6 +48,11 @@ public class ClientBaseMessageDto {
     @Setter
     private boolean read;
 
+    @Schema(description = "Message sender")
+    @Getter
+    @Setter
+    private UUID sender;
+
     @Schema(description = "Message recipient")
     @Getter
     @Setter

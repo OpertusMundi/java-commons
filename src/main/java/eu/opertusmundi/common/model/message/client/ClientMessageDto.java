@@ -15,16 +15,19 @@ public class ClientMessageDto extends ClientBaseMessageDto {
         super(EnumMessageType.MESSAGE);
     }
 
-    public ClientMessageDto(ServerMessageDto m) {
-        this();
+    public static ClientMessageDto from(ServerMessageDto m) {
+        final ClientMessageDto c = new ClientMessageDto();
 
-        this.setCreatedAt(m.getCreatedAt());
-        this.setId(m.getId());
-        this.setRead(m.isRead());
-        this.setReadAt(m.getReadAt());
-        this.setRecipient(m.getRecipient());
-        this.setText(m.getText());
-        this.setThread(m.getThread());
+        c.setCreatedAt(m.getCreatedAt());
+        c.setId(m.getId());
+        c.setSender(m.getSender());
+        c.setRead(m.isRead());
+        c.setReadAt(m.getReadAt());
+        c.setRecipient(m.getRecipient());
+        c.setText(m.getText());
+        c.setThread(m.getThread());
+
+        return c;
     }
 
     @Schema(description = "Message thread unique id")

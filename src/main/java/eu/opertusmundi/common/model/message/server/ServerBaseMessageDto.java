@@ -22,6 +22,8 @@ public class ServerBaseMessageDto {
 
     private boolean read;
 
+    private UUID sender;
+    
     private UUID recipient;
 
 }

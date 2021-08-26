@@ -19,6 +19,7 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
@@ -149,6 +150,11 @@ public class HelpdeskAccountEntity {
     )
     List<HelpdeskAccountRoleEntity> roles = new ArrayList<>();
 
+    @Transient
+    public String getFullName() {
+        return String.format("%s %s", this.firstName, this.lastName).trim();
+    }
+
     public HelpdeskAccountEntity() {
 
     }
@@ -161,9 +167,9 @@ public class HelpdeskAccountEntity {
         this.email    = email;
     }
 
-    public void setName(String firstname, String lastname) {
-        this.firstName = firstname;
-        this.lastName  = lastname;
+    public void setName(String firstName, String lastName) {
+        this.firstName = firstName;
+        this.lastName  = lastName;
     }
 
     public String getUserName() {
