@@ -72,6 +72,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemVisibilityComm
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromAssetCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromFileCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.EnumDeliveryMethod;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumType;
 import eu.opertusmundi.common.model.catalogue.client.UnpublishAssetCommand;
@@ -286,6 +287,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             final CatalogueItemCommandDto draftCommand = new CatalogueItemCommandDto(feature);
 
             draftCommand.setAutomatedMetadata(null);
+            draftCommand.setDeliveryMethod(EnumDeliveryMethod.DIGITAL_PLATFORM);
             draftCommand.setIngested(true);
             draftCommand.setIngestionInfo(null);
             draftCommand.setParentId(command.getPid());
@@ -345,6 +347,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             // Create draft
             final CatalogueItemCommandDto draftCommand = new CatalogueItemCommandDto();
 
+            draftCommand.setDeliveryMethod(EnumDeliveryMethod.DIGITAL_PLATFORM);
+            draftCommand.setFormat(command.getFormat());
             draftCommand.setIngested(true);
             draftCommand.setPublisherKey(command.getPublisherKey());
             draftCommand.setSpatialDataServiceType(EnumSpatialDataServiceType.fromString(command.getServiceType()));
