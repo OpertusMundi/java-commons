@@ -117,6 +117,15 @@ public interface CatalogueService {
     CatalogueFeature findOneFeature(String id) throws CatalogueServiceException;
 
     /**
+     * Find one catalogue feature by its unique PID from history
+     *
+     * @param id
+     * @return
+     * @throws CatalogueServiceException
+     */
+    CatalogueFeature findOneHistoryFeature(String id) throws CatalogueServiceException;
+
+    /**
      * Find a harvested resource by its unique identifier
      *
      * <p>

@@ -72,6 +72,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemVisibilityComm
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromAssetCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromFileCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.DraftFromAssetCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumDeliveryMethod;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumType;
@@ -404,6 +405,58 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     @Transactional
+    public AssetDraftDto createDraftFromAsset(DraftFromAssetCommandDto command) throws AssetDraftException {
+        Assert.notNull(command, "Expected a non-null command");
+        Assert.notNull(command.getPublisherKey(), "Expected a non-null publisher key");
+        Assert.isTrue(!StringUtils.isBlank(command.getPid()), "Expected a non-empty pid");
+
+        try {
+            final CatalogueFeature feature = this.catalogueService.findOneFeature(command.getPid());
+
+            // TODO: If the feature is not published, check history (add method to catalogue for fetching the latest asset version)
+            /*
+            if (feature == null) {
+                this.catalogueService.findOneHistoryFeature(command.getPid());
+            }
+            */
+
+            // Feature must exist
+            if(feature == null) {
+                throw new AssetDraftException(
+                    AssetMessageCode.ASSET_NOT_FOUND,
+                    String.format("Cannot find asset with PID [%s]", command.getPid())
+                );
+            }
+
+            // Publisher must own the asset
+            if (!command.getPublisherKey().equals(feature.getProperties().getPublisherId())) {
+                throw new AssetDraftException(
+                    AssetMessageCode.API_COMMAND_ASSET_ACCESS_DENIED,
+                    String.format("Provider does not own asset with PID [%s]", command.getPid())
+                );
+            }
+
+            // Create draft
+            final CatalogueItemCommandDto draftCommand = new CatalogueItemCommandDto(feature);
+
+            draftCommand.setAutomatedMetadata(null);
+            draftCommand.setIngestionInfo(null);
+            draftCommand.setParentId(command.getPid());
+            draftCommand.setPublisherKey(command.getPublisherKey());
+            draftCommand.setTitle(draftCommand.getTitle() + " [Draft]");
+
+            final AssetDraftDto draft = this.updateDraft(draftCommand);
+
+            return draft;
+        } catch (final AssetDraftException ex) {
+            throw ex;
+        } catch(final Exception ex) {
+            throw new AssetDraftException(AssetMessageCode.ERROR, "Failed to create draft from asset existing asset", ex);
+        }
+    }
+
+    @Override
+    @Transactional
     public AssetDraftDto updateDraftMetadataVisibility(CatalogueItemVisibilityCommandDto command) throws AssetDraftException {
         final AssetDraftDto draft = this.draftRepository.update(command);
 
@@ -482,7 +535,21 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             }
 
             // A draft must exist with status DRAFT
-            this.ensureDraftAndStatus(command.getPublisherKey(), command.getAssetKey(), EnumProviderAssetDraftStatus.DRAFT);
+            final AssetDraftDto draft = this.ensureDraftAndStatus(
+                command.getPublisherKey(), command.getAssetKey(), EnumProviderAssetDraftStatus.DRAFT
+            );
+
+            // No other draft (excluding this one) with the same parent identifier must exist
+            if (!StringUtils.isBlank(draft.getParentId())) {
+                final ProviderAssetDraftEntity existingDraft = this.draftRepository.findAllByParentId(draft.getParentId()).stream()
+                    .filter(d -> StringUtils.equals(d.getParentId(), draft.getParentId()) && !d.getKey().equals(draft.getKey()))
+                    .findFirst()
+                    .orElse(null);
+
+                if (existingDraft != null) {
+                    throw new AssetDraftException(AssetMessageCode.DRAFT_FOR_PARENT_EXISTS, "Draft for the selected asset already exists");
+                }
+            }
 
             // Check if workflow exists
             ProcessInstanceDto instance = this.bpmEngine.findInstance(command.getAssetKey());
@@ -656,10 +723,14 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             // symbolic link
             this.draftFileManager.linkDraftFilesToAsset(publisherKey, draftKey, pid);
 
+            // If there is a parent identifier, unpublish parent asset
+            if (!StringUtils.isBlank(draft.getParentId())) {
+                this.catalogueService.unpublish(publisherKey, draft.getParentId());
+            }
+
             // Publish asset
             this.catalogueService.publish(feature);
 
-            // Get
             // Link resource files to the new PID value
             this.assetResourceRepository.linkDraftResourcesToAsset(draftKey, pid);
             this.assetAdditionalResourceRepository.linkDraftResourcesToAsset(draftKey, pid);

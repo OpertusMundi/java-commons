@@ -52,6 +52,9 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
         this.additionalResources = new ArrayList<>();
         this.pricingModels       = new ArrayList<>();
         this.resources           = new ArrayList<>();
+        this.title               = feature.getProperties().getTitle();
+        this.type                = EnumType.fromString(feature.getProperties().getType());
+        this.version             = feature.getProperties().getVersion();
         this.visibility          = feature.getProperties().getVisibility();
     }
 

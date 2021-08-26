@@ -54,6 +54,11 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         Pageable pageable
     );
 
+    @Query("SELECT a FROM ProviderAssetDraft a WHERE "
+           + "(a.parentId = :parentId) and "
+           + "(not status in ('HELPDESK_REJECTED', 'PROVIDER_REJECTED', 'PUBLISHED'))")
+    List<ProviderAssetDraftEntity> findAllByParentId(String parentId);
+
     @Query("SELECT a FROM ProviderAssetDraft a WHERE a.account.key = :publisherKey")
     Page<ProviderAssetDraftEntity> findAllByPublisher(
         @Param("publisherKey") UUID publisherKey, Pageable pageable

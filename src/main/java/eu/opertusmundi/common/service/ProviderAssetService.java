@@ -28,6 +28,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemSamplesCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemVisibilityCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.DraftFromAssetCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumType;
 import eu.opertusmundi.common.model.catalogue.client.UnpublishAssetCommand;
@@ -94,6 +95,15 @@ public interface ProviderAssetService {
      * @throws AssetDraftException
      */
     AssetDraftDto createApiDraft(DraftApiCommandDto command) throws AssetDraftException;
+
+    /**
+     * Create a new draft from an existing asset
+     *
+     * @param command
+     * @return
+     * @throws AssetDraftException
+     */
+    AssetDraftDto createDraftFromAsset(DraftFromAssetCommandDto command) throws AssetDraftException;
 
     /**
      * Create one or more drafts by importing records from a harvested catalogue
