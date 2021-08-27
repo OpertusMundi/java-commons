@@ -27,7 +27,7 @@ public class ContractSectionOptionDto{
 
 	@Getter
 	@Setter
-	private byte[] icon;
+	private EnumIcon icon;
 	
 	@Getter
 	@Setter
