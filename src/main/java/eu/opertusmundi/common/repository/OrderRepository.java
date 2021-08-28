@@ -46,7 +46,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     Optional<OrderEntity> findOrderEntityByKey(@Param("key") UUID key);
 
     /**
-     * Find a order created by a specific consumer
+     * Find an order created by a specific consumer
      *
      * This method does not return orders with status <b>CREATED</b>.
      *
@@ -57,7 +57,24 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     @Query("SELECT o FROM Order o "
          + "WHERE o.key = :orderKey and o.consumer.key = :consumerKey and o.status <> 'CREATED'"
     )
-    Optional<OrderEntity> findOrderEntityByKeyAndConsumerKey(@Param("consumerKey") UUID consumerKey, @Param("orderKey") UUID orderKey);
+    Optional<OrderEntity> findEntityByKeyAndConsumerAndStatusNotCreated(
+        @Param("consumerKey") UUID consumerKey, @Param("orderKey") UUID orderKey
+    );
+
+    /**
+     * Find an order created by a specific consumer
+     *
+     *
+     * @param consumerKey
+     * @param orderKey
+     * @return
+     */
+    @Query("SELECT o FROM Order o "
+         + "WHERE o.key = :orderKey and o.consumer.key = :consumerKey"
+    )
+    Optional<OrderEntity> findEntityByKeyAndConsumerKey(
+        @Param("consumerKey") UUID consumerKey, @Param("orderKey") UUID orderKey
+    );
 
     /**
      * Find an order linked to a specific provider.
@@ -191,7 +208,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     }
 
     default Optional<ConsumerOrderDto> findOrderObjectByKeyAndConsumer(UUID consumerKey, UUID orderKey) {
-        return this.findOrderEntityByKeyAndConsumerKey(consumerKey, orderKey).map(o -> o.toConsumerDto(true));
+        return this.findEntityByKeyAndConsumerAndStatusNotCreated(consumerKey, orderKey).map(o -> o.toConsumerDto(true));
     }
 
     default Optional<ProviderOrderDto> findOrderObjectByKeyAndProvider(UUID providerKey, UUID orderKey) {
