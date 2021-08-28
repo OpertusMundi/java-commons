@@ -2,6 +2,9 @@ package eu.opertusmundi.common.model.message.client;
 
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 import eu.opertusmundi.common.model.message.EnumMessageType;
 import eu.opertusmundi.common.model.message.server.ServerMessageDto;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -20,19 +23,36 @@ public class ClientMessageDto extends ClientBaseMessageDto {
 
         c.setCreatedAt(m.getCreatedAt());
         c.setId(m.getId());
-        c.setSender(m.getSender());
+        c.setSenderId(m.getSender());
         c.setRead(m.isRead());
         c.setReadAt(m.getReadAt());
-        c.setRecipient(m.getRecipient());
+        c.setRecipientId(m.getRecipient());
+        c.setReply(m.getReply());
         c.setText(m.getText());
         c.setThread(m.getThread());
 
         return c;
     }
-
+    
+    @Schema(description = "Message recipient identifier")
+    @Getter
+    @Setter
+    private UUID recipientId;
+    
+    @Schema(description = "Message recipient contact")
+    @JsonInclude(Include.NON_NULL)
+    @Getter
+    @Setter
+    private ClientContactDto recipient;
+    
     @Schema(description = "Message thread unique id")
     @Getter
     @Setter
     private UUID thread;
+    
+    @Schema(description = "Reply message unique id")
+    @Getter
+    @Setter
+    private UUID reply;
 
 }

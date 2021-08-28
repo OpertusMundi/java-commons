@@ -6,6 +6,8 @@ import java.util.UUID;
 import javax.validation.constraints.NotEmpty;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import eu.opertusmundi.common.model.message.EnumMessageType;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -48,14 +50,15 @@ public class ClientBaseMessageDto {
     @Setter
     private boolean read;
 
-    @Schema(description = "Message sender")
+    @Schema(description = "Message sender identifier")
     @Getter
     @Setter
-    private UUID sender;
-
-    @Schema(description = "Message recipient")
+    private UUID senderId;
+    
+    @Schema(description = "Message sender contact")
+    @JsonInclude(Include.NON_NULL)
     @Getter
     @Setter
-    private UUID recipient;
+    private ClientContactDto sender;
 
 }
