@@ -51,6 +51,14 @@ public interface MessageServiceFeignClient {
     );
 
     /**
+     * Count helpdesk unassigned messages
+     *
+     * @return The number of unassigned messages
+     */
+    @GetMapping(value = "/v1/messages/helpdesk/count")
+    ResponseEntity<RestResponse<Long>> countUnassignedMessages();
+
+    /**
      * Find user messages
      *
      * @param pageIndex
@@ -72,6 +80,14 @@ public interface MessageServiceFeignClient {
         @RequestParam(name = "read",      required = false) Boolean       read
     );
 
+    /**
+     * Count user new (unread) messages
+     *
+     * @return The number of new messages
+     */
+    @GetMapping(value = "/v1/messages/user/{userKey}/count")
+    ResponseEntity<RestResponse<Long>> countUserNewMessages(@PathVariable(name = "userKey") UUID userKey);
+    
     /**
      * Send message
      *
