@@ -163,7 +163,7 @@ public abstract class CustomerEntity {
     @Column(name = "`wallet_funds`", columnDefinition = "numeric", precision = 20, scale = 6)
     @Getter
     @Setter
-    protected BigDecimal walletFunds;
+    protected BigDecimal walletFunds = BigDecimal.ZERO;
 
     @Column(name = "`wallet_funds_updated_on`")
     @Getter
