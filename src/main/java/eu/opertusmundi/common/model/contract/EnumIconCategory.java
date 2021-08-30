@@ -5,5 +5,4 @@ public enum EnumIconCategory {
     Countries,
     Restrictions,
     ;
-
 }

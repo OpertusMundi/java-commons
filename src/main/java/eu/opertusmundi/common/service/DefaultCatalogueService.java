@@ -1,5 +1,9 @@
 package eu.opertusmundi.common.service;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -8,7 +12,9 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
 import org.camunda.bpm.engine.rest.dto.runtime.StartProcessInstanceDto;
@@ -16,6 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -30,6 +38,8 @@ import brave.Span;
 import brave.Tracer;
 import eu.opertusmundi.common.domain.AssetAdditionalResourceEntity;
 import eu.opertusmundi.common.domain.AssetResourceEntity;
+import eu.opertusmundi.common.domain.MasterSectionHistoryEntity;
+import eu.opertusmundi.common.domain.ProviderTemplateContractHistoryEntity;
 import eu.opertusmundi.common.feign.client.BpmServerFeignClient;
 import eu.opertusmundi.common.feign.client.CatalogueFeignClient;
 import eu.opertusmundi.common.model.PageRequestDto;
@@ -59,6 +69,7 @@ import eu.opertusmundi.common.model.catalogue.server.CatalogueCollection;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueResponse;
 import eu.opertusmundi.common.model.contract.ContractDto;
+import eu.opertusmundi.common.model.contract.ContractTermDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
@@ -79,8 +90,14 @@ public class DefaultCatalogueService implements CatalogueService {
 
     private static final String DRAFT_PUBLISHED_STATUS = "published";
 
+    @Value("${opertusmundi.contract.icons}")
+    private String iconFolder;
+
     @Autowired
     private Tracer tracer;
+
+    @Autowired
+    private ResourceLoader resourceLoader;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -95,7 +112,7 @@ public class DefaultCatalogueService implements CatalogueService {
     private AssetAdditionalResourceRepository assetAdditionalResourceRepository;
 
     @Autowired
-    private ProviderTemplateContractHistoryRepository contractRepository;
+    private ProviderTemplateContractHistoryRepository providerContractRepository;
 
     @Autowired
     private ObjectProvider<BpmServerFeignClient> bpmClient;
@@ -407,12 +424,8 @@ public class DefaultCatalogueService implements CatalogueService {
         item.setPublisher(publisher);
 
         // Inject contract details
-        final ContractDto contract = this.contractRepository.findOneObjectByIdAndVersion(
-            item.getPublisherId(),
-            feature.getProperties().getContractTemplateId(),
-            feature.getProperties().getContractTemplateVersion()
-        );
-        item.setContract(contract);
+        this.setContract(item, feature);
+
 
         // Consolidate data from asset repository
         final List<AssetResourceEntity> resources = this.assetResourceRepository
@@ -961,5 +974,34 @@ public class DefaultCatalogueService implements CatalogueService {
         });
     }
 
+    private void setContract(CatalogueItemDetailsDto item, CatalogueFeature feature) {
+        final ProviderTemplateContractHistoryEntity providerTemplate = this.providerContractRepository.findByIdAndVersion(
+            feature.getProperties().getPublisherId(),
+            feature.getProperties().getContractTemplateId(),
+            feature.getProperties().getContractTemplateVersion()
+        ).orElse(null);
+
+        final ContractDto contract = providerTemplate.toSimpleDto();
+
+        // Inject contract terms and conditions
+        providerTemplate.getSections().stream()
+            .filter(s -> s.getOption() != null)
+            .map(s -> Pair.<Integer, MasterSectionHistoryEntity>of(s.getOption(), s.getMasterSection()))
+            .map(p -> p.getRight().getOptions().get(p.getLeft()))
+            .filter(s -> s.getIcon() != null)
+            .map(s -> {
+                final Path path = Paths.get(iconFolder, s.getIcon().getFile());
+                try (final InputStream fileStream = resourceLoader.getResource(path.toString()).getInputStream()) {
+                    final byte[] data = IOUtils.toByteArray(fileStream);
+                    return ContractTermDto.of(s.getIcon(), s.getIcon().getCategory(), data, s.getShortDescription());
+                } catch (final IOException ex) {
+                    logger.warn(String.format("Failed to load resource [icon=%s, path=%s]", s.getIcon(), path), ex);
+                }
+                return ContractTermDto.of(s.getIcon(), s.getIcon().getCategory(), null, s.getShortDescription());
+            })
+            .forEach(contract.getTerms()::add);
+
+        item.setContract(contract);
+    }
 
 }
