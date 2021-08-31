@@ -4,6 +4,7 @@ import java.time.ZonedDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -22,7 +23,7 @@ public abstract class AccountSubscriptionDto {
     private Integer orderId;
 
     @Schema(description = "Service PID")
-    private String service;
+    private String serviceId;
 
     @Schema(description = "When the subscription was registered to the user account")
     private ZonedDateTime addedOn;
@@ -35,5 +36,8 @@ public abstract class AccountSubscriptionDto {
 
     @Schema(description = "First asset topic category if any exist")
     private EnumTopicCategory segment;
+
+    @Schema(description = "Catalogue item")
+    private CatalogueItemDto item;
 
 }

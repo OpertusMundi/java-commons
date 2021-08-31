@@ -1,19 +1,14 @@
 package eu.opertusmundi.common.service;
 
 import java.time.ZonedDateTime;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
-import org.camunda.bpm.engine.rest.dto.message.CorrelationMessageDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
-import org.camunda.bpm.engine.rest.dto.runtime.StartProcessInstanceDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.retry.annotation.Backoff;
@@ -22,24 +17,33 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import eu.opertusmundi.common.domain.AccountAssetEntity;
+import eu.opertusmundi.common.domain.AccountSubscriptionEntity;
+import eu.opertusmundi.common.domain.AccountSubscriptionSkuEntity;
 import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.OrderItemEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
-import eu.opertusmundi.common.feign.client.BpmServerFeignClient;
 import eu.opertusmundi.common.model.account.EnumAssetSource;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.PaymentMessageCode;
+import eu.opertusmundi.common.model.pricing.CallPrePaidPricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.pricing.EnumPricingModel;
 import eu.opertusmundi.common.model.pricing.FixedPricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.PrePaidTierDto;
+import eu.opertusmundi.common.model.pricing.QuotationParametersDto;
+import eu.opertusmundi.common.model.pricing.RowPrePaidPricingModelCommandDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.repository.AccountAssetRepository;
+import eu.opertusmundi.common.repository.AccountSubscriptionRepository;
 import eu.opertusmundi.common.repository.OrderRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
+import eu.opertusmundi.common.util.BpmEngineUtils;
+import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
 import feign.FeignException;
 
 @Service
@@ -62,7 +66,13 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     private AccountAssetRepository accountAssetRepository;
 
     @Autowired
-    private ObjectProvider<BpmServerFeignClient> bpmClient;
+    private AccountSubscriptionRepository accountSubscriptionRepository;
+
+    @Autowired
+    private BpmEngineUtils bpmEngine;
+
+    @Autowired
+    private CatalogueService catalogueService;
 
     /**
      * Initializes a workflow instance to process the referenced PayIn
@@ -83,24 +93,22 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                 return payIn.getProcessInstance();
             }
 
-            ProcessInstanceDto instance = this.findRunningInstance(payInKey.toString());
+            final ProcessInstanceDto instance = this.bpmEngine.findInstance(payInKey.toString());
             if (instance == null) {
-                // Start new instance
-                final StartProcessInstanceDto options = new StartProcessInstanceDto();
-
-                final Map<String, VariableValueDto> variables = new HashMap<String, VariableValueDto>();
+                // Set business key
+                final String businessKey= payInKey.toString();
 
                 // Set variables
-                this.setStringVariable(variables, EnumProcessInstanceVariable.START_USER_KEY.getValue(), "");
-                this.setStringVariable(variables, "payInKey", payInKey);
-                this.setStringVariable(variables, "payInId", payInId);
-                this.setStringVariable(variables, "payInStatus", payInStatus.toString());
+                final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
+                    .variableAsString(EnumProcessInstanceVariable.START_USER_KEY.getValue(), "")
+                    .variableAsString("payInKey", payInKey.toString())
+                    .variableAsString("payInId", payInId)
+                    .variableAsString("payInStatus", payInStatus.toString())
+                    .build();
 
-                options.setBusinessKey(payInKey.toString());
-                options.setVariables(variables);
-                options.setWithVariablesInReturn(true);
 
-                instance = this.bpmClient.getObject().startProcessDefinitionByKey(WORKFLOW_PROCESS_PAYIN, options);
+
+                this.bpmEngine.startProcessDefinitionByKey(WORKFLOW_PROCESS_PAYIN, businessKey, variables);
             }
 
             payInRepository.setPayInWorkflowInstance(payIn.getId(), instance.getDefinitionId(), instance.getId());
@@ -120,21 +128,13 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     @Retryable(include = {Exception.class}, maxAttempts = 3, backoff = @Backoff(delay = 2000, maxDelay = 3000))
     public void sendPayInStatusUpdateMessage(UUID payInKey, EnumTransactionStatus status) {
         try {
-            final PayInEntity payIn       = payInRepository.findOneEntityByKey(payInKey).orElse(null);
-            final String      businessKey = payIn.getKey().toString();
+            final PayInEntity                   payIn       = payInRepository.findOneEntityByKey(payInKey).orElse(null);
+            final String                        businessKey = payIn.getKey().toString();
+            final Map<String, VariableValueDto> variables   = BpmInstanceVariablesBuilder.builder()
+                .variableAsString("payInStatus", status.toString())
+                .build();
 
-            final CorrelationMessageDto         message   = new CorrelationMessageDto();
-            final Map<String, VariableValueDto> variables = new HashMap<String, VariableValueDto>();
-
-            this.setStringVariable(variables, "payInStatus", status.toString());
-
-            message.setMessageName(MESSAGE_UPDATE_PAYIN_STATUS);
-            message.setBusinessKey(businessKey);
-            message.setProcessVariables(variables);
-            message.setVariablesInResultEnabled(true);
-            message.setResultEnabled(true);
-
-            this.bpmClient.getObject().correlateMessage(message);
+            this.bpmEngine.correlateMessage(businessKey, MESSAGE_UPDATE_PAYIN_STATUS, variables);
         } catch (final FeignException fex) {
             if (fex.status() == HttpStatus.BAD_REQUEST.value()) {
                 // No process definition or execution matches the parameters.
@@ -175,11 +175,12 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                 case ORDER :
                     final PayInOrderItemEntity orderItem = (PayInOrderItemEntity) item;
 
-                    this.registerAsset(payIn, (PayInOrderItemEntity) item);
+                    this.registerOrderItem(payIn, (PayInOrderItemEntity) item);
 
                     // Complete order
                     this.orderRepository.setStatus(orderItem.getOrder().getKey(), EnumOrderStatus.SUCCEEDED, ZonedDateTime.now());
                     break;
+
                 default :
                     throw new PaymentException(PaymentMessageCode.PAYIN_ITEM_TYPE_NOT_SUPPORTED, String.format(
                         "PayIn item type not supported [payIn=%s, index=%d, type=%s]",
@@ -189,7 +190,30 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         }
     }
 
-    private void registerAsset(PayInEntity payIn, PayInOrderItemEntity payInItem) {
+    private void registerOrderItem(PayInEntity payIn, PayInOrderItemEntity payInItem) {
+        final OrderEntity             order     = payInItem.getOrder();
+        final OrderItemEntity         orderItem = order.getItems().get(0);
+        final CatalogueItemDetailsDto asset      = this.catalogueService.findOne(null, orderItem.getAssetId(), null, false);
+
+        switch(asset.getType()) {
+            case VECTOR :
+            case RASTER :
+                this.registerAsset(payIn, payInItem, asset);
+                break;
+
+            case SERVICE :
+                this.registerSubscription(payIn, payInItem, asset);
+                break;
+
+            default :
+                throw new PaymentException(PaymentMessageCode.PAYIN_ASSET_TYPE_NOT_SUPPORTED, String.format(
+                    "PayIn asset type not supported [payIn=%s, index=%d, type=%s]",
+                    payIn.getKey(), orderItem.getIndex(), asset.getType(
+                )));
+        }
+    }
+
+    private void registerAsset(PayInEntity payIn, PayInOrderItemEntity payInItem, CatalogueItemDetailsDto asset) {
         // An order contains only a single item
         final UUID                     userKey      = payIn.getConsumer().getKey();
         final OrderEntity              order        = payInItem.getOrder();
@@ -200,6 +224,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         final AccountAssetEntity ownedAsset = accountAssetRepository.findAllByUserKeyAndAssetId(userKey, orderItem.getAssetId()).stream()
             .filter(a -> a.getOrder().getId() == order.getId())
             .findFirst().orElse(null);
+        // TODO: Update existing asset i.e. update update years of free updates
         if (ownedAsset != null) {
             return;
         }
@@ -229,32 +254,72 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         this.accountAssetRepository.save(reg);
     }
 
-    /**
-     * Find running workflow instance by business key
-     *
-     * @param businessKey
-     * @return
-     */
-    private ProcessInstanceDto findRunningInstance(String businessKey) {
-        final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstances(null, businessKey);
+    private void registerSubscription(PayInEntity payIn, PayInOrderItemEntity payInItem, CatalogueItemDetailsDto asset) {
+        // An order contains only a single item
+        final UUID                     userKey      = payIn.getConsumer().getKey();
+        final OrderEntity              order        = payInItem.getOrder();
+        final OrderItemEntity          orderItem    = order.getItems().get(0);
+        final EffectivePricingModelDto pricingModel = orderItem.getPricingModel();
+        final ZonedDateTime            now          = ZonedDateTime.now();
 
-        return instances.stream()
-            .filter(i -> !i.isEnded())
-            .findFirst()
-            .orElse(null);
-    }
+        // Check if a subscription is already active
+        final AccountSubscriptionEntity activeSubscription = accountSubscriptionRepository.findAllByUserKeyAndServiceId(userKey, orderItem.getAssetId()).stream()
+            .filter(a -> a.getOrder().getId() == order.getId())
+            .findFirst().orElse(null);
+        final boolean renewal = activeSubscription != null;
 
-    private void setStringVariable(Map<String, VariableValueDto> variables, String name, Object value) {
-        this.setVariable(variables, "String", name, value);
-    }
+        if(renewal) {
+            activeSubscription.setUpdatedOn(now);
+        }
+        // Create/Update subscription for consumer account
+        final AccountSubscriptionEntity sub = new AccountSubscriptionEntity();
 
-    private void setVariable(Map<String, VariableValueDto> variables, String type, String name, Object value) {
-        final VariableValueDto v = new VariableValueDto();
+        sub.setAddedOn(now);
+        sub.setConsumer(payIn.getConsumer());
+        sub.setProvider(orderItem.getProvider());
+        sub.setOrder(order);
+        sub.setService(orderItem.getAssetId());
+        sub.setUpdatedOn(now);
+        sub.setSegment(asset.getTopicCategory().stream().findFirst().orElse(null));
+        sub.setSource(renewal ? EnumAssetSource.UPDATE : EnumAssetSource.PURCHASE);
 
-        v.setValue(value);
-        v.setType(type);
+        // Register call/rows SKUs
+        final QuotationParametersDto params = pricingModel.getParameters();
+        AccountSubscriptionSkuEntity sku    = null;
 
-        variables.put(name, v);
+        switch (pricingModel.getModel().getType()) {
+            case PER_CALL_WITH_PREPAID :
+                final CallPrePaidPricingModelCommandDto prePaidCallModel = (CallPrePaidPricingModelCommandDto) pricingModel.getModel();
+                final PrePaidTierDto callTier = prePaidCallModel.getPrePaidTiers().get(params.getPrePaidTier());
+
+                sku = new AccountSubscriptionSkuEntity();
+                sku.setPurchasedCalls(callTier.getCount());
+
+                break;
+
+            case PER_ROW_WITH_PREPAID :
+                final RowPrePaidPricingModelCommandDto prePaidRowModel = (RowPrePaidPricingModelCommandDto) pricingModel.getModel();
+                final PrePaidTierDto rowTier = prePaidRowModel.getPrePaidTiers().get(params.getPrePaidTier());
+
+                sku = new AccountSubscriptionSkuEntity();
+                sku.setPurchasedCalls(rowTier.getCount());
+
+                break;
+
+            default :
+                // No action is required
+                break;
+        }
+        if (sku != null) {
+            sku.setOrder(order);
+            sku.setSubscription(sub);
+            sku.setUsedCalls(0);
+            sku.setUsedRows(0);
+
+            sub.getSkus().add(sku);
+        }
+
+        this.accountSubscriptionRepository.save(sub);
     }
 
 }
