@@ -1,11 +1,13 @@
 package eu.opertusmundi.common.util;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
+import org.camunda.bpm.engine.rest.dto.externaltask.SetRetriesForExternalTasksDto;
 import org.camunda.bpm.engine.rest.dto.message.CorrelationMessageDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
 import org.camunda.bpm.engine.rest.dto.runtime.StartProcessInstanceDto;
@@ -97,6 +99,22 @@ public class BpmEngineUtils {
         message.setResultEnabled(true);
 
         this.bpmClient.getObject().correlateMessage(message);
+    }
+
+    public void retryExternalTask(String processInstanceId, String externalTaskId) {
+        final SetRetriesForExternalTasksDto request            = new SetRetriesForExternalTasksDto();
+        final List<String>                  processInstanceIds = Arrays.asList(processInstanceId);
+        final List<String>                  externalTaskIds    = Arrays.asList(externalTaskId);
+
+        request.setProcessInstanceIds(processInstanceIds);
+        request.setExternalTaskIds(externalTaskIds);
+        request.setRetries(1);
+
+        this.bpmClient.getObject().setExternalTaskRetries(request);
+    }
+
+    public void deleteProcessInstance(String processInstanceId) {
+        this.bpmClient.getObject().deleteProcessInstance(processInstanceId);
     }
 
 }

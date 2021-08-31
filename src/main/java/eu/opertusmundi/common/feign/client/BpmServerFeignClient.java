@@ -26,6 +26,7 @@ import org.camunda.bpm.engine.rest.dto.task.TaskDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -300,5 +301,16 @@ public interface BpmServerFeignClient {
     List<HistoricIncidentDto> getHistoryIncidents(
         @RequestParam String processInstanceId
     );
+
+    /**
+     * Deletes a running process instance by id.
+     *
+     * @param processInstanceId
+     * @return
+     *
+     * @see https://docs.camunda.org/manual/latest/reference/rest/process-instance/delete/
+     */
+    @DeleteMapping(value = "/process-instance/{id}")
+    ResponseEntity<Void> deleteProcessInstance(@PathVariable("id") String processInstanceId);
 
 }
