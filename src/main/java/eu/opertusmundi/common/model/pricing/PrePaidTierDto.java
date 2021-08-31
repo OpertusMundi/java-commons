@@ -29,7 +29,7 @@ public class PrePaidTierDto implements Serializable {
                         + "The unit type is determined by the parent pricing model")
     @NotNull
     @Min(1)
-    private Long count;
+    private Integer count;
 
     @Schema(description = "Discount percent")
     @Digits(integer = 3, fraction = 2)

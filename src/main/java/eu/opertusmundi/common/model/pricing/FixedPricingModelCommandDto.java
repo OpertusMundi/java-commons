@@ -43,7 +43,7 @@ public class FixedPricingModelCommandDto extends BasePricingModelCommandDto {
     }
 
     @Override
-    public void validate(QuotationParametersDto params) throws QuotationException {
+    public void validate(QuotationParametersDto params, boolean ignoreMissing) throws QuotationException {
         // No validation is required
     }
 

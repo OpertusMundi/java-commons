@@ -53,16 +53,19 @@ public class FixedRowPricingModelCommandDto extends BasePricingModelCommandDto {
     @Setter
     private List<DiscountRateDto> discountRates;
 
+    @Override
     public void validate() throws QuotationException {
         // No validation is required
     }
 
-    public void validate(QuotationParametersDto params) throws QuotationException {
+    @Override
+    public void validate(QuotationParametersDto params, boolean ignoreMissing) throws QuotationException {
         if (params.getNuts() == null || params.getNuts().isEmpty()) {
             throw new QuotationException(QuotationMessageCode.NO_NUTS_SELECTED, "At least a region must be selected");
         }
     }
 
+    @Override
     public  EffectivePricingModelDto compute(QuotationParametersDto params) {
         final EffectivePricingModelDto result = EffectivePricingModelDto.from(this, params);
 
@@ -73,7 +76,7 @@ public class FixedRowPricingModelCommandDto extends BasePricingModelCommandDto {
             quotation.setTaxPercent(params.getTaxPercent().intValue());
 
             if (this.discountRates != null) {
-                for (DiscountRateDto r : this.discountRates) {
+                for (final DiscountRateDto r : this.discountRates) {
                     if (params.getSystemParams().getRows() > r.getCount()) {
                         discount = r.getDiscount();
                     }

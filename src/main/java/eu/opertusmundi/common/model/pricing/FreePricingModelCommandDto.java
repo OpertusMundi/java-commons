@@ -10,14 +10,17 @@ public class FreePricingModelCommandDto extends BasePricingModelCommandDto {
         super(EnumPricingModel.FREE);
     }
 
+    @Override
     public void validate() throws QuotationException {
         // No validation is required
     }
 
-    public void validate(QuotationParametersDto params) throws QuotationException {
+    @Override
+    public void validate(QuotationParametersDto params, boolean ignoreMissing) throws QuotationException {
         // No validation is required
     }
 
+    @Override
     public EffectivePricingModelDto compute(QuotationParametersDto params) {
         final EffectivePricingModelDto result    = EffectivePricingModelDto.from(this, params);
         final QuotationDto             quotation = new QuotationDto();

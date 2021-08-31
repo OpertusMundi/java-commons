@@ -46,6 +46,7 @@ public class RowBlockRatePricingModelCommandDto extends BasePricingModelCommandD
     @Setter
     private List<DiscountRateDto> discountRates;
 
+    @Override
     public void validate() throws QuotationException {
         if (this.discountRates != null) {
             for (int i = 1; i < this.discountRates.size(); i++) {
@@ -67,10 +68,12 @@ public class RowBlockRatePricingModelCommandDto extends BasePricingModelCommandD
         }
     }
 
-    public void validate(QuotationParametersDto params) throws QuotationException {
+    @Override
+    public void validate(QuotationParametersDto params, boolean ignoreMissing) throws QuotationException {
         // No validation is required
     }
 
+    @Override
     public  EffectivePricingModelDto compute(QuotationParametersDto params) {
         final EffectivePricingModelDto result = EffectivePricingModelDto.from(this, params);
 

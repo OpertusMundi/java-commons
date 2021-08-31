@@ -2,6 +2,7 @@ package eu.opertusmundi.common.model.order;
 
 import java.util.UUID;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
@@ -35,6 +36,7 @@ public class CartAddCommandDto {
 
     @Schema(description = "Quotation parameters")
     @NotNull
+    @Valid
     private QuotationParametersDto parameters;
 
     /**

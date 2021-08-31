@@ -59,7 +59,7 @@ public class DefaultCartService implements CartService {
 
             // Compute quotation
             final EffectivePricingModelDto quotation = quotationService.createQuotation(
-                asset, command.getPricingModelKey(), command.getParameters()
+                asset, command.getPricingModelKey(), command.getParameters(), false
             );
 
             command.setQuotation(quotation);

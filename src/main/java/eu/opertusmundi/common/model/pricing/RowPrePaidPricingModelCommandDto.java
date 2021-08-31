@@ -47,6 +47,7 @@ public class RowPrePaidPricingModelCommandDto extends BasePricingModelCommandDto
     @Setter
     private List<PrePaidTierDto> prePaidTiers;
 
+    @Override
     public void validate() throws QuotationException {
         if (this.prePaidTiers != null) {
             for (int i = 1; i < this.prePaidTiers.size(); i++) {
@@ -68,11 +69,16 @@ public class RowPrePaidPricingModelCommandDto extends BasePricingModelCommandDto
         }
     }
 
-    public void validate(QuotationParametersDto params) throws QuotationException {
+    @Override
+    public void validate(QuotationParametersDto params, boolean ignoreMissing) throws QuotationException {
         final Integer tier = params.getPrePaidTier();
 
-        if (tier == null) {
+        if (tier == null && ignoreMissing) {
             return;
+        }
+
+        if (tier == null) {
+            throw new QuotationException(QuotationMessageCode.PRE_PAID_TIER_NOT_SET, "Prepaid tier is required");
         }
 
         if (this.prePaidTiers == null || tier < 0 || tier >= this.prePaidTiers.size()) {
@@ -80,6 +86,7 @@ public class RowPrePaidPricingModelCommandDto extends BasePricingModelCommandDto
         }
     }
 
+    @Override
     public  EffectivePricingModelDto compute(QuotationParametersDto params) {
         final EffectivePricingModelDto result = EffectivePricingModelDto.from(this, params);
 

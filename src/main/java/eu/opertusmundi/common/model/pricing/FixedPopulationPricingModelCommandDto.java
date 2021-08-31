@@ -12,6 +12,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+import io.jsonwebtoken.lang.Collections;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -81,8 +82,8 @@ public class FixedPopulationPricingModelCommandDto extends BasePricingModelComma
     }
 
     @Override
-    public void validate(QuotationParametersDto params) throws QuotationException {
-        if (params.getNuts() == null || params.getNuts().isEmpty()) {
+    public void validate(QuotationParametersDto params, boolean ignoreMissing) throws QuotationException {
+        if (!ignoreMissing && Collections.isEmpty(params.getNuts())) {
             throw new QuotationException(QuotationMessageCode.NO_NUTS_SELECTED, "At least a region must be selected");
         }
     }

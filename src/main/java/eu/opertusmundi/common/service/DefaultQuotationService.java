@@ -21,27 +21,27 @@ public class DefaultQuotationService implements QuotationService {
 
     // TODO: Set from configuration
     private final BigDecimal tax = new BigDecimal(24);
-    
+
     @Override
     public void validate(BasePricingModelCommandDto model) throws QuotationException {
         model.validate();
     }
-    
+
     @Override
-    public void validate(BasePricingModelCommandDto model, QuotationParametersDto params) throws QuotationException {
-        model.validate(params);
+    public void validate(BasePricingModelCommandDto model, QuotationParametersDto params, boolean ignoreMissing) throws QuotationException {
+        model.validate(params, ignoreMissing);
     }
 
     @Override
     public EffectivePricingModelDto createQuotation(
-        CatalogueItemDto asset, UUID pricingModelKey, QuotationParametersCommandDto command
+        CatalogueItemDto asset, UUID pricingModelKey, QuotationParametersCommandDto command, boolean ignoreMissing
     ) throws QuotationException {
         try {
             final BasePricingModelCommandDto pricingModel = asset.getPricingModels().stream()
                 .filter(m -> m.getKey().equals(pricingModelKey))
                 .findFirst()
                 .orElse(null);
-            
+
             if(pricingModel == null) {
                 throw new QuotationException(
                     QuotationMessageCode.PRICING_MODEL_NOT_FOUND,
@@ -49,17 +49,17 @@ public class DefaultQuotationService implements QuotationService {
                 );
             }
             final QuotationParametersDto params = QuotationParametersDto.from(command);
-            
+
             // Inject required parameters
             this.injectParameters(pricingModel, params);
-            
+
             // Validate parameters
-            this.validate(pricingModel, params);
-            
+            this.validate(pricingModel, params, ignoreMissing);
+
             return pricingModel.compute(params);
-        } catch(QuotationException ex) {
+        } catch(final QuotationException ex) {
             throw ex;
-        } catch(Exception ex) {
+        } catch(final Exception ex) {
             throw new QuotationException("Quotation failed", ex);
         }
     }
@@ -80,11 +80,11 @@ public class DefaultQuotationService implements QuotationService {
             })
             .collect(Collectors.toList());
     }
-    
+
     /**
      * Injects dynamic parameters to a quotation command object e.g. row count
      * or population
-     * 
+     *
      * @param command
      */
     private void injectParameters(BasePricingModelCommandDto command, QuotationParametersDto params) {
@@ -103,7 +103,7 @@ public class DefaultQuotationService implements QuotationService {
                 if (params.getNuts() != null && params.getNuts().size() > 0) {
                     params.setSystemParams(SystemParameters.fromPopulation(500000L, 20));
                 }
-                
+
                 break;
 
             default :
@@ -111,5 +111,5 @@ public class DefaultQuotationService implements QuotationService {
                 break;
         }
     }
-    
+
 }

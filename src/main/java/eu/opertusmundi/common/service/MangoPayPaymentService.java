@@ -645,7 +645,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
             // Create quotation
             final EffectivePricingModelDto quotation = quotationService.createQuotation(
-                asset, cartItemPricingModel.getModel().getKey(), cartItemPricingModel.getParameters()
+                asset, cartItemPricingModel.getModel().getKey(), cartItemPricingModel.getParameters(), false
             );
 
             // Create command
@@ -1737,7 +1737,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     private PaymentException wrapException(String operation, Exception ex) {
         return super.wrapException(operation, ex, null, logger);
     }
-    
+
     protected PaymentException wrapException(String operation, Exception ex, Object command) {
         return super.wrapException(operation, ex, command, logger);
     }
