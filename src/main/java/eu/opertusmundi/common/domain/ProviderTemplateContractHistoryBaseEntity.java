@@ -21,6 +21,7 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.contract.EnumContractStatus;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -34,13 +35,15 @@ public class ProviderTemplateContractHistoryBaseEntity {
     )
     @GeneratedValue(generator = "provider_contract_hist_id_seq", strategy = GenerationType.SEQUENCE)
     @Getter
+    @Setter(AccessLevel.PROTECTED)
     protected Integer id ;
 
     @NotNull
     @NaturalId
     @Column(name = "key", updatable = false, columnDefinition = "uuid")
     @Getter
-    protected final UUID key = UUID.randomUUID();
+    @Setter(AccessLevel.PROTECTED)
+    protected UUID key = UUID.randomUUID();
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
