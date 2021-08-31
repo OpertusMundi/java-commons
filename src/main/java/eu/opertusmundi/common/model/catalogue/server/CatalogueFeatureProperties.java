@@ -110,6 +110,7 @@ public class CatalogueFeatureProperties {
     }
 
     @JsonProperty("abstract")
+    @JsonInclude(Include.NON_EMPTY)
     private String abstractText;
 
     @JsonProperty("additional_resources")
@@ -118,15 +119,19 @@ public class CatalogueFeatureProperties {
     @JsonProperty("automated_metadata")
     private JsonNode automatedMetadata;
 
+    @JsonInclude(Include.NON_EMPTY)
     private String conformity;
 
     @JsonProperty("contract_template_id")
+    @JsonInclude(Include.NON_NULL)
     private Integer contractTemplateId;
 
     @JsonProperty("contract_template_version")
+    @JsonInclude(Include.NON_EMPTY)
     private String contractTemplateVersion;
 
     @JsonProperty("creation_date")
+    @JsonInclude(Include.NON_EMPTY)
     private String creationDate;
 
     @JsonProperty("date_end")
