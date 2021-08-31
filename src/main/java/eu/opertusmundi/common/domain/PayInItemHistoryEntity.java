@@ -51,7 +51,6 @@ public class PayInItemHistoryEntity {
     @Enumerated(EnumType.STRING)
     private EnumOrderItemType assetType;
 
-    @NotNull
     @Column(name = "segment", updatable = false)
     @Enumerated(EnumType.STRING)
     private EnumTopicCategory segment;
