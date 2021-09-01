@@ -914,13 +914,53 @@ public class DefaultCatalogueService implements CatalogueService {
 
     @Override
     public void publish(CatalogueFeature feature) throws CatalogueServiceException {
-        // TODO: Check if asset already exists (draft key can be used as the
-        // idempotent key)
+        // Draft may already be created
+        CatalogueFeature existingDraft = null;
+        try {
+            ResponseEntity<CatalogueResponse<CatalogueFeature>> draftResponse;
+            CatalogueResponse<CatalogueFeature>                 draftBody;
+
+            draftResponse = this.catalogueClient.getObject().findOneDraftById(feature.getId());
+            draftBody     = draftResponse.getBody();
+
+            if (draftBody.isSuccess()) {
+                existingDraft = draftBody.getResult();
+            }
+        } catch (final FeignException fex) {
+            // 404 errors are valid responses
+            if (fex.status() != HttpStatus.NOT_FOUND.value()) {
+                throw fex;
+            }
+        }
+
+        // Asset may already be published
+        CatalogueFeature existingAsset = null;
+        try {
+            final ResponseEntity<CatalogueResponse<CatalogueFeature>> assetResponse;
+            final CatalogueResponse<CatalogueFeature>                 assetBody;
+
+            assetResponse = this.catalogueClient.getObject().findOneById(feature.getId());
+            assetBody     = assetResponse.getBody();
+
+            if (assetBody.isSuccess()) {
+                existingAsset = assetBody.getResult();
+            }
+        } catch (final FeignException fex) {
+            // 404 errors are valid responses
+            if (fex.status() != HttpStatus.NOT_FOUND.value()) {
+                throw fex;
+            }
+        }
 
         try {
             // Create a draft record first and then set its status to published.
-            this.catalogueClient.getObject().createDraft(feature);
-            this.catalogueClient.getObject().setDraftStatus(feature.getId(), DRAFT_PUBLISHED_STATUS);
+            if (existingAsset == null) {
+                if (existingDraft == null) {
+                    this.catalogueClient.getObject().createDraft(feature);
+                }
+
+                this.catalogueClient.getObject().setDraftStatus(feature.getId(), DRAFT_PUBLISHED_STATUS);
+            }
 
             // Query new published item from the catalogue. Catalogue may inject
             // additional information such as versions
