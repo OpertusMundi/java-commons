@@ -17,8 +17,13 @@ public enum EnumIcon {
 	UpdatesIncluded            ("topio-licence-terms_updates-included.svg",                EnumIconCategory.Terms),
 	WarrantyNotProvided        ("topio-licence-terms_warranty-not-provided.svg",           EnumIconCategory.Terms),
 	WarrantyProvided           ("topio-licence-terms_warranty-provided.svg",               EnumIconCategory.Terms),
-	NoRestrictionsWorldwide    ("topio-licence-terms_no-restrictions-worldwide.svg",       EnumIconCategory.Countries),
-	Geomarketing               ("topio-licence-terms_no-restrictions-worldwide.svg",       EnumIconCategory.Restrictions),
+	NoRestrictionsWorldwide    ("topio-licence-terms_worldwide.svg",                       EnumIconCategory.Countries),
+	AdvertisingMarketing       ("topio-licence-terms_advertising-marketing.svg",           EnumIconCategory.Restrictions),
+	Geomarketing               ("topio-licence-terms_geomarketing.svg",                    EnumIconCategory.Restrictions),
+	IntranetApplications       ("topio-licence-terms_intranet-applications.svg",           EnumIconCategory.Restrictions),
+	MobileApplications         ("topio-licence-terms_mobile-applications.svg",             EnumIconCategory.Restrictions),
+	NavigationMobility         ("topio-licence-terms_navigation-mobility.svg",             EnumIconCategory.Restrictions),
+	WebApplications            ("topio-licence-terms_web-applications.svg",                EnumIconCategory.Restrictions),
     ;
 
     @Getter
