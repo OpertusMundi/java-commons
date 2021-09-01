@@ -250,7 +250,12 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     }
 
     private String subStringUsingLength(String myString, int start, int length) {
-        return myString.substring(start, Math.min(start + length, myString.length()));
+        final int endIndex = Math.min(start + length, myString.length());
+        if (start > endIndex) {
+            // Content must not be empty!
+            return " ";
+        }
+        return myString.substring(start, endIndex);
     }
 
     private Map<String, String> createKeywordMapping() {
@@ -811,17 +816,17 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
     private Block generateSingleStylePricingModelBlock(
     		String text, String style) {
-		Block block = new Block(text);
-		int offset 	= 0;
-		int length	= text.length();
-		BlockStyle blockStyle = new BlockStyle(offset, length, style);
+		final Block block = new Block(text);
+		final int offset 	= 0;
+		final int length	= text.length();
+		final BlockStyle blockStyle = new BlockStyle(offset, length, style);
 		block.getBlockStyles().add(blockStyle);
 		return block;
     }
 
     private Block generateMultiStylePricingModelBlock(
     		String text) {
-    	Block block = new Block(text);
+    	final Block block = new Block(text);
     	int offset	 	= 0;
     	int length 		= 0;
     	String style 	= null;
@@ -870,9 +875,9 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     	if (oArray instanceof EnumContinent[]) {
 	    	for (int i = 0 ; i < oArray.length ; i++) {
 	    		if (oArray.length == 1) {
-	    			string = (String) ((EnumContinent) oArray[i]).getDescription().toString();
+	    			string = ((EnumContinent) oArray[i]).getDescription().toString();
 	    		} else if (i == oArray.length-1) {
-	    			string += (String) ((EnumContinent) oArray[i]).getDescription().toString();
+	    			string += ((EnumContinent) oArray[i]).getDescription().toString();
 	    		} else {
 	    			string += ((EnumContinent) oArray[i]).getDescription().toString() + ", ";
 	    		}
@@ -881,11 +886,11 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     	if (oArray instanceof String[]) {
 	    	for (int i = 0 ; i < oArray.length ; i++) {
 	    		if (oArray.length == 1) {
-	    			string = (String) oArray[i].toString();
+	    			string = oArray[i].toString();
 	    		} else if (i == oArray.length-1) {
-	    			string += (String) oArray[i].toString();
+	    			string += oArray[i].toString();
 	    		} else {
-	    			string += (String) oArray[i].toString() + ", ";
+	    			string += oArray[i].toString() + ", ";
 	    		}
 	    	}
     	}
@@ -966,9 +971,9 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
     	Section section = new Section(sectionTitle);
 
-    	String partPrice 		= "APPLICABLE PRICE";
-    	String partDelivery		= "DELIVERY";
-    	String partRestriction	= "RESTICTIONS";
+    	final String partPrice 		= "APPLICABLE PRICE";
+    	final String partDelivery		= "DELIVERY";
+    	final String partRestriction	= "RESTICTIONS";
 
     	/* Fixed with and without updates updates*/
     	if (pricingModel.getPricingModelType() == EnumPricingModel.FIXED) {
@@ -1015,7 +1020,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		Block block = generateSingleStylePricingModelBlock(partPrice, BOLD);
     		section.getBlocks().add(block);
 
-    		String text = pricingModel.getPricingModelDescription();;
+    		String text = pricingModel.getPricingModelDescription();
     		block = generateSingleStylePricingModelBlock(text, NORMAL);
     		section.getBlocks().add(block);
 
@@ -1603,8 +1608,8 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     public List<BlockStyle> getBlockStylesSorted(List<BlockStyle> blockstyles) {
     	return blockstyles.stream().sorted((b1,b2) -> {
     		/* Get index of each section*/
-    		int offset1	=	b1.getOffset();
-    		int offset2	=	b2.getOffset();
+    		final int offset1	=	b1.getOffset();
+    		final int offset2	=	b2.getOffset();
 
     		if (offset1 > offset2) {
     			return 1;
@@ -1738,7 +1743,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
             for (final Section section  : allSections) {
                 for (final Block block : section.getBlocks()) {
-                	ArrayList<BlockStyle> sortedBlockStyles = (ArrayList<BlockStyle>) getBlockStylesSorted(block.getBlockStyles());
+                	final ArrayList<BlockStyle> sortedBlockStyles = (ArrayList<BlockStyle>) getBlockStylesSorted(block.getBlockStyles());
                 	block.setBlockStyles(sortedBlockStyles);
                 }
             }

@@ -47,12 +47,12 @@ public class ContractParametersDto {
             return result;
         }
 
-        private String corporateName;
-        private String professionalAddress;
-        private String contactEmail;
-        private String contactPerson;
-        private String companyRegistrationNumber;
-        private String euVatNumber;
+        private String corporateName             = "";
+        private String professionalAddress       = "";
+        private String contactEmail              = "";
+        private String contactPerson             = "";
+        private String companyRegistrationNumber = "";
+        private String euVatNumber               = "";
     }
 
 	@AllArgsConstructor
@@ -87,12 +87,12 @@ public class ContractParametersDto {
             return result;
         }
 
-        private String corporateName;
-        private String professionalAddress;
-        private String contactEmail;
-        private String contactPerson;
-        private String companyRegistrationNumber;
-        private String euVatNumber;
+        private String corporateName             = "";
+        private String professionalAddress       = "";
+        private String contactEmail              = "";
+        private String contactPerson             = "";
+        private String companyRegistrationNumber = "";
+        private String euVatNumber               = "";
 
     }
 
@@ -148,18 +148,18 @@ public class ContractParametersDto {
             if (result.pricingModelType == EnumPricingModel.FIXED) {
                 final FixedPricingModelCommandDto fixedPricingModelCommandDto = (FixedPricingModelCommandDto) c.getModel();
                 final Integer yearsOfUpdates	= fixedPricingModelCommandDto.getYearsOfUpdates();
-                
+
                 if (yearsOfUpdates == null || yearsOfUpdates == 0) {
                 	result.pricingModelDescription = "The product includes only the current version, with no access to updates. ";
                 } else {
                 	result.pricingModelDescription = "The product includes previous versions, the current one and access to updates for "
-                									 + yearsOfUpdates 
+                									 + yearsOfUpdates
                 									 + " years.";
                 }
             	result.pricePerRows 		= null;
             	result.pricePerPopulation	= null;
             	result.discountRates		= null;
-                
+
             } else if (result.pricingModelType == EnumPricingModel.FIXED_PER_ROWS) {
                 final FixedRowPricingModelCommandDto fixedRowPricingModelCommandDto = (FixedRowPricingModelCommandDto) c.getModel();
                 result.pricingModelDescription = "The product includes a subset per row of the current version of the asset"
@@ -167,8 +167,8 @@ public class ContractParametersDto {
                 								 + ", with no access to updates.";
             	result.pricePerRows 		= df.format(fixedRowPricingModelCommandDto.getPrice());
             	result.pricePerPopulation	= null;
-            	result.discountRates		= fixedRowPricingModelCommandDto.getDiscountRates();  
-            	
+            	result.discountRates		= fixedRowPricingModelCommandDto.getDiscountRates();
+
             } else if (result.pricingModelType == EnumPricingModel.FIXED_FOR_POPULATION) {
                 final FixedPopulationPricingModelCommandDto fixedPopulationPricingModelCommandDto = (FixedPopulationPricingModelCommandDto) c.getModel();
                 result.pricingModelDescription = "The product includes a subset per population coverage of the current version of the asset"
@@ -178,7 +178,7 @@ public class ContractParametersDto {
             	result.pricePerPopulation	= df.format(fixedPopulationPricingModelCommandDto.getPrice());
             	result.discountRates		= fixedPopulationPricingModelCommandDto.getDiscountRates();
             }
-            
+
             result.consumerRestrictionContinents	= c.getModel().getConsumerRestrictionContinents();
             result.consumerRestrictionCountries		= c.getModel().getConsumerRestrictionCountries();
             result.coverageRestrictionContinents	= c.getModel().getCoverageRestrictionContinents();
@@ -188,19 +188,19 @@ public class ContractParametersDto {
 
             return result;
         }
-        
-        private EnumPricingModel 		pricingModelType;	
-        private String					pricingModelDescription;
-        private EnumContinent[]			consumerRestrictionContinents;
-        private String[]				consumerRestrictionCountries;
-        private EnumContinent[]			coverageRestrictionContinents;
-        private String[]				coverageRestrictionCountries;
-        private String[]				domainRestrictions;
-        private String					totalPrice;
-        private String					totalPriceExcludingTax;
-        private String					pricePerRows;
-        private String					pricePerPopulation;
-        private List<DiscountRateDto>	discountRates;
+
+        private EnumPricingModel      pricingModelType;
+        private String                pricingModelDescription;
+        private EnumContinent[]       consumerRestrictionContinents;
+        private String[]              consumerRestrictionCountries;
+        private EnumContinent[]       coverageRestrictionContinents;
+        private String[]              coverageRestrictionCountries;
+        private String[]              domainRestrictions;
+        private String                totalPrice;
+        private String                totalPriceExcludingTax;
+        private String                pricePerRows;
+        private String                pricePerPopulation;
+        private List<DiscountRateDto> discountRates;
     }
 
     private Consumer     consumer;

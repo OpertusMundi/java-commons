@@ -2,6 +2,8 @@ package eu.opertusmundi.common.model.account;
 
 import java.io.Serializable;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.mangopay.core.Address;
 
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
@@ -47,7 +49,7 @@ public class AddressDto implements Serializable {
 
     @Override
     public String toString() {
-        final String lines = String.format("%s %s", line1, line2).trim();
+        final String lines = String.format("%s %s", line1, StringUtils.isBlank(line2) ? "" : line2).trim();
 
         return String.format("%s, %s, %s, %s", lines, postalCode, region, city).trim();
     }
