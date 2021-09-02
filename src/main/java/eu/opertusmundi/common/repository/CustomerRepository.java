@@ -19,6 +19,9 @@ public interface CustomerRepository extends JpaRepository<CustomerEntity, Intege
     @Query("SELECT p.provider FROM AccountProfile p WHERE p.provider.email = :email and p.account.id <> :id")
     Optional<CustomerEntity> findProviderByEmailAndAccountIdNot(String email, Integer id);
 
+    @Query("SELECT p.provider FROM AccountProfile p WHERE p.provider.name = :name and p.account.id <> :id")
+    Optional<CustomerEntity> findProviderByNameAndAccountIdNot(String name, Integer id);
+
     @Query("SELECT c FROM Customer c WHERE c.paymentProviderUser = :paymentProviderUser")
     Optional<CustomerEntity> findCustomerByProviderUserId(String paymentProviderUser);
 
