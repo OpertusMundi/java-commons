@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @lombok.Getter
 @lombok.Setter
+@lombok.AllArgsConstructor
+@lombok.NoArgsConstructor
 public class UserTokenCommandDto 
 {
     /**

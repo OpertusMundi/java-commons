@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @lombok.Setter
 @lombok.Getter
+@lombok.ToString
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserTokenDto 
 {

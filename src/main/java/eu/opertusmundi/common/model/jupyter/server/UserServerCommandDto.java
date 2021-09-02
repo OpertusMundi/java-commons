@@ -1,11 +1,14 @@
 package eu.opertusmundi.common.model.jupyter.server;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 @lombok.Getter
 @lombok.Setter
+@lombok.ToString
+@lombok.AllArgsConstructor
+@lombok.NoArgsConstructor
 public class UserServerCommandDto 
 {
-    /**
-     * The name of the server profile
-     */
-    String profile;
+	@JsonProperty("profile")
+    String profileName;
 }

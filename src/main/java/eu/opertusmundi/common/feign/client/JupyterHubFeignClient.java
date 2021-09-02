@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.feign.client;
 
+import java.util.List;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
@@ -12,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import eu.opertusmundi.common.feign.client.config.JupyterHubFeignClientConfiguration;
 import eu.opertusmundi.common.model.jupyter.server.GroupUsersCommandDto;
+import eu.opertusmundi.common.model.jupyter.server.UserDto;
+import eu.opertusmundi.common.model.jupyter.server.UserServerCommandDto;
 import eu.opertusmundi.common.model.jupyter.server.UserTokenCommandDto;
 import eu.opertusmundi.common.model.jupyter.server.UserTokenDto;
 import eu.opertusmundi.common.model.jupyter.server.UserTokensDto;
@@ -25,8 +29,27 @@ import eu.opertusmundi.common.model.jupyter.server.VersionDto;
 )
 public interface JupyterHubFeignClient 
 {
+    /**
+     * Get version of REST API
+     * @return
+     */
     @GetMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<VersionDto> getVersion();
+    
+    /**
+     * List users of JupyterHub application
+     * @return
+     */
+    @GetMapping(value = "/users", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<List<UserDto>> listUsers();
+    
+    /**
+     * Get user info
+     * @param userName
+     * @return
+     */
+    @GetMapping(value = "/users/{name}", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<UserDto> getUser(@PathVariable("name") String userName);
     
     /**
      * Add users to a group
@@ -78,5 +101,34 @@ public interface JupyterHubFeignClient
         @PathVariable("name") String userName,
         @RequestBody UserTokenCommandDto command
     );
-
+    
+    /**
+     * Start a user's server.
+     * 
+     * <p>The server starts asynchronously. When server is started, this is reflected on the user status
+     * (see {@link JupyterHubFeignClient#getUser(String)}) on {@code servers[''].ready}
+     * 
+     * <p>Note: Attempting to start a server with an illegal profile (see {@code command.profileName})
+     * will result in HTTP 5xx error.
+     *    
+     * @param userName
+     * @param command
+     * @return
+     */
+    @PostMapping(value = "/users/{name}/server", consumes = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<Void> startServerForUser(
+        @PathVariable("name") String userName,
+        @RequestBody UserServerCommandDto command
+    );
+    
+    /**
+     * Stop a user's server.
+     * 
+     * <p>The server stops asynchronously. When stopped, this is reflected on the user status
+     * (see {@link JupyterHubFeignClient#getUser(String)}) because the respective server object disappears.
+     * @param userName
+     * @return
+     */
+    @DeleteMapping(value = "/users/{name}/server")
+    ResponseEntity<Void> stopServerForUser(@PathVariable("name") String userName);
 }
