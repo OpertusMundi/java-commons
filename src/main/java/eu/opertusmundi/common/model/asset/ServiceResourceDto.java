@@ -49,6 +49,7 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
         @JsonProperty("parentId") UUID parentId,
         @JsonProperty("serviceType") EnumSpatialDataServiceType serviceType,
         @JsonProperty("styles") List<String> styles,
+        @JsonProperty("styleImages") List<byte[]> styleImages,
         @JsonProperty("tileSets") List<TileSet> tileSets
     ) {
         super(id, parentId, EnumResourceType.SERVICE);
@@ -65,6 +66,7 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
         this.outputFormats      = outputFormats;
         this.serviceType        = serviceType;
         this.styles             = styles;
+        this.styleImages        = styleImages;
         this.tileSets           = tileSets;
     }
 
@@ -87,6 +89,7 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
         this.parentId           = r.getParentId();
         this.serviceType        = r.getServiceType();
         this.styles             = r.getStyles();
+        this.styleImages        = r.getStyleImages();
         this.tileSets           = StreamUtils.from(r.getTileSets())
             .map(ServiceResourceDto.TileSet::new)
             .collect(Collectors.toList());
@@ -107,6 +110,9 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
 
     @Schema(description = "A list of URLs pointing to the available styles of the resource")
     private List<String> styles;
+
+    @Schema(description = "A list of Base64 encoded images with samples of the available styles")
+    private List<byte[]> styleImages;
 
     @Schema(description = "The bounding box of the resource")
     private Geometry bbox;
@@ -150,6 +156,7 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
         this.outputFormats      = resource.outputFormats;
         this.serviceType        = resource.serviceType;
         this.styles             = resource.styles;
+        this.styleImages        = resource.styleImages;
         this.tileSets           = resource.tileSets;
     }
 
@@ -173,6 +180,7 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
             .parentId(parentId)
             .serviceType(serviceType)
             .styles(styles)
+            .styleImages(styleImages)
             .tileSets(StreamUtils.from(tileSets).map(CatalogueResource.TileSet::new).collect(Collectors.toList()))
             .build();
     }

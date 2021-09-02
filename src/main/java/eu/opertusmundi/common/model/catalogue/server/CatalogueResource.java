@@ -83,6 +83,10 @@ public class CatalogueResource implements Serializable {
     private List<String> styles;
 
     @JsonInclude(Include.NON_NULL)
+    @JsonProperty("style_image")
+    private List<byte[]> styleImages;
+
+    @JsonInclude(Include.NON_NULL)
     private Geometry bbox;
 
     @JsonProperty("dimension")

@@ -9,6 +9,7 @@ public enum OgcServiceMessageCode implements MessageCode {
     RESOURCE_NOT_CREATED,
     WFS_SERVICE_ERROR,
     TYPE_NOT_SUPPORTED,
+    LAYER_NOT_FOUND,
     UNKNOWN,
     URI_SYNTAX_ERROR,
     ;
