@@ -291,8 +291,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             draftCommand.setDeliveryMethod(EnumDeliveryMethod.DIGITAL_PLATFORM);
             draftCommand.setIngested(true);
             draftCommand.setIngestionInfo(null);
-            // TODO: Fix catalogue reference first
-            // draftCommand.setParentId(command.getPid());
+            draftCommand.setParentId(command.getPid());
             draftCommand.setPublisherKey(command.getPublisherKey());
             draftCommand.setSpatialDataServiceType(EnumSpatialDataServiceType.fromString(command.getServiceType()));
             draftCommand.setTitle(command.getTitle());
