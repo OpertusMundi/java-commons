@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.model.catalogue.client;
 
+import java.io.Serializable;
 import java.util.UUID;
 
 import javax.validation.constraints.NotEmpty;
@@ -23,7 +24,9 @@ import lombok.Setter;
 })
 @Getter
 @Setter
-public abstract class DraftApiCommandDto {
+public abstract class DraftApiCommandDto implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     protected DraftApiCommandDto(EnumDraftCommandType type) {
         this.type = type;

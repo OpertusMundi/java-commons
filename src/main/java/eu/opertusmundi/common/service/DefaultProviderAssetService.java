@@ -1217,7 +1217,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 .variableAsString("publisherKey", command.getPublisherKey().toString())
                 .build();
 
-            instance = this.bpmEngine.startProcessDefinitionByKey(
+            this.bpmEngine.startProcessDefinitionByKey(
                 WORKFLOW_UNPUBLISH_ASSET, businessKey, variables, true
             );
         }

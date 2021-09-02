@@ -144,7 +144,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                 return payIn.getProcessInstance();
             }
 
-            final ProcessInstanceDto instance = this.bpmEngine.findInstance(payInKey.toString());
+            ProcessInstanceDto instance = this.bpmEngine.findInstance(payInKey.toString());
             if (instance == null) {
                 // Set business key
                 final String businessKey= payInKey.toString();
@@ -158,9 +158,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                     .variableAsString("deliveryMethod", payInItem.getOrder().getDeliveryMethod().toString())
                     .build();
 
-
-
-                this.bpmEngine.startProcessDefinitionByKey(WORKFLOW_PROCESS_PAYIN, businessKey, variables);
+                instance = this.bpmEngine.startProcessDefinitionByKey(WORKFLOW_PROCESS_PAYIN, businessKey, variables);
             }
 
             payInRepository.setPayInWorkflowInstance(payIn.getId(), instance.getDefinitionId(), instance.getId());
@@ -344,7 +342,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
         // Check if the order item is already registered
         final AccountAssetEntity ownedAsset = accountAssetRepository.findAllByUserKeyAndAssetId(userKey, orderItem.getAssetId()).stream()
-            .filter(a -> a.getOrder().getId() == order.getId())
+            .filter(a -> a.getOrder().getId().equals(order.getId()))
             .findFirst().orElse(null);
         // TODO: Update existing asset i.e. update update years of free updates
         if (ownedAsset != null) {
@@ -386,7 +384,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
         // Check if a subscription is already active
         final AccountSubscriptionEntity activeSubscription = accountSubscriptionRepository.findAllByUserKeyAndServiceId(userKey, orderItem.getAssetId()).stream()
-            .filter(a -> a.getOrder().getId() == order.getId())
+            .filter(s -> s.getOrder().getId().equals(order.getId()))
             .findFirst().orElse(null);
         final boolean renewal = activeSubscription != null;
 

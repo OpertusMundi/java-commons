@@ -48,7 +48,7 @@ public class DefaultWfsClient implements WfsClient {
     private XmlMapper xmlMapper;
 
     @Override
-    public ServiceResourceDto GetMetadata(
+    public ServiceResourceDto getMetadata(
         String endpoint, String workspace, String typeName, String userName, String password
     ) throws OgcServiceClientException {
         try {
@@ -132,7 +132,6 @@ public class DefaultWfsClient implements WfsClient {
 
                     doc.getDocumentElement().normalize();
 
-                    doc.getElementsByTagNameNS("xsd", "element");
                     final XPath    xPath      = XPathFactory.newInstance().newXPath();
                     final String   expression = "//complexType//element";
                     final NodeList nodes      = (NodeList) xPath.compile(expression).evaluate(doc, XPathConstants.NODESET);

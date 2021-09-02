@@ -74,7 +74,9 @@ public class ResourceIngestionDataDto implements Serializable {
     @AllArgsConstructor
     @Getter
     @Setter
-    public static class ServiceEndpoint {
+    public static class ServiceEndpoint implements Serializable {
+
+        private static final long serialVersionUID = 1L;
 
         @Schema(description = "Service type")
         private EnumSpatialDataServiceType type;

@@ -13,7 +13,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
-public class CustomerBankAccountEmbeddable extends BankAccountEmbeddable {
+public class CustomerBankAccountEmbeddable extends BankAccountEmbeddable implements Cloneable {
 
     @Column
     @EqualsAndHashCode.Include

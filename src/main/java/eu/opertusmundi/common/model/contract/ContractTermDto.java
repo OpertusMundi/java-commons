@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.model.contract;
 
+import java.io.Serializable;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,7 +12,9 @@ import lombok.Setter;
 @AllArgsConstructor(staticName = "of")
 @Getter
 @Setter
-public class ContractTermDto {
+public class ContractTermDto implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "Icon name")
     private EnumIcon icon;

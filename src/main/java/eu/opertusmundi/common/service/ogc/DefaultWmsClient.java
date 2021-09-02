@@ -26,7 +26,7 @@ import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 public class DefaultWmsClient implements WmsClient {
 
     @Override
-    public ServiceResourceDto GetMetadata(URL url, String typeName, String userName, String password) throws OgcServiceClientException {
+    public ServiceResourceDto getMetadata(URL url, String typeName, String userName, String password) throws OgcServiceClientException {
         try {
             final WebMapServer wms = new WebMapServer(url);
 

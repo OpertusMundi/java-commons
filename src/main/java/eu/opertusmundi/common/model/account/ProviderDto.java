@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.model.account;
 
+import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
@@ -13,7 +14,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @Setter
 @Getter
-public class ProviderDto {
+public class ProviderDto implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "Publisher unique key")
     @JsonProperty("id")

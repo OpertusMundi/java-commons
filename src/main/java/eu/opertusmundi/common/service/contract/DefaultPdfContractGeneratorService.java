@@ -1718,8 +1718,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
                 String optionJson, subOptionJson;
                 optionJson = masterSection.getOptions().get(section.getOption()).getBody();
-                List<ContractSectionSubOptionDto> suboptions = new ArrayList<ContractSectionSubOptionDto>();
-                suboptions = masterSection.getOptions().get(section.getOption()).getSubOptions();
+                final List<ContractSectionSubOptionDto> suboptions = masterSection.getOptions().get(section.getOption()).getSubOptions();
                 JsonNode obj = objectMapper.readTree(optionJson);
 
                 /* Get blocks */

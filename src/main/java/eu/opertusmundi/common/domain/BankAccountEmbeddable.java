@@ -16,7 +16,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class BankAccountEmbeddable {
+public class BankAccountEmbeddable implements Cloneable {
 
     @Column
     @EqualsAndHashCode.Include

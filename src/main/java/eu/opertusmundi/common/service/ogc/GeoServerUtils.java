@@ -36,9 +36,9 @@ public class GeoServerUtils {
 
             switch (type) {
                 case WMS :
-                    return this.wmsClient.GetMetadata(uri.toURL(), layerName);
+                    return this.wmsClient.getMetadata(uri.toURL(), layerName);
                 case WFS:
-                    return this.wfsClient.GetMetadata(uri.toString(), workspace, layerName);
+                    return this.wfsClient.getMetadata(uri.toString(), workspace, layerName);
 
                 default :
                     return null;

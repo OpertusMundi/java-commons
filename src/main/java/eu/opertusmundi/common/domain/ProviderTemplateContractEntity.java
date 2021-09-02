@@ -110,8 +110,8 @@ public class ProviderTemplateContractEntity {
         c.setVersion(version);
 
         if (includeDetails) {
-            c.setContractParentKey(parent == null ? null : parent.getKey());
-            c.setContractRootKey(parent == null ? null : parent.getContractRoot().getKey());
+            c.setContractParentKey(parent.getKey());
+            c.setContractRootKey(parent.getContractRoot().getKey());
             c.setMasterContract(parent.getTemplate().toDto(true));
 
             c.setSections(sections.stream()

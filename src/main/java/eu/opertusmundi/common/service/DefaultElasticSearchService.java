@@ -1172,18 +1172,8 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             }
             searchRequest.source(searchSourceBuilder);
 
-            List<Map<String, Object>> assetAnalytics = new ArrayList<Map<String, Object>>();
-
-            final SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
-            final SearchHits     hits           = searchResponse.getHits();
-            assetAnalytics = new ArrayList<Map<String, Object>>();
-
-            for (final SearchHit hit : hits) {
-                final Map<String, Object> sourceAsMap = hit.getSourceAsMap();
-                assetAnalytics.add(sourceAsMap);
-            }
-
-            final CompositeAggregation agg = searchResponse.getAggregations().get("groupby");
+            final SearchResponse       searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+            final CompositeAggregation agg            = searchResponse.getAggregations().get("groupby");
 
             // For each entry
             for (final CompositeAggregation.Bucket bucket : agg.getBuckets()) {

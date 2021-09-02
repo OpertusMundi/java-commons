@@ -1545,7 +1545,8 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
         try {
             bankAccount.setActive(false);
-            bankAccount = this.api.getUserApi().updateBankAccount(userId, bankAccount, bankAccount.getId());
+            
+            this.api.getUserApi().updateBankAccount(userId, bankAccount, bankAccount.getId());
         } catch (final ResponseException ex) {
             logger.error("MANGOPAY operation has failed", ex);
 
@@ -1825,7 +1826,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     private PayOutEntity ensurePayOut(String providerPayOutId) {
         final PayOutEntity payOutEntity = this.payOutRepository.findOneByPayOutId(providerPayOutId).orElse(null);
 
-        if(providerPayOutId == null) {
+        if(payOutEntity == null) {
             throw new PaymentException(
                 PaymentMessageCode.SERVER_ERROR,
                 String.format("[OpertusMundi] PayOut [%s] was not found", providerPayOutId)

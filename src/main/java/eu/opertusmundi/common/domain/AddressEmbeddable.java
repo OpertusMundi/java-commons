@@ -13,7 +13,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class AddressEmbeddable {
+public class AddressEmbeddable implements Cloneable {
 
     @Column
     @EqualsAndHashCode.Include

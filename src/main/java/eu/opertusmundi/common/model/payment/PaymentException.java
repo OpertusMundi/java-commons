@@ -1,6 +1,6 @@
 package eu.opertusmundi.common.model.payment;
 
-import java.util.HashMap;
+import java.util.Map;
 
 import com.mangopay.core.ResponseException;
 
@@ -15,7 +15,7 @@ public final class PaymentException extends ServiceException {
     private String providerMessage;
 
     @Getter
-    private HashMap<String, String> providerErrors;
+    private Map<String, String> providerErrors;
 
     public PaymentException(PaymentMessageCode code) {
         super(code, "An unhandled exception has occurred");
@@ -38,11 +38,12 @@ public final class PaymentException extends ServiceException {
     }
 
     public PaymentException(
-        PaymentMessageCode code, String message, Throwable cause, String providerMessage, HashMap<String, String> providerErrors
+        PaymentMessageCode code, String message, Throwable cause, String providerMessage, Map<String, String> providerErrors
     ) {
         super(code, message, cause);
 
         this.providerMessage = providerMessage;
+        this.providerErrors = providerErrors;
     }
 
     public PaymentException(PaymentMessageCode code, String message, ResponseException cause) {

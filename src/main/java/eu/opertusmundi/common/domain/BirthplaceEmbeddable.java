@@ -13,7 +13,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class BirthplaceEmbeddable {
+public class BirthplaceEmbeddable implements Cloneable {
 
     @Column
     @EqualsAndHashCode.Include

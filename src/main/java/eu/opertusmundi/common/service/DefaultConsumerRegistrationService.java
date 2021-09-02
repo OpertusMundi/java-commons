@@ -68,7 +68,7 @@ public class DefaultConsumerRegistrationService extends AbstractCustomerRegistra
                 .variableAsBoolean("isReviewRequired", true)
                 .build();
 
-            instance = this.bpmEngine.startProcessDefinitionByKey(
+            this.bpmEngine.startProcessDefinitionByKey(
                 WORKFLOW_CONSUMER_REGISTRATION, registrationKey.toString(), variables, true
             );
         }

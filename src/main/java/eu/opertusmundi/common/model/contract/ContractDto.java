@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.model.contract;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -15,7 +16,9 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ContractDto {
+public class ContractDto implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @JsonIgnore
     private Integer id;

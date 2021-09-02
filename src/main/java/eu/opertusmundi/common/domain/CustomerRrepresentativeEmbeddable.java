@@ -15,7 +15,7 @@ import lombok.Setter;
 @Embeddable
 @Getter
 @Setter
-public class CustomerRrepresentativeEmbeddable {
+public class CustomerRrepresentativeEmbeddable implements Cloneable {
 
     @Embedded
     private AddressEmbeddable address;

@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.model.pricing;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -16,7 +17,9 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class QuotationParametersDto extends QuotationParametersCommandDto {
+public class QuotationParametersDto extends QuotationParametersCommandDto implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * Tax percent set automatically by the platform
@@ -33,7 +36,9 @@ public class QuotationParametersDto extends QuotationParametersCommandDto {
     @Getter
     @Setter
     @ToString
-    public static class SystemParameters {
+    public static class SystemParameters implements Serializable {
+
+        private static final long serialVersionUID = 1L;
 
         @Schema(description = "System-defined parameter of the number of rows selected. If the pricing model does not support "
                             + "number of rows parameter, this property is not set")

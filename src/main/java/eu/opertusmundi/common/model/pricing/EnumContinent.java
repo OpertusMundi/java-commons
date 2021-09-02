@@ -4,7 +4,7 @@ import lombok.Getter;
 
 public enum EnumContinent {
     AFRICA("AF", "Africa"),
-    NORTH_AMERICA("NA", "North America"),  
+    NORTH_AMERICA("NA", "North America"),
     OCEANIA("OC", "Oceania"),
     ANTARCTICA("AN", "Antarctica"),
     ASIA("AS", "Asia"),
@@ -13,14 +13,14 @@ public enum EnumContinent {
     ;
 
     @Getter
-    public String code;
+    private final String code;
 
     @Getter
-    public String description;
+    private final String description;
 
-    EnumContinent(String code, String description) {
+    private EnumContinent(String code, String description) {
         this.code        = code;
         this.description = description;
     }
-    
+
 }
