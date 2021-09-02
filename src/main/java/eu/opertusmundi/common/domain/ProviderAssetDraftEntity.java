@@ -93,6 +93,7 @@ public class ProviderAssetDraftEntity {
     @Setter
     private EnumSpatialDataServiceType serviceType;
 
+    @NotNull
     @Column(name = "`data`")
     @Convert(converter = CatalogueItemCommandAttributeConverter.class)
     @Getter

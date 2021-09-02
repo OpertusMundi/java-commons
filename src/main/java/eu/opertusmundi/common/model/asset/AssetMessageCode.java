@@ -5,6 +5,7 @@ import eu.opertusmundi.common.model.MessageCode;
 public enum AssetMessageCode implements MessageCode {
     ERROR,
     IO_ERROR,
+    SERIALIZATION_ERROR,
     INVALID_STATE,
     VALIDATION,
     DRAFT_NOT_FOUND,
