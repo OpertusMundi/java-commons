@@ -44,25 +44,25 @@ public class AccountSubscriptionSkuEntity {
     @Column(name = "`purchased_rows`")
     @Getter
     @Setter
-    private Integer purchasedRows;
+    private Integer purchasedRows = 0;
 
     @NotNull
     @Column(name = "`purchased_calls`")
     @Getter
     @Setter
-    private Integer purchasedCalls;
+    private Integer purchasedCalls = 0;
 
     @NotNull
     @Column(name = "`used_rows`")
     @Getter
     @Setter
-    private Integer usedRows;
+    private Integer usedRows = 0;
 
     @NotNull
     @Column(name = "`used_calls`")
     @Getter
     @Setter
-    private Integer usedCalls;
+    private Integer usedCalls = 0;
 
     public AccountSubscriptionSkuDto toDto() {
         final AccountSubscriptionSkuDto s = new AccountSubscriptionSkuDto();
