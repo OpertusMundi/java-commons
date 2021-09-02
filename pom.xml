@@ -34,6 +34,7 @@
 		<org.locationtech.jts.spatial4j.version>0.7</org.locationtech.jts.spatial4j.version>
 		<springdoc.version>1.5.4</springdoc.version>
 		<postgresql.version>42.2.19</postgresql.version>
+		<spotbugs.skip>false</spotbugs.skip>
 	</properties>
 
 	<repositories>
@@ -332,6 +333,34 @@
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<configuration>
 					<show>public</show>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>com.github.spotbugs</groupId>
+				<artifactId>spotbugs-maven-plugin</artifactId>
+				<version>4.2.0</version>
+				<dependencies>
+					<dependency>
+						<groupId>com.github.spotbugs</groupId>
+						<artifactId>spotbugs</artifactId>
+						<version>4.3.0</version>
+					</dependency>
+				</dependencies>
+				<executions>
+					<execution>
+						<id>spotbugs-check</id>
+						<goals>
+							<goal>check</goal>
+						</goals>
+						<!-- <phase>package</phase> -->
+					</execution>
+				</executions>
+				<configuration>
+					<detail>true</detail>
+					<fork>true</fork>
+					<failOnError>false</failOnError>
+					<excludeFilterFile>./spotbugs-exclude.xml</excludeFilterFile>
 				</configuration>
 			</plugin>
 		</plugins>
