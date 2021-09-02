@@ -6,11 +6,13 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,6 +93,7 @@ import eu.opertusmundi.common.model.location.Location;
 import eu.opertusmundi.common.model.order.CartDto;
 import eu.opertusmundi.common.model.order.CartItemDto;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
+import eu.opertusmundi.common.model.order.HelpdeskOrderDto;
 import eu.opertusmundi.common.model.order.OrderCommand;
 import eu.opertusmundi.common.model.order.OrderDto;
 import eu.opertusmundi.common.model.payment.BankwirePayInCommand;
@@ -630,6 +633,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             if (asset == null) {
                 throw new PaymentException(PaymentMessageCode.ASSET_NOT_FOUND, "Asset not found");
             }
+            final boolean vettingRequired = BooleanUtils.isTrue(asset.getVettingRequired());
 
             // Pricing model must exist. We need to check only the pricing model
             // key. Updating the parameters of a pricing model, creates a new key.
@@ -656,6 +660,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 .location(location)
                 .quotation(quotation)
                 .userId(cart.getAccountId())
+                .vettingRequired(vettingRequired)
                 .build();
 
             final OrderDto order = this.orderRepository.create(orderCommand);
@@ -807,7 +812,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             this.ensureCostumer(customer, command.getUserKey());
 
             // Check order
-            this.ensureOrder(order, command.getOrderKey());
+            this.ensureOrderForPayIn(order, command.getOrderKey());
 
             final String idempotencyKey = order.getKey().toString();
 
@@ -870,7 +875,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             this.ensureCostumer(customer, command.getUserKey());
 
             // Check order
-            this.ensureOrder(order, command.getOrderKey());
+            this.ensureOrderForPayIn(order, command.getOrderKey());
 
             final String idempotencyKey = order.getKey().toString();
 
@@ -929,7 +934,10 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 // Update order status if we have a valid response i.e.
                 // 3D-Secure validation was skipped
                 if (result.getStatus() != EnumTransactionStatus.CREATED) {
-                    this.orderRepository.setStatus(order.getKey(), result.getStatus().toOrderStatus(), ZonedDateTime.now());
+                    this.orderRepository.setStatus(
+                        order.getKey(),
+                        result.getStatus().toOrderStatus(order.getDeliveryMethod())
+                    );
                 }
             }
 
@@ -994,10 +1002,10 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             // Update order status
             for (final PayInItemDto item : result.getItems()) {
                 if(item.getType() == EnumPaymentItemType.ORDER) {
+                    final HelpdeskOrderDto order = ((HelpdeskOrderPayInItemDto) item).getOrder();
                     this.orderRepository.setStatus(
-                        ((HelpdeskOrderPayInItemDto) item).getOrder().getKey(),
-                        result.getStatus().toOrderStatus(),
-                        ZonedDateTime.now()
+                        order.getKey(),
+                        result.getStatus().toOrderStatus(order.getDeliveryMethod())
                     );
                 }
             }
@@ -1780,17 +1788,23 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         }
     }
 
-    private void ensureOrder(OrderEntity order, UUID key) throws PaymentException {
+    private void ensureOrderForPayIn(OrderEntity order, UUID key) throws PaymentException {
         if (order == null) {
             throw new PaymentException(
                 PaymentMessageCode.ORDER_NOT_FOUND,
                 String.format("[MANGOPAY] Order [%s] was not", key)
             );
         }
-        if (order.getStatus() != EnumOrderStatus.CREATED && order.getStatus() != EnumOrderStatus.CHARGED) {
+        final List<EnumOrderStatus> validStatus = Arrays.asList(
+            EnumOrderStatus.CREATED,
+            EnumOrderStatus.PROVIDER_ACCEPTED,
+            EnumOrderStatus.CHARGED
+        );
+
+        if (!validStatus.contains(order.getStatus())) {
             throw new PaymentException(PaymentMessageCode.ORDER_INVALID_STATUS, String.format(
                 "[MANGOPAY] Invalid order status [order=%s, status=%s, expected=%s,%s]",
-                key, order.getStatus(), EnumOrderStatus.CREATED, EnumOrderStatus.CHARGED
+                key, order.getStatus(), validStatus
             ));
         }
     }

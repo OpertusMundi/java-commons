@@ -15,6 +15,7 @@ import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import eu.opertusmundi.common.domain.AccountAssetEntity;
 import eu.opertusmundi.common.domain.AccountSubscriptionEntity;
@@ -26,7 +27,15 @@ import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
 import eu.opertusmundi.common.model.account.EnumAssetSource;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
+import eu.opertusmundi.common.model.order.ConsumerOrderDto;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
+import eu.opertusmundi.common.model.order.OrderConfirmCommandDto;
+import eu.opertusmundi.common.model.order.OrderDeliveryCommandDto;
+import eu.opertusmundi.common.model.order.OrderException;
+import eu.opertusmundi.common.model.order.OrderMessageCode;
+import eu.opertusmundi.common.model.order.OrderShippingCommandDto;
+import eu.opertusmundi.common.model.order.ProviderOrderDto;
+import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.PaymentMessageCode;
@@ -54,6 +63,10 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
     private static final String MESSAGE_UPDATE_PAYIN_STATUS = "payin-updated-message";
 
+    private static final String MESSAGE_PROVIDER_SEND_ORDER = "provider-send-order-message";
+
+    private static final String MESSAGE_CONSUMER_RECEIVED_ORDER = "consumer-order-received-message";
+
     private static final Logger logger = LoggerFactory.getLogger(DefaultOrderFulfillmentService.class);
 
     @Autowired
@@ -74,6 +87,40 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     @Autowired
     private CatalogueService catalogueService;
 
+    @Override
+    public ProviderOrderDto acceptOrder(OrderConfirmCommandDto command) throws OrderException {
+        return this.confirmOrder(command.getPublisherKey(), command.getOrderKey(), true, null);
+    }
+
+    @Override
+    public ProviderOrderDto rejectOrder(OrderConfirmCommandDto command) throws OrderException {
+        return this.confirmOrder(command.getPublisherKey(), command.getOrderKey(), false, command.getReason());
+    }
+
+    @Transactional
+    private ProviderOrderDto confirmOrder(UUID publisherKey, UUID orderKey, boolean accepted, String rejectReason) throws OrderException {
+        try {
+            ProviderOrderDto order;
+            if (accepted) {
+                order = this.orderRepository.acceptOrder(publisherKey, orderKey);
+            } else {
+                order = this.orderRepository.rejectOrder(publisherKey, orderKey, rejectReason);
+            }
+
+            return order;
+        } catch (final OrderException ex) {
+            throw ex;
+        } catch (final FeignException fex) {
+            logger.error("Operation has failed", fex);
+
+            throw new OrderException(OrderMessageCode.BPM_SERVICE, "Operation on BPM server failed", fex);
+        } catch (final Exception ex) {
+            logger.error("Operation has failed", ex);
+
+            throw new OrderException(OrderMessageCode.ERROR, "An unknown error has occurred", ex);
+        }
+    }
+
     /**
      * Initializes a workflow instance to process the referenced PayIn
      *
@@ -84,9 +131,13 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
      */
     @Override
     @Retryable(include = {Exception.class}, maxAttempts = 3, backoff = @Backoff(delay = 2000, maxDelay = 3000))
-    public String start(UUID payInKey, String payInId, EnumTransactionStatus payInStatus) {
+    public String startOrderWorkflow(UUID payInKey, String payInId, EnumTransactionStatus payInStatus) {
         try {
             final PayInEntity payIn = payInRepository.findOneEntityByKey(payInKey).orElse(null);
+            Assert.isTrue(payIn.getItems().size() == 1, "Expected a single pay in item");
+            final EnumPaymentItemType type = payIn.getItems().get(0).getType();
+            Assert.isTrue(type == EnumPaymentItemType.ORDER, "Expected an order pay in item");
+            final PayInOrderItemEntity payInItem = (PayInOrderItemEntity) payIn.getItems().get(0);
 
             if (!StringUtils.isBlank(payIn.getProcessInstance())) {
                 // Workflow instance already exists
@@ -104,6 +155,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                     .variableAsString("payInKey", payInKey.toString())
                     .variableAsString("payInId", payInId)
                     .variableAsString("payInStatus", payInStatus.toString())
+                    .variableAsString("deliveryMethod", payInItem.getOrder().getDeliveryMethod().toString())
                     .build();
 
 
@@ -159,6 +211,76 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         }
     }
 
+    @Override
+    @Transactional
+    public ProviderOrderDto sendOrderByProvider(OrderShippingCommandDto command) throws OrderException {
+        try {
+            Assert.notNull(command.getPublisherKey(), "Expected a non-null publisher key");
+            Assert.notNull(command.getOrderKey(), "Expected a non-null order key");
+
+            final PayInEntity payIn = payInRepository.findOneByOrderKey(command.getOrderKey()).orElse(null);
+            Assert.isTrue(payIn.getItems().size() == 1, "Expected a single pay in item");
+            Assert.isTrue(
+                payIn.getItems().get(0).getProvider().getKey().equals(command.getPublisherKey()),
+                "Expected pay in publisher to match command"
+            );
+
+            final ProviderOrderDto result = this.orderRepository.sendOrderByProvider(command);
+
+            final String                        businessKey = payIn.getKey().toString();
+            final Map<String, VariableValueDto> variables   = BpmInstanceVariablesBuilder.builder().build();
+
+            this.bpmEngine.correlateMessage(businessKey, MESSAGE_PROVIDER_SEND_ORDER, variables);
+
+            return result;
+        } catch (final OrderException ex) {
+            throw ex;
+        } catch (final FeignException fex) {
+            logger.error("Operation has failed", fex);
+
+            throw new OrderException(OrderMessageCode.BPM_SERVICE, "Operation on BPM server failed", fex);
+        } catch (final Exception ex) {
+            logger.error("Operation has failed", ex);
+
+            throw new OrderException(OrderMessageCode.ERROR, "An unknown error has occurred", ex);
+        }
+    }
+
+    @Override
+    @Transactional
+    public ConsumerOrderDto receiveOrderByConsumer(OrderDeliveryCommandDto command) throws OrderException {
+        try {
+            Assert.notNull(command.getConsumerKey(), "Expected a non-null consumer key");
+            Assert.notNull(command.getOrderKey(), "Expected a non-null order key");
+
+            final PayInEntity payIn = payInRepository.findOneByOrderKey(command.getOrderKey()).orElse(null);
+            Assert.isTrue(payIn.getItems().size() == 1, "Expected a single pay in item");
+            Assert.isTrue(
+                payIn.getConsumer().getKey().equals(command.getConsumerKey()),
+                "Expected pay in consumer to match command"
+            );
+
+            final ConsumerOrderDto result = this.orderRepository.receiveOrderByConsumer(command);
+
+            final String                        businessKey = payIn.getKey().toString();
+            final Map<String, VariableValueDto> variables   = BpmInstanceVariablesBuilder.builder().build();
+
+            this.bpmEngine.correlateMessage(businessKey, MESSAGE_CONSUMER_RECEIVED_ORDER, variables);
+
+            return result;
+        } catch (final OrderException ex) {
+            throw ex;
+        } catch (final FeignException fex) {
+            logger.error("Operation has failed", fex);
+
+            throw new OrderException(OrderMessageCode.BPM_SERVICE, "Operation on BPM server failed", fex);
+        } catch (final Exception ex) {
+            logger.error("Operation has failed", ex);
+
+            throw new OrderException(OrderMessageCode.ERROR, "An unknown error has occurred", ex);
+        }
+    }
+
     /**
      * Update user profile with purchased assets and subscriptions
      *
@@ -178,14 +300,14 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                     this.registerOrderItem(payIn, (PayInOrderItemEntity) item);
 
                     // Complete order
-                    this.orderRepository.setStatus(orderItem.getOrder().getKey(), EnumOrderStatus.SUCCEEDED, ZonedDateTime.now());
+                    this.orderRepository.setStatus(orderItem.getOrder().getKey(), EnumOrderStatus.SUCCEEDED);
                     break;
 
                 default :
                     throw new PaymentException(PaymentMessageCode.PAYIN_ITEM_TYPE_NOT_SUPPORTED, String.format(
                         "PayIn item type not supported [payIn=%s, index=%d, type=%s]",
-                        payInKey, item.getIndex(), item.getType(
-                    )));
+                        payInKey, item.getIndex(), item.getType()
+                    ));
             }
         }
     }

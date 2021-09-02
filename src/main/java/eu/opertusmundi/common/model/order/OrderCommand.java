@@ -33,4 +33,6 @@ public class OrderCommand {
 
     private Location location;
 
+    private boolean vettingRequired;
+
 }

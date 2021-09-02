@@ -6,13 +6,35 @@ public enum EnumOrderStatus {
      */
     CREATED,
     /**
-     * PayIn created
+     * Order created and requires provider approval
+     */
+    PENDING_PROVIDER_APPROVAL,
+    /**
+     * Order has been rejected
+     */
+    PROVIDER_REJECTED,
+    /**
+     * Order has been accepted
+     */
+    PROVIDER_ACCEPTED,
+    /**
+     * PayIn created (order previous status must be either CREATED or
+     * PROVIDER_ACCEPTED)
      */
     CHARGED,
     /**
-     * Order payment has been received, asset delivery/subscription registration is pending
+     * Waiting for provider send confirmation
      */
-    PENDING,
+    PENDING_PROVIDER_SEND_CONFIRMATION,
+    /**
+     * Waiting for consumer receive confirmation
+     */
+    PENDING_CONSUMER_RECEIVE_CONFIRMATION,
+    /**
+     * Order payment has been received and assets have been delivered asset.
+     * Asset/subscription registration is pending
+     */
+    ASSET_REGISTRATION,
     /**
      * Order has been cancelled, not payment received
      */

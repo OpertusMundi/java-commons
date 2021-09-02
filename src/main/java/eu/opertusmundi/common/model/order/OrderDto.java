@@ -59,7 +59,14 @@ public abstract class OrderDto {
     @Schema(description = "Payment method")
     private EnumPaymentMethod paymentMethod;
 
+    @Schema(description = "Provider rejection reason. Set only when status is `PROVIDER_REJECTED`")
+    private String providerRejectionReason;
+
     @Schema(description = "User friendly reference code for support")
     private String referenceNumber;
+
+    @Schema(description = "True if consumer vetting is required")
+    private boolean vettingRequired;
+
 
 }

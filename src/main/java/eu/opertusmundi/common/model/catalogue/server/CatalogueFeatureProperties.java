@@ -78,6 +78,7 @@ public class CatalogueFeatureProperties {
         this.version                      = command.getVersion();
         this.versions                     = Collections.emptyList();
         this.visibility                   = command.getVisibility();
+        this.vettingRequired              = command.getVettingRequired();
 
         this.resources = StreamUtils.from(command.getResources())
             .map(ResourceDto::toCatalogueResource)
@@ -272,6 +273,9 @@ public class CatalogueFeatureProperties {
     private List<String> versions;
 
     private List<String> visibility = new ArrayList<>();
+
+    @JsonInclude(Include.NON_NULL)
+    private Boolean vettingRequired;
 
     @NoArgsConstructor
     @Getter

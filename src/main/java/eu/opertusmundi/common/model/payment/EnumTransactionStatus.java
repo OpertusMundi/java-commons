@@ -2,6 +2,7 @@ package eu.opertusmundi.common.model.payment;
 
 import com.mangopay.core.enumerations.TransactionStatus;
 
+import eu.opertusmundi.common.model.catalogue.client.EnumDeliveryMethod;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
 
 public enum EnumTransactionStatus {
@@ -39,12 +40,14 @@ public enum EnumTransactionStatus {
         }
     }
 
-    public EnumOrderStatus toOrderStatus() throws PaymentException {
+    public EnumOrderStatus toOrderStatus(EnumDeliveryMethod deliveryMethod) throws PaymentException {
         switch (this) {
             case FAILED :
                 return EnumOrderStatus.CANCELLED;
             case SUCCEEDED :
-                return EnumOrderStatus.PENDING;
+                return deliveryMethod == EnumDeliveryMethod.DIGITAL_PLATFORM
+                    ? EnumOrderStatus.ASSET_REGISTRATION
+                    : EnumOrderStatus.PENDING_PROVIDER_SEND_CONFIRMATION;
             default :
                 throw new PaymentException(
                     PaymentMessageCode.ENUM_MEMBER_NOT_SUPPORTED,

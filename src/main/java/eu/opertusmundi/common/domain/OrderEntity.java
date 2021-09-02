@@ -166,6 +166,16 @@ public class OrderEntity {
     @Setter
     private String referenceNumber;
 
+    @Column(name = "`vetting_required`")
+    @Getter
+    @Setter
+    private boolean vettingRequired = false;
+
+    @Column(name = "`provider_rejection_reason`")
+    @Getter
+    @Setter
+    private String providerRejectionReason;
+
     private void updateDto(OrderDto o) {
         o.setCartId(cart);
         o.setCreatedOn(createdOn);
@@ -176,12 +186,14 @@ public class OrderEntity {
         if (this.payin != null) {
             o.setPaymentMethod(this.payin.getPaymentMethod());
         }
+        o.setProviderRejectionReason(providerRejectionReason);
         o.setReferenceNumber(referenceNumber);
         o.setStatus(status);
         o.setStatusUpdatedOn(statusUpdatedOn);
         o.setTotalPrice(totalPrice);
         o.setTotalPriceExcludingTax(totalPriceExcludingTax);
         o.setTotalTax(totalTax);
+        o.setVettingRequired(vettingRequired);
     }
 
     public ConsumerOrderDto toConsumerDto(boolean includeDetails) {

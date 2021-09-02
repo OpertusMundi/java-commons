@@ -25,7 +25,11 @@ import eu.opertusmundi.common.model.order.EnumOrderItemType;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
 import eu.opertusmundi.common.model.order.HelpdeskOrderDto;
 import eu.opertusmundi.common.model.order.OrderCommand;
+import eu.opertusmundi.common.model.order.OrderDeliveryCommandDto;
 import eu.opertusmundi.common.model.order.OrderDto;
+import eu.opertusmundi.common.model.order.OrderException;
+import eu.opertusmundi.common.model.order.OrderMessageCode;
+import eu.opertusmundi.common.model.order.OrderShippingCommandDto;
 import eu.opertusmundi.common.model.order.ProviderOrderDto;
 import io.jsonwebtoken.lang.Assert;
 
@@ -228,12 +232,13 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
         order.setCreatedOn(ZonedDateTime.now());
         order.setCurrency(command.getQuotation().getQuotation().getCurrency().toString());
         order.setDeliveryMethod(command.getDeliveryMethod());
-        order.setStatus(EnumOrderStatus.CREATED);
+        order.setStatus(command.isVettingRequired() ? EnumOrderStatus.PENDING_PROVIDER_APPROVAL : EnumOrderStatus.CREATED);
         order.setStatusUpdatedOn(order.getCreatedOn());
         order.setTaxPercent(command.getQuotation().getQuotation().getTaxPercent());
         order.setTotalPrice(command.getQuotation().getQuotation().getTotalPrice());
         order.setTotalPriceExcludingTax(command.getQuotation().getQuotation().getTotalPriceExcludingTax());
         order.setTotalTax(command.getQuotation().getQuotation().getTax());
+        order.setVettingRequired(command.isVettingRequired());
 
         final OrderStatusEntity status = new OrderStatusEntity();
         status.setOrder(order);
@@ -289,7 +294,10 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
         Assert.notNull(order, "Expected a non-null order");
         Assert.notNull(payIn, "Expected a non-null payIn");
-        Assert.isTrue(order.getStatus() == EnumOrderStatus.CREATED, "Expected order status CREATED");
+        Assert.isTrue(
+            order.getStatus() == EnumOrderStatus.CREATED || order.getStatus() == EnumOrderStatus.PROVIDER_ACCEPTED,
+            "Expected order status in [CREATED, PROVIDER_ACCEPTED]"
+        );
 
         // Update order
         order.setPayin(payIn);
@@ -318,7 +326,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
      * @throws Exception
      */
     @Transactional(readOnly = false)
-    default void setStatus(UUID orderKey, EnumOrderStatus status, ZonedDateTime when) throws Exception {
+    default void setStatus(UUID orderKey, EnumOrderStatus status) throws Exception {
         final OrderEntity order = this.findOrderEntityByKey(orderKey).orElse(null);
 
         // Update only on status changes
@@ -333,7 +341,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
         final OrderStatusEntity history = new OrderStatusEntity();
         history.setOrder(order);
         history.setStatus(status);
-        history.setStatusUpdatedOn(when);
+        history.setStatusUpdatedOn(ZonedDateTime.now());
 
         order.getStatusHistory().add(history);
     }
@@ -349,6 +357,119 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
         item.setContractSignedOn(contractSignedOn);
 
         this.saveAndFlush(order);
+    }
+
+    @Transactional(readOnly = false)
+    default ProviderOrderDto acceptOrder(UUID providerKey, UUID orderKey) throws Exception {
+        final OrderEntity order = this.findOrderEntityByKeyAndProviderKey(providerKey, orderKey).orElse(null);
+
+        if (order == null) {
+            throw new OrderException(OrderMessageCode.ORDER_NOT_FOUND, "Order not found");
+        }
+
+        // Update only on status change
+        if (order.getStatus() != EnumOrderStatus.PROVIDER_ACCEPTED) {
+            if (order.getStatus() != EnumOrderStatus.PENDING_PROVIDER_APPROVAL) {
+                throw new OrderException(OrderMessageCode.ORDER_INVALID_STATUS, String.format(
+                    "Invalid order status [expected=%s, found=%s]",
+                    EnumOrderStatus.PENDING_PROVIDER_APPROVAL, order.getStatus()
+                ));
+            }
+            // Update status and create history record
+            this.setStatus(orderKey, EnumOrderStatus.PROVIDER_ACCEPTED);
+
+            this.saveAndFlush(order);
+        }
+
+        return order.toProviderDto(true);
+    }
+
+    @Transactional(readOnly = false)
+    default ProviderOrderDto rejectOrder(UUID providerKey, UUID orderKey, String reason) throws Exception {
+        final OrderEntity order = this.findOrderEntityByKeyAndProviderKey(providerKey, orderKey).orElse(null);
+
+        if (order == null) {
+            throw new OrderException(OrderMessageCode.ORDER_NOT_FOUND, "Order not found");
+        }
+
+        // Update only on status change
+        if (order.getStatus() != EnumOrderStatus.PROVIDER_REJECTED) {
+            if (order.getStatus() != EnumOrderStatus.PENDING_PROVIDER_APPROVAL) {
+                throw new OrderException(OrderMessageCode.ORDER_INVALID_STATUS, String.format(
+                    "Invalid order status [expected=%s, found=%s]",
+                    EnumOrderStatus.PENDING_PROVIDER_APPROVAL, order.getStatus()
+                ));
+            }
+            // Update status and create history record
+            this.setStatus(orderKey, EnumOrderStatus.PROVIDER_REJECTED);
+
+            order.setProviderRejectionReason(reason);
+
+            this.saveAndFlush(order);
+        }
+
+        this.saveAndFlush(order);
+
+        return order.toProviderDto(true);
+    }
+
+    @Transactional(readOnly = false)
+    default ProviderOrderDto sendOrderByProvider(OrderShippingCommandDto command) throws Exception {
+        final OrderEntity order = this.findOrderEntityByKeyAndProviderKey(command.getPublisherKey(), command.getOrderKey()).orElse(null);
+
+        if (order == null) {
+            throw new OrderException(OrderMessageCode.ORDER_NOT_FOUND, "Order not found");
+        }
+
+        final EnumOrderStatus oldStatus = EnumOrderStatus.PENDING_PROVIDER_SEND_CONFIRMATION;
+        final EnumOrderStatus newStatus = EnumOrderStatus.PENDING_CONSUMER_RECEIVE_CONFIRMATION;
+
+        // Update only on status change
+        if (order.getStatus() != newStatus) {
+            if (order.getStatus() != oldStatus) {
+                throw new OrderException(OrderMessageCode.ORDER_INVALID_STATUS, String.format(
+                    "Invalid order status [expected=%s, found=%s]",
+                    oldStatus, order.getStatus()
+                ));
+            }
+            // Update status and create history record
+            this.setStatus(command.getOrderKey(), newStatus);
+            // TODO: Update other order properties e.g. tracker URL
+
+            this.saveAndFlush(order);
+        }
+
+        return order.toProviderDto(true);
+    }
+
+    @Transactional(readOnly = false)
+    default ConsumerOrderDto receiveOrderByConsumer(OrderDeliveryCommandDto command) throws Exception {
+        final OrderEntity order = this.findEntityByKeyAndConsumerAndStatusNotCreated(command.getConsumerKey(), command.getOrderKey())
+            .orElse(null);
+
+        if (order == null) {
+            throw new OrderException(OrderMessageCode.ORDER_NOT_FOUND, "Order not found");
+        }
+
+        final EnumOrderStatus oldStatus = EnumOrderStatus.PENDING_CONSUMER_RECEIVE_CONFIRMATION;
+        final EnumOrderStatus newStatus = EnumOrderStatus.ASSET_REGISTRATION;
+
+        // Update only on status change
+        if (order.getStatus() != newStatus) {
+            if (order.getStatus() != oldStatus) {
+                throw new OrderException(OrderMessageCode.ORDER_INVALID_STATUS, String.format(
+                    "Invalid order status [expected=%s, found=%s]",
+                    oldStatus, order.getStatus()
+                ));
+            }
+            // Update status and create history record
+            this.setStatus(command.getOrderKey(), newStatus);
+            // TODO: Update other order properties e.g. delivery date
+
+            this.saveAndFlush(order);
+        }
+
+        return order.toConsumerDto(true);
     }
 
 }

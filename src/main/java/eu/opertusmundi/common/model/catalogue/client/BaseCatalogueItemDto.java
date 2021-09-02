@@ -69,6 +69,7 @@ public abstract class BaseCatalogueItemDto {
         this.spatialResolution            = props.getSpatialResolution();
         this.suitableFor                  = props.getSuitableFor();
         this.userOnlyForVas               = props.isUseOnlyForVas();
+        this.vettingRequired              = props.getVettingRequired();
 
         this.geometry = feature.getGeometry();
 
@@ -257,6 +258,9 @@ public abstract class BaseCatalogueItemDto {
 
     @Schema(description = "True if the asset must be only used for Value-Added-Services (VAS)")
     private boolean userOnlyForVas;
+
+    @Schema(description = "True if consumer vetting is required")
+    private Boolean vettingRequired = null;
 
     @NoArgsConstructor
     @Getter
