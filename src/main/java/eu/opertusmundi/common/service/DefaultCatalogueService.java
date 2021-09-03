@@ -962,6 +962,13 @@ public class DefaultCatalogueService implements CatalogueService {
                 this.catalogueClient.getObject().setDraftStatus(feature.getId(), DRAFT_PUBLISHED_STATUS);
             }
 
+            // Add delay to avoid database replication race condition
+            try {
+                Thread.sleep(5000);
+            } catch (final InterruptedException e) {
+                // Ignore
+            }
+
             // Query new published item from the catalogue. Catalogue may inject
             // additional information such as versions
             final CatalogueFeature published = this.catalogueClient.getObject()
