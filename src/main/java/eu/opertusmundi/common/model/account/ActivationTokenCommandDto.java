@@ -2,8 +2,6 @@ package eu.opertusmundi.common.model.account;
 
 import javax.validation.constraints.NotEmpty;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,10 +18,5 @@ public class ActivationTokenCommandDto {
     @Getter
     @Setter
     private String email;
-
-    @JsonIgnore
-    @Getter
-    @Setter
-    private int duration;
 
 }
