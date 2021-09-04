@@ -4,6 +4,7 @@ public enum EnumMailType {
 
     ACCOUNT_ACTIVATION_TOKEN,
     ACCOUNT_ACTIVATION_SUCCESS,
+    ORDER_CONFIRMATION
     ;
 
 }

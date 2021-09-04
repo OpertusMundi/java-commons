@@ -12,14 +12,21 @@ import com.ibm.icu.text.MessageFormat;
 
 import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.ActivationTokenEntity;
+import eu.opertusmundi.common.domain.AddressEmbeddable;
+import eu.opertusmundi.common.domain.CustomerIndividualEntity;
 import eu.opertusmundi.common.domain.MailTemplateEntity;
+import eu.opertusmundi.common.domain.OrderEntity;
+import eu.opertusmundi.common.domain.OrderItemEntity;
 import eu.opertusmundi.common.model.ServiceException;
+import eu.opertusmundi.common.model.account.EnumCustomerType;
+import eu.opertusmundi.common.model.catalogue.client.EnumDeliveryMethod;
 import eu.opertusmundi.common.model.email.EmailAddressDto;
 import eu.opertusmundi.common.model.email.EnumMailType;
 import eu.opertusmundi.common.model.email.MailMessageCode;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.ActivationTokenRepository;
 import eu.opertusmundi.common.repository.MailTemplateRepository;
+import eu.opertusmundi.common.repository.OrderRepository;
 
 @Service
 public class DefaultMailMessageHelper implements MailMessageHelper {
@@ -35,6 +42,9 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 
     @Autowired
     private ActivationTokenRepository activationTokenRepository;
+    
+    @Autowired
+    private OrderRepository orderRepository;
 
     @Override
     public String composeSubject(EnumMailType type, Map<String, Object> variables) {
@@ -48,6 +58,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
         switch (type) {
             case ACCOUNT_ACTIVATION_TOKEN :
             case ACCOUNT_ACTIVATION_SUCCESS :
+            case ORDER_CONFIRMATION:
                 return MessageFormat.format(template.getSubjectTemplate(), variables);
         }
 
@@ -90,6 +101,11 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             case ACCOUNT_ACTIVATION_SUCCESS :
                 this.populateAccountActivationSuccessModel(builder);
                 break;
+                
+            case ORDER_CONFIRMATION:
+            	this.populateOrderConfirmationModel(builder);
+            	break;
+            	
         }
 
         return builder.build();
@@ -118,6 +134,40 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .setRecipientAddress(account.getEmail())
             .add("name", account.getFullName())
             .add("url", this.baseUrl);
+    }
+    
+    private void populateOrderConfirmationModel(MailModelBuilder builder) {
+    	final UUID userKey 	= UUID.fromString((String) builder.get("userKey"));
+    	
+    	/* TODO: How to get orderKey?*/
+    	final UUID orderKey = UUID.fromString((String) builder.get("orderKey"));
+    	
+        final AccountEntity account = this.accountRepository.findOneByKey(userKey).get();
+        
+        final AddressEmbeddable consumerAddress = ((CustomerIndividualEntity) account.getConsumer()).getAddress();
+    	
+        final OrderEntity     				orderEntity     	= orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderItemEntity 				orderItemEntity 	= orderEntity.getItems().get(0);
+        
+        builder
+        .setRecipientName(account.getFullName())
+        .setRecipientAddress(account.getEmail())
+        .add("orderId", orderEntity.getId())
+        .add("orderDate", orderEntity.getCreatedOn())
+        .add("orderTotal", orderEntity.getTotalPrice())
+        
+        /* TODO: Verify source for those variables */
+        .add("shippingRoad", consumerAddress.getLine1() + " " + consumerAddress.getLine2())
+        .add("shippingPostalCode", consumerAddress.getPostalCode())
+        .add("shippingCity", consumerAddress.getCity())
+        .add("shippingCountry", consumerAddress.getCountry())
+        .add("itemName", orderItemEntity.getDescription())       
+        
+        .add("itemType", orderItemEntity.getType())
+        .add("itemVersion", orderItemEntity.getAssetVersion())
+        .add("itemVendor", orderItemEntity.getProvider())
+        .add("itemPrice", orderItemEntity.getTotalPrice());
+      
     }
 
 }
