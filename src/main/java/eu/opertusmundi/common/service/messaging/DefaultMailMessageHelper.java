@@ -18,8 +18,6 @@ import eu.opertusmundi.common.domain.MailTemplateEntity;
 import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.OrderItemEntity;
 import eu.opertusmundi.common.model.ServiceException;
-import eu.opertusmundi.common.model.account.EnumCustomerType;
-import eu.opertusmundi.common.model.catalogue.client.EnumDeliveryMethod;
 import eu.opertusmundi.common.model.email.EmailAddressDto;
 import eu.opertusmundi.common.model.email.EnumMailType;
 import eu.opertusmundi.common.model.email.MailMessageCode;
@@ -42,7 +40,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 
     @Autowired
     private ActivationTokenRepository activationTokenRepository;
-    
+
     @Autowired
     private OrderRepository orderRepository;
 
@@ -101,11 +99,11 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             case ACCOUNT_ACTIVATION_SUCCESS :
                 this.populateAccountActivationSuccessModel(builder);
                 break;
-                
+
             case ORDER_CONFIRMATION:
             	this.populateOrderConfirmationModel(builder);
             	break;
-            	
+
         }
 
         return builder.build();
@@ -135,39 +133,34 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .add("name", account.getFullName())
             .add("url", this.baseUrl);
     }
-    
+
     private void populateOrderConfirmationModel(MailModelBuilder builder) {
-    	final UUID userKey 	= UUID.fromString((String) builder.get("userKey"));
-    	
-    	/* TODO: How to get orderKey?*/
-    	final UUID orderKey = UUID.fromString((String) builder.get("orderKey"));
-    	
+        final UUID userKey  = UUID.fromString((String) builder.get("userKey"));
+        final UUID orderKey = UUID.fromString((String) builder.get("orderKey"));
+
         final AccountEntity account = this.accountRepository.findOneByKey(userKey).get();
-        
+
         final AddressEmbeddable consumerAddress = ((CustomerIndividualEntity) account.getConsumer()).getAddress();
-    	
-        final OrderEntity     				orderEntity     	= orderRepository.findOrderEntityByKey(orderKey).get();
-        final OrderItemEntity 				orderItemEntity 	= orderEntity.getItems().get(0);
-        
+
+        final OrderEntity     orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderItemEntity orderItemEntity = orderEntity.getItems().get(0);
+
+        // TODO: Add shipping address to order
         builder
-        .setRecipientName(account.getFullName())
-        .setRecipientAddress(account.getEmail())
-        .add("orderId", orderEntity.getId())
-        .add("orderDate", orderEntity.getCreatedOn())
-        .add("orderTotal", orderEntity.getTotalPrice())
-        
-        /* TODO: Verify source for those variables */
-        .add("shippingRoad", consumerAddress.getLine1() + " " + consumerAddress.getLine2())
-        .add("shippingPostalCode", consumerAddress.getPostalCode())
-        .add("shippingCity", consumerAddress.getCity())
-        .add("shippingCountry", consumerAddress.getCountry())
-        .add("itemName", orderItemEntity.getDescription())       
-        
-        .add("itemType", orderItemEntity.getType())
-        .add("itemVersion", orderItemEntity.getAssetVersion())
-        .add("itemVendor", orderItemEntity.getProvider())
-        .add("itemPrice", orderItemEntity.getTotalPrice());
-      
+            .setRecipientName(account.getFullName())
+            .setRecipientAddress(account.getEmail())
+            .add("orderId", orderEntity.getId())
+            .add("orderDate", orderEntity.getCreatedOn())
+            .add("orderTotal", orderEntity.getTotalPrice())
+            .add("shippingRoad", consumerAddress.getLine1() + " " + consumerAddress.getLine2())
+            .add("shippingPostalCode", consumerAddress.getPostalCode())
+            .add("shippingCity", consumerAddress.getCity())
+            .add("shippingCountry", consumerAddress.getCountry())
+            .add("itemName", orderItemEntity.getDescription())
+            .add("itemType", orderItemEntity.getType())
+            .add("itemVersion", orderItemEntity.getAssetVersion())
+            .add("itemVendor", orderItemEntity.getProvider())
+            .add("itemPrice", orderItemEntity.getTotalPrice());
     }
 
 }
