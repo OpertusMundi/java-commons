@@ -26,20 +26,20 @@ public class DefaultContractParametersFactory implements ContractParametersFacto
 
     @Override
     public ContractParametersDto create(UUID orderKey) {
-        final HelpdeskOrderDto        	order    		= orderRepository.findOrderObjectByKey(orderKey).get();
-        final HelpdeskOrderItemDto    	item     		= order.getItems().get(0);
-        final CustomerDto             	consumer 		= order.getConsumer();
-        final CustomerProfessionalDto 	provider 		= item.getProvider();
-        final CatalogueFeature        	feature  		= catalogueService.findOneFeature(item.getAssetId());
-        final EffectivePricingModelDto 	pricingModel 	= item.getPricingModel();
+        final HelpdeskOrderDto         order        = orderRepository.findOrderObjectByKey(orderKey).get();
+        final HelpdeskOrderItemDto     item         = order.getItems().get(0);
+        final CustomerDto              consumer     = order.getConsumer();
+        final CustomerProfessionalDto  provider     = item.getProvider();
+        final CatalogueFeature         feature      = catalogueService.findOneHistoryFeature(item.getAssetId(), item.getAssetVersion());
+        final EffectivePricingModelDto pricingModel = item.getPricingModel();
 
         final ContractParametersDto params = ContractParametersDto.builder()
-        		.consumer(ContractParametersDto.Consumer.from(consumer))
-        		.provider(ContractParametersDto.Provider.from(provider))
-        		.product(ContractParametersDto.Product.from(item, feature))
-        		.pricingModel(ContractParametersDto.PricingModel.from(pricingModel))
-        		.build();
-        
+    		.consumer(ContractParametersDto.Consumer.from(consumer))
+    		.provider(ContractParametersDto.Provider.from(provider))
+    		.product(ContractParametersDto.Product.from(item, feature))
+    		.pricingModel(ContractParametersDto.PricingModel.from(pricingModel))
+    		.build();
+
 
         return params;
     }

@@ -120,10 +120,11 @@ public interface CatalogueService {
      * Find one catalogue feature by its unique PID from history
      *
      * @param id
+     * @param version
      * @return
      * @throws CatalogueServiceException
      */
-    CatalogueFeature findOneHistoryFeature(String id) throws CatalogueServiceException;
+    CatalogueFeature findOneHistoryFeature(String id, String version) throws CatalogueServiceException;
 
     /**
      * Find a harvested resource by its unique identifier

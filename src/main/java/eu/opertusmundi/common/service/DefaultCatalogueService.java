@@ -255,7 +255,7 @@ public class DefaultCatalogueService implements CatalogueService {
 
     @Override
     public List<CatalogueItemDto> findAllById(String[] id) throws CatalogueServiceException {
-        Assert.notEmpty(id, "Expected a non-empty array of identifers");
+        Assert.notEmpty(id, "Expected a non-empty array of identifiers");
 
         try {
             // Catalogue service data page index is 1-based
@@ -498,13 +498,11 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     @Override
-    public CatalogueFeature findOneHistoryFeature(String id) throws CatalogueServiceException {
+    public CatalogueFeature findOneHistoryFeature(String id, String version) throws CatalogueServiceException {
         try {
-            final ResponseEntity<CatalogueResponse<CatalogueCollection>> e = this.catalogueClient.getObject().findAllHistory(
-                id, null, null, 1, 1
-            );
+            final ResponseEntity<CatalogueResponse<CatalogueFeature>> e = this.catalogueClient.getObject().findOneByIdAndVersion(id, version);
 
-            final CatalogueResponse<CatalogueCollection> catalogueResponse = e.getBody();
+            final CatalogueResponse<CatalogueFeature> catalogueResponse = e.getBody();
 
             if (!catalogueResponse.isSuccess()) {
                 throw new CatalogueServiceException(
@@ -513,11 +511,7 @@ public class DefaultCatalogueService implements CatalogueService {
                 );
             }
 
-            if (catalogueResponse.getResult().getItems().isEmpty()) {
-                return null;
-            }
-
-            return catalogueResponse.getResult().getItems().get(0);
+            return catalogueResponse.getResult();
         } catch (final FeignException fex) {
             // Convert 404 errors to empty results
             if (fex.status() == HttpStatus.NOT_FOUND.value()) {
