@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import eu.opertusmundi.common.model.EnumSortingOrder;
+import eu.opertusmundi.common.model.PageRequestDto;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.account.AccountAssetDto;
 import eu.opertusmundi.common.model.account.AccountSubscriptionDto;
@@ -42,6 +43,10 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
         List<AccountAssetDto> records = this.accountAssetRepository.findAllByUserKey(userKey).stream()
             .map(e -> e.toDto())
             .collect(Collectors.toList());
+
+        if (records.isEmpty()) {
+            return PageResultDto.empty(PageRequestDto.of(pageIndex, pageSize));
+        }
 
         final String[]               pid    = records.stream().map(a -> a.getAssetId()).distinct().toArray(String[]::new);
         final List<CatalogueItemDto> assets = this.catalogueService.findAllById(pid);
@@ -98,7 +103,11 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
     public PageResultDto<AccountSubscriptionDto> findAllSubscriptions(
             UUID userKey, EnumSpatialDataServiceType type, int pageIndex, int pageSize, EnumConsumerSubSortField orderBy, EnumSortingOrder order
     ) {
-        List<AccountSubscriptionDto> records = this.accountSubscriptionRepository.findAllByUserKeyForConsumer(userKey);
+        List<AccountSubscriptionDto> records = this.accountSubscriptionRepository.findAllObjectsByConsumer(userKey);
+
+        if (records.isEmpty()) {
+            return PageResultDto.empty(PageRequestDto.of(pageIndex, pageSize));
+        }
 
         final String[]               pid    = records.stream().map(a -> a.getServiceId()).distinct().toArray(String[]::new);
         final List<CatalogueItemDto> assets = this.catalogueService.findAllById(pid);

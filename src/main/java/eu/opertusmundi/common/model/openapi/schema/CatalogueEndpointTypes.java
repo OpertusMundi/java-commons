@@ -8,6 +8,7 @@ import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueClientCollectionResponse;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
+import eu.opertusmundi.common.model.payment.provider.ProviderAccountSubscriptionDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public class CatalogueEndpointTypes {
@@ -35,6 +36,11 @@ public class CatalogueEndpointTypes {
     @Schema(description = "Harvest import response. The result contains a map with all imported "
                         + "drafts. The key of the map is the initial harvested item unique identifier")
     public static class HarvestImportResponse extends RestResponse<Map<String, AssetDraftDto>> {
+
+    }
+
+    @Schema(description = "Subscription collection response")
+    public static class SubCollectionResponse extends RestResponse<PageResultDto<ProviderAccountSubscriptionDto>> {
 
     }
 

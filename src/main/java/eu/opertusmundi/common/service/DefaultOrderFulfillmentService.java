@@ -383,7 +383,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         final ZonedDateTime            now          = ZonedDateTime.now();
 
         // Check if a subscription is already active
-        final AccountSubscriptionEntity activeSubscription = accountSubscriptionRepository.findAllByUserKeyAndServiceId(userKey, orderItem.getAssetId()).stream()
+        final AccountSubscriptionEntity activeSubscription = accountSubscriptionRepository.findAllByConsumerAndServiceId(userKey, orderItem.getAssetId()).stream()
             .filter(s -> s.getOrder().getId().equals(order.getId()))
             .findFirst().orElse(null);
         final boolean renewal = activeSubscription != null;

@@ -56,6 +56,7 @@ import eu.opertusmundi.common.model.asset.EnumAssetSourceType;
 import eu.opertusmundi.common.model.asset.EnumMetadataPropertyType;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftSortField;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
+import eu.opertusmundi.common.model.asset.EnumProviderSubSortField;
 import eu.opertusmundi.common.model.asset.EnumResourceType;
 import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.FileResourceDto;
@@ -85,8 +86,10 @@ import eu.opertusmundi.common.model.file.FileSystemMessageCode;
 import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestResultResponseDto;
+import eu.opertusmundi.common.model.payment.provider.ProviderAccountSubscriptionDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.repository.AccountRepository;
+import eu.opertusmundi.common.repository.AccountSubscriptionRepository;
 import eu.opertusmundi.common.repository.AssetAdditionalResourceRepository;
 import eu.opertusmundi.common.repository.AssetFileTypeRepository;
 import eu.opertusmundi.common.repository.AssetMetadataPropertyRepository;
@@ -132,6 +135,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Autowired
     private AssetAdditionalResourceRepository assetAdditionalResourceRepository;
+
+    @Autowired
+    private AccountSubscriptionRepository subscriptionRepository;
 
     @Autowired
     private ProviderTemplateContractHistoryRepository contractRepository;
@@ -1206,7 +1212,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         final String businessKey = String.format("%s:%s:unpublish", command.getPublisherKey(), command.getPid());
 
         // Check if workflow exists
-        ProcessInstanceDto instance = this.bpmEngine.findInstance(businessKey);
+        final ProcessInstanceDto instance = this.bpmEngine.findInstance(businessKey);
 
         if (instance == null) {
             final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
@@ -1222,6 +1228,20 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             );
         }
     }
+
+    @Override
+    public PageResultDto<ProviderAccountSubscriptionDto> findAllSubscriptions(
+        UUID publisherKey, int pageIndex, int pageSize,
+        EnumProviderSubSortField orderBy, EnumSortingOrder order
+    ) {
+        final Direction   direction   = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
+        final PageRequest pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
+
+        final Page<ProviderAccountSubscriptionDto> page = this.subscriptionRepository.findAllObjectsByProvider(publisherKey, pageRequest);
+
+        return PageResultDto.of(pageIndex, pageSize, page.getContent(), page.getTotalElements());
+    }
+
 
     private String getMetadataPropertyFileName(UUID resourceKey, String propertyName, EnumMetadataPropertyType propertyType) {
         return StringUtils.joinWith(".", resourceKey, "property", propertyName, propertyType.getExtension());

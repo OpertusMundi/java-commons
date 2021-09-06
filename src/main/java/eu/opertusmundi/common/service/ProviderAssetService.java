@@ -18,6 +18,7 @@ import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceCommandDto;
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftSortField;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
+import eu.opertusmundi.common.model.asset.EnumProviderSubSortField;
 import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.MetadataProperty;
 import eu.opertusmundi.common.model.asset.ResourceDto;
@@ -35,6 +36,7 @@ import eu.opertusmundi.common.model.catalogue.client.UnpublishAssetCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestResultResponseDto;
+import eu.opertusmundi.common.model.payment.provider.ProviderAccountSubscriptionDto;
 
 public interface ProviderAssetService {
 
@@ -375,5 +377,31 @@ public interface ProviderAssetService {
      * @throws CatalogueServiceException
      */
     void unpublishAsset(UnpublishAssetCommand command) throws CatalogueServiceException;
+
+    /**
+     * Find all registered subscriptions for the specified provider
+     *
+     * @param publisherKey
+     * @param type
+     * @param pageIndex
+     * @param pageSize
+     * @param orderBy
+     * @param order
+     * @return
+     */
+    PageResultDto<ProviderAccountSubscriptionDto> findAllSubscriptions(
+        UUID publisherKey, int pageIndex, int pageSize,
+        EnumProviderSubSortField orderBy, EnumSortingOrder order
+    );
+
+    default PageResultDto<ProviderAccountSubscriptionDto> findAllSubscriptions(
+        UUID publisherKey, Set<EnumSpatialDataServiceType> serviceType,
+        int pageIndex, int pageSize
+    ) {
+        return this.findAllSubscriptions(
+            publisherKey, pageIndex, pageSize,
+            EnumProviderSubSortField.ADDED_ON, EnumSortingOrder.DESC
+        );
+    }
 
 }
