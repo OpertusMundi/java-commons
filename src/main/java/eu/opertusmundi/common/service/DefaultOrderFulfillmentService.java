@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.service;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.UUID;
@@ -59,7 +60,9 @@ import feign.FeignException;
 @Transactional
 public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
-    private static final String WORKFLOW_PROCESS_PAYIN = "workflow-process-payin";
+    private static final String WORKFLOW_PROCESS_ORDER_WITH_PAYMENT = "workflow-process-order-with-payin";
+
+    private static final String WORKFLOW_PROCESS_ORDER_FREE = "workflow-process-order-without-payin";
 
     private static final String MESSAGE_UPDATE_PAYIN_STATUS = "payin-updated-message";
 
@@ -122,6 +125,61 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     }
 
     /**
+     * Initializes a workflow instance to process the referenced order
+     *
+     * The operation may fail because of (a) a network error, (b) BPM engine
+     * service error or (c) database command error. The operation is retried for
+     * at most 3 times, with a maximum latency due to attempt delays of 9
+     * seconds.
+     */
+    @Override
+    @Retryable(include = {Exception.class}, maxAttempts = 3, backoff = @Backoff(delay = 2000, maxDelay = 3000))
+    public String startOrderWithoutPayInWorkflow(UUID payInKey) {
+        try {
+            final PayInEntity payIn = payInRepository.findOneEntityByKey(payInKey).orElse(null);
+            Assert.isTrue(payIn.getItems().size() == 1, "Expected a single pay in item");
+            Assert.isTrue(payIn.getTotalPrice().compareTo(BigDecimal.ZERO) == 0, "Expected total price to be 0");
+
+            final EnumPaymentItemType type = payIn.getItems().get(0).getType();
+            Assert.isTrue(type == EnumPaymentItemType.ORDER, "Expected an order pay in item");
+
+            final PayInOrderItemEntity payInItem = (PayInOrderItemEntity) payIn.getItems().get(0);
+
+            if (!StringUtils.isBlank(payIn.getProcessInstance())) {
+                // Workflow instance already exists
+                return payIn.getProcessInstance();
+            }
+
+            ProcessInstanceDto instance = this.bpmEngine.findInstance(payInKey.toString());
+            if (instance == null) {
+                // Set business key
+                final String businessKey= payInKey.toString();
+
+                // Set variables
+                final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
+                    .variableAsString(EnumProcessInstanceVariable.START_USER_KEY.getValue(), "")
+                    .variableAsString("payInKey", payInKey.toString())
+                    .variableAsString("payInStatus", EnumTransactionStatus.SUCCEEDED.toString())
+                    .variableAsString("deliveryMethod", payInItem.getOrder().getDeliveryMethod().toString())
+                    .build();
+
+                instance = this.bpmEngine.startProcessDefinitionByKey(WORKFLOW_PROCESS_ORDER_FREE, businessKey, variables);
+            }
+
+            payInRepository.setPayInWorkflowInstance(payIn.getId(), instance.getDefinitionId(), instance.getId());
+
+            return instance.getId();
+        } catch(final Exception ex) {
+            logger.error(
+                "Failed to start workflow instance [workflow={}, businessKey={}, ex={}]",
+                WORKFLOW_PROCESS_ORDER_FREE, payInKey, ex.getMessage()
+            );
+        }
+
+        return null;
+    }
+
+    /**
      * Initializes a workflow instance to process the referenced PayIn
      *
      * The operation may fail because of (a) a network error, (b) BPM engine
@@ -131,7 +189,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
      */
     @Override
     @Retryable(include = {Exception.class}, maxAttempts = 3, backoff = @Backoff(delay = 2000, maxDelay = 3000))
-    public String startOrderWorkflow(UUID payInKey, String payInId, EnumTransactionStatus payInStatus) {
+    public String startOrderWithPayInWorkflow(UUID payInKey, String payInId, EnumTransactionStatus payInStatus) {
         try {
             final PayInEntity payIn = payInRepository.findOneEntityByKey(payInKey).orElse(null);
             Assert.isTrue(payIn.getItems().size() == 1, "Expected a single pay in item");
@@ -158,7 +216,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                     .variableAsString("deliveryMethod", payInItem.getOrder().getDeliveryMethod().toString())
                     .build();
 
-                instance = this.bpmEngine.startProcessDefinitionByKey(WORKFLOW_PROCESS_PAYIN, businessKey, variables);
+                instance = this.bpmEngine.startProcessDefinitionByKey(WORKFLOW_PROCESS_ORDER_WITH_PAYMENT, businessKey, variables);
             }
 
             payInRepository.setPayInWorkflowInstance(payIn.getId(), instance.getDefinitionId(), instance.getId());
@@ -167,7 +225,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         } catch(final Exception ex) {
             logger.error(
                 "Failed to start workflow instance [workflow={}, businessKey={}, ex={}]",
-                WORKFLOW_PROCESS_PAYIN, payInKey, ex.getMessage()
+                WORKFLOW_PROCESS_ORDER_WITH_PAYMENT, payInKey, ex.getMessage()
             );
         }
 
@@ -196,14 +254,14 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             } else {
                 logger.error(
                     "Failed to send message [workflow={}, businessKey={}, message={}, ex={}]",
-                    WORKFLOW_PROCESS_PAYIN, payInKey, MESSAGE_UPDATE_PAYIN_STATUS, fex.getMessage()
+                    WORKFLOW_PROCESS_ORDER_WITH_PAYMENT, payInKey, MESSAGE_UPDATE_PAYIN_STATUS, fex.getMessage()
                 );
                 throw fex;
             }
         } catch(final Exception ex) {
             logger.error(
                 "Failed to send message [workflow={}, businessKey={}, message={}, ex={}]",
-                WORKFLOW_PROCESS_PAYIN, payInKey, MESSAGE_UPDATE_PAYIN_STATUS, ex.getMessage()
+                WORKFLOW_PROCESS_ORDER_WITH_PAYMENT, payInKey, MESSAGE_UPDATE_PAYIN_STATUS, ex.getMessage()
             );
             throw ex;
         }

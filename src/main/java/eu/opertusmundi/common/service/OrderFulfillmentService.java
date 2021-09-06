@@ -33,6 +33,16 @@ public interface OrderFulfillmentService {
     /**
      * Initialize a workflow instance to process the referenced PayIn.
      *
+     * The PayIn total amount must be 0 e.g. an asset with FREE pricing model
+     *
+     * @param payInKey
+     * @return
+     */
+    String startOrderWithoutPayInWorkflow(UUID payInKey);
+
+    /**
+     * Initialize a workflow instance to process the referenced PayIn.
+     *
      * This method is applicable for PayIns that refer to an order record.
      *
      * @param payInKey
@@ -40,7 +50,7 @@ public interface OrderFulfillmentService {
      * @param payInStatus
      * @return
      */
-    String startOrderWorkflow(UUID payInKey, String payInId, EnumTransactionStatus payInStatus);
+    String startOrderWithPayInWorkflow(UUID payInKey, String payInId, EnumTransactionStatus payInStatus);
 
     /**
      * Update PayIn status in an existing workflow instance

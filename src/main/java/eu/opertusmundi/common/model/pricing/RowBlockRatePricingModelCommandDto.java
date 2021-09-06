@@ -75,7 +75,14 @@ public class RowBlockRatePricingModelCommandDto extends BasePricingModelCommandD
 
     @Override
     public  EffectivePricingModelDto compute(QuotationParametersDto params) {
-        final EffectivePricingModelDto result = EffectivePricingModelDto.from(this, params);
+        final EffectivePricingModelDto result    = EffectivePricingModelDto.from(this, params);
+        final QuotationDto             quotation = new QuotationDto();
+
+        quotation.setTaxPercent(params.getTaxPercent().intValue());
+        quotation.setTotalPriceExcludingTax(new BigDecimal(0));
+        quotation.setTax(new BigDecimal(0));
+
+        result.setQuotation(quotation);
 
         return result;
     }

@@ -27,6 +27,7 @@ import lombok.Setter;
 @JsonSubTypes({
     @Type(name = "CARD_DIRECT", value = ProviderCardDirectPayInDto.class),
     @Type(name = "BANKWIRE", value = ProviderBankwirePayInDto.class),
+    @Type(name = "FREE", value = ProviderFreePayInDto.class),
 })
 public class ProviderPayInDto extends PayInDto {
 

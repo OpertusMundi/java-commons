@@ -107,6 +107,7 @@ import eu.opertusmundi.common.model.payment.EnumPayInSortField;
 import eu.opertusmundi.common.model.payment.EnumPayOutSortField;
 import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
+import eu.opertusmundi.common.model.payment.FreePayInCommand;
 import eu.opertusmundi.common.model.payment.PayInDto;
 import eu.opertusmundi.common.model.payment.PayInItemDto;
 import eu.opertusmundi.common.model.payment.PayInStatusUpdateCommand;
@@ -800,7 +801,6 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
         return PageResultDto.of(pageIndex, pageSize, records, count);
     }
-
     @Override
     public PayInDto createPayInBankwireForOrder(BankwirePayInCommand command) throws PaymentException {
         try {
@@ -828,6 +828,11 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             // integer 10050
             command.setDebitedFunds(order.getTotalPrice().multiply(BigDecimal.valueOf(100L)).intValue());
             command.setReferenceNumber(this.createReferenceNumber());
+
+            // Funds must be greater than 0
+            if (command.getDebitedFunds() <= 0) {
+                throw new PaymentException(PaymentMessageCode.ZERO_AMOUNT, "[TOPIO] PayIn amount must be greater than 0");
+            }
 
             // Check if this is a retry operation
             PayIn payInResponse = this.<PayIn>getResponse(idempotencyKey);
@@ -865,6 +870,44 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     @Override
+    public PayInDto createPayInFreeForOrder(FreePayInCommand command) throws PaymentException {
+        try {
+            final AccountEntity  account        = this.getAccount(command.getUserKey());
+            final CustomerEntity customer       = account.getProfile().getConsumer();
+            final OrderEntity    order          = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).orElse(null);
+
+            // Check customer
+            this.ensureCostumer(customer, command.getUserKey());
+
+            // Check order
+            this.ensureOrderForPayIn(order, command.getOrderKey());
+
+            // Funds must be greater than 0
+            if (order.getTotalPrice().longValue() > 0) {
+                throw new PaymentException(PaymentMessageCode.NON_ZERO_AMOUNT, "[TOPIO] PayIn amount must be equal to 0");
+            }
+
+            // Check payment
+            final PayInEntity payIn = order.getPayin();
+            if (payIn != null) {
+                return payIn.toConsumerDto(true);
+            }
+
+            command.setReferenceNumber(this.createReferenceNumber());
+
+
+            // Create database record
+            final PayInDto result = this.payInRepository.createFreePayInForOrder(command);
+            // Link PayIn record to order
+            this.orderRepository.setPayIn(command.getOrderKey(), result.getPayIn(), account.getKey());
+
+            return result;
+        } catch (final Exception ex) {
+            throw this.wrapException("Create PayIn Free", ex, command);
+        }
+    }
+
+    @Override
     public PayInDto createPayInCardDirectForOrder(CardDirectPayInCommand command) throws PaymentException {
         try {
             final AccountEntity  account        = this.getAccount(command.getUserKey());
@@ -889,6 +932,11 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             command.setDebitedFunds(order.getTotalPrice().multiply(BigDecimal.valueOf(100L)).intValue());
             command.setReferenceNumber(this.createReferenceNumber());
             command.setStatementDescriptor(this.createStatementDescriptor(command));
+
+            // Funds must be greater than 0
+            if (command.getDebitedFunds() <= 0) {
+                throw new PaymentException(PaymentMessageCode.ZERO_AMOUNT, "[TOPIO] PayIn amount must be greater than 0");
+            }
 
             // Check if this is a retry operation
             PayIn payInResponse = this.<PayIn>getResponse(idempotencyKey);
@@ -1545,7 +1593,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
         try {
             bankAccount.setActive(false);
-            
+
             this.api.getUserApi().updateBankAccount(userId, bankAccount, bankAccount.getId());
         } catch (final ResponseException ex) {
             logger.error("MANGOPAY operation has failed", ex);

@@ -23,6 +23,7 @@ import eu.opertusmundi.common.model.payment.EnumPayInItemSortField;
 import eu.opertusmundi.common.model.payment.EnumPayInSortField;
 import eu.opertusmundi.common.model.payment.EnumPayOutSortField;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
+import eu.opertusmundi.common.model.payment.FreePayInCommand;
 import eu.opertusmundi.common.model.payment.PayInDto;
 import eu.opertusmundi.common.model.payment.PayOutCommandDto;
 import eu.opertusmundi.common.model.payment.PayOutDto;
@@ -238,6 +239,15 @@ public interface  PaymentService {
     PageResultDto<ProviderPayInItemDto> findAllProviderPayInItems(
         UUID userKey, EnumTransactionStatus status, int pageIndex, int pageSize, EnumPayInItemSortField orderBy, EnumSortingOrder order
     );
+
+    /**
+     * Create a free PayIn for consumer order
+     *
+     * @param command
+     * @return
+     * @throws PaymentException
+     */
+    PayInDto createPayInFreeForOrder(FreePayInCommand command) throws PaymentException;
 
     /**
      * Create bank wire PayIn for a consumer order

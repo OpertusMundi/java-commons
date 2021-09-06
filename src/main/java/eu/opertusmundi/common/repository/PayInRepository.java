@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.repository;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.Set;
@@ -23,6 +24,7 @@ import eu.opertusmundi.common.domain.BankAccountEmbeddable;
 import eu.opertusmundi.common.domain.BankWirePayInEntity;
 import eu.opertusmundi.common.domain.CardDirectPayInEntity;
 import eu.opertusmundi.common.domain.CartEntity;
+import eu.opertusmundi.common.domain.FreePayInEntity;
 import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInItemEntity;
@@ -31,6 +33,7 @@ import eu.opertusmundi.common.domain.PayInStatusEntity;
 import eu.opertusmundi.common.model.payment.BankwirePayInCommand;
 import eu.opertusmundi.common.model.payment.CardDirectPayInCommand;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
+import eu.opertusmundi.common.model.payment.FreePayInCommand;
 import eu.opertusmundi.common.model.payment.PayInDto;
 import eu.opertusmundi.common.model.payment.PayInItemDto;
 import eu.opertusmundi.common.model.payment.PayInStatusUpdateCommand;
@@ -178,6 +181,54 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         @Param("processDefinition") String processDefinition,
         @Param("processInstance")   String processInstance
     );
+
+    @Transactional(readOnly = false)
+    default PayInDto createFreePayInForOrder(FreePayInCommand command) throws Exception {
+        Assert.notNull(command, "Expected a non-null command");
+        Assert.notNull(command.getOrderKey(), "Expected a non-null order key");
+
+        final OrderEntity order = this.findOrderByKey(command.getOrderKey()).orElse(null);
+
+        Assert.notNull(order, "Expected a non-null order");
+        Assert.notNull(order.getItems().size() == 1, "Expected a single order item");
+        Assert.isTrue(order.getTotalPrice().compareTo(BigDecimal.ZERO) == 0, "Expected total price to be 0");
+
+        final AccountEntity   consumer = order.getConsumer();
+        final FreePayInEntity payin    = new FreePayInEntity();
+        final ZonedDateTime   now      = ZonedDateTime.now();
+
+        payin.setConsumer(consumer);
+        payin.setCreatedOn(now);
+        payin.setCurrency(order.getCurrency());
+        payin.setExecutedOn(now);
+        payin.setKey(command.getPayInKey());
+        payin.setPayIn(UUID.randomUUID().toString());
+        payin.setReferenceNumber(command.getReferenceNumber());
+        payin.setStatus(EnumTransactionStatus.SUCCEEDED);
+        payin.setStatusUpdatedOn(now);
+        payin.setTotalPrice(order.getTotalPrice());
+        payin.setTotalPriceExcludingTax(order.getTotalPriceExcludingTax());
+        payin.setTotalTax(order.getTotalTax());
+
+        final PayInStatusEntity status = new PayInStatusEntity();
+        status.setPayin(payin);
+        status.setStatus(payin.getStatus());
+        status.setStatusUpdatedOn(now);
+
+        payin.getStatusHistory().add(status);
+
+        final PayInOrderItemEntity item = new PayInOrderItemEntity();
+        item.setIndex(1);
+        item.setOrder(order);
+        item.setPayin(payin);
+        item.setProvider(order.getItems().get(0).getProvider());
+
+        payin.getItems().add(item);
+
+        this.saveAndFlush(payin);
+
+        return payin.toConsumerDto(true);
+    }
 
     @Transactional(readOnly = false)
     default PayInDto createBankwirePayInForOrder(BankwirePayInCommand command) throws Exception {
