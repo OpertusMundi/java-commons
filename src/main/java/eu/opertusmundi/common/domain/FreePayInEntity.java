@@ -6,7 +6,7 @@ import javax.persistence.Table;
 
 import eu.opertusmundi.common.model.payment.EnumPaymentMethod;
 import eu.opertusmundi.common.model.payment.PayInDto;
-import eu.opertusmundi.common.model.payment.consumer.ConsumerBankwirePayInDto;
+import eu.opertusmundi.common.model.payment.consumer.ConsumerFreePayInDto;
 import eu.opertusmundi.common.model.payment.consumer.ConsumerPayInDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskFreePayInDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
@@ -41,7 +41,7 @@ public class FreePayInEntity extends PayInEntity {
 
     @Override
     public ConsumerPayInDto toConsumerDto(boolean includeDetails) {
-        final ConsumerBankwirePayInDto p = new ConsumerBankwirePayInDto();
+        final ConsumerFreePayInDto p = new ConsumerFreePayInDto();
 
         this.updateDto(p);
 
