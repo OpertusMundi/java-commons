@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,16 @@ public interface AccountSubscriptionRepository extends JpaRepository<AccountSubs
         return this.findAllEntitiesByConsumer(userKey).stream()
             .map(e -> e.toConsumerDto())
             .collect(Collectors.toList());
+    }
+
+    @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey and order.key = :orderKey")
+    Optional<AccountSubscriptionEntity> findAllEntitiesByConsumerAndOrder(UUID userKey, UUID orderKey);
+
+    @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey and order.key = :orderKey")
+    default Optional<AccountSubscriptionDto> findAllObjectsByConsumerAndOrder(UUID userKey, UUID orderKey) {
+        return this.findAllEntitiesByConsumerAndOrder(userKey, orderKey)
+            .map(e -> e.toConsumerDto());
+
     }
 
     @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey and s.service = :assetId")

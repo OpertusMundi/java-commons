@@ -14,7 +14,12 @@ public class ConsumerEndpointTypes {
     }
 
     @Schema(description = "Subscription collection response")
-    public static class AssetSubscriptionResponse extends RestResponse<PageResultDto<AccountSubscriptionDto>> {
+    public static class SubscriptionCollectionResponse extends RestResponse<PageResultDto<AccountSubscriptionDto>> {
+
+    }
+
+    @Schema(description = "Subscription response")
+    public static class SubscriptionResponse extends RestResponse<AccountSubscriptionDto> {
 
     }
 

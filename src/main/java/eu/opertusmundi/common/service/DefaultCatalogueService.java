@@ -253,6 +253,8 @@ public class DefaultCatalogueService implements CatalogueService {
         }
     }
 
+    // TODO: Restrict automated metadata visibility
+
     @Override
     public List<CatalogueItemDto> findAllById(String[] id) throws CatalogueServiceException {
         Assert.notEmpty(id, "Expected a non-empty array of identifiers");

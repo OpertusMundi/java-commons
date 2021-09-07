@@ -38,7 +38,6 @@ public interface ConsumerAssetService {
         UUID userKey, EnumType type, int pageIndex, int pageSize, EnumConsumerAssetSortField orderBy, EnumSortingOrder order
     ) throws ConsumerServiceException;
 
-
     /**
      * Search registered subscriptions
      *
@@ -54,5 +53,14 @@ public interface ConsumerAssetService {
     PageResultDto<AccountSubscriptionDto> findAllSubscriptions(
         UUID userKey, EnumSpatialDataServiceType type, int pageIndex, int pageSize, EnumConsumerSubSortField orderBy, EnumSortingOrder order
     ) throws ConsumerServiceException;
+
+    /**
+     * Get a subscription
+     *
+     * @param userKey
+     * @param orderKey
+     * @return
+     */
+    AccountSubscriptionDto findSubscription(UUID userKey, UUID orderKey);
 
 }

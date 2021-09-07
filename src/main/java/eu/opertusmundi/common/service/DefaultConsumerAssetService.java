@@ -160,4 +160,26 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
         return PageResultDto.of(pageIndex, pageSize, items);
     }
 
+    @Override
+    public AccountSubscriptionDto findSubscription(UUID userKey, UUID orderKey) {
+       final AccountSubscriptionDto result = this.accountSubscriptionRepository.findAllObjectsByConsumerAndOrder(userKey, orderKey)
+           .orElse(null);
+
+        if (result == null) {
+            return result;
+        }
+
+        final List<CatalogueItemDto> assets = this.catalogueService.findAllById(new String[]{result.getServiceId()});
+
+        if(assets.isEmpty()) {
+            throw new ConsumerServiceException(ConsumerServiceMessageCode.CATALOGUE_ITEM_NOT_FOUND, String.format(
+                "Catalogue item not found [userKey=%s, assetPid=%s]" ,
+                userKey,result.getServiceId()
+            ));
+        }
+        result.setItem(assets.get(0));
+
+       return result;
+    }
+
 }

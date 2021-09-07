@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.model.account;
 
 import java.time.ZonedDateTime;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -21,6 +22,9 @@ public abstract class AccountSubscriptionDto {
 
     @JsonIgnore
     private Integer orderId;
+
+    @Schema(description = "Subscription key")
+    private UUID key;
 
     @Schema(description = "Service PID")
     private String serviceId;

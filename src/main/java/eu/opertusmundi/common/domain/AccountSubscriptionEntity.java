@@ -105,6 +105,7 @@ public class AccountSubscriptionEntity {
     public void updateDto(AccountSubscriptionDto s) {
         s.setAddedOn(addedOn);
         s.setId(id);
+        s.setKey(order.getKey());
         s.setOrderId(order.getId());
         s.setSegment(segment);
         s.setServiceId(service);
