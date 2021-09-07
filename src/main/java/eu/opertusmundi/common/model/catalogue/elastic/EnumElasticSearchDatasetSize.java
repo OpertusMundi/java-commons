@@ -3,7 +3,7 @@ package eu.opertusmundi.common.model.catalogue.elastic;
 import lombok.Getter;
 
 public enum EnumElasticSearchDatasetSize {
-	SMALL(null, 999),
+	SMALL(null, 1000),
 	MEDIUM(1000, 100000),
 	LARGE(100000, null),
 	;

@@ -785,7 +785,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             if (topLeft != null && bottomRight != null) {
                 final Rectangle geometry = new EnvelopeBuilder(topLeft, bottomRight).buildGeometry();
 
-                query.must(QueryBuilders.geoShapeQuery("geometry", geometry).relation(spatialOperation));
+                query.must(QueryBuilders.geoShapeQuery("properties.automated_metadata.mbr", geometry).relation(spatialOperation));
             }
 
             // Check asset format
