@@ -31,6 +31,11 @@ public interface CartRepository extends JpaRepository<CartEntity, Integer> {
     Optional<CartEntity> findOneByKey(UUID key);
 
     @Transactional(readOnly = false)
+    default CartDto create() {
+        return this.create(null);
+    }
+
+    @Transactional(readOnly = false)
     default CartDto create(Integer accountId) {
         final CartEntity cart = new CartEntity();
 
@@ -150,6 +155,7 @@ public interface CartRepository extends JpaRepository<CartEntity, Integer> {
     default CartDto clear(UUID cartKey) {
         Assert.notNull(cartKey, "Cart key must not be null");
 
+        // Empty existing cart
         final CartEntity cart = this.findOneByKey(cartKey).orElse(null);
 
         if (cart == null) {
@@ -160,8 +166,12 @@ public interface CartRepository extends JpaRepository<CartEntity, Integer> {
 
         cart.getItems().stream().forEach(i -> i.setRemovedAt(removedAt));
         cart.setModifiedAt(removedAt);
+        cart.updateAggregates();
 
-        return this.saveAndFlush(cart).toDto();
+        this.saveAndFlush(cart);
+
+        // Create new cart
+        return this.create();
     }
 
 }
