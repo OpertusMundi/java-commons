@@ -8,6 +8,7 @@ import org.locationtech.jts.geom.Coordinate;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import eu.opertusmundi.common.model.EnumSortingOrder;
+import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import eu.opertusmundi.common.model.catalogue.client.EnumType;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -36,6 +37,15 @@ public class ElasticAssetQuery {
         minItems = 0, uniqueItems = true
     )
     private List<EnumType> type;
+
+    @ArraySchema(
+        arraySchema = @Schema(
+            description = "The type of the spatial data service. This filter selects only assets of type `SERVICE`",
+            example = "WFS"
+        ),
+        minItems = 0, uniqueItems = true
+    )
+    private List<EnumSpatialDataServiceType> serviceType;
 
     @Schema(description = "The file format, physical medium, or dimensions of the resource", example = "ESRI Shapefile")
     private List<String> format;
