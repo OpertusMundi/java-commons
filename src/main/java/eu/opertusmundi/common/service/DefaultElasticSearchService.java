@@ -694,7 +694,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
                 	serviceTypeQueries.add(QueryBuilders.matchQuery("properties.spatial_data_service_type", serviceType.get(i)));
                 }
                 final BoolQueryBuilder tempBool = QueryBuilders.boolQuery();
-                for (final QueryBuilder currentQuery : typeQueries) {
+                for (final QueryBuilder currentQuery : serviceTypeQueries) {
                     tempBool.should(currentQuery);
                 }
                 query.must(tempBool);
