@@ -108,6 +108,7 @@ import eu.opertusmundi.common.model.analytics.DataPoint;
 import eu.opertusmundi.common.model.analytics.DataSeries;
 import eu.opertusmundi.common.model.analytics.EnumAssetViewSource;
 import eu.opertusmundi.common.model.analytics.ProfileRecord;
+import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import eu.opertusmundi.common.model.catalogue.client.EnumType;
 import eu.opertusmundi.common.model.catalogue.elastic.CreateIndexCommand;
@@ -593,6 +594,9 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             final List<String> type        = assetQuery.getType() == null
                 ? null
                 : assetQuery.getType().stream().map(EnumType::getValue).collect(Collectors.toList());
+            final List<String> serviceType = assetQuery.getServiceType() == null
+                ? null
+                : assetQuery.getServiceType().stream().map(EnumSpatialDataServiceType::getValue).collect(Collectors.toList());
             final List<String> format      = assetQuery.getFormat();
             final List<String> crs         = assetQuery.getCrs();
             final Integer      minPrice    = assetQuery.getMinPrice();
@@ -674,6 +678,20 @@ public class DefaultElasticSearchService implements ElasticSearchService {
                 typeQueries = new ArrayList<QueryBuilder>();
                 for (int i = 0; i < type.size(); i++) {
                     typeQueries.add(QueryBuilders.matchQuery("properties.type", type.get(i)));
+                }
+                final BoolQueryBuilder tempBool = QueryBuilders.boolQuery();
+                for (final QueryBuilder currentQuery : typeQueries) {
+                    tempBool.should(currentQuery);
+                }
+                query.must(tempBool);
+            }
+            
+            // Check service type
+            List<QueryBuilder> serviceTypeQueries = null;
+            if (serviceType != null && !serviceType.isEmpty()) {
+            	serviceTypeQueries = new ArrayList<QueryBuilder>();
+                for (int i = 0; i < serviceType.size(); i++) {
+                	serviceTypeQueries.add(QueryBuilders.matchQuery("properties.spatial_data_service_type", serviceType.get(i)));
                 }
                 final BoolQueryBuilder tempBool = QueryBuilders.boolQuery();
                 for (final QueryBuilder currentQuery : typeQueries) {
