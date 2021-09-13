@@ -96,7 +96,7 @@ public class MangoPayWebhookHelper extends BaseMangoPayService {
             for(final Hook hook : hooks) {
                 if(!this.eventTypes.contains(hook.getEventType())) {
                     final String message = String.format(
-                        "Web hook registartion is not supported [eventType=%s, url=%s, status=%s]",
+                        "Web hook registration is not supported [eventType=%s, url=%s, status=%s]",
                         hook.getEventType(), hook.getUrl(), hook.getStatus()
                     );
 
