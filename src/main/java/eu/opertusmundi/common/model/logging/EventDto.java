@@ -9,6 +9,8 @@ import lombok.Setter;
 @Setter
 public class EventDto {
 
+    private long id;
+
     private String application;
 
     private ZonedDateTime createdOn;

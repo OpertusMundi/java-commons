@@ -27,7 +27,7 @@ public class EventEntity {
     @SequenceGenerator(sequenceName = "logging.log4j_message_id_seq", name = "log4j_message_id_seq", initialValue = 1, allocationSize = 1)
     @GeneratedValue(generator = "log4j_message_id_seq", strategy = GenerationType.SEQUENCE)
     @Getter
-    private final long id = -1L;
+    private long id = -1L;
 
     @NotNull
     @Column(name = "`application`", nullable = false)
@@ -78,6 +78,7 @@ public class EventEntity {
         e.setClientAddress(this.clientAddress);
         e.setCreatedOn(this.generated);
         e.setException(this.throwable);
+        e.setId(this.id);
         e.setLevel(this.level);
         e.setLogger(this.logger);
         e.setMessage(this.message);

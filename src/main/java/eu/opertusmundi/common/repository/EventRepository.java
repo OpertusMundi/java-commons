@@ -30,5 +30,5 @@ public interface EventRepository extends JpaRepository<EventEntity, Integer> {
         @Param("clientAddress") String clientAddress,
         Pageable pageable
     );
-    
+
 }
