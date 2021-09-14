@@ -45,7 +45,6 @@ import eu.opertusmundi.common.feign.client.CatalogueFeignClient;
 import eu.opertusmundi.common.model.PageRequestDto;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.RequestContext;
-import eu.opertusmundi.common.model.RestResponse;
 import eu.opertusmundi.common.model.account.ProviderDto;
 import eu.opertusmundi.common.model.analytics.AssetViewRecord;
 import eu.opertusmundi.common.model.analytics.EnumAssetViewSource;
@@ -54,10 +53,8 @@ import eu.opertusmundi.common.model.catalogue.CatalogueResult;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceMessageCode;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueAssetQuery;
-import eu.opertusmundi.common.model.catalogue.client.CatalogueClientSetStatusCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueDraftQuery;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestCommandDto;
-import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDraftDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
@@ -797,115 +794,6 @@ public class DefaultCatalogueService implements CatalogueService {
         final List<EffectivePricingModelDto> quotations = quotationService.createQuotation(item);
 
         item.setEffectivePricingModels(quotations);
-    }
-
-    /**
-     * TODO: Implement draft using catalogue
-     */
-
-    public RestResponse<Void> createDraftTemp(CatalogueItemCommandDto command) {
-        try {
-            // TODO : id must be created by the PID service
-
-            // Inject provider (current user) key
-            command.setPublisherKey(command.getPublisherKey());
-
-            // Create feature
-            final CatalogueFeature feature = command.toFeature();
-
-            command.getPricingModels().stream().forEach(m-> {
-                // Always override the key with a value generated at the server
-                m.setKey(UUID.randomUUID());
-            });
-
-            // Insert new asset
-            this.catalogueClient.getObject().createDraft(feature);
-
-            return RestResponse.success();
-        } catch (final FeignException fex) {
-            logger.error("Operation has failed", fex);
-        } catch (final Exception ex) {
-            logger.error("Operation has failed", ex);
-        }
-
-        return RestResponse.failure();
-    }
-
-    public CatalogueItemDraftDto findOneDraftTemp(UUID draftKey) {
-        try {
-            final ResponseEntity<CatalogueResponse<CatalogueFeature>> e = this.catalogueClient.getObject()
-                .findOneDraftById(draftKey.toString());
-
-            final CatalogueResponse<CatalogueFeature> catalogueResponse = e.getBody();
-
-            if (!catalogueResponse.isSuccess()) {
-                throw CatalogueServiceException.fromService(catalogueResponse.getMessage());
-            }
-
-            // Convert feature to catalogue item
-            final CatalogueItemDraftDto item = new CatalogueItemDraftDto(catalogueResponse.getResult());
-
-            // Inject publisher details
-            final ProviderDto publisher = this.providerRepository.findOneByKey(item.getPublisherId()).getProvider().toProviderDto(true);
-
-            item.setPublisher(publisher);
-
-            // Compute effective pricing models
-            this.refreshPricingModels(item);
-
-            return item;
-        } catch (final FeignException fex) {
-            // Convert 404 errors to empty results
-            if (fex.status() == HttpStatus.NOT_FOUND.value()) {
-                return null;
-            }
-
-            logger.error("Operation has failed", fex);
-
-            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage(), fex);
-        } catch (final Exception ex) {
-            logger.error("Operation has failed", ex);
-
-            throw CatalogueServiceException.wrap(ex);
-        }
-    }
-
-    public void updateDraftTemp(UUID draftKey, CatalogueItemCommandDto command) {
-        try {
-            // Inject provider and asset identifiers
-            command.setPublisherKey(command.getPublisherKey());
-            command.setAssetKey(draftKey);
-
-            // Create feature
-            final CatalogueFeature feature = command.toFeature();
-
-            // Update draft
-            this.catalogueClient.getObject().updateDraft(draftKey.toString(), feature);
-        } catch (final Exception ex) {
-            logger.error("Operation has failed", ex);
-
-            throw CatalogueServiceException.wrap(ex);
-        }
-    }
-
-    public void setDraftStatusTemp(UUID draftKey, CatalogueClientSetStatusCommandDto command) throws CatalogueServiceException {
-        try {
-            this.catalogueClient.getObject().setDraftStatus(draftKey.toString(), command.getStatus().getValue());
-        } catch (final Exception ex) {
-            logger.error("Operation has failed", ex);
-
-            throw CatalogueServiceException.wrap(ex);
-        }
-    }
-
-    public void deleteDraftTemp(UUID draftKey) throws CatalogueServiceException {
-        try {
-            this.catalogueClient.getObject().deleteDraft(draftKey.toString());
-        } catch (final Exception ex) {
-            logger.error("Operation has failed", ex);
-
-            throw CatalogueServiceException.wrap(ex);
-        }
     }
 
     @Override
