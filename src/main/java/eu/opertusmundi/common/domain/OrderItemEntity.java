@@ -165,12 +165,12 @@ public class OrderItemEntity {
         i.setType(type);
     }
 
-    public ConsumerOrderItemDto toConsumerDto() {
+    public ConsumerOrderItemDto toConsumerDto(boolean includeProviderDetails) {
         final ConsumerOrderItemDto i = new ConsumerOrderItemDto();
 
         this.updateDto(i);
 
-        i.setProvider(this.provider.getProvider().toProviderDto());
+        i.setProvider(this.provider.getProvider().toProviderDto(includeProviderDetails));
 
         return i;
     }

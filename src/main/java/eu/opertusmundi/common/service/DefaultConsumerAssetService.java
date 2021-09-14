@@ -103,7 +103,7 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
     public PageResultDto<AccountSubscriptionDto> findAllSubscriptions(
             UUID userKey, EnumSpatialDataServiceType type, int pageIndex, int pageSize, EnumConsumerSubSortField orderBy, EnumSortingOrder order
     ) {
-        List<AccountSubscriptionDto> records = this.accountSubscriptionRepository.findAllObjectsByConsumer(userKey);
+        List<AccountSubscriptionDto> records = this.accountSubscriptionRepository.findAllObjectsByConsumer(userKey, false);
 
         if (records.isEmpty()) {
             return PageResultDto.empty(PageRequestDto.of(pageIndex, pageSize));
@@ -162,7 +162,7 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
 
     @Override
     public AccountSubscriptionDto findSubscription(UUID userKey, UUID orderKey) {
-       final AccountSubscriptionDto result = this.accountSubscriptionRepository.findAllObjectsByConsumerAndOrder(userKey, orderKey)
+       final AccountSubscriptionDto result = this.accountSubscriptionRepository.findAllObjectsByConsumerAndOrder(userKey, orderKey, true)
            .orElse(null);
 
         if (result == null) {

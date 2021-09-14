@@ -196,13 +196,13 @@ public class OrderEntity {
         o.setVettingRequired(vettingRequired);
     }
 
-    public ConsumerOrderDto toConsumerDto(boolean includeDetails) {
+    public ConsumerOrderDto toConsumerDto(boolean includeItemDetails, boolean includeProviderDetails) {
         final ConsumerOrderDto o = new ConsumerOrderDto();
 
         this.updateDto(o);
 
-        if (includeDetails) {
-            items.stream().map(OrderItemEntity::toConsumerDto).forEach(o::addItem);
+        if (includeItemDetails) {
+            items.stream().map(i -> i.toConsumerDto(includeProviderDetails)).forEach(o::addItem);
         }
 
         return o;

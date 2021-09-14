@@ -184,14 +184,14 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     default Page<ConsumerOrderDto> findAllObjectsForConsumer(
         UUID consumerKey, String referenceNumber, Set<EnumOrderStatus> status,
         Pageable pageable,
-        boolean includeDetails
+        boolean includeItemDetails, boolean includeProviderDetails
     ) {
         return this.findAllForConsumer(
             consumerKey,
             StringUtils.isBlank(referenceNumber) ? null : referenceNumber,
             status != null && status.size() > 0 ? status : null,
             pageable
-        ).map(e -> e.toConsumerDto(includeDetails));
+        ).map(e -> e.toConsumerDto(includeItemDetails, includeProviderDetails));
     }
 
     default Page<ProviderOrderDto> findAllObjectsForProvider(
@@ -212,7 +212,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     }
 
     default Optional<ConsumerOrderDto> findOrderObjectByKeyAndConsumer(UUID consumerKey, UUID orderKey) {
-        return this.findEntityByKeyAndConsumerAndStatusNotCreated(consumerKey, orderKey).map(o -> o.toConsumerDto(true));
+        return this.findEntityByKeyAndConsumerAndStatusNotCreated(consumerKey, orderKey).map(o -> o.toConsumerDto(true, true));
     }
 
     default Optional<ProviderOrderDto> findOrderObjectByKeyAndProvider(UUID providerKey, UUID orderKey) {
@@ -278,7 +278,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
         this.saveAndFlush(order);
 
-        return order.toConsumerDto(true);
+        return order.toConsumerDto(true, true);
     }
 
     @Transactional(readOnly = false)
@@ -469,7 +469,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
             this.saveAndFlush(order);
         }
 
-        return order.toConsumerDto(true);
+        return order.toConsumerDto(true, true);
     }
 
 }

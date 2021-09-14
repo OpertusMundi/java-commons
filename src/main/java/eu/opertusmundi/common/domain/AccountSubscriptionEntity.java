@@ -113,12 +113,12 @@ public class AccountSubscriptionEntity {
         s.setUpdatedOn(updatedOn);
     }
 
-    public ConsumerAccountSubscriptionDto toConsumerDto() {
+    public ConsumerAccountSubscriptionDto toConsumerDto(boolean includeProviderDetails) {
         final ConsumerAccountSubscriptionDto s = new ConsumerAccountSubscriptionDto();
 
         this.updateDto(s);
 
-        s.setProvider(this.provider.getProvider().toProviderDto());
+        s.setProvider(this.provider.getProvider().toProviderDto(includeProviderDetails));
 
         return s;
     }

@@ -304,20 +304,22 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         }
     }
 
-    public ProviderDto toProviderDto() {
+    public ProviderDto toProviderDto(boolean includeProviderDetails) {
         final ProviderDto p = new ProviderDto();
 
         p.setCity(headquartersAddress.getCity());
         p.setCountry(headquartersAddress.getCountry());
         p.setJoinedAt(createdAt);
         p.setKey(this.account.getKey());
-        p.setLogoImage(logoImage);
-        p.setLogoImageMimeType(logoImageMimeType);
         p.setName(name);
         p.setRating(getRating());
 
         if (emailVerified) {
             p.setEmail(email);
+        }
+        if (includeProviderDetails) {
+            p.setLogoImage(logoImage);
+            p.setLogoImageMimeType(logoImageMimeType);
         }
 
         return p;

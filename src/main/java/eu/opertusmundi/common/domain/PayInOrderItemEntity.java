@@ -45,7 +45,7 @@ public class PayInOrderItemEntity extends PayInItemEntity {
 
         this.updateDto(i);
 
-        i.setOrder(this.order.toConsumerDto(includeDetails));
+        i.setOrder(this.order.toConsumerDto(includeDetails, true));
 
         return i;
     }

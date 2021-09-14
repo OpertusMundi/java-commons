@@ -22,12 +22,12 @@ import eu.opertusmundi.common.model.payment.provider.ProviderAccountSubscription
 public interface AccountSubscriptionRepository extends JpaRepository<AccountSubscriptionEntity, Integer> {
 
     @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey")
-    List<AccountSubscriptionEntity> findAllEntitiesByConsumer(@Param("userKey") UUID userKey);
+    List<AccountSubscriptionEntity> findAllEntitiesByConsumer(UUID userKey);
 
     @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey")
-    default List<AccountSubscriptionDto> findAllObjectsByConsumer(@Param("userKey") UUID userKey) {
+    default List<AccountSubscriptionDto> findAllObjectsByConsumer(UUID userKey, boolean includeProviderDetails) {
         return this.findAllEntitiesByConsumer(userKey).stream()
-            .map(e -> e.toConsumerDto())
+            .map(e -> e.toConsumerDto(includeProviderDetails))
             .collect(Collectors.toList());
     }
 
@@ -35,21 +35,21 @@ public interface AccountSubscriptionRepository extends JpaRepository<AccountSubs
     Optional<AccountSubscriptionEntity> findAllEntitiesByConsumerAndOrder(UUID userKey, UUID orderKey);
 
     @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey and order.key = :orderKey")
-    default Optional<AccountSubscriptionDto> findAllObjectsByConsumerAndOrder(UUID userKey, UUID orderKey) {
+    default Optional<AccountSubscriptionDto> findAllObjectsByConsumerAndOrder(UUID userKey, UUID orderKey, boolean includeProviderDetails) {
         return this.findAllEntitiesByConsumerAndOrder(userKey, orderKey)
-            .map(e -> e.toConsumerDto());
+            .map(e -> e.toConsumerDto(includeProviderDetails));
 
     }
 
     @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey and s.service = :assetId")
-    List<AccountSubscriptionEntity> findAllByConsumerAndServiceId(@Param("userKey") UUID userKey, @Param("assetId") String assetId);
+    List<AccountSubscriptionEntity> findAllByConsumerAndServiceId(UUID userKey, @Param("assetId") String assetId);
 
 
     @Query("SELECT s FROM AccountSubscription s WHERE s.provider.key = :userKey")
-    Page<AccountSubscriptionEntity> findAllEntitiesByProvider(@Param("userKey") UUID userKey, Pageable pageable);
+    Page<AccountSubscriptionEntity> findAllEntitiesByProvider(UUID userKey, Pageable pageable);
 
     @Query("SELECT s FROM AccountSubscription s WHERE s.provider.key = :userKey")
-    default Page<ProviderAccountSubscriptionDto> findAllObjectsByProvider(@Param("userKey") UUID userKey, Pageable pageable) {
+    default Page<ProviderAccountSubscriptionDto> findAllObjectsByProvider(UUID userKey, Pageable pageable) {
         return this.findAllEntitiesByProvider(userKey, pageable).map(e -> e.toProviderDto());
     }
 

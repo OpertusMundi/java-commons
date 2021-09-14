@@ -422,7 +422,7 @@ public class DefaultCatalogueService implements CatalogueService {
         }
 
         // Inject publisher details
-        final ProviderDto publisher = this.providerRepository.findOneByKey(item.getPublisherId()).getProvider().toProviderDto();
+        final ProviderDto publisher = this.providerRepository.findOneByKey(item.getPublisherId()).getProvider().toProviderDto(true);
         item.setPublisher(publisher);
 
         // Inject contract details
@@ -764,7 +764,7 @@ public class DefaultCatalogueService implements CatalogueService {
                 final UUID[] publisherKeys = items.stream().map(i -> i.getPublisherId()).distinct().toArray(UUID[]::new);
 
                 publishers = this.providerRepository.findAllByKey(publisherKeys).stream()
-                    .map(a -> a.getProvider().toProviderDto())
+                    .map(a -> a.getProvider().toProviderDto(true))
                     .filter(p -> p != null)
                     .collect(Collectors.toList());
 
@@ -846,7 +846,7 @@ public class DefaultCatalogueService implements CatalogueService {
             final CatalogueItemDraftDto item = new CatalogueItemDraftDto(catalogueResponse.getResult());
 
             // Inject publisher details
-            final ProviderDto publisher = this.providerRepository.findOneByKey(item.getPublisherId()).getProvider().toProviderDto();
+            final ProviderDto publisher = this.providerRepository.findOneByKey(item.getPublisherId()).getProvider().toProviderDto(true);
 
             item.setPublisher(publisher);
 

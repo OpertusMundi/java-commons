@@ -108,12 +108,12 @@ public class SubscriptionBillingEntity {
         s.setTotalTax(totalTax);
     }
 
-    public ConsumerSubscriptionBillingDto toConsumerDto(boolean includeDetails) {
+    public ConsumerSubscriptionBillingDto toConsumerDto(boolean includeProviderDetails) {
         final ConsumerSubscriptionBillingDto s = new ConsumerSubscriptionBillingDto();
 
         this.updateDto(s);
 
-        s.setSubscription(this.getSubscription().toConsumerDto());
+        s.setSubscription(this.getSubscription().toConsumerDto(includeProviderDetails));
 
         return s;
     }
