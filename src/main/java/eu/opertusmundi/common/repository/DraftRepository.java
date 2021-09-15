@@ -317,69 +317,93 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
     }
 
     @Transactional(readOnly = false)
-    default void acceptHelpDesk(UUID publisherKey, UUID draftKey) throws AssetDraftException {
-        final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
+    default EnumProviderAssetDraftStatus acceptHelpDesk(UUID publisherKey, UUID draftKey) throws AssetDraftException {
+        final ProviderAssetDraftEntity     draft      = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
+        final EnumProviderAssetDraftStatus currStatus = EnumProviderAssetDraftStatus.PENDING_HELPDESK_REVIEW;
+        final EnumProviderAssetDraftStatus nextStatus = EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW;
 
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
-
-        // Set modified on only the first time the status changes
-        if (draft.getStatus() == EnumProviderAssetDraftStatus.PENDING_HELPDESK_REVIEW) {
-            draft.setModifiedOn(ZonedDateTime.now());
+        if (draft.getStatus() != currStatus) {
+            throw new AssetDraftException(
+                AssetMessageCode.INVALID_STATE,
+                String.format("Expected status [%s]. Found [%s]", currStatus, draft.getStatus())
+            );
         }
 
-        draft.setStatus(EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW);
+        draft.setModifiedOn(ZonedDateTime.now());
+        draft.setStatus(nextStatus);
+
+        return nextStatus;
     }
 
     @Transactional(readOnly = false)
-    default void acceptProvider(UUID publisherKey, UUID draftKey) throws AssetDraftException {
-        final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
+    default EnumProviderAssetDraftStatus acceptProvider(UUID publisherKey, UUID draftKey) throws AssetDraftException {
+        final ProviderAssetDraftEntity     draft     = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
+        final EnumProviderAssetDraftStatus currStatus = EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW;
+        final EnumProviderAssetDraftStatus nextStatus = EnumProviderAssetDraftStatus.POST_PROCESSING;
 
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
-
-        // Set modified on only the first time the status changes
-        if (draft.getStatus() == EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW) {
-            draft.setModifiedOn(ZonedDateTime.now());
+        if (draft.getStatus() != currStatus) {
+            throw new AssetDraftException(
+                AssetMessageCode.INVALID_STATE,
+                String.format("Expected status [%s]. Found [%s]", currStatus, draft.getStatus())
+            );
         }
 
-        draft.setStatus(EnumProviderAssetDraftStatus.POST_PROCESSING);
+        draft.setModifiedOn(ZonedDateTime.now());
+        draft.setStatus(nextStatus);
+
+        return nextStatus;
     }
 
     @Transactional(readOnly = false)
-    default void rejectHelpDesk(UUID publisherKey, UUID draftKey, String reason) throws AssetDraftException {
-        final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
+    default EnumProviderAssetDraftStatus rejectHelpDesk(UUID publisherKey, UUID draftKey, String reason) throws AssetDraftException {
+        final ProviderAssetDraftEntity     draft     = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
+        final EnumProviderAssetDraftStatus currStatus = EnumProviderAssetDraftStatus.PENDING_HELPDESK_REVIEW;
+        final EnumProviderAssetDraftStatus nextStatus = EnumProviderAssetDraftStatus.HELPDESK_REJECTED;
 
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
-
-        // Set modified on only the first time the status changes
-        if (draft.getStatus() != EnumProviderAssetDraftStatus.HELPDESK_REJECTED) {
-            draft.setModifiedOn(ZonedDateTime.now());
+        if (draft.getStatus() != currStatus) {
+            throw new AssetDraftException(
+                AssetMessageCode.INVALID_STATE,
+                String.format("Expected status [%s]. Found [%s]", currStatus, draft.getStatus())
+            );
         }
 
-        draft.setStatus(EnumProviderAssetDraftStatus.HELPDESK_REJECTED);
+        draft.setModifiedOn(ZonedDateTime.now());
+        draft.setStatus(nextStatus);
         draft.setHelpdeskRejectionReason(reason);
+
+        return nextStatus;
     }
 
     @Transactional(readOnly = false)
-    default void rejectProvider(UUID publisherKey, UUID draftKey, String reason) throws AssetDraftException {
+    default EnumProviderAssetDraftStatus rejectProvider(UUID publisherKey, UUID draftKey, String reason) throws AssetDraftException {
         final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
+        final EnumProviderAssetDraftStatus currStatus = EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW;
+        final EnumProviderAssetDraftStatus nextStatus = EnumProviderAssetDraftStatus.PROVIDER_REJECTED;
 
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
-
-        // Set modified on only the first time the status changes
-        if (draft.getStatus() != EnumProviderAssetDraftStatus.PROVIDER_REJECTED) {
-            draft.setModifiedOn(ZonedDateTime.now());
+        if (draft.getStatus() != currStatus) {
+            throw new AssetDraftException(
+                AssetMessageCode.INVALID_STATE,
+                String.format("Expected status [%s]. Found [%s]", currStatus, draft.getStatus())
+            );
         }
 
-        draft.setStatus(EnumProviderAssetDraftStatus.PROVIDER_REJECTED);
+        draft.setModifiedOn(ZonedDateTime.now());
+        draft.setStatus(nextStatus);
         draft.setProviderRejectionReason(reason);
+
+        return nextStatus;
     }
 
     @Transactional(readOnly = false)
