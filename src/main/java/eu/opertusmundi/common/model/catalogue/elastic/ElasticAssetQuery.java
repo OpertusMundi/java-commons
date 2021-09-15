@@ -81,6 +81,12 @@ public class ElasticAssetQuery {
     @Schema(description = "Maximum scale value")
     private Integer maxScale;
 
+    @Schema(description = "Distinct scale values")
+    private List<Integer> scales;
+
+    @Schema(description = "Used for declaring open datasets")
+    private Boolean openDataset;
+
     @Schema(description = "Automated metadata attributes")
     private List<String> attribute;
 
