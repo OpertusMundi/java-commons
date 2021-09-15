@@ -548,7 +548,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             // No other draft (excluding this one) with the same parent identifier must exist
             if (!StringUtils.isBlank(draft.getParentId())) {
                 final ProviderAssetDraftEntity existingDraft = this.draftRepository.findAllByParentId(draft.getParentId()).stream()
-                    .filter(d -> StringUtils.equals(d.getParentId(), draft.getParentId()) && !d.getKey().equals(draft.getKey()))
+                    .filter(d -> !d.getKey().equals(draft.getKey()))
                     .findFirst()
                     .orElse(null);
 
@@ -558,7 +558,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             }
 
             // Check if workflow exists
-            ProcessInstanceDto instance = this.bpmEngine.findInstance(command.getAssetKey());
+            final EnumProviderAssetDraftStatus newStatus = EnumProviderAssetDraftStatus.SUBMITTED;
+            ProcessInstanceDto                 instance  = this.bpmEngine.findInstance(command.getAssetKey());
 
             if (instance == null) {
                 final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
@@ -567,6 +568,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                     .variableAsString("publisherKey", command.getPublisherKey().toString())
                     .variableAsString("type", command.getType().toString())
                     .variableAsBoolean("ingested", command.isIngested())
+                    .variableAsString("status", newStatus.toString())
                     .build();
 
                 instance = this.bpmEngine.startProcessDefinitionByKey(
@@ -574,7 +576,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 );
             }
 
-            this.draftRepository.update(command, EnumProviderAssetDraftStatus.SUBMITTED, instance.getDefinitionId(), instance.getId());
+            this.draftRepository.update(command, newStatus, instance.getDefinitionId(), instance.getId());
         } catch (final AssetDraftException ex) {
             throw ex;
         }
@@ -591,36 +593,35 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Override
     @Transactional
     public void acceptHelpDesk(UUID publisherKey, UUID draftKey) throws AssetDraftException {
-        this.reviewHelpDesk(publisherKey, draftKey, false, null);
+        this.reviewHelpDesk(publisherKey, draftKey, true, null);
     }
 
     @Override
     @Transactional
     public void rejectHelpDesk(UUID publisherKey, UUID draftKey, String reason) throws AssetDraftException {
-        this.reviewHelpDesk(publisherKey, draftKey, true, reason);
+        this.reviewHelpDesk(publisherKey, draftKey, false, reason);
     }
 
     @Transactional
-    private void reviewHelpDesk(UUID publisherKey, UUID draftKey, boolean rejected, String reason) throws AssetDraftException {
+    private void reviewHelpDesk(UUID publisherKey, UUID draftKey, boolean accepted, String reason) throws AssetDraftException {
         try {
+            // Update draft
+            final EnumProviderAssetDraftStatus newStatus = accepted
+                ? this.draftRepository.acceptHelpDesk(publisherKey, draftKey)
+                : this.draftRepository.rejectHelpDesk(publisherKey, draftKey, reason);
+
             // Find workflow instance
             final TaskDto task = this.bpmEngine.findTaskById(draftKey.toString(), TASK_REVIEW).orElse(null);
 
             if (task != null) {
                 // Complete task
                 final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
-                    .variableAsBoolean("helpdeskAccept", !rejected)
+                    .variableAsBoolean("helpdeskAccept", accepted)
                     .variableAsString("helpdeskRejectReason", reason)
+                    .variableAsString("status", newStatus.toString())
                     .build();
 
                 this.bpmEngine.completeTask(task.getId(), variables);
-            }
-
-            // Update draft
-            if (rejected) {
-                this.draftRepository.rejectHelpDesk(publisherKey, draftKey, reason);
-            } else {
-                this.draftRepository.acceptHelpDesk(publisherKey, draftKey);
             }
         } catch (final FeignException fex) {
             logger.error("Operation has failed", fex);
@@ -633,24 +634,30 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     public void acceptProvider(AssetDraftReviewCommandDto command) throws AssetDraftException {
         // Update status BEFORE updating workflow instance to avoid race
         // condition
-        this.reviewProviderSetStatus(command.getPublisherKey(), command.getAssetKey(), false, null);
+        final EnumProviderAssetDraftStatus newStatus = this.reviewProviderSetStatus(
+            command.getPublisherKey(), command.getAssetKey(), true, null
+        );
 
         // Send message to workflow instance
-        this.reviewProviderSendMessage(command.getAssetKey(), false, null);
+        this.reviewProviderSendMessage(command.getAssetKey(), newStatus, true, null);
     }
 
     @Override
     public void rejectProvider(AssetDraftReviewCommandDto command) throws AssetDraftException {
         // Update status BEFORE updating workflow instance to avoid race
         // condition
-        this.reviewProviderSetStatus(command.getPublisherKey(), command.getAssetKey(), true, command.getReason());
+        final EnumProviderAssetDraftStatus newStatus = this.reviewProviderSetStatus(
+            command.getPublisherKey(), command.getAssetKey(), false, command.getReason()
+        );
 
         // Send message to workflow instance
-        this.reviewProviderSendMessage(command.getAssetKey(), true, command.getReason());
+        this.reviewProviderSendMessage(command.getAssetKey(), newStatus, false, command.getReason());
     }
 
     @Transactional
-    private void reviewProviderSetStatus(UUID publisherKey, UUID draftKey, boolean rejected, String reason) throws AssetDraftException {
+    private EnumProviderAssetDraftStatus reviewProviderSetStatus(
+        UUID publisherKey, UUID draftKey, boolean accepted, String reason
+    ) throws AssetDraftException {
         // A draft must exist with status in [PENDING_PROVIDER_REVIEW,
         // POST_PROCESSING, PROVIDER_REJECTED]
         final AssetDraftDto draft = this.findOneDraft(publisherKey, draftKey);
@@ -659,26 +666,30 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
 
-        if (draft.getStatus() != EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW
-                && draft.getStatus() != EnumProviderAssetDraftStatus.POST_PROCESSING
-                && draft.getStatus() != EnumProviderAssetDraftStatus.PROVIDER_REJECTED) {
+        if (draft.getStatus() != EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW &&
+            draft.getStatus() != EnumProviderAssetDraftStatus.POST_PROCESSING &&
+            draft.getStatus() != EnumProviderAssetDraftStatus.PROVIDER_REJECTED
+        ) {
             throw new AssetDraftException(AssetMessageCode.INVALID_STATE, String.format(
                 "Expected status in [PENDING_PROVIDER_REVIEW, POST_PROCESSING, PROVIDER_REJECTED]. Found [%s]", draft.getStatus()
             ));
         }
 
-        if (rejected) {
-            this.draftRepository.rejectProvider(publisherKey, draftKey, reason);
+        if (accepted) {
+            return this.draftRepository.acceptProvider(publisherKey, draftKey);
         } else {
-            this.draftRepository.acceptProvider(publisherKey, draftKey);
+            return this.draftRepository.rejectProvider(publisherKey, draftKey, reason);
         }
     }
 
-    private void reviewProviderSendMessage(UUID draftKey, boolean rejected, String reason) throws AssetDraftException {
+    private void reviewProviderSendMessage(
+        UUID draftKey, EnumProviderAssetDraftStatus status, boolean accepted, String reason
+    ) throws AssetDraftException {
         try {
             final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
-                .variableAsBoolean("providerAccept", !rejected)
+                .variableAsBoolean("providerAccept", accepted)
                 .variableAsString("providerRejectReason", reason)
+                .variableAsString("status", status.toString())
                 .build();
 
             this.bpmEngine.correlateMessage(draftKey.toString(), MESSAGE_PROVIDER_REVIEW, variables);

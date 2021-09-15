@@ -2,6 +2,7 @@ package eu.opertusmundi.common.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 
@@ -41,5 +42,13 @@ public class BpmInstanceVariablesBuilder {
     public Map<String, VariableValueDto> build() {
         return this.variables;
     }
+
+    public Map<String, Object> buildValues() {
+        return this.variables.entrySet().stream().collect(Collectors.toMap(
+            Map.Entry::getKey,
+            e -> e.getValue().getValue()
+        ));
+    }
+
 
 }
