@@ -16,6 +16,7 @@ import eu.opertusmundi.common.model.account.ConsumerServiceException;
 import eu.opertusmundi.common.model.account.ConsumerServiceMessageCode;
 import eu.opertusmundi.common.model.asset.EnumConsumerAssetSortField;
 import eu.opertusmundi.common.model.asset.EnumConsumerSubSortField;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumType;
@@ -48,8 +49,8 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
             return PageResultDto.empty(PageRequestDto.of(pageIndex, pageSize));
         }
 
-        final String[]               pid    = records.stream().map(a -> a.getAssetId()).distinct().toArray(String[]::new);
-        final List<CatalogueItemDto> assets = this.catalogueService.findAllById(pid);
+        final String[]                      pid    = records.stream().map(a -> a.getAssetId()).distinct().toArray(String[]::new);
+        final List<CatalogueItemDetailsDto> assets = this.catalogueService.findAllById(pid);
 
         // Add catalogue items to records
         records.forEach(r -> {
@@ -110,7 +111,7 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
         }
 
         final String[]               pid    = records.stream().map(a -> a.getServiceId()).distinct().toArray(String[]::new);
-        final List<CatalogueItemDto> assets = this.catalogueService.findAllById(pid);
+        final List<CatalogueItemDetailsDto> assets = this.catalogueService.findAllById(pid);
 
         // Add catalogue items to records
         records.forEach(r -> {
@@ -169,7 +170,7 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
             return result;
         }
 
-        final List<CatalogueItemDto> assets = this.catalogueService.findAllById(new String[]{result.getServiceId()});
+        final List<CatalogueItemDetailsDto> assets = this.catalogueService.findAllById(new String[]{result.getServiceId()});
 
         if(assets.isEmpty()) {
             throw new ConsumerServiceException(ConsumerServiceMessageCode.CATALOGUE_ITEM_NOT_FOUND, String.format(

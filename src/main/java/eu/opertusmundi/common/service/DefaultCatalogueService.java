@@ -253,7 +253,7 @@ public class DefaultCatalogueService implements CatalogueService {
     // TODO: Restrict automated metadata visibility
 
     @Override
-    public List<CatalogueItemDto> findAllById(String[] id) throws CatalogueServiceException {
+    public List<CatalogueItemDetailsDto> findAllById(String[] id) throws CatalogueServiceException {
         Assert.notEmpty(id, "Expected a non-empty array of identifiers");
 
         try {
@@ -273,7 +273,9 @@ public class DefaultCatalogueService implements CatalogueService {
                 );
             }
 
-            return catalogueResponse.getResult().stream().map(CatalogueItemDto::new).collect(Collectors.toList());
+            return catalogueResponse.getResult().stream()
+                .map(feature -> this.featureToItem(null, feature, feature.getProperties().getPublisherId(), false))
+                .collect(Collectors.toList());
         } catch (final CatalogueServiceException ex) {
             throw ex;
         } catch (final FeignException fex) {

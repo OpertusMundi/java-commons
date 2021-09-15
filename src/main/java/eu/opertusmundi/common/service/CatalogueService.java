@@ -56,7 +56,7 @@ public interface CatalogueService {
      * @return
      * @throws CatalogueServiceException
      */
-    List<CatalogueItemDto> findAllById(String[] id) throws CatalogueServiceException;
+    List<CatalogueItemDetailsDto> findAllById(String[] id) throws CatalogueServiceException;
 
     /**
      * Search for draft items
