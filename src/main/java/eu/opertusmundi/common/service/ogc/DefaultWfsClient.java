@@ -140,7 +140,7 @@ public class DefaultWfsClient implements WfsClient {
                         final Node node = nodes.item(i);
 
                         if (node.getNodeType() == Node.ELEMENT_NODE) {
-                            node.getAttributes().getNamedItem("name").getTextContent();
+                            // node.getAttributes().getNamedItem("name").getTextContent();
                         }
                     }
                 }

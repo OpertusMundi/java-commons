@@ -1804,8 +1804,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                 for (int i = 0; i < section.getBlocks().size(); i++) {
                     final Block block = section.getBlocks().get(i);
 
-                    if (section.getBlocks().size() == 1 && (block.getText().equals(" ") || block.getText().equals(" ")
-                            || block.getText().equals("") || block.getText().equals("\n"))) {
+                    if (section.getBlocks().size() == 1 && (block.getText().equals(" ") || block.getText().equals("") || block.getText().equals("\n"))) {
                         continue;
                     } else if (i != section.getBlocks().size() - 1) {
                         addBlock(ctx, block, true, false, false, i);
