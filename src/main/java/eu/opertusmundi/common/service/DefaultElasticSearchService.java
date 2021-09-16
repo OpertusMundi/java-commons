@@ -601,6 +601,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             final List<String> crs         = assetQuery.getCrs();
             final Integer      minPrice    = assetQuery.getMinPrice();
             final Integer      maxPrice    = assetQuery.getMaxPrice();
+            final Boolean	   freeDataset = assetQuery.getFreeDataset();
             final String       fromDate    = assetQuery.getFromDate();
             final String       toDate      = assetQuery.getToDate();
             final List<String> topic       = assetQuery.getTopic() == null
@@ -608,6 +609,8 @@ public class DefaultElasticSearchService implements ElasticSearchService {
                 : assetQuery.getTopic().stream().map(EnumTopicCategory::getValue).collect(Collectors.toList());
             final Integer      minScale    = assetQuery.getMinScale();
             final Integer      maxScale    = assetQuery.getMaxScale();
+            final List<Integer> scales	   = assetQuery.getScales();
+            final Boolean 	   openDataset = assetQuery.getOpenDataset();
             final ShapeRelation spatialOperation 	= assetQuery.getSpatialOperation() == null
             	? ShapeRelation.INTERSECTS
             	: assetQuery.getSpatialOperation().toShapeRelation();
@@ -699,14 +702,26 @@ public class DefaultElasticSearchService implements ElasticSearchService {
                 }
                 query.must(tempBool);
             }
-
-            // Check min, max price
-            if (minPrice != null && maxPrice != null) {
-                query.must(QueryBuilders.rangeQuery("properties.pricing_models.totalPriceExcludingTax").from(minPrice).to(maxPrice));
-            } else if (minPrice != null && maxPrice == null) {
-                query.must(QueryBuilders.rangeQuery("properties.pricing_models.totalPriceExcludingTax").from(minPrice));
-            } else if (minPrice == null && maxPrice != null) {
-                query.must(QueryBuilders.rangeQuery("properties.pricing_models.totalPriceExcludingTax").to(maxPrice));
+            
+            // Check price
+            List<QueryBuilder> priceQueries = null;
+            if (freeDataset != null || minPrice != null || maxPrice != null) {
+            	priceQueries = new ArrayList<QueryBuilder>();
+	            if (freeDataset != null && freeDataset) {
+	            	priceQueries.add(QueryBuilders.matchQuery("properties.pricing_models.type", "FREE"));
+	            }
+                if (minPrice != null && maxPrice != null) {
+                	priceQueries.add(QueryBuilders.rangeQuery("properties.pricing_models.totalPriceExcludingTax").from(minPrice).to(maxPrice));
+                } else if (minPrice != null && maxPrice == null) {
+                	priceQueries.add(QueryBuilders.rangeQuery("properties.pricing_models.totalPriceExcludingTax").from(minPrice));
+                } else if (minPrice == null && maxPrice != null) {
+                	priceQueries.add(QueryBuilders.rangeQuery("properties.pricing_models.totalPriceExcludingTax").to(maxPrice));
+                }
+                final BoolQueryBuilder tempBool = QueryBuilders.boolQuery();
+                for (final QueryBuilder currentQuery : priceQueries) {
+                    tempBool.should(currentQuery);
+                }
+                query.must(tempBool);
             }
 
             // Check date range
@@ -835,12 +850,31 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             }
 
             // Check asset scale
-            if (minScale != null && maxScale != null) {
-                query.must(QueryBuilders.boolQuery().must(QueryBuilders.rangeQuery("properties.scales.scale").from(minScale).to(maxScale)));
-            } else if (minScale != null && maxScale == null) {
-                query.must(QueryBuilders.boolQuery().must(QueryBuilders.rangeQuery("properties.scales.scale").from(minScale)));
-            } else if (minScale == null && maxScale != null) {
-                query.must(QueryBuilders.boolQuery().must(QueryBuilders.rangeQuery("properties.scales.scale").to(maxScale)));
+            List<QueryBuilder> scaleQueries = null;
+            if ((scales != null && !scales.isEmpty()) || minScale != null || maxScale != null) {
+            	scaleQueries = new ArrayList<QueryBuilder>();
+	            if (scales != null && !scales.isEmpty()) {
+	                for (int i = 0; i < scales.size(); i++) {
+	                    scaleQueries.add(QueryBuilders.matchQuery("properties.scales.scale", scales.get(i)));
+	                }	
+	            }
+	            if (minScale != null && maxScale != null) {
+	            	scaleQueries.add(QueryBuilders.boolQuery().must(QueryBuilders.rangeQuery("properties.scales.scale").from(minScale).to(maxScale)));
+	            } else if (minScale != null && maxScale == null) {
+	            	scaleQueries.add(QueryBuilders.boolQuery().must(QueryBuilders.rangeQuery("properties.scales.scale").from(minScale)));
+	            } else if (minScale == null && maxScale != null) {
+	            	scaleQueries.add(QueryBuilders.boolQuery().must(QueryBuilders.rangeQuery("properties.scales.scale").to(maxScale)));
+	            }
+                final BoolQueryBuilder tempBool = QueryBuilders.boolQuery();
+                for (final QueryBuilder currentQuery : scaleQueries) {
+                    tempBool.should(currentQuery);
+                }
+                query.must(tempBool);
+            }
+            
+            // Check if asset is open
+            if (openDataset != null && openDataset) {
+            	query.must(QueryBuilders.matchQuery("properties.open_dataset", true));
             }
 
             // Check attributes

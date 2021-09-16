@@ -58,6 +58,9 @@ public class ElasticAssetQuery {
 
     @Schema(description = "Maximum price (excluding VAT)")
     private Integer maxPrice;
+    
+    @Schema(description = "Used for declaring free datasets")
+    private Boolean freeDataset;
 
     @Schema(description = "The temporal extent of the resource (start date)", example = "2020-06-01")
     private String fromDate;
