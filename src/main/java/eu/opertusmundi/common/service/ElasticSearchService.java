@@ -1,6 +1,9 @@
 package eu.opertusmundi.common.service;
 
 import java.math.BigDecimal;
+import java.util.List;
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import eu.opertusmundi.common.model.analytics.AssetViewQuery;
 import eu.opertusmundi.common.model.analytics.DataSeries;
@@ -204,5 +207,21 @@ public interface ElasticSearchService {
      * @return
      */
     DataSeries<BigDecimal> searchAssetViews(AssetViewQuery query) throws ElasticServiceException;
+    
+    /**
+     * Find popular assets
+     *
+     * @param 
+     * @return
+     */
+    public List<ImmutablePair<String, Integer>> findPopularAssets();
+    
+    /**
+     * Find popular terms
+     *
+     * @param 
+     * @return
+     */
+    public List<ImmutablePair<String, Integer>> findPopularTerms();
 
 }

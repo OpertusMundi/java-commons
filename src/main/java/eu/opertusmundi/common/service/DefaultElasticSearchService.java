@@ -17,6 +17,7 @@ import javax.annotation.PreDestroy;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
@@ -77,10 +78,13 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.AggregatorFactories;
+import org.elasticsearch.search.aggregations.BucketOrder;
 import org.elasticsearch.search.aggregations.bucket.composite.CompositeAggregation;
 import org.elasticsearch.search.aggregations.bucket.composite.CompositeAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.composite.TermsValuesSourceBuilder;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 import org.elasticsearch.search.aggregations.metrics.SumAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -1296,6 +1300,83 @@ public class DefaultElasticSearchService implements ElasticSearchService {
         }
 
         return p;
+    }
+    
+    @Override
+    public List<ImmutablePair<String, Integer>> findPopularAssets() {
+
+        try {
+        	final List<ImmutablePair<String, Integer>> 	result 			= new ArrayList<ImmutablePair<String, Integer>>();
+            final SearchSourceBuilder                   sourceBuilder   = new SearchSourceBuilder();
+            
+            // Sum of view_count group by id order by sum of view_count desc
+            SumAggregationBuilder 		sumOfView					= AggregationBuilders.sum("view_count").field("view_count");
+            TermsAggregationBuilder		termsAggregationBuilder		= AggregationBuilders.terms("id").
+            															field("id.keyword").
+            															order(BucketOrder.aggregation("view_count", false)).
+            															subAggregation(sumOfView);
+            termsAggregationBuilder.size(maxBucketCount);
+            sourceBuilder.aggregation(termsAggregationBuilder);
+         
+            // Define index
+            final SearchRequest       searchRequest       = new SearchRequest(this.configuration.getAssetViewAggregateIndex().getName());
+            final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+            
+            // Aggregate
+            searchSourceBuilder.aggregation(termsAggregationBuilder).size(0);           
+            searchRequest.source(searchSourceBuilder);
+         
+            final SearchResponse	searchResponse 	= client.search(searchRequest, RequestOptions.DEFAULT);
+            final Terms  			terms 			= searchResponse.getAggregations().get("id");
+            
+            for (final Terms.Bucket bucket : terms.getBuckets()) {
+            	result.add(new ImmutablePair<>(bucket.getKey().toString(), (int) ((ParsedSum) bucket.getAggregations().asMap().get("view_count")).getValue()));
+            }
+
+            return result;
+        } catch (final Exception ex) {
+            throw new ElasticServiceException("Search operation has failed", ex);
+        }
+    }    
+    
+    @Override
+    public List<ImmutablePair<String, Integer>> findPopularTerms() {
+
+        try {
+        	final List<ImmutablePair<String, Integer>> 	result 			= new ArrayList<ImmutablePair<String, Integer>>();
+            TermsValuesSourceBuilder                    aggregationByTerm   	= null;
+            final List<CompositeValuesSourceBuilder<?>> sources                	= new ArrayList<CompositeValuesSourceBuilder<?>>();
+            final SearchSourceBuilder                   sourceBuilder          	= new SearchSourceBuilder();
+            
+            // Create the GROUP BY query statement
+            aggregationByTerm = new TermsValuesSourceBuilder("query").field("query.keyword");
+            sources.add(aggregationByTerm);    
+            
+            // Count
+            CompositeAggregationBuilder compositeAggregationBuilder = new CompositeAggregationBuilder("groupby", sources);
+            compositeAggregationBuilder.size(maxBucketCount);
+            sourceBuilder.aggregation(compositeAggregationBuilder);
+            
+            // Define index
+            final SearchRequest       searchRequest       = new SearchRequest(this.configuration.getAssetViewIndex().getName());
+            final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+            
+            // Aggregate
+            searchSourceBuilder.aggregation(compositeAggregationBuilder).size(0);
+            
+            searchRequest.source(searchSourceBuilder);
+
+            final SearchResponse       searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+            final CompositeAggregation agg            = searchResponse.getAggregations().get("groupby");
+
+            for (final CompositeAggregation.Bucket bucket : agg.getBuckets()) {
+            	result.add(new ImmutablePair<>(bucket.getKey().get("query").toString(), (int) bucket.getDocCount()));
+            }
+
+            return result;
+        } catch (final Exception ex) {
+            throw new ElasticServiceException("Search operation has failed", ex);
+        }
     }
 
 }
