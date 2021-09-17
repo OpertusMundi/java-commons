@@ -15,8 +15,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import eu.opertusmundi.common.feign.client.config.MessageServiceFeignClientConfiguration;
 import eu.opertusmundi.common.model.BaseResponse;
+import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.RestResponse;
+import eu.opertusmundi.common.model.message.EnumNotificationSortField;
 import eu.opertusmundi.common.model.message.server.ServerMessageCommandDto;
 import eu.opertusmundi.common.model.message.server.ServerMessageDto;
 import eu.opertusmundi.common.model.message.server.ServerNotificationCommandDto;
@@ -87,7 +89,7 @@ public interface MessageServiceFeignClient {
      */
     @GetMapping(value = "/v1/messages/user/{userKey}/count")
     ResponseEntity<RestResponse<Long>> countUserNewMessages(@PathVariable(name = "userKey") UUID userKey);
-    
+
     /**
      * Send message
      *
@@ -156,12 +158,15 @@ public interface MessageServiceFeignClient {
      */
     @GetMapping(value = "/v1/notifications")
     ResponseEntity<RestResponse<PageResultDto<ServerNotificationDto>>> findNotifications(
-        @RequestParam(name = "page",      required = false) Integer       pageIndex,
-        @RequestParam(name = "size",      required = false) Integer       pageSize,
-        @RequestParam(name = "user",      required = true)  UUID          userKey,
-        @RequestParam(name = "date-from", required = false) ZonedDateTime dateFrom,
-        @RequestParam(name = "date-to",   required = false) ZonedDateTime dateTo,
-        @RequestParam(name = "read",      required = false) Boolean       read
+        @RequestParam(name = "page",      required = false) Integer                     pageIndex,
+        @RequestParam(name = "size",      required = false) Integer                     pageSize,
+        @RequestParam(name = "user",      required = true)  UUID                        userKey,
+        @RequestParam(name = "date-from", required = false) ZonedDateTime               dateFrom,
+        @RequestParam(name = "date-to",   required = false) ZonedDateTime               dateTo,
+        @RequestParam(name = "read",      required = false) Boolean                     read,
+        @RequestParam(name = "orderBy",   required = false) EnumNotificationSortField   orderBy,
+        @RequestParam(name = "order",     required = false) EnumSortingOrder            order
+
     );
 
     /**
