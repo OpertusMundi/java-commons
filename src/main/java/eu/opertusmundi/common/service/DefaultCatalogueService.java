@@ -72,6 +72,7 @@ import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.repository.AssetAdditionalResourceRepository;
 import eu.opertusmundi.common.repository.AssetResourceRepository;
+import eu.opertusmundi.common.repository.FavoriteRepository;
 import eu.opertusmundi.common.repository.ProviderRepository;
 import eu.opertusmundi.common.repository.contract.ProviderTemplateContractHistoryRepository;
 import feign.FeignException;
@@ -98,6 +99,9 @@ public class DefaultCatalogueService implements CatalogueService {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private FavoriteRepository favoriteRepository;
 
     @Autowired
     private ProviderRepository providerRepository;
@@ -415,6 +419,7 @@ public class DefaultCatalogueService implements CatalogueService {
                 }
             }
         }
+
         // Filter ingestion information
         if (!item.getPublisherId().equals(publisherKey)) {
             item.setIngestionInfo(null);
@@ -426,7 +431,6 @@ public class DefaultCatalogueService implements CatalogueService {
 
         // Inject contract details
         this.setContract(item, feature);
-
 
         // Consolidate data from asset repository
         final List<AssetResourceEntity> resources = this.assetResourceRepository
@@ -461,6 +465,12 @@ public class DefaultCatalogueService implements CatalogueService {
 
         // Compute effective pricing models
         this.refreshPricingModels(item);
+
+        // Set favorite flag
+        final Integer userId = ctx.getAccount() == null ? null : ctx.getAccount().getId();
+        if (this.favoriteRepository.findOneAsset(userId, item.getId()).isPresent()) {
+            item.setFavorite(true);
+        }
 
         // Log asset views
         this.logView(ctx,  item, null, EnumAssetViewSource.VIEW);

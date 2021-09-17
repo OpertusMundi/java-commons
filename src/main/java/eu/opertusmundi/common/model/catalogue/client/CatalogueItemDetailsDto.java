@@ -88,6 +88,11 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
         this.contract = contract;
     }
 
+    @Schema(description = "True if the asset is already added to the user's favorite list")
+    @Getter
+    @Setter
+    private boolean favorite = false;
+
     @Schema(description = "Publisher details")
     @JsonProperty(access = Access.READ_ONLY)
     @Getter
