@@ -191,4 +191,14 @@ public interface MessageServiceFeignClient {
     @PutMapping(value = "/v1/notifications/{key}")
     ResponseEntity<BaseResponse> readNotification(@PathVariable(name = "key", required = true) UUID key);
 
+    /**
+     * Mark all notifications as read
+     *
+     * @param key The key of the recipient
+     *
+     * @return An instance of {@link BaseResponse}
+     */
+    @PutMapping(value = "/v1/notifications/user/{key}")
+    ResponseEntity<BaseResponse> readAllNotifications(@PathVariable(name = "key", required = true) UUID key);
+
 }
