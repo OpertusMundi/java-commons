@@ -467,8 +467,8 @@ public class DefaultCatalogueService implements CatalogueService {
         this.refreshPricingModels(item);
 
         // Set favorite flag
-        final Integer userId = ctx.getAccount() == null ? null : ctx.getAccount().getId();
-        if (this.favoriteRepository.findOneAsset(userId, item.getId()).isPresent()) {
+        final Integer userId = ctx == null || ctx.getAccount() == null ? null : ctx.getAccount().getId();
+        if (userId != null && this.favoriteRepository.findOneAsset(userId, item.getId()).isPresent()) {
             item.setFavorite(true);
         }
 
