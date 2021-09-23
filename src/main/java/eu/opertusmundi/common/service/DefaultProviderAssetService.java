@@ -18,6 +18,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
 import org.camunda.bpm.engine.rest.dto.task.TaskDto;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.io.WKTReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -114,6 +116,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     private static final String TASK_REVIEW = "task-review";
 
     private static final String MESSAGE_PROVIDER_REVIEW = "provider-publish-asset-user-acceptance-message";
+
+    private static final String METADATA_PROPERTY_MBR = "mbr";
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -856,7 +860,19 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             // Update metadata
             metadata.add(value);
 
-            this.draftRepository.updateMetadata(publisherKey, draftKey, metadata);
+            // Set geometry, if not already set, from metadata
+            Geometry geometry = null;
+            if (draft.getCommand().getGeometry() == null) {
+                final JsonNode mbrNode = value.get(METADATA_PROPERTY_MBR);
+
+                // Ignore undefined or null nodes
+                if (mbrNode != null && !mbrNode.isNull()) {
+                    final WKTReader mbrReader = new WKTReader();
+                    geometry = mbrReader.read(mbrNode.asText());
+                }
+            }
+
+            this.draftRepository.updateMetadataAndGeometry(publisherKey, draftKey, metadata, geometry);
         } catch (final AssetDraftException ex) {
             throw ex;
         } catch (final JsonProcessingException ex) {

@@ -7,7 +7,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import javax.annotation.Nullable;
+
 import org.apache.commons.lang3.StringUtils;
+import org.locationtech.jts.geom.Geometry;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -174,8 +177,20 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         return draft.toDto();
     }
 
+    /**
+     * Update draft metadata. Optionally, if the geometry argument is not null,
+     * update geometry too.
+     *
+     * @param publisherKey
+     * @param draftKey
+     * @param metadata
+     * @param geometry
+     * @throws AssetDraftException
+     */
     @Transactional(readOnly = false)
-    default void updateMetadata(UUID publisherKey, UUID draftKey, JsonNode metadata) throws AssetDraftException {
+    default void updateMetadataAndGeometry(
+        UUID publisherKey, UUID draftKey, JsonNode metadata, @Nullable Geometry geometry
+    ) throws AssetDraftException {
         final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
 
         if (draft == null) {
@@ -187,6 +202,12 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
                 AssetMessageCode.INVALID_STATE,
                 String.format("Expected status is [%s]. Found [%s]", EnumProviderAssetDraftStatus.SUBMITTED, draft.getStatus())
             );
+        }
+
+        // Update geometry only if it is not already set and a non-null geometry
+        // is specified
+        if (draft.getCommand().getGeometry() == null && geometry != null) {
+            draft.getCommand().setGeometry(geometry);
         }
 
 		draft.getCommand().setAutomatedMetadata(metadata);

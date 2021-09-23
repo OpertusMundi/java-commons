@@ -2,6 +2,9 @@ package eu.opertusmundi.common.model.catalogue.server;
 
 import org.locationtech.jts.geom.Geometry;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,6 +27,7 @@ public final class CatalogueFeature {
 
     String type;
 
+    @JsonInclude(Include.NON_NULL)
     Geometry geometry;
 
     CatalogueFeatureProperties properties;
