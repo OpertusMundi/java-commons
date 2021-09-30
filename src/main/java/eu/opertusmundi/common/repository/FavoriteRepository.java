@@ -16,7 +16,7 @@ import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.FavoriteAssetEntity;
 import eu.opertusmundi.common.domain.FavoriteEntity;
 import eu.opertusmundi.common.domain.FavoriteProviderEntity;
-import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.favorite.EnumFavoriteType;
 import eu.opertusmundi.common.model.favorite.FavoriteAssetCommandDto;
 import eu.opertusmundi.common.model.favorite.FavoriteDto;
@@ -53,11 +53,11 @@ public interface FavoriteRepository extends JpaRepository<FavoriteEntity, Intege
     @Transactional(readOnly = false)
     default FavoriteDto create(FavoriteAssetCommandDto command) {
         Assert.notNull(command, "Expected a non-null command");
-        Assert.notNull(command.getFeature(), "Expected a non-null feature");
+        Assert.notNull(command.getItem(), "Expected a non-null catalogue item");
 
-        final AccountEntity    owner    = this.findAccountById(command.getUserId()).orElse(null);
-        final CatalogueFeature feature  = command.getFeature();
-        FavoriteAssetEntity    favorite = this.findOneAsset(command.getUserId(), command.getPid()).orElse(null);
+        final AccountEntity           owner    = this.findAccountById(command.getUserId()).orElse(null);
+        final CatalogueItemDetailsDto item     = command.getItem();
+        FavoriteAssetEntity           favorite = this.findOneAsset(command.getUserId(), command.getPid()).orElse(null);
 
         if(favorite != null) {
             return favorite.toDto(true);
@@ -66,11 +66,11 @@ public interface FavoriteRepository extends JpaRepository<FavoriteEntity, Intege
         favorite = new FavoriteAssetEntity();
 
         favorite.setAccount(owner);
-        favorite.setAssetId(feature.getId());
-        favorite.setAssetVersion(feature.getProperties().getVersion());
+        favorite.setAssetId(item.getId());
+        favorite.setAssetVersion(item.getVersion());
         favorite.setCreatedOn(ZonedDateTime.now());
         favorite.setKey(UUID.randomUUID());
-        favorite.setTitle(feature.getProperties().getTitle());
+        favorite.setTitle(item.getTitle());
 
         return this.save(favorite).toDto(true);
     }
@@ -107,5 +107,10 @@ public interface FavoriteRepository extends JpaRepository<FavoriteEntity, Intege
     @Transactional(readOnly = false)
     @Query("DELETE Favorite f WHERE f.account.id = :accountId and f.key = :key")
     int delete(Integer accountId, UUID key);
+
+    @Modifying
+    @Transactional(readOnly = false)
+    @Query("DELETE FavoriteAsset f WHERE f.assetId = :assetId")
+    int deleteAllByAssetId(String assetId);
 
 }

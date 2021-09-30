@@ -3,6 +3,7 @@ package eu.opertusmundi.common.model.catalogue.client;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.util.Assert;
@@ -28,6 +29,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
+@Schema(description = "Catalogue item details")
 public final class CatalogueItemDetailsDto extends CatalogueItemDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -88,10 +90,10 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
         this.contract = contract;
     }
 
-    @Schema(description = "True if the asset is already added to the user's favorite list")
+    @Schema(description = "The unique key of the favorite record, if the asset is already added to the user's favorite list")
     @Getter
     @Setter
-    private boolean favorite = false;
+    private UUID favorite;
 
     @Schema(description = "Publisher details")
     @JsonProperty(access = Access.READ_ONLY)

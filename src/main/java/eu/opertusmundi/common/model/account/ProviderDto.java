@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@Schema(description = "Provider details")
 @NoArgsConstructor
 @Setter
 @Getter
@@ -47,5 +48,10 @@ public class ProviderDto implements Serializable {
 
     @Schema(description = "Average rating. If no user ratings exist, null is returned", example = "3.3", minimum = "0", maximum = "5")
     private Double rating;
+
+    @Schema(description = "The unique key of the favorite record, if the provider is already added to the user's favorite list")
+    @Getter
+    @Setter
+    private UUID favorite;
 
 }

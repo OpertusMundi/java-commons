@@ -6,7 +6,7 @@ import javax.validation.constraints.NotEmpty;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,6 +26,6 @@ public final class FavoriteAssetCommandDto extends FavoriteCommandDto implements
     private String pid;
 
     @JsonIgnore
-    private transient CatalogueFeature feature;
+    private transient CatalogueItemDetailsDto item;
 
 }

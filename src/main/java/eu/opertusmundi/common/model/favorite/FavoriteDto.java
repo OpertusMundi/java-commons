@@ -23,7 +23,8 @@ import lombok.Setter;
     @Type(name = "ASSET", value = FavoriteAssetDto.class),
     @Type(name = "PROVIDER", value = FavoriteProviderDto.class),
 })
-public abstract class FavoriteDto {
+@Schema(oneOf = {FavoriteAssetDto.class, FavoriteProviderDto.class})
+public class FavoriteDto {
 
     @JsonIgnore
     protected Integer id;
@@ -34,7 +35,7 @@ public abstract class FavoriteDto {
     @Schema(description = "Favorite type")
     protected EnumFavoriteType type;
 
-    @Schema(description = "Favorite short description")
+    @JsonIgnore
     protected String title;
 
 }

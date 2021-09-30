@@ -38,6 +38,7 @@ import brave.Span;
 import brave.Tracer;
 import eu.opertusmundi.common.domain.AssetAdditionalResourceEntity;
 import eu.opertusmundi.common.domain.AssetResourceEntity;
+import eu.opertusmundi.common.domain.FavoriteEntity;
 import eu.opertusmundi.common.domain.MasterSectionHistoryEntity;
 import eu.opertusmundi.common.domain.ProviderTemplateContractHistoryEntity;
 import eu.opertusmundi.common.feign.client.BpmServerFeignClient;
@@ -466,10 +467,19 @@ public class DefaultCatalogueService implements CatalogueService {
         // Compute effective pricing models
         this.refreshPricingModels(item);
 
-        // Set favorite flag
+        // Set favorite flag for asset and provider
         final Integer userId = ctx == null || ctx.getAccount() == null ? null : ctx.getAccount().getId();
-        if (userId != null && this.favoriteRepository.findOneAsset(userId, item.getId()).isPresent()) {
-            item.setFavorite(true);
+
+        if (userId != null) {
+            final FavoriteEntity assetFavorite    = this.favoriteRepository.findOneAsset(userId, item.getId()).orElse(null);
+            final FavoriteEntity providerFavorite = this.favoriteRepository.findOneProvider(userId, item.getPublisherId()).orElse(null);
+            if (assetFavorite != null) {
+                item.setFavorite(assetFavorite.getKey());
+            }
+
+            if (providerFavorite != null) {
+                item.getPublisher().setFavorite(providerFavorite.getKey());
+            }
         }
 
         // Log asset views
@@ -653,6 +663,9 @@ public class DefaultCatalogueService implements CatalogueService {
     @Override
     public void unpublish(UUID publisherKey, String pid) throws CatalogueServiceException {
         try {
+            // Remove all references from favorites
+            this.favoriteRepository.deleteAllByAssetId(pid);
+
             // Remove asset from Elasticsearch
             if (this.elasticSearchService != null) {
                 final CatalogueFeature feature = this.elasticSearchService.findAsset(pid);
@@ -856,13 +869,6 @@ public class DefaultCatalogueService implements CatalogueService {
                 }
 
                 this.catalogueClient.getObject().setDraftStatus(feature.getId(), DRAFT_PUBLISHED_STATUS);
-            }
-
-            // Add delay to avoid database replication race condition
-            try {
-                Thread.sleep(5000);
-            } catch (final InterruptedException e) {
-                // Ignore
             }
 
             // Query new published item from the catalogue. Catalogue may inject
