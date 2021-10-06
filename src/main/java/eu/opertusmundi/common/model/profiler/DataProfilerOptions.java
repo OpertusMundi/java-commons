@@ -16,26 +16,27 @@ import lombok.Setter;
 public class DataProfilerOptions {
 
     private BigDecimal aspectRatio;
-    
+
     @Builder.Default
     private String     baseMapName = "Mapnik";
-    
+
     @Builder.Default
     private String     baseMapProvider = "OpenStreetMap";
-    
+
     private String     crs;
-    
-    @Builder.Default
-    private String     geometry = "WKT";
-    
+
+    private String     encoding;
+
+    private String     geometry;
+
     private Integer    height;
-    
+
     private String     lat;
-    
+
     private String     lon;
-    
+
     private String     time;
-    
+
     private Integer    width;
 
 }
