@@ -55,6 +55,7 @@ public abstract class BaseCatalogueItemDto {
         this.metadataPointOfContactName   = props.getMetadataPointOfContactName();
         this.openDataset                  = props.isOpenDataset();
         this.parentId                     = props.getParentId();
+        this.parentDataSourceId           = props.getParentDataSourceId();
         this.publicAccessLimitations      = props.getPublicAccessLimitations();
         this.publicationDate              = props.getPublicationDate();
         this.publisherEmail               = props.getPublisherEmail();
@@ -175,8 +176,11 @@ public abstract class BaseCatalogueItemDto {
     @Schema(description = "Used for declaring open datasets")
     private boolean openDataset;
 
-    @Schema(description = "Provides the ID of a parent dataset")
+    @Schema(description = "Provides the identifier of a parent resource")
     private String parentId;
+
+    @Schema(description = "Provides the identifier of a parent data source resource")
+    private String parentDataSourceId;
 
     @Schema(description = "Information on the limitations and the reasons for them")
     private String publicAccessLimitations;

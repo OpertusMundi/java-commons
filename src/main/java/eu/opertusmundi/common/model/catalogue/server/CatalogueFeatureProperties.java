@@ -54,6 +54,7 @@ public class CatalogueFeatureProperties {
         this.metadataPointOfContactName   = command.getMetadataPointOfContactName();
         this.openDataset                  = command.isOpenDataset();
         this.parentId                     = command.getParentId();
+        this.parentDataSourceId           = command.getParentDataSourceId();
         this.publicAccessLimitations      = command.getPublicAccessLimitations();
         this.publicationDate              = command.getPublicationDate();
         this.publisherEmail               = command.getPublisherEmail();
@@ -186,6 +187,10 @@ public class CatalogueFeatureProperties {
     @JsonProperty("parent_id")
     @JsonInclude(Include.NON_EMPTY)
     private String parentId;
+
+    @JsonProperty("parent_data_source_id")
+    @JsonInclude(Include.NON_EMPTY)
+    private String parentDataSourceId;
 
     @JsonProperty("pricing_models")
     private List<BasePricingModelCommandDto> pricingModels;
