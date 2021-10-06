@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import eu.opertusmundi.common.model.catalogue.client.EnumType;
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -21,7 +21,7 @@ public class PricingModelSettings {
         minItems = 1,
         uniqueItems = true
     )
-    private List<EnumType> applicableTo;
+    private List<EnumAssetType> applicableTo;
 
     @JsonIgnore
     private boolean enabled;

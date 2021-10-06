@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.feign.client.DataProfilerServiceFeignClient;
-import eu.opertusmundi.common.model.asset.EnumAssetSourceType;
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.profiler.DataProfilerDeferredResponseDto;
 import eu.opertusmundi.common.model.profiler.DataProfilerOptions;
 import eu.opertusmundi.common.model.profiler.DataProfilerServiceException;
@@ -41,7 +41,7 @@ public class DefaultDataProfilerService implements DataProfilerService{
 
     @Override
     public DataProfilerDeferredResponseDto profile(
-        UUID idempotencyKey, EnumAssetSourceType type, String resource, DataProfilerOptions options
+        UUID idempotencyKey, EnumAssetType type, String resource, DataProfilerOptions options
     ) throws DataProfilerServiceException {
         try {
             final File file = new File(resource);
@@ -71,8 +71,7 @@ public class DefaultDataProfilerService implements DataProfilerService{
                         options.getLat(),                               // The column name containing the latitude information
                         options.getLon(),                               // The column name containing the longitude information
                         options.getTime(),                              // The column name containing the time information
-                        options.getCrs(),                               // The CRS e.g. EPSG:4326
-                        options.getGeometry()                           // The column name containing the geometry information. Default: WKT
+                        options.getCrs()                                // The CRS e.g. EPSG:4326
                     );
                     break;
                 case RASTER :
@@ -82,6 +81,7 @@ public class DefaultDataProfilerService implements DataProfilerService{
                         EnumDataProfilerResponse.DEFERRED.getValue()
                     );
                     break;
+                case TABULAR :
                 case VECTOR :
                     e = this.profilerClient.getObject().profileVector(
                         idempotencyKey,
@@ -94,8 +94,8 @@ public class DefaultDataProfilerService implements DataProfilerService{
                         options.getWidth(),                             // The width (in pixels) of the static map to be generated
                         options.getLat(),                               // The column name containing the latitude information
                         options.getLon(),                               // The column name containing the longitude information
-                        options.getTime(),                              // The column name containing the time information
                         options.getCrs(),                               // The CRS e.g. EPSG:4326
+                        options.getEncoding(),                          // File encoding e.g. UTF-8
                         options.getGeometry()                           // The column name containing the geometry information. Default: WKT
                     );
                     break;

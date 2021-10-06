@@ -114,7 +114,7 @@ import eu.opertusmundi.common.model.analytics.EnumAssetViewSource;
 import eu.opertusmundi.common.model.analytics.ProfileRecord;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
-import eu.opertusmundi.common.model.catalogue.client.EnumType;
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.elastic.CreateIndexCommand;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQuery;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQueryResult;
@@ -597,7 +597,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             final String       text        = assetQuery.getText();
             final List<String> type        = assetQuery.getType() == null
                 ? null
-                : assetQuery.getType().stream().map(EnumType::getValue).collect(Collectors.toList());
+                : assetQuery.getType().stream().map(EnumAssetType::getValue).collect(Collectors.toList());
             final List<String> serviceType = assetQuery.getServiceType() == null
                 ? null
                 : assetQuery.getServiceType().stream().map(EnumSpatialDataServiceType::getValue).collect(Collectors.toList());

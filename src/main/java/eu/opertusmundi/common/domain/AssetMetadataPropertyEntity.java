@@ -12,8 +12,8 @@ import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
 import eu.opertusmundi.common.model.asset.AssetMetadataPropertyDto;
-import eu.opertusmundi.common.model.asset.EnumAssetSourceType;
 import eu.opertusmundi.common.model.asset.EnumMetadataPropertyType;
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -33,7 +33,7 @@ public class AssetMetadataPropertyEntity {
     @Enumerated(EnumType.STRING)
     @Getter
     @Setter
-    private EnumAssetSourceType assetType;
+    private EnumAssetType assetType;
 
     @NotNull
     @Column(name = "`name`")

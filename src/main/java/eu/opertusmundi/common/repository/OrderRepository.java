@@ -263,8 +263,10 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
         item.setTotalPriceExcludingTax(command.getQuotation().getQuotation().getTotalPriceExcludingTax());
         item.setTotalTax(command.getQuotation().getQuotation().getTax());
         switch (command.getAsset().getType()) {
-            case VECTOR :
             case RASTER :
+            case TABULAR :
+            case NETCDF :
+            case VECTOR :
                 item.setType(EnumOrderItemType.ASSET);
                 break;
             case SERVICE :

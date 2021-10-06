@@ -17,8 +17,8 @@ import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.AssetResourceEntity;
 import eu.opertusmundi.common.domain.ProviderAssetDraftEntity;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
-import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
+import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.service.AssetDraftException;
 
@@ -28,33 +28,33 @@ public interface AssetResourceRepository extends JpaRepository<AssetResourceEnti
 
     @Query("SELECT a FROM Account a WHERE a.key = :key")
     Optional<AccountEntity> findAccountByKey(@Param("key") UUID key);
-    
+
     @Query("SELECT d FROM ProviderAssetDraft d WHERE d.key = :draftKey and d.account.key = :publisherKey")
     Optional<ProviderAssetDraftEntity> findDraftByPublisherAndKey(
         @Param("publisherKey") UUID publisherKey, @Param("draftKey") UUID draftKey
     );
-    
+
     @Query("SELECT r FROM AssetResource r WHERE r.fileName = :fileName and r.draftKey = :draftKey")
     Optional<AssetResourceEntity> findOneByDraftKeyAndFileName(
         @Param("draftKey") UUID draftKey, @Param("fileName") String fileName
     );
-    
+
     @Query("SELECT r FROM AssetResource r WHERE r.key = :resourceKey and r.draftKey = :draftKey")
     Optional<AssetResourceEntity> findOneByDraftKeyAndResourceKey(
         @Param("draftKey") UUID draftKey, @Param("resourceKey") UUID resourceKey
     );
-    
+
     @Query("SELECT r FROM AssetResource r WHERE r.key = :resourceKey and r.pid = :pid")
     Optional<AssetResourceEntity> findOneByAssetPidAndResourceKey(
         @Param("pid") String pid, @Param("resourceKey") UUID resourceKey
     );
-    
+
     @Query("SELECT r FROM AssetResource r WHERE r.draftKey = :key")
     List<AssetResourceEntity> findAllResourcesByDraftKey(@Param("key") UUID draftKey);
-    
+
     @Query("SELECT r FROM AssetResource r WHERE r.pid = :pid")
     List<AssetResourceEntity> findAllResourcesByAssetPid(@Param("pid") String pid);
-    
+
     @Transactional(readOnly = false)
     default FileResourceDto update(FileResourceCommandDto command) throws AssetDraftException {
         Assert.notNull(command, "Expected a non-null command");
@@ -68,7 +68,7 @@ public interface AssetResourceRepository extends JpaRepository<AssetResourceEnti
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
-        
+
         // Check status
         if (draft.getStatus() != EnumProviderAssetDraftStatus.DRAFT) {
             throw new AssetDraftException(
@@ -83,9 +83,9 @@ public interface AssetResourceRepository extends JpaRepository<AssetResourceEnti
         if (account == null) {
             throw new AssetDraftException(AssetMessageCode.PROVIDER_NOT_FOUND);
         }
-        
+
         AssetResourceEntity resource = this.findOneByDraftKeyAndFileName(command.getDraftKey(), command.getFileName()).orElse(null);
-        
+
         if(resource == null ) {
             resource = new AssetResourceEntity(command.getDraftKey());
         } else {
@@ -94,10 +94,12 @@ public interface AssetResourceRepository extends JpaRepository<AssetResourceEnti
 
         resource.setAccount(account);
         resource.setCategory(command.getCategory());
+        resource.setCrs(command.getCrs());
+        resource.setEncoding(command.getEncoding());
         resource.setFileName(command.getFileName());
         resource.setFormat(command.getFormat());
         resource.setSize(command.getSize());
-       
+
         this.saveAndFlush(resource);
 
         return resource.toDto();
@@ -109,35 +111,35 @@ public interface AssetResourceRepository extends JpaRepository<AssetResourceEnti
 
         resources.forEach(r -> r.setPid(pid));
     }
-    
+
     @Transactional(readOnly = false)
     default void deleteAll(UUID draftKey) {
         Assert.notNull(draftKey, "Expected a non-null draft key");
-        
+
         final List<AssetResourceEntity> resources = this.findAllResourcesByDraftKey(draftKey);
 
         resources.stream().forEach(r -> this.delete(r));
     }
-    
+
     @Transactional(readOnly = false)
     default FileResourceDto delete(UUID draftKey, UUID resourceKey) {
         Assert.notNull(draftKey, "Expected a non-null draft key");
         Assert.notNull(resourceKey, "Expected a non-null resource key");
-        
+
         final AssetResourceEntity entity = this.findOneByDraftKeyAndResourceKey(draftKey, resourceKey).orElse(null);
-        
+
         if(entity == null) {
             throw new AssetDraftException(
                 AssetMessageCode.RESOURCE_NOT_FOUND,
                 String.format("Resource [%s] was not found", resourceKey)
             );
         }
-        
+
         final FileResourceDto resource = entity.toDto();
-        
+
         this.delete(entity);
-        
+
         return resource;
     }
-    
+
 }

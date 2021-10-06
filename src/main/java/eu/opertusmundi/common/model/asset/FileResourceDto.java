@@ -2,13 +2,16 @@ package eu.opertusmundi.common.model.asset;
 
 import java.io.Serializable;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.UUID;
 
+import org.apache.commons.lang3.StringUtils;
 import org.locationtech.jts.util.Assert;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueResource;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -27,10 +30,12 @@ public class FileResourceDto extends ResourceDto implements Serializable {
         @JsonProperty("id") UUID id,
         @JsonProperty("parentId") UUID parentId,
         @JsonProperty("size") Long size,
-        @JsonProperty("category") EnumAssetSourceType category,
+        @JsonProperty("category") EnumAssetType category,
         @JsonProperty("fileName") String fileName,
         @JsonProperty("modifiedOn") ZonedDateTime modifiedOn,
-        @JsonProperty("format") String format
+        @JsonProperty("format") String format,
+        @JsonProperty("encoding") String encoding,
+        @JsonProperty("crs") String crs
     ) {
         super(id, parentId, EnumResourceType.FILE);
 
@@ -39,6 +44,8 @@ public class FileResourceDto extends ResourceDto implements Serializable {
         this.fileName   = fileName;
         this.modifiedOn = modifiedOn;
         this.format     = format;
+        this.encoding   = encoding;
+        this.crs        = crs;
     }
 
     public FileResourceDto(CatalogueResource r) {
@@ -50,13 +57,15 @@ public class FileResourceDto extends ResourceDto implements Serializable {
         this.parentId   = r.getParentId();
         this.size       = r.getSize();
         this.type       = r.getType();
+        this.encoding   = r.getEncoding();
+        this.crs        = r.getCrs() != null && !r.getCrs().isEmpty() ? r.getCrs().get(0) : null;
     }
 
     @Schema(description = "File size")
     private Long size;
 
     @Schema(description = "Asset category computed from the file format")
-    private EnumAssetSourceType category;
+    private EnumAssetType category;
 
     @Schema(description = "File name")
     private String fileName;
@@ -66,6 +75,12 @@ public class FileResourceDto extends ResourceDto implements Serializable {
 
     @Schema(description = "File format")
     private String format;
+
+    @Schema(description = "File encoding")
+    private String encoding;
+
+    @Schema(description = "Geometry data CRS")
+    private String crs;
 
     @Override
     public void patch(ResourceDto r) {
@@ -77,12 +92,15 @@ public class FileResourceDto extends ResourceDto implements Serializable {
         this.modifiedOn = resource.modifiedOn;
         this.category   = resource.category;
         this.format     = resource.format;
+        this.crs        = resource.crs;
+        this.encoding   = resource.encoding;
     }
 
     @Override
     public CatalogueResource toCatalogueResource() {
-        return CatalogueResource.builder()
+        final CatalogueResource r = CatalogueResource.builder()
             .category(category)
+            .encoding(encoding)
             .fileName(fileName)
             .format(format)
             .id(id)
@@ -91,6 +109,12 @@ public class FileResourceDto extends ResourceDto implements Serializable {
             .size(size)
             .type(EnumResourceType.FILE)
             .build();
+
+        if (!StringUtils.isBlank(crs)) {
+            r.setCrs(Arrays.asList(crs));
+        }
+
+        return r;
     }
 
 }

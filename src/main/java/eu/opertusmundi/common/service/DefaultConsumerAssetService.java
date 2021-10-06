@@ -19,7 +19,7 @@ import eu.opertusmundi.common.model.asset.EnumConsumerSubSortField;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
-import eu.opertusmundi.common.model.catalogue.client.EnumType;
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.repository.AccountAssetRepository;
 import eu.opertusmundi.common.repository.AccountSubscriptionRepository;
 
@@ -39,7 +39,7 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
 
     @Override
     public PageResultDto<AccountAssetDto> findAllAssets(
-            UUID userKey, EnumType type, int pageIndex, int pageSize, EnumConsumerAssetSortField orderBy, EnumSortingOrder order
+            UUID userKey, EnumAssetType type, int pageIndex, int pageSize, EnumConsumerAssetSortField orderBy, EnumSortingOrder order
     ) {
         List<AccountAssetDto> records = this.accountAssetRepository.findAllByUserKey(userKey).stream()
             .map(e -> e.toDto())

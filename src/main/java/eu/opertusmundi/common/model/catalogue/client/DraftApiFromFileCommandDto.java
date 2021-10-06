@@ -26,4 +26,10 @@ public class DraftApiFromFileCommandDto extends DraftApiCommandDto implements Se
     @NotEmpty
     private String format;
 
+    @Schema(description = "File encoding")
+    private String encoding;
+
+    @Schema(description = "Geometry data CRS")
+    private String crs;
+
 }

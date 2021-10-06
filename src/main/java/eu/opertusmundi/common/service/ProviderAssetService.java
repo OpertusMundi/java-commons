@@ -31,7 +31,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemVisibilityComm
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftFromAssetCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
-import eu.opertusmundi.common.model.catalogue.client.EnumType;
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.UnpublishAssetCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
@@ -55,14 +55,14 @@ public interface ProviderAssetService {
      */
     PageResultDto<AssetDraftDto> findAllDraft(
         UUID publisherKey,
-        Set<EnumProviderAssetDraftStatus> status, Set<EnumType> type, Set<EnumSpatialDataServiceType> serviceType,
+        Set<EnumProviderAssetDraftStatus> status, Set<EnumAssetType> type, Set<EnumSpatialDataServiceType> serviceType,
         int pageIndex, int pageSize,
         EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order
     );
 
     default PageResultDto<AssetDraftDto> findAllDraft(
         UUID publisherKey,
-        Set<EnumProviderAssetDraftStatus> status, Set<EnumType> type, Set<EnumSpatialDataServiceType> serviceType,
+        Set<EnumProviderAssetDraftStatus> status, Set<EnumAssetType> type, Set<EnumSpatialDataServiceType> serviceType,
         int pageIndex, int pageSize
     ) {
         return this.findAllDraft(

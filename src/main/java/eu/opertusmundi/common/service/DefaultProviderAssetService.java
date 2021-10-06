@@ -54,7 +54,6 @@ import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceDto;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
 import eu.opertusmundi.common.model.asset.EnumAssetAdditionalResource;
-import eu.opertusmundi.common.model.asset.EnumAssetSourceType;
 import eu.opertusmundi.common.model.asset.EnumMetadataPropertyType;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftSortField;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
@@ -76,9 +75,9 @@ import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromAssetCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromFileCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftFromAssetCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumDeliveryMethod;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
-import eu.opertusmundi.common.model.catalogue.client.EnumType;
 import eu.opertusmundi.common.model.catalogue.client.UnpublishAssetCommand;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractHistoryDto;
@@ -167,7 +166,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Override
     public PageResultDto<AssetDraftDto> findAllDraft(
         UUID publisherKey,
-        Set<EnumProviderAssetDraftStatus> status, Set<EnumType> type, Set<EnumSpatialDataServiceType> serviceType,
+        Set<EnumProviderAssetDraftStatus> status, Set<EnumAssetType> type, Set<EnumSpatialDataServiceType> serviceType,
         int pageIndex, int pageSize,
         EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order
     ) {
@@ -285,7 +284,14 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                     String.format("Cannot find asset with PID [%s]", command.getPid())
                 );
             }
-
+            // Feature asset type must be VECTOR
+            final EnumAssetType sourceAssetType = EnumAssetType.fromString(feature.getProperties().getType());
+            if (sourceAssetType != EnumAssetType.VECTOR) {
+                throw new AssetDraftException(
+                    AssetMessageCode.API_COMMAND_ASSET_TYPE_NOT_SUPPORTED,
+                    String.format("Asset type [%s] not supported for service creation", sourceAssetType)
+                );
+            }
             // Publisher must own the asset
             if (!command.getPublisherKey().equals(feature.getProperties().getPublisherId())) {
                 throw new AssetDraftException(
@@ -301,11 +307,12 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             draftCommand.setDeliveryMethod(EnumDeliveryMethod.DIGITAL_PLATFORM);
             draftCommand.setIngested(true);
             draftCommand.setIngestionInfo(null);
-            draftCommand.setParentId(command.getPid());
+            draftCommand.setParentDataSourceId(command.getPid());
+            draftCommand.setParentId(null);
             draftCommand.setPublisherKey(command.getPublisherKey());
             draftCommand.setSpatialDataServiceType(EnumSpatialDataServiceType.fromString(command.getServiceType()));
             draftCommand.setTitle(command.getTitle());
-            draftCommand.setType(EnumType.SERVICE);
+            draftCommand.setType(EnumAssetType.SERVICE);
             draftCommand.setVersion(command.getVersion());
 
             AssetDraftDto draft = this.updateDraft(draftCommand);
@@ -364,20 +371,22 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             draftCommand.setPublisherKey(command.getPublisherKey());
             draftCommand.setSpatialDataServiceType(EnumSpatialDataServiceType.fromString(command.getServiceType()));
             draftCommand.setTitle(command.getTitle());
-            draftCommand.setType(EnumType.SERVICE);
+            draftCommand.setType(EnumAssetType.SERVICE);
             draftCommand.setVersion(command.getVersion());
 
             AssetDraftDto draft = this.updateDraft(draftCommand);
 
             // Get file format and category
             final AssetFileTypeEntity format = this.assetFileTypeRepository
-                .findOneByFormat(command.getFormat()).get();
+                .findOneByCategoryAndFormat(EnumAssetType.VECTOR, command.getFormat()).get();
 
             // Add resource
             final FileResourceCommandDto resourceCommand = new FileResourceCommandDto();
 
-            resourceCommand.setCategory(format.getCategory());
+            resourceCommand.setCategory(EnumAssetType.VECTOR);
+            resourceCommand.setCrs(command.getCrs());
             resourceCommand.setDraftKey(draft.getKey());
+            resourceCommand.setEncoding(command.getEncoding());
             resourceCommand.setFileName(FilenameUtils.getName(command.getPath()));
             resourceCommand.setFormat(format.getFormat());
             resourceCommand.setPublisherKey(command.getPublisherKey());
@@ -818,8 +827,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             // Filter properties before updating metadata in catalogue service
             final FileResourceDto                   resource   = (FileResourceDto) draft.getResourceByKey(resourceKey);
-            final EnumAssetSourceType               source     = mapFormatToSourceType(resource.getFormat());
-            final List<AssetMetadataPropertyEntity> properties = this.assetMetadataPropertyRepository.findAllByAssetType(source);
+            final EnumAssetType                     assetType  = resource.getCategory();
+            final List<AssetMetadataPropertyEntity> properties = this.assetMetadataPropertyRepository.findAllByAssetType(assetType);
 
             for(final AssetMetadataPropertyEntity p: properties) {
                 final String   propertyName = p.getName();
@@ -951,7 +960,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         );
 
         // Set category
-        command.setCategory(this.mapFormatToSourceType(command.getFormat()));
+        if (command.getCategory() == null) {
+            command.setCategory(draft.getType());
+        }
 
         // Update database link
         final FileResourceDto resource = assetResourceRepository.update(command);
@@ -1078,17 +1089,6 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         return MetadataProperty.of(property.getType(), path);
     }
 
-    public EnumAssetSourceType mapFormatToSourceType(String format) throws AssetDraftException {
-        final Optional<AssetFileTypeEntity> fileType = this.assetFileTypeRepository.findOneByFormat(format);
-
-        if (fileType.isPresent()) {
-            return fileType.get().getCategory();
-        }
-
-        throw new AssetDraftException(AssetMessageCode.FORMAT_NOT_SUPPORTED,
-                String.format("Format [%s] cannot be mapped to data profiler source type", format));
-    }
-
     @Transactional
     private AssetDraftDto ensureDraftAndStatus(
         UUID publisherKey, UUID assetKey, EnumProviderAssetDraftStatus status
@@ -1196,8 +1196,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 continue;
             }
             final FileResourceDto                   fr         = (FileResourceDto) r;
-            final EnumAssetSourceType               source     = mapFormatToSourceType(fr.getFormat());
-            final List<AssetMetadataPropertyEntity> properties = this.assetMetadataPropertyRepository.findAllByAssetType(source);
+            final EnumAssetType                     assetType  = fr.getCategory();
+            final List<AssetMetadataPropertyEntity> properties = this.assetMetadataPropertyRepository.findAllByAssetType(assetType);
             ObjectNode                              current    = null;
 
             for (int i = 0; i < metadata.size(); i++) {

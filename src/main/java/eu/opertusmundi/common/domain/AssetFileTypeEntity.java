@@ -14,7 +14,7 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
 
 import eu.opertusmundi.common.model.asset.AssetFileTypeDto;
-import eu.opertusmundi.common.model.asset.EnumAssetSourceType;
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -34,7 +34,7 @@ public class AssetFileTypeEntity {
     @Enumerated(EnumType.STRING)
     @Getter
     @Setter
-    private EnumAssetSourceType category;
+    private EnumAssetType category;
 
     @NotNull
     @Column(name = "`format`")

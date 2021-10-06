@@ -6,7 +6,7 @@ import java.util.UUID;
 import eu.opertusmundi.common.model.account.ProviderDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
-import eu.opertusmundi.common.model.catalogue.client.EnumType;
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,7 +30,7 @@ public class AssetDraftDto {
     private String version;
 
     @Schema(description = "Asset type")
-    private EnumType type;
+    private EnumAssetType type;
 
     @Schema(description = "Asset service type. Applicable only when asset type is `SERVICE`")
     private EnumSpatialDataServiceType serviceType;

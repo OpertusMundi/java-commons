@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.model.asset;
 
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -7,7 +8,7 @@ import lombok.Setter;
 @Setter
 public class AssetMetadataPropertyDto {
 
-    private EnumAssetSourceType assetType;
+    private EnumAssetType assetType;
 
     private String name;
 

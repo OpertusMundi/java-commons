@@ -33,13 +33,14 @@ public class CatalogueItemDto extends BaseCatalogueItemDto implements Serializab
         super(feature);
 
         final CatalogueFeatureProperties props = feature.getProperties();
-        
+
         this.id = feature.getId();
 
         this.pricingModels = Optional.ofNullable(props.getPricingModels()).orElse(Collections.emptyList());
         this.publisherId   = props.getPublisherId();
+        this.statistics    = props.getStatistics();
         this.title         = props.getTitle();
-        this.type          = EnumType.fromString(props.getType());
+        this.type          = EnumAssetType.fromString(props.getType());
         this.version       = props.getVersion();
 
         // Initialize with an empty collection. Caller must compute the
@@ -56,7 +57,7 @@ public class CatalogueItemDto extends BaseCatalogueItemDto implements Serializab
     @Getter
     @Setter
     private List<BasePricingModelCommandDto> pricingModels;
-    
+
     @ArraySchema(
         arraySchema = @Schema(
             description = "Supported pricing models"
@@ -75,21 +76,26 @@ public class CatalogueItemDto extends BaseCatalogueItemDto implements Serializab
         Assert.notNull(models, "Expected a non-null list of effective pricing models");
         this.effectivePricingModels = models;
     }
-    
+
     @Schema(description = "Id of an entity responsible for making the resource available")
     @Getter
     @Setter
     protected UUID publisherId;
 
+    @Schema(description = "Asset statistics")
+    @Getter
+    @Setter
+    private CatalogueItemStatistics statistics;
+
     @Schema(description = "A name given to the resource")
     @Getter
     @Setter
     private String title;
-    
+
     @Schema(description = "The nature or genre of the resource")
     @Getter
     @Setter
-    private EnumType type;
+    private EnumAssetType type;
 
     @Schema(description = "Version of the resource")
     @Getter

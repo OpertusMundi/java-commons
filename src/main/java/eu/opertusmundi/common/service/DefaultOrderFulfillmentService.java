@@ -374,8 +374,10 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         final CatalogueItemDetailsDto asset      = this.catalogueService.findOne(null, orderItem.getAssetId(), null, false);
 
         switch(asset.getType()) {
-            case VECTOR :
             case RASTER :
+            case TABULAR :
+            case NETCDF :
+            case VECTOR :
                 this.registerAsset(payIn, payInItem, asset);
                 break;
 

@@ -53,7 +53,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
         this.pricingModels       = new ArrayList<>();
         this.resources           = new ArrayList<>();
         this.title               = feature.getProperties().getTitle();
-        this.type                = EnumType.fromString(feature.getProperties().getType());
+        this.type                = EnumAssetType.fromString(feature.getProperties().getType());
         this.version             = feature.getProperties().getVersion();
         this.visibility          = feature.getProperties().getVisibility();
     }
@@ -124,7 +124,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
     private String title;
 
     @Schema(description = "The nature or genre of the resource", required = true)
-    private EnumType type;
+    private EnumAssetType type;
 
     @Schema(description = "Version of the resource", required = true)
     @NotEmpty

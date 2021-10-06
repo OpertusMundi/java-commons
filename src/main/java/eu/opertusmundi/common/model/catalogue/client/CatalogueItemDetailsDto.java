@@ -45,7 +45,6 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
 
         this.contractTemplateId      = props.getContractTemplateId();
         this.contractTemplateVersion = props.getContractTemplateVersion();
-        this.statistics              = props.getStatistics();
         this.versions                = props.getVersions();
         this.visibility              = props.getVisibility();
         this.resources               = StreamUtils.from(props.getResources())
@@ -116,11 +115,6 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
     )
     @Getter
     private List<ResourceDto> resources;
-
-    @Schema(description = "Asset statistics")
-    @Getter
-    @Setter
-    private CatalogueItemStatistics statistics;
 
     @Schema(description = "A list of all item versions")
     @Getter

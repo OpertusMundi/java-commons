@@ -19,8 +19,8 @@ import javax.validation.constraints.NotNull;
 
 import org.hibernate.annotations.NaturalId;
 
-import eu.opertusmundi.common.model.asset.EnumAssetSourceType;
 import eu.opertusmundi.common.model.asset.FileResourceDto;
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -87,7 +87,7 @@ public class AssetResourceEntity {
     @Enumerated(EnumType.STRING)
     @Getter
     @Setter
-    private EnumAssetSourceType category;
+    private EnumAssetType category;
 
     @NotNull
     @Column(name = "`format`")
@@ -95,8 +95,18 @@ public class AssetResourceEntity {
     @Setter
     private String format;
 
+    @Column(name = "`encoding`")
+    @Getter
+    @Setter
+    private String encoding;
+
+    @Column(name = "`crs`")
+    @Getter
+    @Setter
+    private String crs;
+
     public FileResourceDto toDto() {
-        return new FileResourceDto(key, null, size, category, fileName, createdOn, format);
+        return new FileResourceDto(key, null, size, category, fileName, createdOn, format, encoding, crs);
     }
 
 }

@@ -10,12 +10,12 @@ import eu.opertusmundi.common.model.account.ConsumerServiceException;
 import eu.opertusmundi.common.model.asset.EnumConsumerAssetSortField;
 import eu.opertusmundi.common.model.asset.EnumConsumerSubSortField;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
-import eu.opertusmundi.common.model.catalogue.client.EnumType;
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 
 public interface ConsumerAssetService {
 
     default PageResultDto<AccountAssetDto> findAllAssets(
-        UUID userKey, EnumType type, int pageIndex, int pageSize
+        UUID userKey, EnumAssetType type, int pageIndex, int pageSize
     ) throws ConsumerServiceException {
         return this.findAllAssets(
             userKey, type, pageIndex, pageSize, EnumConsumerAssetSortField.ADDED_ON, EnumSortingOrder.DESC
@@ -35,7 +35,7 @@ public interface ConsumerAssetService {
      * @throws ConsumerServiceException if a catalogue item is not found
      */
     PageResultDto<AccountAssetDto> findAllAssets(
-        UUID userKey, EnumType type, int pageIndex, int pageSize, EnumConsumerAssetSortField orderBy, EnumSortingOrder order
+        UUID userKey, EnumAssetType type, int pageIndex, int pageSize, EnumConsumerAssetSortField orderBy, EnumSortingOrder order
     ) throws ConsumerServiceException;
 
     /**

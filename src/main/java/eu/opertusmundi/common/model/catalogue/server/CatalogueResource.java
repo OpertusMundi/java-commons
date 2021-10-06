@@ -11,9 +11,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import eu.opertusmundi.common.model.asset.EnumAssetSourceType;
 import eu.opertusmundi.common.model.asset.EnumResourceType;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -54,10 +54,13 @@ public class CatalogueResource implements Serializable {
     private String format;
 
     @JsonInclude(Include.NON_NULL)
+    private String encoding;
+
+    @JsonInclude(Include.NON_NULL)
     private Long size;
 
     @JsonInclude(Include.NON_NULL)
-    private EnumAssetSourceType category;
+    private EnumAssetType category;
 
     @JsonInclude(Include.NON_NULL)
     private ZonedDateTime modifiedOn;
@@ -75,14 +78,14 @@ public class CatalogueResource implements Serializable {
     @JsonInclude(Include.NON_NULL)
     private Attributes attributes;
 
-    @JsonInclude(Include.NON_NULL)
+    @JsonInclude(Include.NON_EMPTY)
     private List<String> crs;
 
-    @JsonInclude(Include.NON_NULL)
+    @JsonInclude(Include.NON_EMPTY)
     @JsonProperty("style")
     private List<String> styles;
 
-    @JsonInclude(Include.NON_NULL)
+    @JsonInclude(Include.NON_EMPTY)
     @JsonProperty("style_image")
     private List<byte[]> styleImages;
 
@@ -90,15 +93,15 @@ public class CatalogueResource implements Serializable {
     private Geometry bbox;
 
     @JsonProperty("dimension")
-    @JsonInclude(Include.NON_NULL)
+    @JsonInclude(Include.NON_EMPTY)
     private List<Dimension> dimensions;
 
     @JsonProperty("output_formats")
-    @JsonInclude(Include.NON_NULL)
+    @JsonInclude(Include.NON_EMPTY)
     private List<String> outputFormats;
 
     @JsonProperty("filter_capabilities")
-    @JsonInclude(Include.NON_NULL)
+    @JsonInclude(Include.NON_EMPTY)
     private List<String> filterCapabilities;
 
     @JsonInclude(Include.NON_NULL)
@@ -113,7 +116,7 @@ public class CatalogueResource implements Serializable {
     private Double maxScale;
 
     @JsonProperty("tile_sets")
-    @JsonInclude(Include.NON_NULL)
+    @JsonInclude(Include.NON_EMPTY)
     private List<TileSet> tileSets;
 
     @NoArgsConstructor

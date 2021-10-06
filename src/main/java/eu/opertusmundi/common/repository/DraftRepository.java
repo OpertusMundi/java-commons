@@ -31,7 +31,7 @@ import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemVisibilityCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
-import eu.opertusmundi.common.model.catalogue.client.EnumType;
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
 import eu.opertusmundi.common.service.AssetDraftException;
@@ -52,7 +52,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
     Page<ProviderAssetDraftEntity> findAllByPublisherAndStatus(
         @Param("publisherKey") UUID publisherKey,
         @Param("status") Set<EnumProviderAssetDraftStatus> status,
-        @Param("type") Set<EnumType> type,
+        @Param("type") Set<EnumAssetType> type,
         @Param("serviceType") Set<EnumSpatialDataServiceType> serviceType,
         Pageable pageable
     );
@@ -231,7 +231,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
 
-        final EnumProviderAssetDraftStatus expectedStatus = draft.getCommand().getType() == EnumType.SERVICE
+        final EnumProviderAssetDraftStatus expectedStatus = draft.getCommand().getType() == EnumAssetType.SERVICE
             ? EnumProviderAssetDraftStatus.SUBMITTED
             : EnumProviderAssetDraftStatus.POST_PROCESSING;
 
@@ -270,7 +270,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
 
-        final EnumProviderAssetDraftStatus expectedStatus = draft.getCommand().getType() == EnumType.SERVICE
+        final EnumProviderAssetDraftStatus expectedStatus = draft.getCommand().getType() == EnumAssetType.SERVICE
             ? EnumProviderAssetDraftStatus.SUBMITTED
             : EnumProviderAssetDraftStatus.POST_PROCESSING;
 
@@ -314,7 +314,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
 
-        final EnumProviderAssetDraftStatus expectedStatus = draft.getCommand().getType() == EnumType.SERVICE
+        final EnumProviderAssetDraftStatus expectedStatus = draft.getCommand().getType() == EnumAssetType.SERVICE
             ? EnumProviderAssetDraftStatus.SUBMITTED
             : EnumProviderAssetDraftStatus.POST_PROCESSING;
 
