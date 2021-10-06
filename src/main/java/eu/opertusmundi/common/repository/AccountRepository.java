@@ -38,6 +38,7 @@ import eu.opertusmundi.common.model.account.CustomerCommandDto;
 import eu.opertusmundi.common.model.account.EnumActivationStatus;
 import eu.opertusmundi.common.model.account.EnumCustomerRegistrationStatus;
 import eu.opertusmundi.common.model.account.ProviderProfessionalCommandDto;
+import eu.opertusmundi.common.model.account.ProviderProfileCommandDto;
 
 @Repository
 @Transactional(readOnly = true)
@@ -197,7 +198,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
 
         this.delete(e);
     }
-    
+
     @Transactional(readOnly = false)
     default AccountDto updateConsumerRegistration(CustomerCommandDto command)  throws IllegalArgumentException {
         return this.updateConsumerRegistration(command, EnumCustomerRegistrationStatus.DRAFT);
@@ -435,6 +436,18 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
         // Update registration
         registration.setStatus(EnumCustomerRegistrationStatus.COMPLETED);
         profile.setProviderRegistration(null);
+
+        this.save(account);
+
+        return account.toDto();
+    }
+
+    @Transactional(readOnly = false)
+    default AccountDto updateProviderProfile(ProviderProfileCommandDto command) {
+        final AccountEntity              account  = this.findById(command.getUserId()).orElse(null);
+        final CustomerProfessionalEntity provider = account.getProvider();
+
+        provider.update(command);
 
         this.save(account);
 

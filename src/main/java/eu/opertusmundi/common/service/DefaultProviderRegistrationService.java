@@ -17,6 +17,7 @@ import eu.opertusmundi.common.model.account.ActivationTokenDto;
 import eu.opertusmundi.common.model.account.CustomerProfessionalDto;
 import eu.opertusmundi.common.model.account.EnumActivationTokenType;
 import eu.opertusmundi.common.model.account.ProviderProfessionalCommandDto;
+import eu.opertusmundi.common.model.account.ProviderProfileCommandDto;
 import eu.opertusmundi.common.model.analytics.ProfileRecord;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.repository.AccountRepository;
@@ -61,7 +62,7 @@ public class DefaultProviderRegistrationService extends AbstractCustomerRegistra
         final UUID       registrationKey = account.getProfile().getProvider().getDraft().getKey();
 
         // Check if workflow exists
-        ProcessInstanceDto instance = this.bpmEngine.findInstance(registrationKey);
+        final ProcessInstanceDto instance = this.bpmEngine.findInstance(registrationKey);
 
         if (instance == null) {
             final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
@@ -115,6 +116,16 @@ public class DefaultProviderRegistrationService extends AbstractCustomerRegistra
         if (elasticSearchService != null) {
             elasticSearchService.addProfile(ProfileRecord.from(account));
         }
+
+        return account;
+    }
+
+    @Override
+    @Transactional
+    public AccountDto updateProfile(ProviderProfileCommandDto command) {
+        Assert.notNull(command, "Expected a non-null command");
+
+        final AccountDto account = this.accountRepository.updateProviderProfile(command);
 
         return account;
     }

@@ -25,6 +25,7 @@ import eu.opertusmundi.common.model.account.EnumLegalPersonType;
 import eu.opertusmundi.common.model.account.EnumMangopayUserType;
 import eu.opertusmundi.common.model.account.ProviderDto;
 import eu.opertusmundi.common.model.account.ProviderProfessionalCommandDto;
+import eu.opertusmundi.common.model.account.ProviderProfileCommandDto;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -302,6 +303,15 @@ public class CustomerProfessionalEntity extends CustomerEntity {
             this.emailVerified   = false;
             this.emailVerifiedAt = null;
         }
+    }
+
+    public void update(ProviderProfileCommandDto command) {
+        this.additionalInfo    = command.getAdditionalInfo();
+        this.companyType       = command.getCompanyType();
+        this.logoImage         = command.getLogoImage();
+        this.logoImageMimeType = command.getLogoImageMimeType();
+        this.phone             = command.getPhone();
+        this.siteUrl           = command.getSiteUrl();
     }
 
     public ProviderDto toProviderDto(boolean includeProviderDetails) {

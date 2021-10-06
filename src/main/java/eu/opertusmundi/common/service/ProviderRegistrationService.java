@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import eu.opertusmundi.common.model.account.AccountDto;
 import eu.opertusmundi.common.model.account.ProviderProfessionalCommandDto;
+import eu.opertusmundi.common.model.account.ProviderProfileCommandDto;
 
 public interface ProviderRegistrationService {
 
@@ -38,5 +39,13 @@ public interface ProviderRegistrationService {
      * @return
      */
     AccountDto completeRegistration(UUID userKey);
+
+    /**
+     * Update provider profile
+     *
+     * @param command The profile update command
+     * @return
+     */
+    AccountDto updateProfile(ProviderProfileCommandDto command);
 
 }
