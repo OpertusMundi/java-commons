@@ -25,7 +25,7 @@ import eu.opertusmundi.common.model.order.EnumOrderItemType;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
 import eu.opertusmundi.common.model.order.HelpdeskOrderDto;
 import eu.opertusmundi.common.model.order.OrderCommand;
-import eu.opertusmundi.common.model.order.OrderDeliveryCommandDto;
+import eu.opertusmundi.common.model.order.OrderDeliveryCommand;
 import eu.opertusmundi.common.model.order.OrderDto;
 import eu.opertusmundi.common.model.order.OrderException;
 import eu.opertusmundi.common.model.order.OrderMessageCode;
@@ -445,7 +445,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     }
 
     @Transactional(readOnly = false)
-    default ConsumerOrderDto receiveOrderByConsumer(OrderDeliveryCommandDto command) throws Exception {
+    default ConsumerOrderDto receiveOrderByConsumer(OrderDeliveryCommand command) throws Exception {
         final OrderEntity order = this.findEntityByKeyAndConsumerAndStatusNotCreated(command.getConsumerKey(), command.getOrderKey())
             .orElse(null);
 

@@ -59,7 +59,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         return this.findOneEntityByKey(key).map(o -> o.toHelpdeskDto(true));
     }
 
-    @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE i.order.key = key")
+    @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE i.order.key = :key")
     Optional<PayInEntity> findOneByOrderKey(@Param("key") UUID key);
 
     /**

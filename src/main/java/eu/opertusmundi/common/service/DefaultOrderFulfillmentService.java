@@ -31,7 +31,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.order.ConsumerOrderDto;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
 import eu.opertusmundi.common.model.order.OrderConfirmCommandDto;
-import eu.opertusmundi.common.model.order.OrderDeliveryCommandDto;
+import eu.opertusmundi.common.model.order.OrderDeliveryCommand;
 import eu.opertusmundi.common.model.order.OrderException;
 import eu.opertusmundi.common.model.order.OrderMessageCode;
 import eu.opertusmundi.common.model.order.OrderShippingCommandDto;
@@ -304,7 +304,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
     @Override
     @Transactional
-    public ConsumerOrderDto receiveOrderByConsumer(OrderDeliveryCommandDto command) throws OrderException {
+    public ConsumerOrderDto receiveOrderByConsumer(OrderDeliveryCommand command) throws OrderException {
         try {
             Assert.notNull(command.getConsumerKey(), "Expected a non-null consumer key");
             Assert.notNull(command.getOrderKey(), "Expected a non-null order key");

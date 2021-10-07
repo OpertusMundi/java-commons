@@ -4,7 +4,7 @@ import java.util.UUID;
 
 import eu.opertusmundi.common.model.order.ConsumerOrderDto;
 import eu.opertusmundi.common.model.order.OrderConfirmCommandDto;
-import eu.opertusmundi.common.model.order.OrderDeliveryCommandDto;
+import eu.opertusmundi.common.model.order.OrderDeliveryCommand;
 import eu.opertusmundi.common.model.order.OrderException;
 import eu.opertusmundi.common.model.order.OrderShippingCommandDto;
 import eu.opertusmundi.common.model.order.ProviderOrderDto;
@@ -76,7 +76,7 @@ public interface OrderFulfillmentService {
      * @return
      * @throws OrderException if order not found or order status is invalid
      */
-    ConsumerOrderDto receiveOrderByConsumer(OrderDeliveryCommandDto command) throws OrderException;
+    ConsumerOrderDto receiveOrderByConsumer(OrderDeliveryCommand command) throws OrderException;
 
     /**
      * Update the profile of a user after a PayIn is successfully processed
