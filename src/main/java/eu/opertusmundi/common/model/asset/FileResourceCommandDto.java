@@ -26,10 +26,10 @@ public class FileResourceCommandDto extends ResourceCommandDto implements Serial
     @NotBlank
     private String format;
 
-    @Schema(description = "File encoding")
+    @Schema(description = "File encoding", example = "UTF-8")
     private String encoding;
 
-    @Schema(description = "Geometry data CRS")
+    @Schema(description = "Geometry data CRS", example = "EPSG:4326")
     private String crs;
 
     @Schema(description = "File name. If not set, the name of uploaded file is used.")
