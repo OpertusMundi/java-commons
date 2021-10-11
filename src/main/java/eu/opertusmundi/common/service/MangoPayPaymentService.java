@@ -1863,7 +1863,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
         if(payInEntity == null) {
             throw new PaymentException(
-                PaymentMessageCode.SERVER_ERROR,
+                PaymentMessageCode.RESOURCE_NOT_FOUND,
                 String.format("[OpertusMundi] PayIn [%s] was not found", providerPayInId)
             );
         }
@@ -1876,7 +1876,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
         if(payOutEntity == null) {
             throw new PaymentException(
-                PaymentMessageCode.SERVER_ERROR,
+                PaymentMessageCode.RESOURCE_NOT_FOUND,
                 String.format("[OpertusMundi] PayOut [%s] was not found", providerPayOutId)
             );
         }
@@ -1889,7 +1889,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
         if (payInItemEntity == null) {
             throw new PaymentException(
-                PaymentMessageCode.SERVER_ERROR,
+                PaymentMessageCode.RESOURCE_NOT_FOUND,
                 String.format("[OpertusMundi] Transfer [%s] was not found", transferId)
             );
         }

@@ -46,6 +46,9 @@ public enum BasicMessageCode implements MessageCode {
     // Generic errors
     NotImplemented,
     IOError,
+
+    // Success
+    Success(HttpStatus.OK),
     ;
 
     private final HttpStatus httpStatus;
