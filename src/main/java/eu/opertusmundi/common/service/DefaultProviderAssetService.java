@@ -18,7 +18,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
 import org.camunda.bpm.engine.rest.dto.task.TaskDto;
+import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.PrecisionModel;
 import org.locationtech.jts.io.WKTReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -783,6 +786,20 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         feature.setId(pid);
         feature.getProperties().setPublisherId(publisherKey);
+
+        // Initialize geometry if not already set for tabular assets
+        if (draft.getType() == EnumAssetType.TABULAR && feature.getGeometry() == null) {
+            final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
+            final Geometry        geom            = geometryFactory.createPolygon(new Coordinate[] {
+                new Coordinate(-180.0,-90.0),
+                new Coordinate(180.0,-90.0),
+                new Coordinate(180.0,90.0),
+                new Coordinate(-180.0,90.0),
+                new Coordinate(-180.0,-90.0)
+            });
+
+            feature.setGeometry(geom);
+        }
 
         // Set contract
         final ProviderTemplateContractHistoryDto contract = this.contractRepository.findOneObjectByKey(

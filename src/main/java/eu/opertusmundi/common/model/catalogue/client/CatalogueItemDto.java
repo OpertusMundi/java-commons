@@ -46,6 +46,11 @@ public class CatalogueItemDto extends BaseCatalogueItemDto implements Serializab
         // Initialize with an empty collection. Caller must compute the
         // effective pricing models
         this.effectivePricingModels = new ArrayList<EffectivePricingModelDto>();
+
+        // Reset geometry for tabular data
+        if (this.getType() == EnumAssetType.TABULAR) {
+            this.setGeometry(null);
+        }
     }
 
     @Schema(description = "Catalogue item identifier (PID)")

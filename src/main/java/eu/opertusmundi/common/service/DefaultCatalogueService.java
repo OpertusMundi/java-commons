@@ -59,6 +59,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDraftDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumCatalogueType;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQuery;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQueryResult;
@@ -879,6 +880,10 @@ public class DefaultCatalogueService implements CatalogueService {
                 .getResult();
 
             if (this.elasticSearchService != null) {
+                // For tabular assets, reset geometry
+                if (EnumAssetType.fromString(published.getProperties().getType()) == EnumAssetType.TABULAR) {
+                    published.setGeometry(null);
+                }
                 this.elasticSearchService.addAsset(published);
             }
         } catch (final ElasticServiceException ex) {
