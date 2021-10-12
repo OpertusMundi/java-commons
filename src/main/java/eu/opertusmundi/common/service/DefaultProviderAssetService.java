@@ -823,7 +823,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Override
     @Transactional
     public void updateMetadata(
-        UUID publisherKey, UUID draftKey, UUID resourceKey, JsonNode value
+        UUID publisherKey, UUID draftKey, String resourceKey, JsonNode value
     ) throws FileSystemException, AssetDraftException {
         try {
             // The provider must have access to the selected draft and also the
@@ -919,7 +919,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     public void updateResourceIngestionData(
-        UUID publisherKey, UUID draftKey, UUID resourceKey, ServerIngestResultResponseDto data
+        UUID publisherKey, UUID draftKey, String resourceKey, ServerIngestResultResponseDto data
     ) throws AssetDraftException {
         try {
             // The provider must have access to the selected draft and also the
@@ -944,7 +944,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     public void updateResourceIngestionData(
-        UUID publisherKey, UUID draftKey, UUID resourceKey, ServerIngestPublishResponseDto data
+        UUID publisherKey, UUID draftKey, String resourceKey, ServerIngestPublishResponseDto data
     ) throws AssetDraftException {
         try {
             // The provider must have access to the selected draft and also the
@@ -1030,7 +1030,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     public Path resolveAssetAdditionalResource(
-        String pid, UUID resourceKey
+        String pid, String resourceKey
     ) throws FileSystemException, AssetRepositoryException {
         final AssetAdditionalResourceEntity resource = this.assetAdditionalResourceRepository
             .findOneByAssetPidAndResourceKey(pid, resourceKey)
@@ -1047,7 +1047,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     public Path resolveDraftAdditionalResource(
-        UUID publisherKey, UUID draftKey, UUID resourceKey
+        UUID publisherKey, UUID draftKey, String resourceKey
     ) throws FileSystemException, AssetRepositoryException {
         final AssetAdditionalResourceEntity resource = this.assetAdditionalResourceRepository
             .findOneByDraftKeyAndResourceKey(draftKey, resourceKey)
@@ -1064,7 +1064,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     public MetadataProperty resolveAssetMetadataProperty(
-        String pid, UUID resourceKey, String propertyName
+        String pid, String resourceKey, String propertyName
     ) throws FileSystemException, AssetRepositoryException {
         final AssetResourceEntity resource = this.assetResourceRepository
             .findOneByAssetPidAndResourceKey(pid, resourceKey)
@@ -1086,7 +1086,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     public MetadataProperty resolveDraftMetadataProperty(
-        UUID publisherKey, UUID draftKey, UUID resourceKey, String propertyName
+        UUID publisherKey, UUID draftKey, String resourceKey, String propertyName
     ) throws FileSystemException, AssetRepositoryException {
         final AssetResourceEntity resource = this.assetResourceRepository
             .findOneByDraftKeyAndResourceKey(draftKey, resourceKey)
@@ -1135,7 +1135,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         final List<AssetAdditionalResourceDto> additionalResources = command.getAdditionalResources();
 
         // Delete all resources that are not present in the draft record
-        final List<UUID> rids = resources.stream()
+        final List<String> rids = resources.stream()
             .filter(r -> r.getType() == EnumResourceType.FILE)
             .map(r -> r.getId())
             .collect(Collectors.toList());
@@ -1154,7 +1154,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         // Delete all additional fire resources that are not present in the
         // draft record
-        final List<UUID> arids = additionalResources.stream().filter(r -> r.getType() == EnumAssetAdditionalResource.FILE)
+        final List<String> arids = additionalResources.stream().filter(r -> r.getType() == EnumAssetAdditionalResource.FILE)
             .map(r -> (AssetFileAdditionalResourceDto) r).map(r -> r.getId())
             .collect(Collectors.toList());
 
@@ -1172,7 +1172,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Transactional
-    private FileResourceDto deleteResourceRecord(UUID publisherKey, UUID draftKey, UUID resourceKey) {
+    private FileResourceDto deleteResourceRecord(UUID publisherKey, UUID draftKey, String resourceKey) {
         // The provider must have access to the selected draft and also the
         // draft must be editable
         this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
@@ -1181,7 +1181,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Transactional
-    private AssetFileAdditionalResourceDto deleteAdditionalResourceRecord(UUID publisherKey, UUID draftKey, UUID resourceKey) {
+    private AssetFileAdditionalResourceDto deleteAdditionalResourceRecord(UUID publisherKey, UUID draftKey, String resourceKey) {
         // The provider must have access to the selected draft and also the
         // draft must be editable
         this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
@@ -1287,7 +1287,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
 
-    private String getMetadataPropertyFileName(UUID resourceKey, String propertyName, EnumMetadataPropertyType propertyType) {
+    private String getMetadataPropertyFileName(String resourceKey, String propertyName, EnumMetadataPropertyType propertyType) {
         return StringUtils.joinWith(".", resourceKey, "property", propertyName, propertyType.getExtension());
     }
 

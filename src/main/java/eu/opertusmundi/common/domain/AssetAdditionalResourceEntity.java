@@ -32,7 +32,7 @@ public class AssetAdditionalResourceEntity {
     public AssetAdditionalResourceEntity(UUID draftKey) {
         this.draftKey = draftKey;
     }
-    
+
     @Id
     @SequenceGenerator(sequenceName = "`file.asset_additional_resource_id_seq`", name = "asset_additional_resource_id_seq", allocationSize = 1)
     @GeneratedValue(generator = "asset_additional_resource_id_seq", strategy = GenerationType.SEQUENCE)
@@ -44,7 +44,7 @@ public class AssetAdditionalResourceEntity {
     @Column(name = "key", updatable = false, columnDefinition = "uuid")
     @NaturalId
     @Getter
-    private final UUID key = UUID.randomUUID();
+    private final String key = UUID.randomUUID().toString();
 
     @Column(name = "pid")
     @Getter

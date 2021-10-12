@@ -1,7 +1,6 @@
 package eu.opertusmundi.common.feign.client;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
@@ -49,7 +48,7 @@ public interface DataProfilerServiceFeignClient {
     )
     @Headers("Content-Type: application/x-www-form-urlencoded")
     ResponseEntity<DataProfilerDeferredResponseDto> profileNetCdf(
-        @RequestHeader("X-Idempotency-Key")                       UUID       idempotencyKey,
+        @RequestHeader("X-Idempotency-Key")                       String     idempotencyKey,
         @RequestPart(name = "resource",         required = true)  String     resource,
         @RequestPart(name = "response",         required = true)  String     response,
         @RequestPart(name = "basemap_provider", required = false) String     baseMapProvider,
@@ -77,7 +76,7 @@ public interface DataProfilerServiceFeignClient {
     )
     @Headers("Content-Type: application/x-www-form-urlencoded")
     ResponseEntity<DataProfilerDeferredResponseDto> profileRaster(
-        @RequestHeader("X-Idempotency-Key")              UUID   idempotencyKey,
+        @RequestHeader("X-Idempotency-Key")              String idempotencyKey,
         @RequestPart(name = "resource", required = true) String resource,
         @RequestPart(name = "response", required = true) String response
     );
@@ -106,7 +105,7 @@ public interface DataProfilerServiceFeignClient {
     )
     @Headers("Content-Type: application/x-www-form-urlencoded")
     ResponseEntity<DataProfilerDeferredResponseDto> profileVector(
-        @RequestHeader("X-Idempotency-Key")                       UUID       idempotencyKey,
+        @RequestHeader("X-Idempotency-Key")                       String     idempotencyKey,
         @RequestPart(name = "resource",         required = true)  String     resource,
         @RequestPart(name = "response",         required = true)  String     response,
         @RequestPart(name = "basemap_provider", required = false) String     baseMapProvider,

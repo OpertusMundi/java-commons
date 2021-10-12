@@ -1,7 +1,6 @@
 package eu.opertusmundi.common.model.asset;
 
 import java.time.ZonedDateTime;
-import java.util.UUID;
 
 import eu.opertusmundi.common.model.catalogue.server.CatalogueAdditionalResource;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -16,7 +15,7 @@ public class AssetFileAdditionalResourceDto extends AssetAdditionalResourceDto {
         super(EnumAssetAdditionalResource.FILE);
     }
 
-    public AssetFileAdditionalResourceDto(UUID id, String fileName, Long size, String description, ZonedDateTime modifiedOn) {
+    public AssetFileAdditionalResourceDto(String id, String fileName, Long size, String description, ZonedDateTime modifiedOn) {
         this();
 
         this.id          = id;
@@ -28,7 +27,7 @@ public class AssetFileAdditionalResourceDto extends AssetAdditionalResourceDto {
 
     @Schema(description = "Additional resource file unique identifier")
     @Getter
-    private UUID id;
+    private String id;
 
     @Schema(description = "The description of the file. If not set, the file name is used as text")
     @Getter

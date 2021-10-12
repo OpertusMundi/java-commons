@@ -3,7 +3,6 @@ package eu.opertusmundi.common.model.ingest;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -26,7 +25,7 @@ public class ResourceIngestionDataDto implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "The resource unique identifier")
-    private UUID key;
+    private String key;
 
     @Schema(description = "The number of features stored in the table.")
     private long features;
@@ -47,7 +46,7 @@ public class ResourceIngestionDataDto implements Serializable {
     @JsonInclude(Include.NON_EMPTY)
     private List<ServiceEndpoint> endpoints = new ArrayList<>();
 
-    public static ResourceIngestionDataDto from(UUID key, ServerIngestResultResponseDto s) {
+    public static ResourceIngestionDataDto from(String key, ServerIngestResultResponseDto s) {
         final ResourceIngestionDataDto c = new ResourceIngestionDataDto();
         c.key       = key;
         c.features  = s.getLength();

@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.UUID;
 
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
@@ -41,7 +40,7 @@ public class DefaultDataProfilerService implements DataProfilerService{
 
     @Override
     public DataProfilerDeferredResponseDto profile(
-        UUID idempotencyKey, EnumAssetType type, String resource, DataProfilerOptions options
+        String idempotencyKey, EnumAssetType type, String resource, DataProfilerOptions options
     ) throws DataProfilerServiceException {
         try {
             final File file = new File(resource);

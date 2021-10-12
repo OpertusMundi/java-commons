@@ -1,7 +1,5 @@
 package eu.opertusmundi.common.feign.client;
 
-import java.util.UUID;
-
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -43,7 +41,7 @@ public interface IngestServiceFeignClient {
     )
     @Headers("Content-Type: application/x-www-form-urlencoded")
     ResponseEntity<ServerIngestPromptResponseDto> ingestSync(
-        @RequestHeader("X-Idempotency-Key") UUID idempotencyKey,
+        @RequestHeader("X-Idempotency-Key") String idempotencyKey,
         @RequestPart(name = "resource", required = true) String resource,
         @RequestPart(name = "response", required = true) String responseType,
         @RequestPart(name = "schema", required = false) String schema,
@@ -64,7 +62,7 @@ public interface IngestServiceFeignClient {
     )
     @Headers("Content-Type: application/x-www-form-urlencoded")
     ResponseEntity<ServerIngestDeferredResponseDto> ingestAsync(
-        @RequestHeader("X-Idempotency-Key") UUID idempotencyKey,
+        @RequestHeader("X-Idempotency-Key") String idempotencyKey,
         @RequestPart(name = "resource", required = true) String resource,
         @RequestPart(name = "response", required = true) String responseType,
         @RequestPart(name = "schema", required = false) String schema,
@@ -85,7 +83,7 @@ public interface IngestServiceFeignClient {
     )
     @Headers("Content-Type: application/x-www-form-urlencoded")
     ResponseEntity<ServerIngestPublishResponseDto> publish(
-        @RequestHeader("X-Idempotency-Key") UUID idempotencyKey, 
+        @RequestHeader("X-Idempotency-Key") String idempotencyKey, 
         @RequestBody ServerIngestPublishCommandDto command
     );
     
@@ -114,6 +112,6 @@ public interface IngestServiceFeignClient {
      * @return
      */
     @GetMapping(value = "/ticket_by_key/{key}", produces = "application/json")
-    ResponseEntity<ServerIngestTicketResponseDto> getTicketFromIdempotentKey(@PathVariable("key") UUID key);
+    ResponseEntity<ServerIngestTicketResponseDto> getTicketFromIdempotentKey(@PathVariable("key") String key);
     
 }

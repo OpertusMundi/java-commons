@@ -30,8 +30,8 @@ import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemVisibilityCommandDto;
-import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
+import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
 import eu.opertusmundi.common.service.AssetDraftException;
@@ -223,7 +223,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
 
     @Transactional(readOnly = false)
     default void updateResourceIngestionData(
-        UUID publisherKey, UUID draftKey, UUID resourceKey, ResourceIngestionDataDto data
+        UUID publisherKey, UUID draftKey, String resourceKey, ResourceIngestionDataDto data
     ) throws AssetDraftException {
         final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
 
@@ -262,7 +262,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
 
     @Transactional(readOnly = false)
     default void updateResourceIngestionData(
-        UUID publisherKey, UUID draftKey, UUID resourceKey, ServerIngestPublishResponseDto data
+        UUID publisherKey, UUID draftKey, String resourceKey, ServerIngestPublishResponseDto data
     ) throws AssetDraftException {
         final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
 

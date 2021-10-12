@@ -3,7 +3,6 @@ package eu.opertusmundi.common.model.asset;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.locationtech.jts.geom.Geometry;
@@ -42,11 +41,11 @@ public class ServiceResourceDto extends ResourceDto implements Serializable {
         @JsonProperty("dimensions") List<Dimension> dimensions,
         @JsonProperty("endpoint") String endpoint,
         @JsonProperty("filterCapabilities") List<String> filterCapabilities,
-        @JsonProperty("id") UUID id,
+        @JsonProperty("id") String id,
         @JsonProperty("maxScale") Double maxScale,
         @JsonProperty("minScale") Double minScale,
         @JsonProperty("outputFormats") List<String> outputFormats,
-        @JsonProperty("parentId") UUID parentId,
+        @JsonProperty("parentId") String parentId,
         @JsonProperty("serviceType") EnumSpatialDataServiceType serviceType,
         @JsonProperty("styles") List<String> styles,
         @JsonProperty("styleImages") List<byte[]> styleImages,

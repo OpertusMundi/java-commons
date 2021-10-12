@@ -5,8 +5,8 @@ import java.util.UUID;
 
 import eu.opertusmundi.common.model.account.ProviderDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
-import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
+import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -70,7 +70,7 @@ public class AssetDraftDto {
     @Schema(description = "Publisher details")
     private ProviderDto publisher;
 
-    public ResourceDto getResourceByKey(UUID key) {
+    public ResourceDto getResourceByKey(String key) {
         return this.getCommand().getResources().stream()
             .filter(r -> r.getId().equals(key))
             .findFirst()

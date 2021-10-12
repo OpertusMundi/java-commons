@@ -26,7 +26,7 @@ public final class CatalogueItemSamplesCommandDto implements Serializable {
 
     @Schema(description = "Resource key")
     @NotNull
-    private UUID resourceKey;
+    private String resourceKey;
 
     @Schema(description = "Samples as a JSON object")
     @NotNull

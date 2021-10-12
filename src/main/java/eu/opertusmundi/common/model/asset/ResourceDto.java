@@ -1,7 +1,6 @@
 package eu.opertusmundi.common.model.asset;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -21,6 +20,7 @@ import lombok.Setter;
     use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type"
 )
 @JsonSubTypes({
+    @Type(name = "ASSET", value = BundleAssetResourceDto.class),
     @Type(name = "FILE", value = FileResourceDto.class),
     @Type(name = "SERVICE", value = ServiceResourceDto.class),
 })
@@ -36,7 +36,7 @@ public abstract class ResourceDto implements Serializable {
         this.type     = type;
     }
 
-    public ResourceDto(UUID id, UUID parentId, EnumResourceType type) {
+    public ResourceDto(String id, String parentId, EnumResourceType type) {
         super();
 
         this.id       = id;
@@ -45,11 +45,11 @@ public abstract class ResourceDto implements Serializable {
     }
 
     @Schema(description = "Resource unique identifier")
-    protected UUID id;
+    protected String id;
 
     @Schema(description = "Resource parent unique identifier")
-    @JsonInclude(Include.NON_NULL)
-    protected UUID parentId;
+    @JsonInclude(Include.NON_EMPTY)
+    protected String parentId;
 
     @Schema(description = "Discriminator field used for deserializing the model to the appropriate data type", example = "FILE")
     protected EnumResourceType type;

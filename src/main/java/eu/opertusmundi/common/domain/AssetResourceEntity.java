@@ -47,7 +47,7 @@ public class AssetResourceEntity {
     @Column(name = "key", updatable = false, columnDefinition = "uuid")
     @NaturalId
     @Getter
-    private final UUID key = UUID.randomUUID();
+    private final String key = UUID.randomUUID().toString();
 
     @Column(name = "pid")
     @Getter

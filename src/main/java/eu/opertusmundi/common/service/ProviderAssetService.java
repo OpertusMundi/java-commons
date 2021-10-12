@@ -30,8 +30,8 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemSamplesCommand
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemVisibilityCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftFromAssetCommandDto;
-import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
+import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.UnpublishAssetCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
@@ -230,7 +230,7 @@ public interface ProviderAssetService {
      * @throws FileSystemException
      * @throws AssetDraftException
      */
-    void updateMetadata(UUID publisherKey, UUID draftKey, UUID resourceKey, JsonNode metadata) throws FileSystemException, AssetDraftException;
+    void updateMetadata(UUID publisherKey, UUID draftKey, String resourceKey, JsonNode metadata) throws FileSystemException, AssetDraftException;
 
     /**
      * Update draft ingestion information
@@ -242,7 +242,7 @@ public interface ProviderAssetService {
      * @throws AssetDraftException
      */
     void updateResourceIngestionData(
-        UUID publisherKey, UUID draftKey, UUID resourceKey, ServerIngestResultResponseDto data
+        UUID publisherKey, UUID draftKey, String resourceKey, ServerIngestResultResponseDto data
     ) throws AssetDraftException;
 
     /**
@@ -255,7 +255,7 @@ public interface ProviderAssetService {
      * @throws AssetDraftException
      */
     void updateResourceIngestionData(
-        UUID publisherKey, UUID draftKey, UUID resourceKey, ServerIngestPublishResponseDto data
+        UUID publisherKey, UUID draftKey, String resourceKey, ServerIngestPublishResponseDto data
     ) throws AssetDraftException;
 
     /**
@@ -311,7 +311,7 @@ public interface ProviderAssetService {
      * @throws FileSystemException If an I/O error occurs
      * @throws AssetRepositoryException If resolve operation fails
      */
-    Path resolveAssetAdditionalResource(String pid, UUID resourceKey) throws FileSystemException, AssetRepositoryException;
+    Path resolveAssetAdditionalResource(String pid, String resourceKey) throws FileSystemException, AssetRepositoryException;
 
     /**
      * Resolve the path of an additional file resource of a draft asset
@@ -324,7 +324,7 @@ public interface ProviderAssetService {
      * @throws FileSystemException If an I/O error occurs
      * @throws AssetRepositoryException If resolve operation fails
      */
-    Path resolveDraftAdditionalResource(UUID publisherKey, UUID draftKey, UUID resourceKey) throws FileSystemException, AssetRepositoryException;
+    Path resolveDraftAdditionalResource(UUID publisherKey, UUID draftKey, String resourceKey) throws FileSystemException, AssetRepositoryException;
 
     /**
      * Resolve path to metadata property file for a specific resource of a draft asset
@@ -338,7 +338,7 @@ public interface ProviderAssetService {
      * @throws AssetRepositoryException If resolve operation fails
      */
     MetadataProperty resolveAssetMetadataProperty(
-        String pid, UUID resourceKey, String propertyName
+        String pid, String resourceKey, String propertyName
     ) throws FileSystemException, AssetRepositoryException;
 
     /**
@@ -354,7 +354,7 @@ public interface ProviderAssetService {
      * @throws AssetRepositoryException If resolve operation fails
      */
     MetadataProperty resolveDraftMetadataProperty(
-        UUID publisherKey, UUID draftKey, UUID resourceKey, String propertyName
+        UUID publisherKey, UUID draftKey, String resourceKey, String propertyName
     ) throws FileSystemException, AssetRepositoryException;
 
     /**

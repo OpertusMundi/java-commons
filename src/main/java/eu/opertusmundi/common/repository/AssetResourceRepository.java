@@ -41,12 +41,12 @@ public interface AssetResourceRepository extends JpaRepository<AssetResourceEnti
 
     @Query("SELECT r FROM AssetResource r WHERE r.key = :resourceKey and r.draftKey = :draftKey")
     Optional<AssetResourceEntity> findOneByDraftKeyAndResourceKey(
-        @Param("draftKey") UUID draftKey, @Param("resourceKey") UUID resourceKey
+        @Param("draftKey") UUID draftKey, @Param("resourceKey") String resourceKey
     );
 
     @Query("SELECT r FROM AssetResource r WHERE r.key = :resourceKey and r.pid = :pid")
     Optional<AssetResourceEntity> findOneByAssetPidAndResourceKey(
-        @Param("pid") String pid, @Param("resourceKey") UUID resourceKey
+        @Param("pid") String pid, @Param("resourceKey") String resourceKey
     );
 
     @Query("SELECT r FROM AssetResource r WHERE r.draftKey = :key")
@@ -122,7 +122,7 @@ public interface AssetResourceRepository extends JpaRepository<AssetResourceEnti
     }
 
     @Transactional(readOnly = false)
-    default FileResourceDto delete(UUID draftKey, UUID resourceKey) {
+    default FileResourceDto delete(UUID draftKey, String resourceKey) {
         Assert.notNull(draftKey, "Expected a non-null draft key");
         Assert.notNull(resourceKey, "Expected a non-null resource key");
 

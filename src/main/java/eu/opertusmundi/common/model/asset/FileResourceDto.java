@@ -3,7 +3,6 @@ package eu.opertusmundi.common.model.asset;
 import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
-import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 import org.locationtech.jts.util.Assert;
@@ -27,8 +26,8 @@ public class FileResourceDto extends ResourceDto implements Serializable {
 
     @JsonCreator
     public FileResourceDto(
-        @JsonProperty("id") UUID id,
-        @JsonProperty("parentId") UUID parentId,
+        @JsonProperty("id") String id,
+        @JsonProperty("parentId") String parentId,
         @JsonProperty("size") Long size,
         @JsonProperty("category") EnumAssetType category,
         @JsonProperty("fileName") String fileName,

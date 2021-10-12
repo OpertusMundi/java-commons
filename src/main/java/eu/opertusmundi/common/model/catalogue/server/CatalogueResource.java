@@ -3,7 +3,6 @@ package eu.opertusmundi.common.model.catalogue.server;
 import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.UUID;
 
 import org.locationtech.jts.geom.Geometry;
 
@@ -34,11 +33,11 @@ public class CatalogueResource implements Serializable {
      * Shared resource properties
      */
 
-    private UUID id;
+    private String id;
 
     @JsonProperty("parent_id")
     @JsonInclude(Include.NON_NULL)
-    private UUID parentId;
+    private String parentId;
 
     private EnumResourceType type;
 

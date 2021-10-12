@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.UUID;
 
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
@@ -44,7 +43,7 @@ public class DefaultIngestService implements IngestService {
 
     @Override
     public ServerIngestPromptResponseDto ingestSync(
-        UUID idempotencyKey, String resource, String schema, String tableName
+        String idempotencyKey, String resource, String schema, String tableName
     ) throws IngestServiceException {
         try {
             final File file = new File(resource);
@@ -74,7 +73,7 @@ public class DefaultIngestService implements IngestService {
 
     @Override
     public ServerIngestDeferredResponseDto ingestAsync(
-        UUID idempotencyKey, String resource, String schema, String tableName
+        String idempotencyKey, String resource, String schema, String tableName
     ) throws IngestServiceException {
         try {
             final File file = new File(resource);
@@ -104,7 +103,7 @@ public class DefaultIngestService implements IngestService {
 
     @Override
     public ServerIngestPublishResponseDto publish(
-        UUID idempotencyKey, String schema, String table, String workspace
+        String idempotencyKey, String schema, String table, String workspace
     ) throws IngestServiceException {
         try {
             final ServerIngestPublishCommandDto command = ServerIngestPublishCommandDto.builder()
@@ -167,9 +166,9 @@ public class DefaultIngestService implements IngestService {
     }
 
     @Override
-    public ServerIngestTicketResponseDto getTicket(UUID idempotentKey) throws IngestServiceException {
+    public ServerIngestTicketResponseDto getTicket(String idempotentKey) throws IngestServiceException {
         try {
-            final ResponseEntity<ServerIngestTicketResponseDto> e = this.ingestClient.getObject() .getTicketFromIdempotentKey(idempotentKey);
+            final ResponseEntity<ServerIngestTicketResponseDto> e = this.ingestClient.getObject().getTicketFromIdempotentKey(idempotentKey);
 
             final ServerIngestTicketResponseDto serviceResponse = e.getBody();
 

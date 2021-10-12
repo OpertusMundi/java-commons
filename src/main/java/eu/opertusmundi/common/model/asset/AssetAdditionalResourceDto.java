@@ -1,7 +1,6 @@
 package eu.opertusmundi.common.model.asset;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
@@ -50,7 +49,7 @@ public abstract class AssetAdditionalResourceDto implements Serializable {
                 return new AssetUriAdditionalResourceDto(r.getValue(), r.getName());
             case FILE:
                 return new AssetFileAdditionalResourceDto(
-                    UUID.fromString(r.getId()), r.getValue(), r.getSize(), r.getName(), r.getModifiedOn()
+                    r.getId(), r.getValue(), r.getSize(), r.getName(), r.getModifiedOn()
                 );
             default:
                 throw ApplicationException.fromMessage(
