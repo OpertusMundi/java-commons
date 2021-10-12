@@ -280,6 +280,7 @@ public class CatalogueFeatureProperties {
     private List<String> visibility = new ArrayList<>();
 
     @JsonInclude(Include.NON_NULL)
+    @JsonProperty("vetting_required")
     private Boolean vettingRequired;
 
     @NoArgsConstructor

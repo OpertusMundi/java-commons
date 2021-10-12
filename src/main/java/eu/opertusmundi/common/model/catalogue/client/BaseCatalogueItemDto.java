@@ -71,6 +71,9 @@ public abstract class BaseCatalogueItemDto {
         this.suitableFor                  = props.getSuitableFor();
         this.userOnlyForVas               = props.isUseOnlyForVas();
         this.vettingRequired              = props.getVettingRequired();
+        if (this.vettingRequired == null) {
+            this.vettingRequired = false;
+        }
 
         this.geometry = feature.getGeometry();
 
