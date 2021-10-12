@@ -410,8 +410,6 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
             this.saveAndFlush(order);
         }
 
-        this.saveAndFlush(order);
-
         return order.toProviderDto(true);
     }
 
