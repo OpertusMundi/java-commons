@@ -1852,7 +1852,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
         if (!validStatus.contains(order.getStatus())) {
             throw new PaymentException(PaymentMessageCode.ORDER_INVALID_STATUS, String.format(
-                "[MANGOPAY] Invalid order status [order=%s, status=%s, expected=%s,%s]",
+                "[MANGOPAY] Invalid order status [order=%s, status=%s, expected=%s]",
                 key, order.getStatus(), validStatus
             ));
         }
