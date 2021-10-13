@@ -16,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonProperty.Access;
 
 import eu.opertusmundi.common.model.account.ProviderDto;
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
+import eu.opertusmundi.common.model.asset.BundleAssetResourceDto;
 import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
@@ -111,7 +112,9 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
         ),
         minItems = 0,
         uniqueItems = true,
-        schema = @Schema(oneOf = {FileResourceDto.class, ServiceResourceDto.class})
+        schema = @Schema(oneOf = {
+            BundleAssetResourceDto.class, FileResourceDto.class, ServiceResourceDto.class
+        })
     )
     @Getter
     private List<ResourceDto> resources;

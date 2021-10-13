@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
 import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceDto;
+import eu.opertusmundi.common.model.asset.BundleAssetResourceDto;
 import eu.opertusmundi.common.model.asset.EnumAssetAdditionalResource;
 import eu.opertusmundi.common.model.asset.EnumResourceType;
 import eu.opertusmundi.common.model.asset.FileResourceDto;
@@ -145,7 +146,9 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
         ),
         minItems = 0,
         uniqueItems = true,
-            schema = @Schema(oneOf = {FileResourceDto.class, ServiceResourceDto.class})
+        schema = @Schema(oneOf = {
+            BundleAssetResourceDto.class, FileResourceDto.class, ServiceResourceDto.class
+        })
     )
     private List<ResourceDto> resources;
 
