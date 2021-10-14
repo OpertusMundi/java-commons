@@ -6,6 +6,7 @@ import com.ibm.icu.text.DecimalFormat;
 
 import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.account.CustomerDto;
+import eu.opertusmundi.common.model.account.CustomerIndividualDto;
 import eu.opertusmundi.common.model.account.CustomerProfessionalDto;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
@@ -41,7 +42,7 @@ public class ContractParametersDto {
             result.contactEmail              = c.getEmail();
             result.contactPerson             = String.format("%s %s", c.getRepresentative().getFirstName(), c.getRepresentative().getLastName()).trim();
             result.corporateName             = c.getName();
-            result.euVatNumber               = "";
+            result.euVatNumber               = "N/A";
             result.professionalAddress       = c.getHeadquartersAddress().toString();
 
             return result;
@@ -68,6 +69,10 @@ public class ContractParametersDto {
 
             switch (c.getType()) {
                 case INDIVIDUAL :
+                	final CustomerIndividualDto d = (CustomerIndividualDto) c;
+                	result.contactEmail = d.getEmail();
+                	result.corporateName = d.getFullName();
+                	result.professionalAddress = d.getAddress().toString();
                     break;
 
                 case PROFESSIONAL :
@@ -77,7 +82,7 @@ public class ContractParametersDto {
                     result.contactEmail = t.getEmail();
                     result.contactPerson = String.format("%s %s", t.getRepresentative().getFirstName(), t.getRepresentative().getLastName()) .trim();
                     result.corporateName = t.getName();
-                    result.euVatNumber = "";
+                    result.euVatNumber = "N/A";
                     result.professionalAddress = t.getHeadquartersAddress().toString();
 
                 default :
@@ -87,12 +92,12 @@ public class ContractParametersDto {
             return result;
         }
 
-        private String corporateName             = "";
-        private String professionalAddress       = "";
-        private String contactEmail              = "";
-        private String contactPerson             = "";
-        private String companyRegistrationNumber = "";
-        private String euVatNumber               = "";
+        private String corporateName             = "N/A";
+        private String professionalAddress       = "N/A";
+        private String contactEmail              = "N/A";
+        private String contactPerson             = "N/A";
+        private String companyRegistrationNumber = "N/A";
+        private String euVatNumber               = "N/A";
 
     }
 

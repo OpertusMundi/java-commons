@@ -261,13 +261,13 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     private Map<String, String> createKeywordMapping() {
       keywords = new HashMap<>();
 
-        keywords.put("[sellerName]", "Corporate name");
+        keywords.put("[sellerName]", "Supplier name");
         keywords.put("[sellerAddress]", "Professional address");
         keywords.put("[sellerEmail]", "Contact email");
         keywords.put("[sellerContactPerson]", "Contact person");
         keywords.put("[sellerCompanyRegNumber]", "Company registration number");
         keywords.put("[sellerVAT]", "EU VAT number");
-        keywords.put("[clientName]", "Corporate name");
+        keywords.put("[clientName]", "Customer name");
         keywords.put("[clientAddress]", "Professional address");
         keywords.put("[clientEmail]", "Contact email");
         keywords.put("[clientContactPerson]", "Contact person");
@@ -872,6 +872,9 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
     private static String restrictionsToString(final Object[] oArray) {
     	String string = "";
+    	if (oArray == null || oArray.length == 0) {
+    		return "N/A";
+    	}
     	if (oArray instanceof EnumContinent[]) {
 	    	for (int i = 0 ; i < oArray.length ; i++) {
 	    		if (oArray.length == 1) {
