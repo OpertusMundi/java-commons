@@ -976,7 +976,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
     	final String partPrice 		= "APPLICABLE PRICE";
     	final String partDelivery		= "DELIVERY";
-    	final String partRestriction	= "RESTICTIONS";
+    	final String partRestriction	= "RESTRICTIONS";
 
     	/* Fixed with and without updates updates*/
     	if (pricingModel.getPricingModelType() == EnumPricingModel.FIXED) {
