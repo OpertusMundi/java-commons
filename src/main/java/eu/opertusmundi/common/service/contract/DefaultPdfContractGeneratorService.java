@@ -873,7 +873,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     private static String restrictionsToString(final Object[] oArray) {
     	String string = "";
     	if (oArray == null || oArray.length == 0) {
-    		return "N/A";
+    		return "None";
     	}
     	if (oArray instanceof EnumContinent[]) {
 	    	for (int i = 0 ; i < oArray.length ; i++) {
