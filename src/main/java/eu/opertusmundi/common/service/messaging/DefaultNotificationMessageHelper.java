@@ -38,6 +38,15 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
         switch (type) {
             case CATALOGUE_ASSET_UNPUBLISHED :
             case CATALOGUE_HARVEST_COMPLETED :
+            case ORDER_CONFIRMATION:
+            case DELIVERY_REQUEST:
+            case DIGITAL_DELIVERY:
+            case PURCHASE_REMINDER:
+            case DIGITAL_DELIVERY_BY_SUPPLIER:
+            case PHYSICAL_DELIVERY_BY_SUPPLIER:
+            case DIGITAL_DELIVERY_BY_PLATFORM:
+            case PURCHASE_REJECTED:
+            case FILES_UPLOAD_COMPLETED:
                 return MessageFormat.format(template.getText(), variables);
         }
 
@@ -60,6 +69,49 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
                 data.put("catalogueUrl", this.checkAndGetVariable(variables, "catalogueUrl"));
                 data.put("catalogueType", this.checkAndGetVariable(variables, "catalogueType"));
                 return data;
+                
+            case ORDER_CONFIRMATION :
+            	data.put("orderId", this.checkAndGetVariable(variables, "orderId"));
+            	return data;
+            	
+            case DELIVERY_REQUEST :
+            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
+            	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+            	return data;
+            	
+            case DIGITAL_DELIVERY :
+            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
+            	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+            	return data;
+            	
+            case PURCHASE_REMINDER :
+            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
+            	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+            	return data;
+            	
+            case DIGITAL_DELIVERY_BY_SUPPLIER :
+            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
+            	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+            	return data;
+            	
+            case PHYSICAL_DELIVERY_BY_SUPPLIER :
+            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
+            	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+            	return data;
+            	
+            case DIGITAL_DELIVERY_BY_PLATFORM :
+            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
+            	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+            	return data;
+            	
+            case PURCHASE_REJECTED :
+            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
+            	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+            	data.put("supplierName", this.checkAndGetVariable(variables, "supplierName"));
+            	return data;
+            	
+            case FILES_UPLOAD_COMPLETED :
+            	return data;
         }
 
         // No variables required
