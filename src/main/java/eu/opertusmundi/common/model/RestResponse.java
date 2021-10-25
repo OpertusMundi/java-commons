@@ -106,7 +106,11 @@ public class RestResponse<Result> extends BaseResponse {
         final List<Message> messages = fieldErrors.stream()
             .map(e -> {
                  return new ValidationMessage(
-                    BasicMessageCode.Validation, e.getField(), e.getCode(), e.getRejectedValue(), e.getArguments()
+                    BasicMessageCode.Validation,
+                    e.getField(),
+                    e.getCode(),
+                    e.getRejectedValue() instanceof byte[] ? null : e.getRejectedValue(),
+                    e.getArguments()
                 );
             }).collect(Collectors.toList());
 
