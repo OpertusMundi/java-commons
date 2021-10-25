@@ -16,11 +16,14 @@ import eu.opertusmundi.common.model.account.ActivationTokenDto;
 import eu.opertusmundi.common.model.account.CustomerCommandDto;
 import eu.opertusmundi.common.model.account.CustomerDto;
 import eu.opertusmundi.common.model.account.EnumActivationTokenType;
+import eu.opertusmundi.common.model.account.EnumMangopayUserType;
+import eu.opertusmundi.common.model.account.ProviderProfessionalCommandDto;
 import eu.opertusmundi.common.model.analytics.ProfileRecord;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.ActivationTokenRepository;
 import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
+import eu.opertusmundi.common.util.ImageUtils;
 
 @Service
 public class DefaultConsumerRegistrationService extends AbstractCustomerRegistrationService implements ConsumerRegistrationService {
@@ -36,10 +39,18 @@ public class DefaultConsumerRegistrationService extends AbstractCustomerRegistra
     @Autowired(required = false)
     private ElasticSearchService elasticSearchService;
 
+    @Autowired
+    private ImageUtils imageUtils;
+
     @Override
     @Transactional
     public AccountDto updateRegistration(CustomerCommandDto command) throws IllegalArgumentException {
         Assert.notNull(command, "Expected a non-null command");
+
+        if (command.getType() == EnumMangopayUserType.PROFESSIONAL) {
+            final ProviderProfessionalCommandDto providerCommand = (ProviderProfessionalCommandDto) command;
+            providerCommand.setLogoImage(imageUtils.resizeImage(providerCommand.getLogoImage(), providerCommand.getLogoImageMimeType()));
+        }
 
         final AccountDto account = this.accountRepository.updateConsumerRegistration(command);
 
@@ -51,13 +62,18 @@ public class DefaultConsumerRegistrationService extends AbstractCustomerRegistra
     public AccountDto submitRegistration(CustomerCommandDto command) throws IllegalArgumentException {
         Assert.notNull(command, "Expected a non-null command");
 
+        if (command.getType() == EnumMangopayUserType.PROFESSIONAL) {
+            final ProviderProfessionalCommandDto providerCommand = (ProviderProfessionalCommandDto) command;
+            providerCommand.setLogoImage(imageUtils.resizeImage(providerCommand.getLogoImage(), providerCommand.getLogoImageMimeType()));
+        }
+
         final AccountDto account         = this.accountRepository.submitConsumerRegistration(command);
         final boolean    isUpdate        = account.getProfile().getConsumer().getCurrent() != null;
         final UUID       userKey         = account.getKey();
         final UUID       registrationKey = account.getProfile().getConsumer().getDraft().getKey();
 
         // Check if workflow exists
-        ProcessInstanceDto instance = this.bpmEngine.findInstance(registrationKey.toString());
+        final ProcessInstanceDto instance = this.bpmEngine.findInstance(registrationKey.toString());
 
         if (instance == null) {
             final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()

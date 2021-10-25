@@ -2,6 +2,8 @@ package eu.opertusmundi.common.model.account;
 
 import java.io.Serializable;
 
+import javax.validation.constraints.Size;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -23,7 +25,8 @@ public final class ProviderProfileCommandDto implements Serializable {
     @Schema(description = "Company type description")
     private String companyType;
 
-    @Schema(description = "Company log image using Base64 encoding")
+    @Schema(description = "Company log image using Base64 encoding. Max allowed image size is `2Mb`")
+    @Size(max = 2 * 1024 * 1024)
     private byte[] logoImage;
 
     @Schema(description = "Company log image MIME type")

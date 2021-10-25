@@ -23,6 +23,7 @@ import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.ActivationTokenRepository;
 import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
+import eu.opertusmundi.common.util.ImageUtils;
 
 @Service
 public class DefaultProviderRegistrationService extends AbstractCustomerRegistrationService implements ProviderRegistrationService {
@@ -41,10 +42,15 @@ public class DefaultProviderRegistrationService extends AbstractCustomerRegistra
     @Autowired(required = false)
     private ElasticSearchService elasticSearchService;
 
+    @Autowired
+    private ImageUtils imageUtils;
+
     @Override
     @Transactional
     public AccountDto updateRegistration(ProviderProfessionalCommandDto command) throws IllegalArgumentException {
         Assert.notNull(command, "Expected a non-null command");
+
+        command.setLogoImage(imageUtils.resizeImage(command.getLogoImage(), command.getLogoImageMimeType()));
 
         final AccountDto account = this.accountRepository.updateProviderRegistration(command);
 
@@ -55,6 +61,8 @@ public class DefaultProviderRegistrationService extends AbstractCustomerRegistra
     @Transactional
     public AccountDto submitRegistration(ProviderProfessionalCommandDto command) throws IllegalArgumentException {
         Assert.notNull(command, "Expected a non-null command");
+
+        command.setLogoImage(imageUtils.resizeImage(command.getLogoImage(), command.getLogoImageMimeType()));
 
         final AccountDto account         = this.accountRepository.submitProviderRegistration(command);
         final boolean    isUpdate        = account.getProfile().getProvider().getCurrent() != null;
@@ -124,6 +132,8 @@ public class DefaultProviderRegistrationService extends AbstractCustomerRegistra
     @Transactional
     public AccountDto updateProfile(ProviderProfileCommandDto command) {
         Assert.notNull(command, "Expected a non-null command");
+
+        command.setLogoImage(imageUtils.resizeImage(command.getLogoImage(), command.getLogoImageMimeType()));
 
         final AccountDto account = this.accountRepository.updateProviderProfile(command);
 
