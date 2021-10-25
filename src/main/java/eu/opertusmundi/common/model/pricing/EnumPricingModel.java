@@ -14,50 +14,40 @@ public enum EnumPricingModel {
     /**
      * Invalid pricing model
      */
-    UNDEFINED(0),
+    UNDEFINED,
     /*
      * Free
      */
-    FREE(1),
+    FREE,
     /**
      * Fixed payment model with or without updates
      */
-    FIXED(2),
+    FIXED,
     /**
-     * Buy once, pay per row with optional reverse block rate 
+     * Buy once, pay per row with optional reverse block rate
      */
-    FIXED_PER_ROWS(3),
+    FIXED_PER_ROWS,
     /**
      * Buy once, pay based on population selection with optional reverse block rate
      */
-    FIXED_FOR_POPULATION(4),
+    FIXED_FOR_POPULATION,
     /**
      * Pay per call, optional buy prepaid SKUs with reverse block rate
      */
-    PER_CALL_WITH_PREPAID(5),
+    PER_CALL_WITH_PREPAID,
     /**
      * Pay per call, optional define reverse block rate pricing
      */
-    PER_CALL_WITH_BLOCK_RATE(6),
+    PER_CALL_WITH_BLOCK_RATE,
     /**
      * Pay per row, optional buy prepaid SKUs with reverse block rate
      */
-    PER_ROW_WITH_PREPAID(5),
+    PER_ROW_WITH_PREPAID,
     /**
      * Pay per row, optional define reverse block rate pricing
      */
-    PER_ROW_WITH_BLOCK_RATE(6),
+    PER_ROW_WITH_BLOCK_RATE,
     ;
-
-    private final int value;
-
-    private EnumPricingModel(int value) {
-        this.value = value;
-    }
-
-    public int getValue() {
-        return this.value;
-    }
 
     public static EnumPricingModel fromString(String value) {
         for (final EnumPricingModel item : EnumPricingModel.values()) {
