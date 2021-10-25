@@ -80,12 +80,20 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
          + "LEFT OUTER JOIN a.profile p "
          + "LEFT OUTER JOIN p.consumer cr "
          + "LEFT OUTER JOIN p.provider pr "
+    )
+    Page<AccountEntity> findAll(Pageable pageable);
+    
+    @Query("SELECT a FROM Account a "
+         + "LEFT OUTER JOIN a.profile p "
+         + "LEFT OUTER JOIN p.consumer cr "
+         + "LEFT OUTER JOIN p.provider pr "
          + "WHERE      (:email is null or a.email like :email)"
     )
     Page<AccountEntity> findAll(
-        @Param("email")String email,
+        @Param("email") String email,
         Pageable pageable
     );
+
     @Query("SELECT a FROM Account a "
          + "LEFT OUTER JOIN a.profile p "
          + "LEFT OUTER JOIN p.consumer cr "
