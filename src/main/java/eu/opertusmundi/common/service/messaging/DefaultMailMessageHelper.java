@@ -25,6 +25,7 @@ import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.ActivationTokenRepository;
 import eu.opertusmundi.common.repository.MailTemplateRepository;
 import eu.opertusmundi.common.repository.OrderRepository;
+import eu.opertusmundi.common.service.ProviderAssetService;
 
 @Service
 public class DefaultMailMessageHelper implements MailMessageHelper {
@@ -43,6 +44,9 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 
     @Autowired
     private OrderRepository orderRepository;
+    
+    @Autowired
+    private ProviderAssetService providerAssetService;
 
     @Override
     public String composeSubject(EnumMailType type, Map<String, Object> variables) {
@@ -56,20 +60,22 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
         switch (type) {
             case ACCOUNT_ACTIVATION_TOKEN :
             case ACCOUNT_ACTIVATION_SUCCESS :
-            case ORDER_CONFIRMATION:
-            case SUPPLIER_EVALUATION:
-            case SUPPLIER_DELIVERY_REQUEST:
-            case SUPPLIER_DIGITAL_DELIVERY:
-            case SUPPLIER_PURCHASE_REMINDER:
-            case CONSUMER_DIGITAL_DELIVERY_BY_SUPPLIER:
-            case CONSUMER_DIGITAL_DELIVERY_BY_PLATFORM:
-            case CONSUMER_PHYSICAL_DELIVERY_BY_SUPPLIER:
-            case CONSUMER_RECEIPT_ISSUED:
-            case CONSUMER_PURCHASE_NOTIFICATION:
-            case CONSUMER_PURCHASE_REJECTION:
-            case MASTER_TEMPLATE_CONTRACT_UPDATE:
-            case FILES_UPLOAD_COMPLETED:
-            case CATALOGUE_HARVEST_COMPLETED:
+            case ORDER_CONFIRMATION :
+            case SUPPLIER_EVALUATION :
+            case SUPPLIER_DELIVERY_REQUEST :
+            case SUPPLIER_DIGITAL_DELIVERY :
+            case SUPPLIER_PUBLISHING_ACCEPTED :
+            case SUPPLIER_PUBLISHING_REJECTED :
+            case SUPPLIER_PURCHASE_REMINDER :
+            case CONSUMER_DIGITAL_DELIVERY_BY_SUPPLIER :
+            case CONSUMER_DIGITAL_DELIVERY_BY_PLATFORM :
+            case CONSUMER_PHYSICAL_DELIVERY_BY_SUPPLIER :
+            case CONSUMER_RECEIPT_ISSUED :
+            case CONSUMER_PURCHASE_NOTIFICATION :
+            case CONSUMER_PURCHASE_REJECTION :
+            case MASTER_TEMPLATE_CONTRACT_UPDATE :
+            case FILES_UPLOAD_COMPLETED :
+            case CATALOGUE_HARVEST_COMPLETED :
                 return MessageFormat.format(template.getSubjectTemplate(), variables);
         }
 
@@ -113,59 +119,67 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
                 this.populateAccountActivationSuccessModel(builder);
                 break;
 
-            case ORDER_CONFIRMATION:
+            case ORDER_CONFIRMATION :
             	this.populateOrderConfirmationModel(builder);
             	break;
             	
-            case SUPPLIER_EVALUATION:
+            case SUPPLIER_EVALUATION :
             	this.populateSupplierEvaluationModel(builder);
             	break;
             	
-            case SUPPLIER_DELIVERY_REQUEST:
+            case SUPPLIER_DELIVERY_REQUEST :
             	this.populateSupplierDeliveryRequestModel(builder);
             	break;
             	
-            case SUPPLIER_DIGITAL_DELIVERY:
+            case SUPPLIER_DIGITAL_DELIVERY :
             	this.populateSupplierDigitalDeliveryModel(builder);
             	break;
             	
-            case SUPPLIER_PURCHASE_REMINDER:
+            case SUPPLIER_PURCHASE_REMINDER :
             	this.populateSupplierPurchaseReminderModel(builder);
             	break;
             	
-            case CONSUMER_DIGITAL_DELIVERY_BY_SUPPLIER:
+            case SUPPLIER_PUBLISHING_ACCEPTED :
+            	this.populateSupplierAssetAcceptedByHelpdeskModel(builder);
+            	break;
+            	
+            case SUPPLIER_PUBLISHING_REJECTED :
+            	this.populateSupplierAssetRejectedByHelpdeskModel(builder);
+            	break;
+            	
+            case CONSUMER_DIGITAL_DELIVERY_BY_SUPPLIER :
             	this.populateConsumerDigitalDeliveryBySupplierModel(builder);
             	break;
             	
-            case CONSUMER_DIGITAL_DELIVERY_BY_PLATFORM:
+            case CONSUMER_DIGITAL_DELIVERY_BY_PLATFORM :
             	this.populateConsumerDigitalDeliveryByPlatformModel(builder);
             	break;
             	
-            case CONSUMER_PHYSICAL_DELIVERY_BY_SUPPLIER:
+            case CONSUMER_PHYSICAL_DELIVERY_BY_SUPPLIER :
             	this.populateConsumerPhysicalDeliveryBySupplierModel(builder);
             	break;
             	
-            case CONSUMER_RECEIPT_ISSUED:
+            case CONSUMER_RECEIPT_ISSUED :
             	this.populateCosumerReceiptIssuedModel(builder);
             	break;
             	
-            case CONSUMER_PURCHASE_NOTIFICATION:
+            case CONSUMER_PURCHASE_NOTIFICATION :
             	this.populateConsumerPurchaseNotificationModel(builder);
             	break;
             	
-            case CONSUMER_PURCHASE_REJECTION:
+            case CONSUMER_PURCHASE_REJECTION :
             	this.populateConsumerPurchaseRejectionModel(builder);
             	break;
             	
-            case MASTER_TEMPLATE_CONTRACT_UPDATE:
+            case MASTER_TEMPLATE_CONTRACT_UPDATE :
             	this.populateMasterTemplateContractUpdateModel(builder);
             	break;
             	
-            case FILES_UPLOAD_COMPLETED:
+            case FILES_UPLOAD_COMPLETED :
             	this.populateFilesUploadCompletedModel(builder);
             	break;
             	
-            case CATALOGUE_HARVEST_COMPLETED:
+            case CATALOGUE_HARVEST_COMPLETED :
             	this.populateCatalogueHarvestCompletedModel(builder);
             	break;
 
@@ -296,9 +310,35 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .add("name", account.getFullName())
             .add("consumerUsername", customerEntity.getUserName())
             .add("productURL", this.baseUrl + "/" + "catalogue" + "/" + orderItemEntity.getAssetId())
-            .add("productName", orderItemEntity.getDescription())
-            ;
-		
+            .add("productName", orderItemEntity.getDescription());
+	}
+	
+	private void populateSupplierAssetAcceptedByHelpdeskModel(MailModelBuilder builder) {
+		final UUID userKey  = UUID.fromString((String) builder.get("userKey"));
+        final UUID draftKey = UUID.fromString((String) builder.get("draftKey"));
+
+        final AccountEntity 	account 		= this.accountRepository.findOneByKey(userKey).get();
+        final String 			assetName 		= this.providerAssetService.findOneDraft(draftKey).getTitle();
+
+        builder
+            .setRecipientName(account.getFullName())
+            .setRecipientAddress(account.getEmail())
+            .add("name", account.getFullName())
+            .add("assetName", assetName);	
+	}
+	
+	private void populateSupplierAssetRejectedByHelpdeskModel(MailModelBuilder builder) {
+		final UUID userKey  = UUID.fromString((String) builder.get("userKey"));
+        final UUID draftKey = UUID.fromString((String) builder.get("draftKey"));
+
+        final AccountEntity 	account 		= this.accountRepository.findOneByKey(userKey).get();
+        final String 			assetName 		= this.providerAssetService.findOneDraft(draftKey).getTitle();
+
+        builder
+            .setRecipientName(account.getFullName())
+            .setRecipientAddress(account.getEmail())
+            .add("name", account.getFullName())
+            .add("assetName", assetName);	
 	}
 
 	private void populateConsumerDigitalDeliveryBySupplierModel(MailModelBuilder builder) {

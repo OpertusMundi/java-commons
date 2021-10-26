@@ -47,6 +47,8 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
             case DIGITAL_DELIVERY_BY_PLATFORM:
             case PURCHASE_REJECTED:
             case FILES_UPLOAD_COMPLETED:
+            case ASSET_PUBLISHING_ACCEPTED:
+            case ASSET_PUBLISHING_REJECTED:
                 return MessageFormat.format(template.getText(), variables);
         }
 
@@ -111,6 +113,14 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
             	return data;
             	
             case FILES_UPLOAD_COMPLETED :
+            	return data;
+            	
+            case ASSET_PUBLISHING_ACCEPTED :
+            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
+            	return data;
+            	
+            case ASSET_PUBLISHING_REJECTED :
+            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
             	return data;
         }
 
