@@ -72,6 +72,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             case CONSUMER_PHYSICAL_DELIVERY_BY_SUPPLIER :
             case CONSUMER_RECEIPT_ISSUED :
             case CONSUMER_PURCHASE_NOTIFICATION :
+            case CONSUMER_PURCHASE_APPROVED :
             case CONSUMER_PURCHASE_REJECTION :
             case MASTER_TEMPLATE_CONTRACT_UPDATE :
             case FILES_UPLOAD_COMPLETED :
@@ -165,6 +166,10 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             	
             case CONSUMER_PURCHASE_NOTIFICATION :
             	this.populateConsumerPurchaseNotificationModel(builder);
+            	break;
+            	
+            case CONSUMER_PURCHASE_APPROVED :
+            	this.populateConsumerPurchaseApprovedModel(builder);
             	break;
             	
             case CONSUMER_PURCHASE_REJECTION :
@@ -418,6 +423,25 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .setRecipientAddress(account.getEmail())
             .add("name", account.getFullName());
 		
+	}
+	
+	private void populateConsumerPurchaseApprovedModel(MailModelBuilder builder) {
+        final UUID userKey  = UUID.fromString((String) builder.get("userKey"));
+        final UUID orderKey = UUID.fromString((String) builder.get("orderKey"));
+
+        final AccountEntity 	account 		= this.accountRepository.findOneByKey(userKey).get();
+        final OrderEntity     	orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderItemEntity	orderItemEntity = orderEntity.getItems().get(0);
+
+        builder
+            .setRecipientName(account.getFullName())
+            .setRecipientAddress(account.getEmail())
+            .add("name", account.getFullName())
+            .add("orderId", orderEntity.getId())
+            .add("supplierName", orderItemEntity.getProvider())
+            .add("productURL", this.baseUrl + "/" + "catalogue" + "/" + orderItemEntity.getAssetId())
+            .add("productName", orderItemEntity.getDescription())
+            ;		
 	}
 
 	private void populateConsumerPurchaseRejectionModel(MailModelBuilder builder) {

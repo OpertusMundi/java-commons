@@ -45,6 +45,7 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
             case DIGITAL_DELIVERY_BY_SUPPLIER:
             case PHYSICAL_DELIVERY_BY_SUPPLIER:
             case DIGITAL_DELIVERY_BY_PLATFORM:
+            case PURCHASE_APPROVED:
             case PURCHASE_REJECTED:
             case FILES_UPLOAD_COMPLETED:
             case ASSET_PUBLISHING_ACCEPTED:
@@ -104,6 +105,12 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
             case DIGITAL_DELIVERY_BY_PLATFORM :
             	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
             	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+            	return data;
+            	
+            case PURCHASE_APPROVED :
+            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
+            	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+            	data.put("supplierName", this.checkAndGetVariable(variables, "supplierName"));
             	return data;
             	
             case PURCHASE_REJECTED :
