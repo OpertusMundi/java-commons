@@ -591,7 +591,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             if (instance == null) {
                 final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
-                    .variableAsString(EnumProcessInstanceVariable.START_USER_KEY.getValue(), command.getPublisherKey().toString())
+                    .variableAsString(EnumProcessInstanceVariable.START_USER_KEY.getValue(), command.getOwnerKey().toString())
                     .variableAsString("draftKey", command.getDraftKey().toString())
                     .variableAsString("publisherKey", command.getPublisherKey().toString())
                     .variableAsString("type", command.getType().toString())
