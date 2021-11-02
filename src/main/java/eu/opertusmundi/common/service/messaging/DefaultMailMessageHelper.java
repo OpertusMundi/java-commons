@@ -493,7 +493,6 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 	}
 
 	private void populateCatalogueHarvestCompletedModel(MailModelBuilder builder) {
-		// TODO: How to get catalogue item url and name
         final UUID userKey = UUID.fromString((String) builder.get("userKey"));
 
         final AccountEntity account = this.accountRepository.findOneByKey(userKey).get();
@@ -501,10 +500,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
         builder
             .setRecipientName(account.getFullName())
             .setRecipientAddress(account.getEmail())
-            .add("name", account.getFullName())
-            .add("catalogueURL", "todo")
-            .add("catalogueName", "todo");
-
+            .add("name", account.getFullName());
 	}
 
 }
