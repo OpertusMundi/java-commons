@@ -1,6 +1,8 @@
 package eu.opertusmundi.common.service.messaging;
 
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -11,10 +13,16 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ibm.icu.text.MessageFormat;
 
 import eu.opertusmundi.common.domain.NotificationTemplateEntity;
+import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.model.ServiceException;
 import eu.opertusmundi.common.model.message.EnumNotificationType;
 import eu.opertusmundi.common.model.message.client.NotificationMessageCode;
+import eu.opertusmundi.common.model.order.HelpdeskOrderItemDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskOrderPayInItemDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
 import eu.opertusmundi.common.repository.NotificationTemplateRepository;
+import eu.opertusmundi.common.repository.PayInRepository;
+import eu.opertusmundi.common.service.ProviderAssetService;
 import io.jsonwebtoken.lang.Assert;
 
 @Service
@@ -25,6 +33,12 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
 
     @Autowired
     private NotificationTemplateRepository templateRepository;
+    
+    @Autowired
+    private PayInRepository payInRepository;
+    
+    @Autowired
+    private ProviderAssetService providerAssetService;
 
     @Override
     public String composeNotificationText(EnumNotificationType type, Map<String, Object> variables) throws ServiceException {
@@ -40,7 +54,6 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
             case CATALOGUE_HARVEST_COMPLETED :
             case ORDER_CONFIRMATION:
             case DELIVERY_REQUEST:
-            case DIGITAL_DELIVERY:
             case PURCHASE_REMINDER:
             case DIGITAL_DELIVERY_BY_SUPPLIER:
             case PHYSICAL_DELIVERY_BY_SUPPLIER:
@@ -74,15 +87,9 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
                 return data;
                 
             case ORDER_CONFIRMATION :
-            	data.put("orderId", this.checkAndGetVariable(variables, "orderId"));
-            	return data;
+            	return populateOrderConfirmationModel(variables, data);
             	
             case DELIVERY_REQUEST :
-            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
-            	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
-            	return data;
-            	
-            case DIGITAL_DELIVERY :
             	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
             	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
             	return data;
@@ -93,47 +100,122 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
             	return data;
             	
             case DIGITAL_DELIVERY_BY_SUPPLIER :
-            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
-            	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
-            	return data;
+            	return populateDigitalDeliveryBySupplierModel(variables, data);
             	
             case PHYSICAL_DELIVERY_BY_SUPPLIER :
-            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
-            	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
-            	return data;
+            	return populatePhysicalDeliveryBySupplierModel(variables, data);
             	
             case DIGITAL_DELIVERY_BY_PLATFORM :
-            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
-            	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
-            	return data;
+            	return populateDigitalDeliveryByPlatformModel(variables, data);
             	
             case PURCHASE_APPROVED :
-            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
-            	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
-            	data.put("supplierName", this.checkAndGetVariable(variables, "supplierName"));
-            	return data;
+            	return populatePurchaseApprovedBySupplierModel(variables, data);
             	
             case PURCHASE_REJECTED :
-            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
-            	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
-            	data.put("supplierName", this.checkAndGetVariable(variables, "supplierName"));
-            	return data;
+            	return populatePurchaseRejectedBySupplierModel(variables, data);
             	
             case FILES_UPLOAD_COMPLETED :
             	return data;
             	
             case ASSET_PUBLISHING_ACCEPTED :
-            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
-            	return data;
+            	return populatePublishingAcceptedModel(variables, data);
             	
             case ASSET_PUBLISHING_REJECTED :
-            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
-            	return data;
+            	return populatePublishingRejectedModel(variables, data);
         }
 
         // No variables required
         return null;
     }
+    
+	private ObjectNode populateOrderConfirmationModel(Map<String, Object> variables, ObjectNode data) {
+        final UUID 						payInKey  			= UUID.fromString((String) variables.get("payInKey"));
+        final Optional<PayInEntity>		payInEntity			= this.payInRepository.findOneEntityByKey(payInKey);
+        final HelpdeskPayInDto			helpDeskPayIn		= payInEntity.get().toHelpdeskDto(true);
+        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);  
+        final HelpdeskOrderItemDto 		orderItem 			= payInOrderItem.getOrder().getItems().get(0);
+        
+    	data.put("orderId", orderItem.getOrderId());
+        return data;
+	}
+    
+	private ObjectNode populatePurchaseApprovedBySupplierModel(Map<String, Object> variables, ObjectNode data) {
+        final UUID 						payInKey  			= UUID.fromString((String) variables.get("payInKey"));
+        final Optional<PayInEntity>		payInEntity			= this.payInRepository.findOneEntityByKey(payInKey);
+        final HelpdeskPayInDto			helpDeskPayIn		= payInEntity.get().toHelpdeskDto(true);
+        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);  
+        final HelpdeskOrderItemDto 		orderItem 			= payInOrderItem.getOrder().getItems().get(0);
+        
+    	data.put("assetName", orderItem.getDescription());
+    	data.put("assetVersion", orderItem.getAssetVersion());
+    	data.put("supplierName", orderItem.getProvider().getName());
+        return data;
+	}
+	
+	private ObjectNode populatePurchaseRejectedBySupplierModel(Map<String, Object> variables, ObjectNode data) {
+        final UUID 						payInKey  			= UUID.fromString((String) variables.get("payInKey"));
+        final Optional<PayInEntity>		payInEntity			= this.payInRepository.findOneEntityByKey(payInKey);
+        final HelpdeskPayInDto			helpDeskPayIn		= payInEntity.get().toHelpdeskDto(true);
+        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);  
+        final HelpdeskOrderItemDto 		orderItem 			= payInOrderItem.getOrder().getItems().get(0);
+        
+    	data.put("assetName", orderItem.getDescription());
+    	data.put("assetVersion", orderItem.getAssetVersion());
+    	data.put("supplierName", orderItem.getProvider().getName());
+        return data;
+	}
+    
+	private ObjectNode populateDigitalDeliveryBySupplierModel(Map<String, Object> variables, ObjectNode data) {
+        final UUID 						payInKey  			= UUID.fromString((String) variables.get("payInKey"));
+        final Optional<PayInEntity>		payInEntity			= this.payInRepository.findOneEntityByKey(payInKey);
+        final HelpdeskPayInDto			helpDeskPayIn		= payInEntity.get().toHelpdeskDto(true);
+        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);  
+        final HelpdeskOrderItemDto 		orderItem 			= payInOrderItem.getOrder().getItems().get(0);
+        
+    	data.put("assetName", orderItem.getDescription());
+    	data.put("assetVersion", orderItem.getAssetVersion());
+        return data;
+	}
+    
+	private ObjectNode populatePhysicalDeliveryBySupplierModel(Map<String, Object> variables, ObjectNode data) {
+        final UUID 						payInKey  			= UUID.fromString((String) variables.get("payInKey"));
+        final Optional<PayInEntity>		payInEntity			= this.payInRepository.findOneEntityByKey(payInKey);
+        final HelpdeskPayInDto			helpDeskPayIn		= payInEntity.get().toHelpdeskDto(true);
+        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);  
+        final HelpdeskOrderItemDto 		orderItem 			= payInOrderItem.getOrder().getItems().get(0);
+        
+    	data.put("assetName", orderItem.getDescription());
+    	data.put("assetVersion", orderItem.getAssetVersion());
+        return data;
+	}
+    
+	private ObjectNode populateDigitalDeliveryByPlatformModel(Map<String, Object> variables, ObjectNode data) {
+        final UUID 						payInKey  			= UUID.fromString((String) variables.get("payInKey"));
+        final Optional<PayInEntity>		payInEntity			= this.payInRepository.findOneEntityByKey(payInKey);
+        final HelpdeskPayInDto			helpDeskPayIn		= payInEntity.get().toHelpdeskDto(true);
+        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);  
+        final HelpdeskOrderItemDto 		orderItem 			= payInOrderItem.getOrder().getItems().get(0);
+        
+    	data.put("assetName", orderItem.getDescription());
+    	data.put("assetVersion", orderItem.getAssetVersion());
+        return data;
+	}
+    
+	private ObjectNode populatePublishingAcceptedModel(Map<String, Object> variables, ObjectNode data) {
+        final UUID 		draftKey  = UUID.fromString((String) variables.get("draftKey"));
+        final String 	assetName = this.providerAssetService.findOneDraft(draftKey).getTitle();
+       
+        data.put("assetName", assetName);
+        return data;
+	}
+	
+	private ObjectNode populatePublishingRejectedModel(Map<String, Object> variables, ObjectNode data) {
+        final UUID 		draftKey  = UUID.fromString((String) variables.get("draftKey"));
+        final String 	assetName = this.providerAssetService.findOneDraft(draftKey).getTitle();
+       
+        data.put("assetName", assetName);
+        return data;
+	}
 
     private String checkAndGetVariable(Map<String, Object> variables, String name) {
         if (!variables.containsKey(name)) {
