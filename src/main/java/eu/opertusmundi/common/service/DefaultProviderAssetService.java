@@ -168,7 +168,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     public PageResultDto<AssetDraftDto> findAllDraft(
-        UUID publisherKey,
+        UUID ownerKey, UUID publisherKey,
         Set<EnumProviderAssetDraftStatus> status, Set<EnumAssetType> type, Set<EnumSpatialDataServiceType> serviceType,
         int pageIndex, int pageSize,
         EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order
@@ -186,19 +186,26 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             serviceType = null;
         }
 
-        final Page<AssetDraftDto> page = this.draftRepository.findAllByPublisherAndStatus(
-            publisherKey, status, type, serviceType, pageRequest
-        ).map(ProviderAssetDraftEntity::toDto);
+        final Page<ProviderAssetDraftEntity> entities = ownerKey == null || ownerKey.equals(publisherKey)
+            ? this.draftRepository.findAllByPublisherAndStatus(publisherKey, status, type, serviceType, pageRequest)
+            : this.draftRepository.findAllByOwnerAndPublisherAndStatus(ownerKey, publisherKey, status, type, serviceType, pageRequest);
 
-        final long                count   = page.getTotalElements();
-        final List<AssetDraftDto> records = page.getContent();
+        final Page<AssetDraftDto> items = entities.map(ProviderAssetDraftEntity::toDto);
+        final long                count   = items.getTotalElements();
+        final List<AssetDraftDto> records = items.getContent();
 
         return PageResultDto.of(pageIndex, pageSize, records, count);
     }
 
     @Override
-    public AssetDraftDto findOneDraft(UUID publisherKey, UUID draftKey) {
-        final ProviderAssetDraftEntity e = this.draftRepository.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
+    public AssetDraftDto findOneDraft(UUID ownerKey, UUID publisherKey, UUID draftKey) {
+        Assert.notNull(ownerKey,     "Expected a non-null owner key");
+        Assert.notNull(publisherKey, "Expected a non-null publisher key");
+        Assert.notNull(draftKey,     "Expected a non-null draft key");
+
+        final ProviderAssetDraftEntity e = ownerKey.equals(publisherKey)
+            ? this.draftRepository.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null)
+            : this.draftRepository.findOneByOwnerAndPublisherAndKey(ownerKey, publisherKey, draftKey).orElse(null);
 
         final AssetDraftDto draft = e != null ? e.toDto() : null;
 
@@ -310,6 +317,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             draftCommand.setDeliveryMethod(EnumDeliveryMethod.DIGITAL_PLATFORM);
             draftCommand.setIngested(true);
             draftCommand.setIngestionInfo(null);
+            draftCommand.setOwnerKey(command.getOwnerKey());
             draftCommand.setParentDataSourceId(command.getPid());
             draftCommand.setParentId(null);
             draftCommand.setPublisherKey(command.getPublisherKey());
@@ -331,6 +339,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 resourceCommand.setDraftKey(draft.getKey());
                 resourceCommand.setFileName(r.getFileName());
                 resourceCommand.setFormat(r.getFormat());
+                resourceCommand.setOwnerKey(command.getOwnerKey());
                 resourceCommand.setPublisherKey(command.getPublisherKey());
                 resourceCommand.setSize(r.getSize());
 
@@ -371,6 +380,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             draftCommand.setDeliveryMethod(EnumDeliveryMethod.DIGITAL_PLATFORM);
             draftCommand.setFormat(command.getFormat());
             draftCommand.setIngested(true);
+            draftCommand.setOwnerKey(command.getOwnerKey());
             draftCommand.setPublisherKey(command.getPublisherKey());
             draftCommand.setSpatialDataServiceType(EnumSpatialDataServiceType.fromString(command.getServiceType()));
             draftCommand.setTitle(command.getTitle());
@@ -392,6 +402,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             resourceCommand.setEncoding(command.getEncoding());
             resourceCommand.setFileName(FilenameUtils.getName(command.getPath()));
             resourceCommand.setFormat(format.getFormat());
+            resourceCommand.setOwnerKey(command.getOwnerKey());
             resourceCommand.setPublisherKey(command.getPublisherKey());
             resourceCommand.setSize(resourcePath.toFile().length());
 
@@ -463,6 +474,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             draftCommand.setAutomatedMetadata(null);
             draftCommand.setIngestionInfo(null);
+            draftCommand.setOwnerKey(command.getOwnerKey());
             draftCommand.setParentId(command.getPid());
             draftCommand.setPublisherKey(command.getPublisherKey());
             draftCommand.setTitle(draftCommand.getTitle() + " [Draft]");
@@ -490,7 +502,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     public AssetDraftDto updateDraftMetadataSamples(CatalogueItemSamplesCommandDto command) throws AssetDraftException {
         // Check draft and owner
         final ProviderAssetDraftEntity draft = this.draftRepository.findOneByPublisherAndKey(
-            command.getProviderKey(), command.getDraftKey()
+            command.getPublisherKey(), command.getDraftKey()
         ).orElse(null);
 
         if (draft == null) {
@@ -510,7 +522,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             command.getResourceKey(), "samples", EnumMetadataPropertyType.JSON
         );
         final Path   path     = this.draftFileManager.resolveMetadataPropertyPath(
-            command.getProviderKey(), command.getDraftKey(), fileName
+            command.getPublisherKey(), command.getDraftKey(), fileName
         );
 
         try {
@@ -524,19 +536,19 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Override
-    public void deleteDraft(UUID publisherKey, UUID draftKey) throws AssetDraftException {
-        this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
+    public void deleteDraft(UUID ownerKey, UUID publisherKey, UUID draftKey) throws AssetDraftException {
+        this.ensureDraftAndStatus(ownerKey, publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
 
         // Delete data in transaction before deleting files
-        this.deleteDraftData(publisherKey, draftKey);
+        this.deleteDraftData(ownerKey, publisherKey, draftKey);
 
         // Delete all files for the selected draft
         this.draftFileManager.deleteAllFiles(publisherKey, draftKey);
     }
 
     @Transactional
-    private void deleteDraftData(UUID publisherKey, UUID draftKey) throws AssetDraftException {
-        this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
+    private void deleteDraftData(UUID ownerKey, UUID publisherKey, UUID draftKey) throws AssetDraftException {
+        this.ensureDraftAndStatus(ownerKey, publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
 
         // Delete resource links in database
         this.assetResourceRepository.deleteAll(draftKey);
@@ -550,15 +562,15 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     public void submitDraft(CatalogueItemCommandDto command) throws AssetDraftException {
         try {
             // Create draft if key is not set
-            if (command.getAssetKey() == null) {
+            if (command.getDraftKey() == null) {
                 final AssetDraftDto draft = this.updateDraft(command);
 
-                command.setAssetKey(draft.getKey());
+                command.setDraftKey(draft.getKey());
             }
 
             // A draft must exist with status DRAFT
             final AssetDraftDto draft = this.ensureDraftAndStatus(
-                command.getPublisherKey(), command.getAssetKey(), EnumProviderAssetDraftStatus.DRAFT
+                command.getOwnerKey(), command.getPublisherKey(), command.getDraftKey(), EnumProviderAssetDraftStatus.DRAFT
             );
 
             // No other draft (excluding this one) with the same parent identifier must exist
@@ -575,12 +587,12 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             // Check if workflow exists
             final EnumProviderAssetDraftStatus newStatus = EnumProviderAssetDraftStatus.SUBMITTED;
-            ProcessInstanceDto                 instance  = this.bpmEngine.findInstance(command.getAssetKey());
+            ProcessInstanceDto                 instance  = this.bpmEngine.findInstance(command.getDraftKey());
 
             if (instance == null) {
                 final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
                     .variableAsString(EnumProcessInstanceVariable.START_USER_KEY.getValue(), command.getPublisherKey().toString())
-                    .variableAsString("draftKey", command.getAssetKey().toString())
+                    .variableAsString("draftKey", command.getDraftKey().toString())
                     .variableAsString("publisherKey", command.getPublisherKey().toString())
                     .variableAsString("type", command.getType().toString())
                     .variableAsBoolean("ingested", command.isIngested())
@@ -588,7 +600,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                     .build();
 
                 instance = this.bpmEngine.startProcessDefinitionByKey(
-                    WORKFLOW_SELL_ASSET, command.getAssetKey().toString(), variables, true
+                    WORKFLOW_SELL_ASSET, command.getDraftKey().toString(), variables, true
                 );
             }
 
@@ -651,11 +663,11 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         // Update status BEFORE updating workflow instance to avoid race
         // condition
         final EnumProviderAssetDraftStatus newStatus = this.reviewProviderSetStatus(
-            command.getPublisherKey(), command.getAssetKey(), true, null
+            command.getOwnerKey(), command.getPublisherKey(), command.getDraftKey(), true, null
         );
 
         // Send message to workflow instance
-        this.reviewProviderSendMessage(command.getAssetKey(), newStatus, true, null);
+        this.reviewProviderSendMessage(command.getDraftKey(), newStatus, true, null);
     }
 
     @Override
@@ -663,20 +675,20 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         // Update status BEFORE updating workflow instance to avoid race
         // condition
         final EnumProviderAssetDraftStatus newStatus = this.reviewProviderSetStatus(
-            command.getPublisherKey(), command.getAssetKey(), false, command.getReason()
+            command.getOwnerKey(), command.getPublisherKey(), command.getDraftKey(), false, command.getReason()
         );
 
         // Send message to workflow instance
-        this.reviewProviderSendMessage(command.getAssetKey(), newStatus, false, command.getReason());
+        this.reviewProviderSendMessage(command.getDraftKey(), newStatus, false, command.getReason());
     }
 
     @Transactional
     private EnumProviderAssetDraftStatus reviewProviderSetStatus(
-        UUID publisherKey, UUID draftKey, boolean accepted, String reason
+        UUID ownerKey, UUID publisherKey, UUID draftKey, boolean accepted, String reason
     ) throws AssetDraftException {
         // A draft must exist with status in [PENDING_PROVIDER_REVIEW,
         // POST_PROCESSING, PROVIDER_REJECTED]
-        final AssetDraftDto draft = this.findOneDraft(publisherKey, draftKey);
+        final AssetDraftDto draft = this.findOneDraft(ownerKey, publisherKey, draftKey);
 
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
@@ -718,10 +730,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     @Transactional
-    public void publishDraft(UUID publisherKey, UUID draftKey) throws AssetDraftException {
+    public void publishDraft(UUID ownerKey, UUID publisherKey, UUID draftKey) throws AssetDraftException {
         try {
             // Validate draft state
-            final AssetDraftDto draft = this.findOneDraft(publisherKey, draftKey);
+            final AssetDraftDto draft = this.findOneDraft(ownerKey, publisherKey, draftKey);
 
             if (draft == null) {
                 throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
@@ -827,8 +839,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     ) throws FileSystemException, AssetDraftException {
         try {
             // The provider must have access to the selected draft and also the
-            // draft must be already accepted by the HelpDesk
-            final AssetDraftDto draft = this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.SUBMITTED);
+            // draft must be already accepted by the HelpDesk. Since metadata is
+            // updated by the publish workflow, we assume that owner key is equal to
+            // publisher key.
+            final AssetDraftDto draft = this.ensureDraftAndStatus(publisherKey, publisherKey, draftKey, EnumProviderAssetDraftStatus.SUBMITTED);
 
             // Get existing metadata. Create JsonNode object if no metadata
             // already exists
@@ -923,8 +937,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     ) throws AssetDraftException {
         try {
             // The provider must have access to the selected draft and also the
-            // draft must be already accepted by the provider
-            this.ensureDraftAndStatus(publisherKey, draftKey, null);
+            // draft must be already accepted by the provider. Since ingestion
+            // data is updated by the workflow, we assume that the owner key is
+            // equal to the publisher key
+            this.ensureDraftAndStatus(publisherKey, publisherKey, draftKey, null);
 
             this.draftRepository.updateResourceIngestionData(
                 publisherKey, draftKey, resourceKey, ResourceIngestionDataDto.from(resourceKey, data)
@@ -948,8 +964,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     ) throws AssetDraftException {
         try {
             // The provider must have access to the selected draft and also the
-            // draft must be already accepted by the provider
-            this.ensureDraftAndStatus(publisherKey, draftKey, null);
+            // draft must be already accepted by the provider. Since ingestion
+            // data is updated by the workflow, we assume that the owner key is
+            // equal to the publisher key
+            this.ensureDraftAndStatus(publisherKey, publisherKey, draftKey, null);
 
             this.draftRepository.updateResourceIngestionData(publisherKey, draftKey, resourceKey, data);
         } catch (final AssetDraftException ex) {
@@ -973,7 +991,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         // The provider must have access to the selected draft and also the
         // draft must be editable
         final AssetDraftDto draft = this.ensureDraftAndStatus(
-            command.getPublisherKey(), command.getDraftKey(), EnumProviderAssetDraftStatus.DRAFT
+            command.getOwnerKey(), command.getPublisherKey(), command.getDraftKey(), EnumProviderAssetDraftStatus.DRAFT
         );
 
         // Set category
@@ -988,7 +1006,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         this.draftFileManager.uploadResource(command, input);
 
         // Update draft with new file resource
-        draft.getCommand().setAssetKey(command.getDraftKey());
+        draft.getCommand().setDraftKey(command.getDraftKey());
+        draft.getCommand().setOwnerKey(command.getOwnerKey());
         draft.getCommand().setPublisherKey(command.getPublisherKey());
         draft.getCommand().addFileResource(resource);
 
@@ -1011,7 +1030,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         // The provider must have access to the selected draft and also the
         // draft must be editable
         final AssetDraftDto draft = this.ensureDraftAndStatus(
-            command.getPublisherKey(), command.getDraftKey(), EnumProviderAssetDraftStatus.DRAFT
+            command.getOwnerKey(), command.getPublisherKey(), command.getDraftKey(), EnumProviderAssetDraftStatus.DRAFT
         );
 
         // Update database link
@@ -1021,7 +1040,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         this.draftFileManager.uploadAdditionalResource(command, input);
 
         // Update draft with new file resource
-        draft.getCommand().setAssetKey(command.getDraftKey());
+        draft.getCommand().setDraftKey(command.getDraftKey());
+        draft.getCommand().setOwnerKey(command.getOwnerKey());
         draft.getCommand().setPublisherKey(command.getPublisherKey());
         draft.getCommand().addAdditionalResource(resource);
 
@@ -1047,8 +1067,11 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     public Path resolveDraftAdditionalResource(
-        UUID publisherKey, UUID draftKey, String resourceKey
+        UUID ownerKey, UUID publisherKey, UUID draftKey, String resourceKey
     ) throws FileSystemException, AssetRepositoryException {
+        // The provider must have access to the selected draft
+        this.ensureDraftAndStatus(ownerKey, publisherKey, draftKey, null);
+
         final AssetAdditionalResourceEntity resource = this.assetAdditionalResourceRepository
             .findOneByDraftKeyAndResourceKey(draftKey, resourceKey)
             .orElse(null);
@@ -1086,8 +1109,11 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     public MetadataProperty resolveDraftMetadataProperty(
-        UUID publisherKey, UUID draftKey, String resourceKey, String propertyName
+        UUID ownerKey, UUID publisherKey, UUID draftKey, String resourceKey, String propertyName
     ) throws FileSystemException, AssetRepositoryException {
+        // The provider must have access to the selected draft
+        this.ensureDraftAndStatus(ownerKey, publisherKey, draftKey, null);
+
         final AssetResourceEntity resource = this.assetResourceRepository
             .findOneByDraftKeyAndResourceKey(draftKey, resourceKey)
             .orElse(null);
@@ -1108,9 +1134,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Transactional
     private AssetDraftDto ensureDraftAndStatus(
-        UUID publisherKey, UUID assetKey, EnumProviderAssetDraftStatus status
+        UUID ownerKey, UUID publisherKey, UUID assetKey, EnumProviderAssetDraftStatus status
     ) throws AssetDraftException {
-        final AssetDraftDto draft = this.findOneDraft(publisherKey, assetKey);
+        final AssetDraftDto draft = this.findOneDraft(ownerKey, publisherKey, assetKey);
 
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
@@ -1129,8 +1155,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Transactional
     private void consolidateResources(AssetDraftDto draft) {
         final CatalogueItemCommandDto          command             = draft.getCommand();
+        final UUID                             ownerKey            = command.getOwnerKey();
         final UUID                             publisherKey        = command.getPublisherKey();
-        final UUID                             draftKey            = command.getAssetKey();
+        final UUID                             draftKey            = command.getDraftKey();
         final List<ResourceDto>                resources           = command.getResources();
         final List<AssetAdditionalResourceDto> additionalResources = command.getAdditionalResources();
 
@@ -1146,7 +1173,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         registeredResources.stream().filter(r -> !rids.contains(r.getId())).forEach(r -> {
             // Delete resource record in transaction before deleting file
-            final FileResourceDto resource = this.deleteResourceRecord(publisherKey, draftKey, r.getId());
+            final FileResourceDto resource = this.deleteResourceRecord(ownerKey, publisherKey, draftKey, r.getId());
 
             // Update asset file repository
             this.draftFileManager.deleteResource(publisherKey, draftKey, resource.getFileName());
@@ -1164,7 +1191,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         registeredAdditionalResources.stream().filter(r -> !arids.contains(r.getId())).forEach(r -> {
             // Delete resource record in transaction before deleting file
-            final AssetFileAdditionalResourceDto resource = this.deleteAdditionalResourceRecord(publisherKey, draftKey, r.getId());
+            final AssetFileAdditionalResourceDto resource = this.deleteAdditionalResourceRecord(
+                ownerKey, publisherKey, draftKey, r.getId()
+            );
 
             // Update asset file repository
             this.draftFileManager.deleteAdditionalResource(publisherKey, draftKey, resource.getFileName());
@@ -1172,19 +1201,19 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Transactional
-    private FileResourceDto deleteResourceRecord(UUID publisherKey, UUID draftKey, String resourceKey) {
+    private FileResourceDto deleteResourceRecord(UUID ownerKey, UUID publisherKey, UUID draftKey, String resourceKey) {
         // The provider must have access to the selected draft and also the
         // draft must be editable
-        this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
+        this.ensureDraftAndStatus(ownerKey, publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
 
         return assetResourceRepository.delete(draftKey, resourceKey);
     }
 
     @Transactional
-    private AssetFileAdditionalResourceDto deleteAdditionalResourceRecord(UUID publisherKey, UUID draftKey, String resourceKey) {
+    private AssetFileAdditionalResourceDto deleteAdditionalResourceRecord(UUID ownerKey, UUID publisherKey, UUID draftKey, String resourceKey) {
         // The provider must have access to the selected draft and also the
         // draft must be editable
-        this.ensureDraftAndStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
+        this.ensureDraftAndStatus(ownerKey, publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
 
         return assetAdditionalResourceRepository.delete(draftKey, resourceKey);
     }

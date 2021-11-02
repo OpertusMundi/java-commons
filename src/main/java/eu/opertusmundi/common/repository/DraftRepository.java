@@ -57,6 +57,22 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         Pageable pageable
     );
 
+    @Query("SELECT d FROM ProviderAssetDraft d WHERE "
+            + "(d.status in :status or :status is null) and "
+            + "(d.vendorAccount.key = :ownerKey) and "
+            + "(d.account.key = :publisherKey) and "
+            + "(d.type in :type or :type is null) and "
+            + "(d.serviceType in :serviceType or :serviceType is null) "
+     )
+     Page<ProviderAssetDraftEntity> findAllByOwnerAndPublisherAndStatus(
+         @Param("ownerKey") UUID ownerKey,
+         @Param("publisherKey") UUID publisherKey,
+         @Param("status") Set<EnumProviderAssetDraftStatus> status,
+         @Param("type") Set<EnumAssetType> type,
+         @Param("serviceType") Set<EnumSpatialDataServiceType> serviceType,
+         Pageable pageable
+     );
+
     @Query("SELECT a FROM ProviderAssetDraft a WHERE "
            + "(a.parentId = :parentId) and "
            + "(not status in ('HELPDESK_REJECTED', 'PROVIDER_REJECTED', 'PUBLISHED'))")
@@ -75,6 +91,11 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
     @Query("SELECT a FROM ProviderAssetDraft a WHERE a.key = :key and a.account.key = :publisherKey")
     Optional<ProviderAssetDraftEntity> findOneByPublisherAndKey(
         @Param("publisherKey") UUID publisherKey, @Param("key") UUID assetKey
+    );
+
+    @Query("SELECT a FROM ProviderAssetDraft a WHERE a.key = :key and a.account.key = :publisherKey and a.vendorAccount.key = :ownerKey")
+    Optional<ProviderAssetDraftEntity> findOneByOwnerAndPublisherAndKey(
+        @Param("ownerKey") UUID ownerKey, @Param("publisherKey") UUID publisherKey, @Param("key") UUID assetKey
     );
 
     @Query("SELECT a FROM ProviderAssetDraft a WHERE a.key = :key")
@@ -107,12 +128,20 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         if (account == null) {
             throw new AssetDraftException(AssetMessageCode.PROVIDER_NOT_FOUND);
         }
+        // Check owner
+        final AccountEntity owner = this.findAccountByKey(command.getOwnerKey()).orElse(null);
+
+        if (owner == null) {
+            throw new AssetDraftException(AssetMessageCode.VENDOR_ACCOUNT_NOT_FOUND);
+        }
 
         // Check draft
         ProviderAssetDraftEntity draft = null;
 
-        if (command.getAssetKey() != null) {
-            draft = this.findOneByPublisherAndKey(command.getPublisherKey(), command.getAssetKey()).orElse(null);
+        if (command.getDraftKey() != null) {
+            draft = command.getOwnerKey().equals(command.getPublisherKey())
+                ? this.findOneByPublisherAndKey(command.getPublisherKey(), command.getDraftKey()).orElse(null)
+                : this.findOneByOwnerAndPublisherAndKey(command.getOwnerKey(), command.getPublisherKey(), command.getDraftKey()).orElse(null);
 
             if (draft == null) {
                 throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
@@ -144,6 +173,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         draft.setStatus(status);
         draft.setTitle(command.getTitle());
         draft.setType(command.getType());
+        draft.setVendorAccount(owner);
         draft.setVersion(command.getVersion());
 
         this.saveAndFlush(draft);
@@ -159,7 +189,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         final ZonedDateTime now = ZonedDateTime.now();
 
         // Check draft
-        final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(command.getProviderKey(), command.getDraftKey()).orElse(null);
+        final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(command.getPublisherKey(), command.getDraftKey()).orElse(null);
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }

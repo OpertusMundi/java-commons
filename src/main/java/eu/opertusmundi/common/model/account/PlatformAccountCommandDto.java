@@ -1,7 +1,6 @@
 package eu.opertusmundi.common.model.account;
 
 import java.io.Serializable;
-import java.util.Set;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Email;
@@ -10,8 +9,8 @@ import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import eu.opertusmundi.common.model.EnumAccountType;
 import eu.opertusmundi.common.model.EnumAuthProvider;
-import eu.opertusmundi.common.model.EnumRole;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,24 +20,33 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class AccountCommandDto extends AccountBaseDto implements Serializable {
+public class PlatformAccountCommandDto implements Serializable {
 
     @Builder
-    public AccountCommandDto(
-        boolean active, boolean blocked, @NotEmpty String email, EnumAuthProvider idpName, @NotEmpty String password,
-        @NotNull @Valid AccountProfileCommandDto profile, Set<EnumRole> roles, @NotEmpty String verifyPassword
+    public PlatformAccountCommandDto(
+        boolean active, boolean blocked, String email, EnumAuthProvider idpName, String password,
+        AccountProfileCommandDto profile, String verifyPassword
     ) {
-        super(active, blocked);
-
+        this.active         = active;
+        this.blocked        = blocked;
         this.email          = email;
         this.idpName        = idpName;
         this.password       = password;
         this.profile        = profile;
-        this.roles          = roles;
+        this.type           = EnumAccountType.OPERTUSMUNDI;
         this.verifyPassword = verifyPassword;
     }
 
     private static final long serialVersionUID = 1L;
+
+    @JsonIgnore
+    private boolean blocked;
+
+    @JsonIgnore
+    private boolean active;
+
+    @JsonIgnore
+    private EnumAccountType type;
 
     @Schema(description = "User email. Must be unique", required = true)
     @NotEmpty
@@ -56,9 +64,6 @@ public class AccountCommandDto extends AccountBaseDto implements Serializable {
     @NotNull
     @Valid
     private AccountProfileCommandDto profile;
-
-    @JsonIgnore
-    protected Set<EnumRole> roles;
 
     @NotEmpty
     @Schema(description = "Account password verification. Must match property password.", example = "s3cr3t", required = true)

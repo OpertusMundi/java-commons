@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import eu.opertusmundi.common.model.EnumAccountType;
 import eu.opertusmundi.common.model.EnumAuthProvider;
 import eu.opertusmundi.common.model.EnumRole;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -23,17 +24,26 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class AccountDto extends AccountBaseDto implements Serializable {
+public class AccountDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @Schema(description = "True if the account is active")
+    private boolean active;
+
+    @JsonIgnore
+    private boolean blocked;
+
+    @JsonIgnore
+    private EnumAccountType type;
+
     @Schema(hidden = true, description = "Identifier of the workflow definition used for processing the account registration")
     @JsonInclude(Include.NON_NULL)
-    protected String processDefinition;
+    private String processDefinition;
 
     @Schema(hidden = true, description = "Identifier of the workflow instance processing the account registration")
     @JsonInclude(Include.NON_NULL)
-    protected String processInstance;
+    private String processInstance;
 
     @Schema(description = "Date of account activation. Activation occurs when the user email is verified")
     private ZonedDateTime activatedAt;
@@ -66,6 +76,12 @@ public class AccountDto extends AccountBaseDto implements Serializable {
     private UUID key;
 
     @JsonIgnore
+    private Integer parentId;
+
+    @JsonIgnore
+    private UUID parentKey;
+
+    @JsonIgnore
     private String password;
 
     @Schema(description = "User profile")
@@ -87,6 +103,10 @@ public class AccountDto extends AccountBaseDto implements Serializable {
         return this.email;
     }
 
+    @Schema(hidden = true, description = "Parent vendor account")
+    @JsonInclude(Include.NON_NULL)
+    private AccountDto parent;
+    
     public boolean hasRole(EnumRole role) {
         if (this.roles == null) {
             return false;

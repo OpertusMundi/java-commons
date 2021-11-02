@@ -2,32 +2,13 @@ package eu.opertusmundi.common.model;
 
 import java.util.Arrays;
 
-public enum EnumRole {
+/**
+ * Vendor account specific roles
+ *
+ * The values of this enumeration must be a subset of the values in {@link EnumRole}
+ */
+public enum EnumVendorRole {
 
-    /**
-     * Default role. Required for successful login
-     */
-    ROLE_USER,
-    /**
-     * Platform administrator
-     */
-    ROLE_ADMIN,
-    /**
-     * Role for enabling additional features for development
-     */
-    ROLE_DEVELOPER,
-    /**
-     * Provider
-     */
-    ROLE_PROVIDER,
-    /**
-     * Consumer
-     */
-    ROLE_CONSUMER,
-    /**
-     * Helpdesk account
-     */
-    ROLE_HELPDESK,
     /**
      * Organizational role for vendor accounts. Required for successful login
      */
@@ -46,9 +27,16 @@ public enum EnumRole {
     ROLE_VENDOR_ANALYTICS,
     ;
 
-    public static EnumRole fromString(String value) {
-        return Arrays.stream(EnumRole.values())
+    public static EnumVendorRole fromString(String value) {
+        return Arrays.stream(EnumVendorRole.values())
             .filter(r -> r.name().equalsIgnoreCase(value))
+            .findFirst()
+            .orElse(null);
+    }
+
+    public EnumRole toPlatformRole() {
+        return Arrays.asList(EnumRole.values()).stream()
+            .filter(v -> v.name().equals(this.name()))
             .findFirst()
             .orElse(null);
     }

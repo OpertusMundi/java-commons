@@ -31,8 +31,9 @@ public interface ActivationTokenRepository extends JpaRepository<ActivationToken
     @Query("SELECT t FROM ActivationToken t WHERE t.token = :token and t.valid = true")
     Optional<ActivationTokenEntity> findOneByKey(UUID token);
 
-    @Query("SELECT t FROM ActivationToken t WHERE t.account.key = :key and t.valid = true and t.redeemedAt IS NULL")
-    Optional<ActivationTokenEntity> findOneActiveByAccountKey(UUID key);
+    @Query("SELECT t FROM ActivationToken t INNER JOIN Account a on t.account = a.id "
+         + "WHERE a.key = :key and t.valid = true and t.redeemedAt IS NULL and t.type = :type")
+    Optional<ActivationTokenEntity> findActiveByTypeAndAccountKey(EnumActivationTokenType type, UUID key);
 
     @Modifying
     @Query("UPDATE ActivationToken t SET t.valid = false WHERE t.redeemedAt IS NULL and t.email = :email")

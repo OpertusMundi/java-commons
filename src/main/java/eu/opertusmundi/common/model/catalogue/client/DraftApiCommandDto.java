@@ -32,11 +32,28 @@ public abstract class DraftApiCommandDto implements Serializable {
         this.type = type;
     }
 
+    /**
+     * The authenticated user id
+     */
     @JsonIgnore
     private Integer userId;
 
+    /**
+     * The publisher key
+     *
+     * If this is a vendor account (with role `ROLE_VENDOR_PROVIDER`), the
+     * publisher key is the unique key of the parent account. If this is a
+     * provider account (with role `ROLE_PROVIDER`), this is the unique key of
+     * the authenticated user.
+     */
     @JsonIgnore
     private UUID publisherKey;
+
+    /**
+     * The authenticated user key
+     */
+    @JsonIgnore
+    private UUID ownerKey;
 
     @Schema(description = "Command type", required = true)
     @NotNull
@@ -45,7 +62,7 @@ public abstract class DraftApiCommandDto implements Serializable {
     @Schema(description = "Service type", allowableValues = {"WMS", "WFS", "DATA_API"}, required = true)
     @NotNull
     private String serviceType;
-    
+
     @Schema(description = "A name given to the resource", required = true)
     @NotEmpty
     private String title;

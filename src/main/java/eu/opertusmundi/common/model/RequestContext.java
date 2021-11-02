@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.model;
 
+import java.util.UUID;
+
 import javax.annotation.Nullable;
 
 import eu.opertusmundi.common.model.account.AccountDto;
@@ -27,4 +29,17 @@ public class RequestContext {
         ctx.setLocation(location);
         return ctx;
     }
+
+    public UUID getUserKey() {
+        return account == null ? null : account.getKey();
+    }
+
+    public UUID getUserParentKey() {
+        return account == null ? null : account.getParentKey() == null ? account.getKey() : account.getParentKey();
+    }
+
+    public boolean isAuthenticated() {
+        return account != null;
+    }
+
 }

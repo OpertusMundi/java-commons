@@ -33,6 +33,7 @@ public enum BasicMessageCode implements MessageCode {
     // Activation Token
     TokenNotFound,
     TokenIsExpired,
+    TokenTypeNotSupported,
 
     // BPM Engine
     BpmServiceError,

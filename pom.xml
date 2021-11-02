@@ -7,7 +7,7 @@
 
 	<groupId>eu.opertusmundi</groupId>
 	<artifactId>opertus-mundi-common</artifactId>
-	<version>1.0.96</version>
+	<version>1.0.97</version>
 	<name>[opertus-mundi] Common</name>
 
 	<packaging>jar</packaging>
@@ -248,7 +248,7 @@
 			<artifactId>tomcat-jdbc</artifactId>
 		</dependency>
 
-		<dependency>	
+		<dependency>
 			<groupId>net.coobird</groupId>
 			<artifactId>thumbnailator</artifactId>
 			<version>${thumbnailator.version}</version>
@@ -294,38 +294,38 @@
 			<artifactId>springdoc-openapi-common</artifactId>
 			<version>${springdoc.version}</version>
 		</dependency>
-	
+
 		<!-- PDFBox -->
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>pdfbox</artifactId>
 			<version>2.0.24</version>
 		</dependency>
-	
+
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>fontbox</artifactId>
 			<version>2.0.24</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>jempbox</artifactId>
 			<version>1.8.16</version>
 		</dependency>
-	
+
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>xmpbox</artifactId>
 			<version>2.0.0</version>
 		</dependency>
-	
+
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>preflight</artifactId>
 			<version>2.0.0</version>
 		</dependency>
-	
+
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>pdfbox-tools</artifactId>

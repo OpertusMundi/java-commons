@@ -48,6 +48,12 @@ public class ProviderAssetDraftEntity {
     @Setter
     private AccountEntity account;
 
+    @ManyToOne(targetEntity=AccountEntity.class)
+    @JoinColumn(name = "account_vendor", nullable = false)
+    @Getter
+    @Setter
+    private AccountEntity vendorAccount;
+
     @NotNull
     @NaturalId
     @Column(name = "key", updatable = false, columnDefinition = "uuid")
@@ -152,6 +158,7 @@ public class ProviderAssetDraftEntity {
         a.setIngested(this.ingested);
         a.setKey(this.key);
         a.setModifiedOn(this.modifiedOn);
+        a.setOwner(this.getVendorAccount() == null ? this.getAccount().getKey() : this.getVendorAccount().getKey());
         a.setParentId(this.parentId);
         a.setProviderRejectionReason(this.providerRejectionReason);
         a.setServiceType(this.serviceType);

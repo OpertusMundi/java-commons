@@ -20,8 +20,22 @@ public final class CatalogueItemVisibilityCommandDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * The publisher key
+     *
+     * If this is a vendor account (with role `ROLE_VENDOR_PROVIDER`), the
+     * publisher key is the unique key of the parent account. If this is a
+     * provider account (with role `ROLE_PROVIDER`, this is the unique key of
+     * the authenticated user.
+     */
     @JsonIgnore
-    private UUID providerKey;
+    private UUID publisherKey;
+
+    /**
+     * The authenticated user key
+     */
+    @JsonIgnore
+    private UUID ownerKey;
 
     @JsonIgnore
     private UUID draftKey;

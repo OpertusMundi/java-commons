@@ -12,9 +12,11 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
+import javax.persistence.ForeignKey;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
@@ -28,6 +30,7 @@ import javax.validation.constraints.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.NaturalId;
 
+import eu.opertusmundi.common.model.EnumAccountType;
 import eu.opertusmundi.common.model.EnumAuthProvider;
 import eu.opertusmundi.common.model.EnumRole;
 import eu.opertusmundi.common.model.account.AccountDto;
@@ -39,7 +42,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity(name = "Account")
-@Table(schema = "web", name = "`account`", uniqueConstraints = {
+@Table(
+    schema = "web",
+    name = "`account`",
+    uniqueConstraints = {
         @UniqueConstraint(name = "uq_account_key", columnNames = {"`key`"}),
         @UniqueConstraint(name = "uq_account_email", columnNames = {"`email`"}),
     }
@@ -58,6 +64,21 @@ public class AccountEntity {
     @Column(name = "key", updatable = false, columnDefinition = "uuid")
     @Getter
     private final UUID key = UUID.randomUUID();
+
+    @NotNull
+    @Column(name = "`type`", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Getter
+    @Setter
+    private EnumAccountType type;
+
+    @OneToOne(
+        optional = true, fetch = FetchType.LAZY
+    )
+    @JoinColumn(name = "`parent`", foreignKey = @ForeignKey(name = "fk_account_parent_account"))
+    @Getter
+    @Setter
+    private AccountEntity parent;
 
     /**
      * Account registration workflow definition
@@ -241,6 +262,10 @@ public class AccountEntity {
         }
     }
 
+    public void revokeAll() {
+        this.roles.clear();
+    }
+
     public AccountDto toDto() {
         return this.toDto(false);
     }
@@ -267,14 +292,22 @@ public class AccountEntity {
         a.setPassword(this.password);
         a.setRegisteredAt(this.registeredAt);
         a.setRoles(this.roles.stream().map(r -> r.getRole()).collect(Collectors.toSet()));
+        a.setType(this.type);
 
         if (this.profile != null) {
             a.setProfile(this.profile.toDto());
+        }
+        if (this.getParent() != null) {
+            a.setParentId(this.parent.getId());
+            a.setParentKey(this.parent.getKey());
         }
 
         if (includeHelpdeskData) {
             a.setProcessDefinition(this.processDefinition);
             a.setProcessInstance(this.processInstance);
+            if (this.getParent() != null) {
+                a.setParent(this.getParent().toDto());
+            }
         }
 
         return a;

@@ -60,20 +60,27 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
     }
 
     /**
-     * Publisher unique key.
+     * The publisher key
      *
-     * This value is ignored during serialization/deserialization. Instead, it
-     * is injected by the controller. The value is equal to the unique key of
+     * If this is a vendor account (with role `ROLE_VENDOR_PROVIDER`), the
+     * publisher key is the unique key of the parent account. If this is a
+     * provider account (with role `ROLE_PROVIDER`), this is the unique key of
      * the authenticated user.
      */
     @JsonIgnore
     private UUID publisherKey;
 
     /**
+     * The authenticated user key
+     */
+    @JsonIgnore
+    private UUID ownerKey;
+
+    /**
      * Asset unique key. This value is injected by the controller.
      */
     @JsonIgnore
-    private UUID assetKey;
+    private UUID draftKey;
 
     @ArraySchema(
         arraySchema = @Schema(

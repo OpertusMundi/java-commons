@@ -85,8 +85,8 @@ public interface ProviderAssetDraftRepository extends JpaRepository<ProviderAsse
         // Check draft
         ProviderAssetDraftEntity draft = null;
 
-        if (command.getAssetKey() != null) {
-            draft = this.findOneByPublisherAndKey(command.getPublisherKey(), command.getAssetKey()).orElse(null);
+        if (command.getDraftKey() != null) {
+            draft = this.findOneByPublisherAndKey(command.getPublisherKey(), command.getDraftKey()).orElse(null);
 
             if (draft == null) {
                 throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
@@ -175,7 +175,7 @@ public interface ProviderAssetDraftRepository extends JpaRepository<ProviderAsse
 
         draft.setStatus(EnumProviderAssetDraftStatus.POST_PROCESSING);
     }
-    
+
     @Transactional(readOnly = false)
     default void rejectHelpDesk(UUID publisherKey, UUID draftKey, String reason) throws AssetDraftException {
         final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
@@ -188,11 +188,11 @@ public interface ProviderAssetDraftRepository extends JpaRepository<ProviderAsse
         if (draft.getStatus() != EnumProviderAssetDraftStatus.HELPDESK_REJECTED) {
             draft.setModifiedOn(ZonedDateTime.now());
         }
-        
+
         draft.setStatus(EnumProviderAssetDraftStatus.HELPDESK_REJECTED);
         draft.setHelpdeskRejectionReason(reason);
     }
-    
+
     @Transactional(readOnly = false)
     default void rejectProvider(UUID publisherKey, UUID draftKey, String reason) throws AssetDraftException {
         final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
@@ -205,7 +205,7 @@ public interface ProviderAssetDraftRepository extends JpaRepository<ProviderAsse
         if (draft.getStatus() != EnumProviderAssetDraftStatus.PROVIDER_REJECTED) {
             draft.setModifiedOn(ZonedDateTime.now());
         }
-        
+
         draft.setStatus(EnumProviderAssetDraftStatus.PROVIDER_REJECTED);
         draft.setProviderRejectionReason(reason);
     }
@@ -225,7 +225,7 @@ public interface ProviderAssetDraftRepository extends JpaRepository<ProviderAsse
 
         draft.setStatus(EnumProviderAssetDraftStatus.PUBLISHED);
     }
-    
+
     @Transactional(readOnly = false)
     default void updateStatus(UUID publisherKey, UUID draftKey, EnumProviderAssetDraftStatus status) throws AssetDraftException {
         final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
@@ -233,7 +233,7 @@ public interface ProviderAssetDraftRepository extends JpaRepository<ProviderAsse
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
-        
+
         // Set modified on only the first time the status changes
         if (draft.getStatus() != status) {
             draft.setModifiedOn(ZonedDateTime.now());
@@ -241,7 +241,7 @@ public interface ProviderAssetDraftRepository extends JpaRepository<ProviderAsse
 
         draft.setStatus(status);
     }
-    
+
     @Transactional(readOnly = false)
     default void delete(UUID publisherKey, UUID assetKey) {
         Assert.notNull(publisherKey, "Expected a non-null publisher key");

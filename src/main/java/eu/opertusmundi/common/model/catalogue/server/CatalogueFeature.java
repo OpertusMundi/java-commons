@@ -16,7 +16,7 @@ import lombok.Setter;
 public final class CatalogueFeature {
 
     public CatalogueFeature(CatalogueItemCommandDto command) {
-        this.id       = command.getAssetKey() == null ? "" : command.getAssetKey().toString();
+        this.id       = command.getDraftKey() == null ? "" : command.getDraftKey().toString();
         this.type     = "Feature";
         this.geometry = command.getGeometry();
 

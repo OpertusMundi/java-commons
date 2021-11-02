@@ -32,7 +32,7 @@ public class ActivationTokenEntity {
     @SequenceGenerator(sequenceName = "web.activation_token_id_seq", name = "activation_token_id_seq", allocationSize = 1)
     @GeneratedValue(generator = "activation_token_id_seq", strategy = GenerationType.SEQUENCE)
     @Getter
-    Integer id;
+    private Integer id;
 
     @NotNull
     @OneToOne(
@@ -48,14 +48,14 @@ public class ActivationTokenEntity {
     @Column(name = "`email`", nullable = false, length = 120)
     @Getter
     @Setter
-    String email;
+    private String email;
 
     @NotNull
     @Column(name = "`type`", nullable = false)
     @Enumerated(EnumType.STRING)
     @Getter
     @Setter
-    EnumActivationTokenType type;
+    private EnumActivationTokenType type;
 
     @NotNull
     @Column(name = "token", updatable = false, columnDefinition = "uuid")
@@ -64,12 +64,12 @@ public class ActivationTokenEntity {
 
     @Column(name = "`created_at`", updatable = false)
     @Getter
-    ZonedDateTime createdAt = ZonedDateTime.now();
+    private final ZonedDateTime createdAt = ZonedDateTime.now();
 
     @Column(name = "`redeemed_at`")
     @Getter
     @Setter
-    ZonedDateTime redeemedAt;
+    private ZonedDateTime redeemedAt;
 
     @Column(name = "`valid`")
     @Getter
@@ -79,7 +79,7 @@ public class ActivationTokenEntity {
     @Column(name = "`duration`")
     @Getter
     @Setter
-    int duration;
+    private int duration;
 
     public boolean isExpired() {
         if (this.redeemedAt != null) {

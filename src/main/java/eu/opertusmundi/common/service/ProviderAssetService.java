@@ -43,6 +43,7 @@ public interface ProviderAssetService {
     /**
      * Search drafts
      *
+     * @param ownerKey
      * @param publisherKey
      * @param status
      * @param type
@@ -54,19 +55,19 @@ public interface ProviderAssetService {
      * @return
      */
     PageResultDto<AssetDraftDto> findAllDraft(
-        UUID publisherKey,
+        UUID ownerKey, UUID publisherKey,
         Set<EnumProviderAssetDraftStatus> status, Set<EnumAssetType> type, Set<EnumSpatialDataServiceType> serviceType,
         int pageIndex, int pageSize,
         EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order
     );
 
     default PageResultDto<AssetDraftDto> findAllDraft(
-        UUID publisherKey,
+        UUID ownerKey, UUID publisherKey,
         Set<EnumProviderAssetDraftStatus> status, Set<EnumAssetType> type, Set<EnumSpatialDataServiceType> serviceType,
         int pageIndex, int pageSize
     ) {
         return this.findAllDraft(
-            publisherKey, status, type, serviceType, pageIndex, pageSize,
+            ownerKey, publisherKey, status, type, serviceType, pageIndex, pageSize,
             EnumProviderAssetDraftSortField.MODIFIED_ON, EnumSortingOrder.DESC
         );
     }
@@ -74,12 +75,17 @@ public interface ProviderAssetService {
     /**
      * Get one draft by key
      *
+     * @param ownerKey
      * @param publisherKey
      * @param draftKey
      * @return
      */
-    AssetDraftDto findOneDraft(UUID publisherKey, UUID draftKey);
+    AssetDraftDto findOneDraft(UUID ownerKey, UUID publisherKey, UUID draftKey);
 
+    default AssetDraftDto findOneDraft(UUID publisherKey, UUID draftKey) {
+        return this.findOneDraft(publisherKey, publisherKey, draftKey);
+    }
+    
     /**
      * Get one draft by key
      *
@@ -153,10 +159,11 @@ public interface ProviderAssetService {
      * {@link EnumProviderAssetDraftStatus#HELPDESK_REJECTED}
      * {@link EnumProviderAssetDraftStatus#PROVIDER_REJECTED}
      *
+     * @param ownerKey
      * @param publisherKey
      * @param draftKey
      */
-    void deleteDraft(UUID publisherKey, UUID draftKey) throws AssetDraftException;
+    void deleteDraft(UUID ownerKey, UUID publisherKey, UUID draftKey) throws AssetDraftException;
 
     /**
      * Submit a draft to OP HelpDesk for review
@@ -214,11 +221,12 @@ public interface ProviderAssetService {
     /**
      * Publish draft to catalogue service
      *
+     * @param ownerKey
      * @param publisherKey
      * @param draftKey
      * @throws AssetDraftException
      */
-    void publishDraft(UUID publisherKey, UUID draftKey) throws AssetDraftException;
+    void publishDraft(UUID ownerKey, UUID publisherKey, UUID draftKey) throws AssetDraftException;
 
     /**
      * Update draft metadata
@@ -316,6 +324,7 @@ public interface ProviderAssetService {
     /**
      * Resolve the path of an additional file resource of a draft asset
      *
+     * @param ownerKey
      * @param publisherKey
      * @param draftKey
      * @param resourceKey
@@ -324,7 +333,9 @@ public interface ProviderAssetService {
      * @throws FileSystemException If an I/O error occurs
      * @throws AssetRepositoryException If resolve operation fails
      */
-    Path resolveDraftAdditionalResource(UUID publisherKey, UUID draftKey, String resourceKey) throws FileSystemException, AssetRepositoryException;
+    Path resolveDraftAdditionalResource(
+        UUID ownerKey, UUID publisherKey, UUID draftKey, String resourceKey
+    ) throws FileSystemException, AssetRepositoryException;
 
     /**
      * Resolve path to metadata property file for a specific resource of a draft asset
@@ -344,6 +355,7 @@ public interface ProviderAssetService {
     /**
      * Resolve path to metadata property file for a specific resource of a draft asset
      *
+     * @param ownerKey
      * @param publisherKey
      * @param draftKey
      * @param resourceKey
@@ -354,7 +366,7 @@ public interface ProviderAssetService {
      * @throws AssetRepositoryException If resolve operation fails
      */
     MetadataProperty resolveDraftMetadataProperty(
-        UUID publisherKey, UUID draftKey, String resourceKey, String propertyName
+        UUID ownerKey, UUID publisherKey, UUID draftKey, String resourceKey, String propertyName
     ) throws FileSystemException, AssetRepositoryException;
 
     /**
