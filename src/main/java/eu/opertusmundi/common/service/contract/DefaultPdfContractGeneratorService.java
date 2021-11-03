@@ -1,9 +1,12 @@
 package eu.opertusmundi.common.service.contract;
 
 import java.awt.Color;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -50,6 +53,7 @@ import eu.opertusmundi.common.model.contract.ContractParametersDto.PricingModel;
 import eu.opertusmundi.common.model.contract.ContractSectionSubOptionDto;
 import eu.opertusmundi.common.model.contract.EnumContract;
 import eu.opertusmundi.common.model.contract.consumer.PrintConsumerContractCommand;
+import eu.opertusmundi.common.model.contract.provider.PrintProviderContractCommand;
 import eu.opertusmundi.common.model.pricing.DiscountRateDto;
 import eu.opertusmundi.common.model.pricing.EnumContinent;
 import eu.opertusmundi.common.model.pricing.EnumPricingModel;
@@ -1623,10 +1627,46 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		return 0;
     	}).collect(Collectors.toList());
     }
+    
+    @Override
+    public byte[] renderConsumerPDF(ContractParametersDto contractParametersDto, PrintConsumerContractCommand command) throws IOException {
 
-	@Override
-    public byte[] renderPDF(
-        ContractParametersDto contractParametersDto, PrintConsumerContractCommand command
+    	final UUID            				orderKey        	= command.getOrderKey();
+    	final OrderEntity     				orderEntity     	= orderRepository.findOrderEntityByKey(orderKey).get();
+    	final OrderItemEntity 				orderItemEntity 	= orderEntity.getItems().get(0);
+    	final AccountEntity   				provider        	= orderItemEntity.getProvider();
+    	final Integer         				contractId      	= orderItemEntity.getContractTemplateId();
+    	final String          				contractVersion 	= orderItemEntity.getContractTemplateVersion();
+    	final EnumDeliveryMethod			deliveryMethod		= orderEntity.getDeliveryMethod();
+    	
+        /* Get contract */
+        final ProviderTemplateContractHistoryEntity contract = contractRepository
+                .findByIdAndVersion(provider.getKey(), contractId, contractVersion).get();
+        
+    	byte[] byteArray = renderPDF(contractParametersDto, contract, deliveryMethod);
+    	
+    	/* save contract to file*/
+    	try (FileOutputStream fos = new FileOutputStream(command.getPath().toString())) {
+            fos.write(byteArray);
+        }
+    	return byteArray;
+    }
+
+    @Override
+    public byte[] renderProviderPDF(ContractParametersDto contractParametersDto, PrintProviderContractCommand command) throws IOException {
+    	
+    	/* Get contract */
+        final ProviderTemplateContractHistoryEntity contract = contractRepository
+                .findByKey(command.getProviderKey(), command.getContractKey()).get();
+        
+        final EnumDeliveryMethod deliveryMethod = EnumDeliveryMethod.DIGITAL_PLATFORM;
+      
+        return renderPDF(contractParametersDto, contract, deliveryMethod);
+    }
+    
+	
+    private byte[] renderPDF(
+        ContractParametersDto contractParametersDto, ProviderTemplateContractHistoryEntity contract, EnumDeliveryMethod deliveryMethod
     ) throws IOException {
         // Initialize all variables that are related to the PDF formatting
         final PDDocument          document = new PDDocument();
@@ -1653,18 +1693,18 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
         // Create rendering context
         try (final RenderContext ctx = RenderContext.of(document, logo, fonts)) {
-            /* Get contract information */
-            final UUID            				orderKey        	= command.getOrderKey();
-            final OrderEntity     				orderEntity     	= orderRepository.findOrderEntityByKey(orderKey).get();
-            final OrderItemEntity 				orderItemEntity 	= orderEntity.getItems().get(0);
-            final AccountEntity   				provider        	= orderItemEntity.getProvider();
-            final Integer         				contractId      	= orderItemEntity.getContractTemplateId();
-            final String          				contractVersion 	= orderItemEntity.getContractTemplateVersion();
-        	final EnumDeliveryMethod			deliveryMethod		= orderEntity.getDeliveryMethod();
-
-            /* Get contract */
-            final ProviderTemplateContractHistoryEntity contract = contractRepository
-                    .findByIdAndVersion(provider.getKey(), contractId, contractVersion).get();
+//            /* Get contract information */
+//	            final UUID            				orderKey        	= command.getOrderKey();
+//	            final OrderEntity     				orderEntity     	= orderRepository.findOrderEntityByKey(orderKey).get();
+//	            final OrderItemEntity 				orderItemEntity 	= orderEntity.getItems().get(0);
+//	            final AccountEntity   				provider        	= orderItemEntity.getProvider();
+//	            final Integer         				contractId      	= orderItemEntity.getContractTemplateId();
+//	            final String          				contractVersion 	= orderItemEntity.getContractTemplateVersion();
+//	        	final EnumDeliveryMethod			deliveryMethod		= orderEntity.getDeliveryMethod();
+//
+//            /* Get contract */
+//            final ProviderTemplateContractHistoryEntity contract = contractRepository
+//                    .findByIdAndVersion(provider.getKey(), contractId, contractVersion).get();
 
 //             ProviderTemplateContractHistoryEntity contract =
 //             contractRepository.findById(4).get();
@@ -1767,10 +1807,10 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
              * If the contract type is a user contract, rebuild all blocks and
              * block styles with the provider, consumer and product information
              */
-            if (command.getType() == EnumContract.USER_CONTRACT) {
-                createKeywordMapping();
-                allSections = addOrderInformation(allSections, contractParametersDto, keywords);
-            }
+            //if (command.getType() == EnumContract.USER_CONTRACT ) {
+            createKeywordMapping();
+            allSections = addOrderInformation(allSections, contractParametersDto, keywords);
+            //}
 
             /* Add contract title and subtitle */
             addTitle(ctx, "Title", title, true, true);
@@ -1822,12 +1862,16 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             addHeaderAndFooter(ctx, title);
 
             /* Save the document */
+//            ctx.close();
+//            document.save(command.getPath().toString());
+//            /* Close the document */
+//            document.close();
             ctx.close();
-            document.save(command.getPath().toString());
-            /* Close the document */
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            document.save(byteArrayOutputStream);
             document.close();
-
-            return Files.readAllBytes(command.getPath());
+            return byteArrayOutputStream.toByteArray();
+            //return Files.readAllBytes(command.getPath());
         }
     }
 

@@ -43,7 +43,7 @@ public class DefaultConsumerContractService implements ConsumerContractService {
             command.setPath(path);
 
             if (!path.toFile().exists()) {
-                pdfService.renderPDF(parameters, command);
+                pdfService.renderConsumerPDF(parameters, command);
             }
         } catch (final ContractServiceException ex) {
             throw ex;
