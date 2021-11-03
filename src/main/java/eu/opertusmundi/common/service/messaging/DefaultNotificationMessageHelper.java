@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.service.messaging;
 
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -41,7 +43,7 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
     private ProviderAssetService providerAssetService;
 
     @Override
-    public String composeNotificationText(EnumNotificationType type, Map<String, Object> variables) throws ServiceException {
+    public String composeNotificationText(EnumNotificationType type, JsonNode data) throws ServiceException {
         Assert.isTrue(type != null, "Expected a non-null notification type");
 
         final NotificationTemplateEntity template = templateRepository.findOneByType(type).orElse(null);
@@ -63,7 +65,7 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
             case FILES_UPLOAD_COMPLETED:
             case ASSET_PUBLISHING_ACCEPTED:
             case ASSET_PUBLISHING_REJECTED:
-                return MessageFormat.format(template.getText(), variables);
+                return MessageFormat.format(template.getText(), this.jsonToMap(data));
         }
 
         throw new ServiceException(NotificationMessageCode.TYPE_NOT_SUPPORTED, String.format("Notification type %s is not supported", type));
@@ -223,6 +225,22 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
         }
 
         return (String) variables.get(name);
+    }
+    
+    private Map<String, Object> jsonToMap(JsonNode data) {
+        final Map<String, Object> result = new HashMap<>();
+
+        final ObjectNode                      node = (ObjectNode) data;
+        Iterator<Map.Entry<String, JsonNode>> iter = node.fields();
+
+        while (iter.hasNext()) {
+            Map.Entry<String, JsonNode> entry = iter.next();
+            if (entry.getValue().isTextual()) {
+                result.put(entry.getKey(), entry.getValue().asText());
+            }
+        }
+
+        return result;
     }
 
 }

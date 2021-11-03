@@ -16,7 +16,7 @@ public interface NotificationMessageHelper {
      * @param variables
      * @return
      */
-    String composeNotificationText(EnumNotificationType type, Map<String, Object> variables) throws ServiceException;
+    String composeNotificationText(EnumNotificationType type, JsonNode data) throws ServiceException;
 
     /**
      * Collect notification data
