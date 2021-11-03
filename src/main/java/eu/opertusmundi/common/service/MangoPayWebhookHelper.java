@@ -2,31 +2,31 @@ package eu.opertusmundi.common.service;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import javax.annotation.PostConstruct;
+import javax.annotation.Nullable;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import com.mangopay.core.Pagination;
 import com.mangopay.core.enumerations.EventType;
 import com.mangopay.core.enumerations.HookStatus;
+import com.mangopay.core.enumerations.Validity;
 import com.mangopay.entities.Hook;
+
+import eu.opertusmundi.common.model.admin.WebhookRegistration;
+import eu.opertusmundi.common.model.payment.PaymentException;
 
 /**
  * Service for configuring MANGOPAY web hooks
  */
-@ConditionalOnProperty(name = "opertusmundi.payments.mangopay.web-hook.create-on-startup")
 @Service
 public class MangoPayWebhookHelper extends BaseMangoPayService {
 
     private static final Logger logger = LoggerFactory.getLogger(MangoPayWebhookHelper.class);
-
-    @Value("${opertus-mundi.base-url}")
-    private String baseUrl;
 
     private final List<EventType> eventTypes = Arrays.asList(
         // Pay-ins
@@ -51,23 +51,48 @@ public class MangoPayWebhookHelper extends BaseMangoPayService {
         EventType.USER_KYC_LIGHT
     );
 
-    @PostConstruct
-    private void init() {
-        this.setup();
+    public List<WebhookRegistration> getAll() throws PaymentException {
+        try {
+        // NOTE: Method getAll returns only the first 10 records
+        final List<Hook> hooks = this.api.getHookApi().getAll(new Pagination(0, 100), null);
+
+        return hooks.stream()
+            .map(h -> WebhookRegistration
+                .builder()
+                .enabled(h.getStatus() == HookStatus.ENABLED)
+                .eventType(h.getEventType())
+                .url(h.getUrl())
+                .valid(h.getValidity() == Validity.VALID)
+                .build()
+            )
+            .collect(Collectors.toList());
+        } catch (final Exception ex) {
+            throw this.wrapException("Get Web Hooks", ex, null, logger);
+        }
     }
 
     /**
-     * Register MANGOPAY web hooks for all supported events
+     * Enables all registered MANGOPAY web hooks. If a web hook is not
+     * registered, it is not created.
+     *
+     * @throws PaymentException
      */
-    private void setup() {
+    public void enableAll() throws PaymentException {
+        this.enableAll(null);
+    }
 
+    /**
+     * Register and (or) enable MANGOPAY web hooks for all supported events
+     *
+     * @param baseUrl
+     * @throws PaymentException if action fails
+     */
+    public void enableAll(@Nullable String baseUrl) throws PaymentException {
         try {
-            final String url = baseUrl + (baseUrl.endsWith("/") ? "" : "/") + "webhooks/mangopay";
+            final String url = StringUtils.isBlank(baseUrl) ? null : baseUrl + (baseUrl.endsWith("/") ? "" : "/") + "webhooks/mangopay";
 
             // NOTE: Method getAll returns only the first 10 records
-            final List<Hook> hooks = this.api.getHookApi().getAll(
-                new Pagination(0, 100), null
-            );
+            final List<Hook> hooks = this.api.getHookApi().getAll(new Pagination(0, 100), null);
 
             // Create/Enable web hook for every supported event type
             for (final EventType eventType : eventTypes) {
@@ -76,7 +101,7 @@ public class MangoPayWebhookHelper extends BaseMangoPayService {
                     .findFirst()
                     .orElse(null);
 
-                if (hook == null) {
+                if (hook == null && url != null) {
                     // Create web hook
                     hook = new Hook();
                     hook.setEventType(eventType);
@@ -84,9 +109,11 @@ public class MangoPayWebhookHelper extends BaseMangoPayService {
 
                     final Hook result = this.api.getHookApi().create(hook);
                     hooks.add(result);
-                } else if (hook.getStatus() != HookStatus.ENABLED) {
+                } else if (hook != null && hook.getStatus() != HookStatus.ENABLED) {
                     // Enable web hook
-                    hook.setUrl(url);
+                    if (url != null) {
+                        hook.setUrl(url);
+                    }
                     hook.setStatus(HookStatus.ENABLED);
 
                     this.api.getHookApi().update(hook);
@@ -108,7 +135,36 @@ public class MangoPayWebhookHelper extends BaseMangoPayService {
                 }
             }
         } catch (final Exception ex) {
-            this.wrapException("Setup Web Hooks", ex, null, logger);
+            throw this.wrapException("Setup Web Hooks", ex, null, logger);
+        }
+    }
+
+    /**
+     * Disable MANGOPAY web hooks for all supported events
+     *
+     * @throws PaymentException if action fails
+     */
+    public void disableAll() throws PaymentException {
+        try {
+            // NOTE: Method getAll returns only the first 10 records
+            final List<Hook> hooks = this.api.getHookApi().getAll(new Pagination(0, 100), null);
+
+            // Disable the web hook for every supported event type if one is
+            // already registered
+            for (final EventType eventType : eventTypes) {
+                Hook hook = hooks.stream()
+                    .filter(h -> h.getEventType() == eventType)
+                    .findFirst()
+                    .orElse(null);
+
+                if (hook != null && hook.getStatus() != HookStatus.DISABLED) {
+                    // Disable web hook
+                    hook.setStatus(HookStatus.DISABLED);
+                    this.api.getHookApi().update(hook);
+                }
+            }
+        } catch (final Exception ex) {
+            throw this.wrapException("Disable Web Hooks", ex, null, logger);
         }
     }
 
