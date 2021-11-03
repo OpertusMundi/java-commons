@@ -17,6 +17,7 @@ import com.ibm.icu.text.MessageFormat;
 import eu.opertusmundi.common.domain.NotificationTemplateEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.model.ServiceException;
+import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.message.EnumNotificationType;
 import eu.opertusmundi.common.model.message.client.NotificationMessageCode;
 import eu.opertusmundi.common.model.order.HelpdeskOrderItemDto;
@@ -24,6 +25,7 @@ import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskOrderPayInItemDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
 import eu.opertusmundi.common.repository.NotificationTemplateRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
+import eu.opertusmundi.common.service.CatalogueService;
 import eu.opertusmundi.common.service.ProviderAssetService;
 import io.jsonwebtoken.lang.Assert;
 
@@ -41,6 +43,12 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
     
     @Autowired
     private ProviderAssetService providerAssetService;
+    
+    @Autowired
+    private CatalogueService catalogueService;
+    
+    @Autowired
+    private AssetDraftDto assetDraftDto;
 
     @Override
     public String composeNotificationText(EnumNotificationType type, JsonNode data) throws ServiceException {
@@ -65,6 +73,7 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
             case FILES_UPLOAD_COMPLETED:
             case ASSET_PUBLISHING_ACCEPTED:
             case ASSET_PUBLISHING_REJECTED:
+            case ASSET_PUBLISHED:
                 return MessageFormat.format(template.getText(), this.jsonToMap(data));
         }
 
@@ -124,6 +133,9 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
             	
             case ASSET_PUBLISHING_REJECTED :
             	return populatePublishingRejectedModel(variables, data);
+            	
+            case ASSET_PUBLISHED :
+            	return populateAssetPublishedModel(variables, data);
         }
 
         // No variables required
@@ -215,6 +227,15 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
         final UUID 		draftKey  = UUID.fromString((String) variables.get("draftKey"));
         final String 	assetName = this.providerAssetService.findOneDraft(draftKey).getTitle();
        
+        data.put("assetName", assetName);
+        return data;
+	}
+	
+	private ObjectNode populateAssetPublishedModel(Map<String, Object> variables, ObjectNode data) {
+		final UUID 		draftKey  			= UUID.fromString((String) variables.get("draftKey"));
+		final String 	assetPublishedId	= this.providerAssetService.findOneDraft(draftKey).getAssetPublished();
+		final String 	assetName			= this.catalogueService.findOneFeature(assetPublishedId).getProperties().getTitle();
+
         data.put("assetName", assetName);
         return data;
 	}

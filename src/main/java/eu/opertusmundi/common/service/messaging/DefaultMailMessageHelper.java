@@ -26,6 +26,7 @@ import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.ActivationTokenRepository;
 import eu.opertusmundi.common.repository.MailTemplateRepository;
 import eu.opertusmundi.common.repository.OrderRepository;
+import eu.opertusmundi.common.service.CatalogueService;
 import eu.opertusmundi.common.service.ProviderAssetService;
 
 @Service
@@ -48,6 +49,9 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 
     @Autowired
     private ProviderAssetService providerAssetService;
+    
+    @Autowired
+    private CatalogueService catalogueService;
 
     @Override
     public String composeSubject(EnumMailType type, Map<String, Object> variables) {
@@ -77,6 +81,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             case SUPPLIER_EVALUATION :
             case SUPPLIER_PUBLISHING_ACCEPTED :
             case SUPPLIER_PUBLISHING_REJECTED :
+            case SUPPLIER_ASSET_PUBLISHED :
             case SUPPLIER_PURCHASE_REMINDER :
             case VENDOR_ACCOUNT_INVITATION:
             case VENDOR_ACCOUNT_ACTIVATION_SUCCESS :
@@ -151,6 +156,10 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 
             case SUPPLIER_PUBLISHING_REJECTED :
             	this.populateSupplierAssetRejectedByHelpdeskModel(builder);
+            	break;
+            	
+            case SUPPLIER_ASSET_PUBLISHED :
+            	this.populateSupplierAssetPublishedModel(builder);
             	break;
 
             case CONSUMER_DIGITAL_DELIVERY_BY_SUPPLIER :
@@ -325,7 +334,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 	}
 
 	private void populateSupplierAssetAcceptedByHelpdeskModel(MailModelBuilder builder) {
-		final UUID userKey  = UUID.fromString((String) builder.get("userKey"));
+		final UUID userKey  = UUID.fromString((String) builder.get("startUserKey"));
         final UUID draftKey = UUID.fromString((String) builder.get("draftKey"));
 
         final AccountEntity 	account 		= this.accountRepository.findOneByKey(userKey).get();
@@ -339,7 +348,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 	}
 
 	private void populateSupplierAssetRejectedByHelpdeskModel(MailModelBuilder builder) {
-		final UUID userKey  = UUID.fromString((String) builder.get("userKey"));
+		final UUID userKey  = UUID.fromString((String) builder.get("startUserKey"));
         final UUID draftKey = UUID.fromString((String) builder.get("draftKey"));
 
         final AccountEntity 	account 		= this.accountRepository.findOneByKey(userKey).get();
@@ -350,6 +359,23 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .setRecipientAddress(account.getEmail())
             .add("name", account.getFullName())
             .add("assetName", assetName);
+	}
+	
+	private void populateSupplierAssetPublishedModel(MailModelBuilder builder) {
+		final UUID userKey  = UUID.fromString((String) builder.get("startUserKey"));
+        final UUID draftKey = UUID.fromString((String) builder.get("draftKey"));
+
+        final AccountEntity 	account 		= this.accountRepository.findOneByKey(userKey).get();
+        
+		final String 	assetPublishedId	= this.providerAssetService.findOneDraft(draftKey).getAssetPublished();
+		final String 	assetName			= this.catalogueService.findOneFeature(assetPublishedId).getProperties().getTitle();
+
+        builder
+            .setRecipientName(account.getFullName())
+            .setRecipientAddress(account.getEmail())
+            .add("name", account.getFullName())
+            .add("assetName", assetName)
+            .add("assetURL", this.baseUrl + "/" + "catalogue" + "/" + assetPublishedId);
 	}
 
 	private void populateConsumerDigitalDeliveryBySupplierModel(MailModelBuilder builder) {
