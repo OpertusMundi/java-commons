@@ -58,18 +58,19 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
         switch (type) {
             case CATALOGUE_ASSET_UNPUBLISHED :
             case CATALOGUE_HARVEST_COMPLETED :
-            case ORDER_CONFIRMATION:
-            case DELIVERY_REQUEST:
-            case PURCHASE_REMINDER:
-            case DIGITAL_DELIVERY_BY_SUPPLIER:
-            case PHYSICAL_DELIVERY_BY_SUPPLIER:
-            case DIGITAL_DELIVERY_BY_PLATFORM:
-            case PURCHASE_APPROVED:
-            case PURCHASE_REJECTED:
-            case FILES_UPLOAD_COMPLETED:
-            case ASSET_PUBLISHING_ACCEPTED:
-            case ASSET_PUBLISHING_REJECTED:
-            case ASSET_PUBLISHED:
+            case ORDER_CONFIRMATION :
+            case DELIVERY_REQUEST :
+            case DIGITAL_DELIVERY :
+            case PURCHASE_REMINDER :
+            case DIGITAL_DELIVERY_BY_SUPPLIER :
+            case PHYSICAL_DELIVERY_BY_SUPPLIER :
+            case DIGITAL_DELIVERY_BY_PLATFORM :
+            case PURCHASE_APPROVED :
+            case PURCHASE_REJECTED :
+            case FILES_UPLOAD_COMPLETED :
+            case ASSET_PUBLISHING_ACCEPTED :
+            case ASSET_PUBLISHING_REJECTED :
+            case ASSET_PUBLISHED :
                 return MessageFormat.format(template.getText(), this.jsonToMap(data));
         }
 
@@ -100,6 +101,11 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
             	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
             	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
             	return data;
+            	
+            case DIGITAL_DELIVERY :
+            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
+            	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+            	return data;
 
             case PURCHASE_REMINDER :
             	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
@@ -122,6 +128,7 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
             	return populatePurchaseRejectedBySupplierModel(variables, data);
 
             case FILES_UPLOAD_COMPLETED :
+            	// No parameters needed
             	return data;
 
             case ASSET_PUBLISHING_ACCEPTED :
