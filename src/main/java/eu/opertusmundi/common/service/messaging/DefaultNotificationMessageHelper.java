@@ -17,7 +17,6 @@ import com.ibm.icu.text.MessageFormat;
 import eu.opertusmundi.common.domain.NotificationTemplateEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.model.ServiceException;
-import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.message.EnumNotificationType;
 import eu.opertusmundi.common.model.message.client.NotificationMessageCode;
 import eu.opertusmundi.common.model.order.HelpdeskOrderItemDto;
@@ -37,18 +36,15 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
 
     @Autowired
     private NotificationTemplateRepository templateRepository;
-    
+
     @Autowired
     private PayInRepository payInRepository;
-    
+
     @Autowired
     private ProviderAssetService providerAssetService;
-    
+
     @Autowired
     private CatalogueService catalogueService;
-    
-    @Autowired
-    private AssetDraftDto assetDraftDto;
 
     @Override
     public String composeNotificationText(EnumNotificationType type, JsonNode data) throws ServiceException {
@@ -96,44 +92,44 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
                 data.put("catalogueUrl", this.checkAndGetVariable(variables, "catalogueUrl"));
                 data.put("catalogueType", this.checkAndGetVariable(variables, "catalogueType"));
                 return data;
-                
+
             case ORDER_CONFIRMATION :
             	return populateOrderConfirmationModel(variables, data);
-            	
+
             case DELIVERY_REQUEST :
             	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
             	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
             	return data;
-            	
+
             case PURCHASE_REMINDER :
             	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
             	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
             	return data;
-            	
+
             case DIGITAL_DELIVERY_BY_SUPPLIER :
             	return populateDigitalDeliveryBySupplierModel(variables, data);
-            	
+
             case PHYSICAL_DELIVERY_BY_SUPPLIER :
             	return populatePhysicalDeliveryBySupplierModel(variables, data);
-            	
+
             case DIGITAL_DELIVERY_BY_PLATFORM :
             	return populateDigitalDeliveryByPlatformModel(variables, data);
-            	
+
             case PURCHASE_APPROVED :
             	return populatePurchaseApprovedBySupplierModel(variables, data);
-            	
+
             case PURCHASE_REJECTED :
             	return populatePurchaseRejectedBySupplierModel(variables, data);
-            	
+
             case FILES_UPLOAD_COMPLETED :
             	return data;
-            	
+
             case ASSET_PUBLISHING_ACCEPTED :
             	return populatePublishingAcceptedModel(variables, data);
-            	
+
             case ASSET_PUBLISHING_REJECTED :
             	return populatePublishingRejectedModel(variables, data);
-            	
+
             case ASSET_PUBLISHED :
             	return populateAssetPublishedModel(variables, data);
         }
@@ -141,96 +137,96 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
         // No variables required
         return null;
     }
-    
+
 	private ObjectNode populateOrderConfirmationModel(Map<String, Object> variables, ObjectNode data) {
         final UUID 						payInKey  			= UUID.fromString((String) variables.get("payInKey"));
         final Optional<PayInEntity>		payInEntity			= this.payInRepository.findOneEntityByKey(payInKey);
         final HelpdeskPayInDto			helpDeskPayIn		= payInEntity.get().toHelpdeskDto(true);
-        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);  
+        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
         final HelpdeskOrderItemDto 		orderItem 			= payInOrderItem.getOrder().getItems().get(0);
-        
+
     	data.put("orderId", orderItem.getOrderId());
         return data;
 	}
-    
+
 	private ObjectNode populatePurchaseApprovedBySupplierModel(Map<String, Object> variables, ObjectNode data) {
         final UUID 						payInKey  			= UUID.fromString((String) variables.get("payInKey"));
         final Optional<PayInEntity>		payInEntity			= this.payInRepository.findOneEntityByKey(payInKey);
         final HelpdeskPayInDto			helpDeskPayIn		= payInEntity.get().toHelpdeskDto(true);
-        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);  
+        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
         final HelpdeskOrderItemDto 		orderItem 			= payInOrderItem.getOrder().getItems().get(0);
-        
+
     	data.put("assetName", orderItem.getDescription());
     	data.put("assetVersion", orderItem.getAssetVersion());
     	data.put("supplierName", orderItem.getProvider().getName());
         return data;
 	}
-	
+
 	private ObjectNode populatePurchaseRejectedBySupplierModel(Map<String, Object> variables, ObjectNode data) {
         final UUID 						payInKey  			= UUID.fromString((String) variables.get("payInKey"));
         final Optional<PayInEntity>		payInEntity			= this.payInRepository.findOneEntityByKey(payInKey);
         final HelpdeskPayInDto			helpDeskPayIn		= payInEntity.get().toHelpdeskDto(true);
-        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);  
+        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
         final HelpdeskOrderItemDto 		orderItem 			= payInOrderItem.getOrder().getItems().get(0);
-        
+
     	data.put("assetName", orderItem.getDescription());
     	data.put("assetVersion", orderItem.getAssetVersion());
     	data.put("supplierName", orderItem.getProvider().getName());
         return data;
 	}
-    
+
 	private ObjectNode populateDigitalDeliveryBySupplierModel(Map<String, Object> variables, ObjectNode data) {
         final UUID 						payInKey  			= UUID.fromString((String) variables.get("payInKey"));
         final Optional<PayInEntity>		payInEntity			= this.payInRepository.findOneEntityByKey(payInKey);
         final HelpdeskPayInDto			helpDeskPayIn		= payInEntity.get().toHelpdeskDto(true);
-        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);  
+        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
         final HelpdeskOrderItemDto 		orderItem 			= payInOrderItem.getOrder().getItems().get(0);
-        
+
     	data.put("assetName", orderItem.getDescription());
     	data.put("assetVersion", orderItem.getAssetVersion());
         return data;
 	}
-    
+
 	private ObjectNode populatePhysicalDeliveryBySupplierModel(Map<String, Object> variables, ObjectNode data) {
         final UUID 						payInKey  			= UUID.fromString((String) variables.get("payInKey"));
         final Optional<PayInEntity>		payInEntity			= this.payInRepository.findOneEntityByKey(payInKey);
         final HelpdeskPayInDto			helpDeskPayIn		= payInEntity.get().toHelpdeskDto(true);
-        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);  
+        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
         final HelpdeskOrderItemDto 		orderItem 			= payInOrderItem.getOrder().getItems().get(0);
-        
+
     	data.put("assetName", orderItem.getDescription());
     	data.put("assetVersion", orderItem.getAssetVersion());
         return data;
 	}
-    
+
 	private ObjectNode populateDigitalDeliveryByPlatformModel(Map<String, Object> variables, ObjectNode data) {
         final UUID 						payInKey  			= UUID.fromString((String) variables.get("payInKey"));
         final Optional<PayInEntity>		payInEntity			= this.payInRepository.findOneEntityByKey(payInKey);
         final HelpdeskPayInDto			helpDeskPayIn		= payInEntity.get().toHelpdeskDto(true);
-        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);  
+        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
         final HelpdeskOrderItemDto 		orderItem 			= payInOrderItem.getOrder().getItems().get(0);
-        
+
     	data.put("assetName", orderItem.getDescription());
     	data.put("assetVersion", orderItem.getAssetVersion());
         return data;
 	}
-    
+
 	private ObjectNode populatePublishingAcceptedModel(Map<String, Object> variables, ObjectNode data) {
         final UUID 		draftKey  = UUID.fromString((String) variables.get("draftKey"));
         final String 	assetName = this.providerAssetService.findOneDraft(draftKey).getTitle();
-       
+
         data.put("assetName", assetName);
         return data;
 	}
-	
+
 	private ObjectNode populatePublishingRejectedModel(Map<String, Object> variables, ObjectNode data) {
         final UUID 		draftKey  = UUID.fromString((String) variables.get("draftKey"));
         final String 	assetName = this.providerAssetService.findOneDraft(draftKey).getTitle();
-       
+
         data.put("assetName", assetName);
         return data;
 	}
-	
+
 	private ObjectNode populateAssetPublishedModel(Map<String, Object> variables, ObjectNode data) {
 		final UUID 		draftKey  			= UUID.fromString((String) variables.get("draftKey"));
 		final String 	assetPublishedId	= this.providerAssetService.findOneDraft(draftKey).getAssetPublished();
@@ -247,15 +243,15 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
 
         return (String) variables.get(name);
     }
-    
+
     private Map<String, Object> jsonToMap(JsonNode data) {
         final Map<String, Object> result = new HashMap<>();
 
         final ObjectNode                      node = (ObjectNode) data;
-        Iterator<Map.Entry<String, JsonNode>> iter = node.fields();
+        final Iterator<Map.Entry<String, JsonNode>> iter = node.fields();
 
         while (iter.hasNext()) {
-            Map.Entry<String, JsonNode> entry = iter.next();
+            final Map.Entry<String, JsonNode> entry = iter.next();
             if (entry.getValue().isTextual()) {
                 result.put(entry.getKey(), entry.getValue().asText());
             }
