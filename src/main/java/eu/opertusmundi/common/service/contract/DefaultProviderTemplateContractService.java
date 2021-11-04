@@ -1,6 +1,5 @@
 package eu.opertusmundi.common.service.contract;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -13,7 +12,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.Assert;
 
 import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.EnumSortingOrder;
@@ -21,9 +19,8 @@ import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.contract.ContractMessageCode;
 import eu.opertusmundi.common.model.contract.ContractParametersDto;
 import eu.opertusmundi.common.model.contract.ContractServiceException;
-import eu.opertusmundi.common.model.contract.consumer.PrintConsumerContractCommand;
-import eu.opertusmundi.common.model.contract.provider.PrintProviderContractCommand;
 import eu.opertusmundi.common.model.contract.provider.EnumProviderContractSortField;
+import eu.opertusmundi.common.model.contract.provider.PrintProviderContractCommand;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractCommandDto;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractDto;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractQuery;
@@ -37,13 +34,10 @@ public class DefaultProviderTemplateContractService implements ProviderTemplateC
 
 	@Autowired
 	private PdfContractGeneratorService pdfService;
-	
+
 	@Autowired
 	private ContractParametersFactory contractParametersFactory;
-	
-	@Autowired
-	private ContractFileManager contractFileManager;
-	
+
     @Autowired
     private ProviderTemplateContractDraftRepository draftRepository;
 
@@ -142,13 +136,11 @@ public class DefaultProviderTemplateContractService implements ProviderTemplateC
 
     @Override
     public byte[] print(PrintProviderContractCommand command) {
-    	byte[] contractByteArray = null;
-    	try {
-
+        byte[] contractByteArray = null;
+        try {
             final ContractParametersDto parameters = contractParametersFactory.createWithPlaceholderData();
 
             contractByteArray = pdfService.renderProviderPDF(parameters, command);
-
         } catch (final ContractServiceException ex) {
             throw ex;
         } catch (final Exception ex) {
@@ -156,6 +148,5 @@ public class DefaultProviderTemplateContractService implements ProviderTemplateC
         }
         return contractByteArray;
     }
-
 
 }
