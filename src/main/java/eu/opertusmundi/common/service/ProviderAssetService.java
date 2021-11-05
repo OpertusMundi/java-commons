@@ -78,18 +78,18 @@ public interface ProviderAssetService {
      * @param ownerKey
      * @param publisherKey
      * @param draftKey
+     * @param boolean lock
      * @return
      */
-    AssetDraftDto findOneDraft(UUID ownerKey, UUID publisherKey, UUID draftKey);
+    AssetDraftDto findOneDraft(UUID ownerKey, UUID publisherKey, UUID draftKey, boolean lock);
 
-    default AssetDraftDto findOneDraft(UUID publisherKey, UUID draftKey) {
-        return this.findOneDraft(publisherKey, publisherKey, draftKey);
+    default AssetDraftDto findOneDraft(UUID publisherKey, UUID draftKey, boolean lock) {
+        return this.findOneDraft(publisherKey, publisherKey, draftKey, lock);
     }
-    
+
     /**
      * Get one draft by key
      *
-     * @param publisherKey
      * @param draftKey
      * @return
      */
@@ -416,4 +416,12 @@ public interface ProviderAssetService {
         );
     }
 
+    /**
+     * Release a record lock
+     *
+     * @param userKey
+     * @param draftKey
+     * @throws AssetDraftException
+     */
+    void releaseLock(UUID userKey, UUID draftKey) throws AssetDraftException;
 }

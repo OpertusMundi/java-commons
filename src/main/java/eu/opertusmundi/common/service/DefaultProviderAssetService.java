@@ -46,6 +46,9 @@ import eu.opertusmundi.common.domain.AssetFileTypeEntity;
 import eu.opertusmundi.common.domain.AssetMetadataPropertyEntity;
 import eu.opertusmundi.common.domain.AssetResourceEntity;
 import eu.opertusmundi.common.domain.ProviderAssetDraftEntity;
+import eu.opertusmundi.common.domain.RecordLockEntity;
+import eu.opertusmundi.common.model.EnumLockResult;
+import eu.opertusmundi.common.model.EnumRecordLock;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
@@ -99,6 +102,7 @@ import eu.opertusmundi.common.repository.AssetFileTypeRepository;
 import eu.opertusmundi.common.repository.AssetMetadataPropertyRepository;
 import eu.opertusmundi.common.repository.AssetResourceRepository;
 import eu.opertusmundi.common.repository.DraftRepository;
+import eu.opertusmundi.common.repository.RecordLockRepository;
 import eu.opertusmundi.common.repository.contract.ProviderTemplateContractHistoryRepository;
 import eu.opertusmundi.common.util.BpmEngineUtils;
 import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
@@ -129,6 +133,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Autowired
     private AssetMetadataPropertyRepository assetMetadataPropertyRepository;
+
+    @Autowired
+    private RecordLockRepository recordLockRepository;
 
     @Autowired
     private DraftRepository draftRepository;
@@ -198,7 +205,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Override
-    public AssetDraftDto findOneDraft(UUID ownerKey, UUID publisherKey, UUID draftKey) {
+    public AssetDraftDto findOneDraft(UUID ownerKey, UUID publisherKey, UUID draftKey, boolean lock) {
         Assert.notNull(ownerKey,     "Expected a non-null owner key");
         Assert.notNull(publisherKey, "Expected a non-null publisher key");
         Assert.notNull(draftKey,     "Expected a non-null draft key");
@@ -208,6 +215,11 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             : this.draftRepository.findOneByOwnerAndPublisherAndKey(ownerKey, publisherKey, draftKey).orElse(null);
 
         final AssetDraftDto draft = e != null ? e.toDto() : null;
+
+        // Optionally, lock the record
+        if (draft != null && lock) {
+            this.getLock(ownerKey, draftKey);
+        }
 
         return draft;
     }
@@ -230,12 +242,13 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             case FILE :
                 return createApiDraftFromFile((DraftApiFromFileCommandDto) command);
-        }
 
-        throw new AssetDraftException(
-            AssetMessageCode.API_COMMAND_NOT_SUPPORTED,
-            String.format("API command type [%s] is not supported", command.getType())
-        );
+            default:
+                throw new AssetDraftException(
+                    AssetMessageCode.API_COMMAND_NOT_SUPPORTED,
+                    String.format("API command type [%s] is not supported", command.getType())
+                );
+        }
     }
 
     /**
@@ -283,7 +296,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         }
     }
 
-    AssetDraftDto createApiDraftFromAsset(DraftApiFromAssetCommandDto command) throws AssetDraftException {
+    private AssetDraftDto createApiDraftFromAsset(DraftApiFromAssetCommandDto command) throws AssetDraftException {
         try {
             final CatalogueFeature feature = this.catalogueService.findOneFeature(command.getPid());
 
@@ -354,6 +367,11 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 }
             }
 
+            // If required, get lock
+            if (command.isLocked()) {
+                this.getLock(command.getOwnerKey(), draft.getKey());
+            }
+
             return draft;
         } catch (final CatalogueServiceException ex) {
             throw new AssetDraftException(AssetMessageCode.CATALOGUE_SERVICE, "Failed to create API draft from asset", ex);
@@ -364,7 +382,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         }
     }
 
-    AssetDraftDto createApiDraftFromFile(DraftApiFromFileCommandDto command) throws AssetDraftException {
+    private AssetDraftDto createApiDraftFromFile(DraftApiFromFileCommandDto command) throws AssetDraftException {
         try {
             // Resolve resource file
             final FilePathCommand fileCommand = FilePathCommand.builder()
@@ -415,6 +433,11 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 );
             }
 
+            // If required, get lock
+            if (command.isLocked()) {
+                this.getLock(command.getOwnerKey(), draft.getKey());
+            }
+
             return draft;
         } catch (final CatalogueServiceException ex) {
             throw new AssetDraftException(AssetMessageCode.CATALOGUE_SERVICE, "Failed to create API draft from asset", ex);
@@ -428,7 +451,25 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Override
     @Transactional
     public AssetDraftDto updateDraft(CatalogueItemCommandDto command) throws AssetDraftException {
+        EnumLockResult locked = EnumLockResult.NONE;
+
+        // Always lock record for update operations
+        if (command.getDraftKey() != null) {
+            locked = this.getLock(command.getOwnerKey(), command.getDraftKey());
+        }
+
         final AssetDraftDto draft = this.draftRepository.update(command);
+
+        // For create operations, if a lock is required, get a lock after the
+        // insertion of the new draft
+        if (locked == EnumLockResult.NONE && command.isLocked()) {
+            this.getLock(command.getOwnerKey(), draft.getKey());
+        }
+
+        // For update operations, optionally release the lock
+        if (command.getDraftKey() != null && !command.isLocked()) {
+            this.releaseLock(command.getOwnerKey(), draft.getKey());
+        }
 
         // Consolidate file resources
         this.consolidateResources(draft);
@@ -481,6 +522,11 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             final AssetDraftDto draft = this.updateDraft(draftCommand);
 
+            // If a lock is required for the new record, create one
+            if (command.isLocked()) {
+                this.getLock(command.getOwnerKey(), draft.getKey());
+            }
+
             return draft;
         } catch (final AssetDraftException ex) {
             throw ex;
@@ -492,58 +538,106 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Override
     @Transactional
     public AssetDraftDto updateDraftMetadataVisibility(CatalogueItemVisibilityCommandDto command) throws AssetDraftException {
-        final AssetDraftDto draft = this.draftRepository.update(command);
+        EnumLockResult lock = EnumLockResult.NONE;
 
-        return draft;
+        try {
+            final UUID ownerKey     = command.getOwnerKey();
+            final UUID publisherKey = command.getPublisherKey();
+            final UUID draftKey     = command.getDraftKey();
+
+            // Check draft and owner
+            final ProviderAssetDraftEntity draft = ownerKey.equals(publisherKey)
+                ? this.draftRepository.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null)
+                : this.draftRepository.findOneByOwnerAndPublisherAndKey(ownerKey, publisherKey, draftKey).orElse(null);
+
+            if (draft == null) {
+                throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND, "Draft not found");
+            }
+
+            // Lock record
+            lock = this.getLock(ownerKey, draftKey);
+
+            final AssetDraftDto result = this.draftRepository.update(command);
+
+            return result;
+        } finally {
+            // Release lock only if it was created in this transaction
+            if (lock == EnumLockResult.CREATED) {
+                this.releaseLock(command.getOwnerKey(), command.getDraftKey());
+            }
+        }
     }
 
     @Override
     @Transactional
     public AssetDraftDto updateDraftMetadataSamples(CatalogueItemSamplesCommandDto command) throws AssetDraftException {
-        // Check draft and owner
-        final ProviderAssetDraftEntity draft = this.draftRepository.findOneByPublisherAndKey(
-            command.getPublisherKey(), command.getDraftKey()
-        ).orElse(null);
-
-        if (draft == null) {
-            throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND, "Draft not found");
-        }
-        // Check resource
-        final ResourceDto resource = draft.getCommand().getResources().stream()
-            .filter(r -> r.getId().equals(command.getResourceKey()))
-            .findFirst()
-            .orElse(null);
-
-        if (resource == null) {
-            throw new AssetDraftException(AssetMessageCode.RESOURCE_NOT_FOUND, "Resource not found");
-        }
-
-        final String fileName = this.getMetadataPropertyFileName(
-            command.getResourceKey(), "samples", EnumMetadataPropertyType.JSON
-        );
-        final Path   path     = this.draftFileManager.resolveMetadataPropertyPath(
-            command.getPublisherKey(), command.getDraftKey(), fileName
-        );
+        EnumLockResult lock = EnumLockResult.NONE;
 
         try {
-            final String content = this.objectMapper.writeValueAsString(command.getData());
-            FileUtils.writeStringToFile(path.toFile(), content, Charset.forName("UTF-8"));
-        } catch (final Exception ex) {
-            throw new AssetDraftException(AssetMessageCode.IO_ERROR, "Failed to serialize and persist samples");
-        }
+            final UUID ownerKey     = command.getOwnerKey();
+            final UUID publisherKey = command.getPublisherKey();
+            final UUID draftKey     = command.getDraftKey();
 
-        return draft.toDto();
+            // Check draft and owner
+            final ProviderAssetDraftEntity draft = ownerKey.equals(publisherKey)
+                ? this.draftRepository.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null)
+                : this.draftRepository.findOneByOwnerAndPublisherAndKey(ownerKey, publisherKey, draftKey).orElse(null);
+
+            if (draft == null) {
+                throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND, "Draft not found");
+            }
+
+            // Lock record
+            lock = this.getLock(ownerKey, draftKey);
+
+            // Check resource
+            final ResourceDto resource = draft.getCommand().getResources().stream()
+                .filter(r -> r.getId().equals(command.getResourceKey()))
+                .findFirst()
+                .orElse(null);
+
+            if (resource == null) {
+                throw new AssetDraftException(AssetMessageCode.RESOURCE_NOT_FOUND, "Resource not found");
+            }
+
+            final String fileName = this.getMetadataPropertyFileName(
+                command.getResourceKey(), "samples", EnumMetadataPropertyType.JSON
+            );
+            final Path   path     = this.draftFileManager.resolveMetadataPropertyPath(
+                command.getPublisherKey(), command.getDraftKey(), fileName
+            );
+
+            try {
+                final String content = this.objectMapper.writeValueAsString(command.getData());
+                FileUtils.writeStringToFile(path.toFile(), content, Charset.forName("UTF-8"));
+            } catch (final Exception ex) {
+                throw new AssetDraftException(AssetMessageCode.IO_ERROR, "Failed to serialize and persist samples");
+            }
+
+            return draft.toDto();
+        } finally {
+            // Release lock only if it was created in this transaction
+            if (lock == EnumLockResult.CREATED) {
+                this.releaseLock(command.getOwnerKey(), command.getDraftKey());
+            }
+        }
     }
 
     @Override
     public void deleteDraft(UUID ownerKey, UUID publisherKey, UUID draftKey) throws AssetDraftException {
-        this.ensureDraftAndStatus(ownerKey, publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
+        try {
+            this.ensureDraftAndStatus(ownerKey, publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
 
-        // Delete data in transaction before deleting files
-        this.deleteDraftData(ownerKey, publisherKey, draftKey);
+            this.getLock(ownerKey, draftKey);
 
-        // Delete all files for the selected draft
-        this.draftFileManager.deleteAllFiles(publisherKey, draftKey);
+            // Delete data in transaction before deleting files
+            this.deleteDraftData(ownerKey, publisherKey, draftKey);
+
+            // Delete all files for the selected draft
+            this.draftFileManager.deleteAllFiles(publisherKey, draftKey);
+        } finally {
+            this.releaseLock(ownerKey, draftKey);
+        }
     }
 
     @Transactional
@@ -561,11 +655,16 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Transactional
     public void submitDraft(CatalogueItemCommandDto command) throws AssetDraftException {
         try {
-            // Create draft if key is not set
+            // If the key is not set, create and lock a new record; Otherwise,
+            // lock the existing one
             if (command.getDraftKey() == null) {
+                command.setLocked(true);
+
                 final AssetDraftDto draft = this.updateDraft(command);
 
                 command.setDraftKey(draft.getKey());
+            } else {
+                this.getLock(command.getOwnerKey(), command.getDraftKey());
             }
 
             // A draft must exist with status DRAFT
@@ -607,7 +706,19 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             this.draftRepository.update(command, newStatus, instance.getDefinitionId(), instance.getId());
         } catch (final AssetDraftException ex) {
             throw ex;
+        } finally {
+            // Attempt to release lock but ignore exceptions
+            try {
+                this.releaseLock(command.getOwnerKey(), command.getDraftKey());
+            } catch (final Exception ex) {
+                logger.warn(
+                    "Failed to release lock [type={}, key={}, message={}]",
+                    EnumRecordLock.DRAFT, command.getDraftKey(), ex.getMessage()
+                );
+            }
+
         }
+
     }
 
     @Override
@@ -686,27 +797,35 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     private EnumProviderAssetDraftStatus reviewProviderSetStatus(
         UUID ownerKey, UUID publisherKey, UUID draftKey, boolean accepted, String reason
     ) throws AssetDraftException {
-        // A draft must exist with status in [PENDING_PROVIDER_REVIEW,
-        // POST_PROCESSING, PROVIDER_REJECTED]
-        final AssetDraftDto draft = this.findOneDraft(ownerKey, publisherKey, draftKey);
+        try {
+            // A draft must exist with status in [PENDING_PROVIDER_REVIEW,
+            // POST_PROCESSING, PROVIDER_REJECTED]
+            final AssetDraftDto draft = this.findOneDraft(ownerKey, publisherKey, draftKey, false);
 
-        if (draft == null) {
-            throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
-        }
+            if (draft == null) {
+                throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
+            }
 
-        if (draft.getStatus() != EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW &&
-            draft.getStatus() != EnumProviderAssetDraftStatus.POST_PROCESSING &&
-            draft.getStatus() != EnumProviderAssetDraftStatus.PROVIDER_REJECTED
-        ) {
-            throw new AssetDraftException(AssetMessageCode.INVALID_STATE, String.format(
-                "Expected status in [PENDING_PROVIDER_REVIEW, POST_PROCESSING, PROVIDER_REJECTED]. Found [%s]", draft.getStatus()
-            ));
-        }
+            // Get lock
+            this.getLock(ownerKey, draftKey);
 
-        if (accepted) {
-            return this.draftRepository.acceptProvider(publisherKey, draftKey);
-        } else {
-            return this.draftRepository.rejectProvider(publisherKey, draftKey, reason);
+            if (draft.getStatus() != EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW &&
+                draft.getStatus() != EnumProviderAssetDraftStatus.POST_PROCESSING &&
+                draft.getStatus() != EnumProviderAssetDraftStatus.PROVIDER_REJECTED
+            ) {
+                throw new AssetDraftException(AssetMessageCode.INVALID_STATE, String.format(
+                    "Expected status in [PENDING_PROVIDER_REVIEW, POST_PROCESSING, PROVIDER_REJECTED]. Found [%s]", draft.getStatus()
+                ));
+            }
+
+            if (accepted) {
+                return this.draftRepository.acceptProvider(publisherKey, draftKey);
+            } else {
+                return this.draftRepository.rejectProvider(publisherKey, draftKey, reason);
+            }
+        } finally {
+            // Release lock since the processing workflow will resume
+            this.releaseLock(ownerKey, draftKey);
         }
     }
 
@@ -733,7 +852,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     public void publishDraft(UUID ownerKey, UUID publisherKey, UUID draftKey) throws AssetDraftException {
         try {
             // Validate draft state
-            final AssetDraftDto draft = this.findOneDraft(ownerKey, publisherKey, draftKey);
+            final AssetDraftDto draft = this.findOneDraft(ownerKey, publisherKey, draftKey, false);
 
             if (draft == null) {
                 throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
@@ -994,6 +1113,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             command.getOwnerKey(), command.getPublisherKey(), command.getDraftKey(), EnumProviderAssetDraftStatus.DRAFT
         );
 
+        // Lock record before update
+        final EnumLockResult lock = this.getLock(command.getOwnerKey(), command.getDraftKey());
+
         // Set category
         if (command.getCategory() == null) {
             command.setCategory(draft.getType());
@@ -1011,7 +1133,14 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         draft.getCommand().setPublisherKey(command.getPublisherKey());
         draft.getCommand().addFileResource(resource);
 
-        return this.draftRepository.update(draft.getCommand());
+        final AssetDraftDto result = this.draftRepository.update(draft.getCommand());
+
+        // Release lock if it was created only for the specific operation
+        if (lock == EnumLockResult.CREATED) {
+            this.releaseLock(command.getDraftKey(), command.getDraftKey());
+        }
+
+        return result;
     }
 
     @Override
@@ -1033,6 +1162,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             command.getOwnerKey(), command.getPublisherKey(), command.getDraftKey(), EnumProviderAssetDraftStatus.DRAFT
         );
 
+        // Lock record before update
+        final EnumLockResult lock = this.getLock(command.getOwnerKey(), command.getDraftKey());
+
         // Update database link
         final AssetFileAdditionalResourceDto resource = assetAdditionalResourceRepository.update(command);
 
@@ -1045,7 +1177,14 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         draft.getCommand().setPublisherKey(command.getPublisherKey());
         draft.getCommand().addAdditionalResource(resource);
 
-        return this.draftRepository.update(draft.getCommand());
+        final AssetDraftDto result = this.draftRepository.update(draft.getCommand());
+
+        // Release lock if it was created only for the specific operation
+        if (lock == EnumLockResult.CREATED) {
+            this.releaseLock(command.getDraftKey(), command.getDraftKey());
+        }
+
+        return result;
     }
 
     @Override
@@ -1136,7 +1275,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     private AssetDraftDto ensureDraftAndStatus(
         UUID ownerKey, UUID publisherKey, UUID assetKey, EnumProviderAssetDraftStatus status
     ) throws AssetDraftException {
-        final AssetDraftDto draft = this.findOneDraft(ownerKey, publisherKey, assetKey);
+        final AssetDraftDto draft = this.findOneDraft(ownerKey, publisherKey, assetKey, false);
 
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
@@ -1318,6 +1457,44 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     private String getMetadataPropertyFileName(String resourceKey, String propertyName, EnumMetadataPropertyType propertyType) {
         return StringUtils.joinWith(".", resourceKey, "property", propertyName, propertyType.getExtension());
+    }
+
+    @Transactional
+    private EnumLockResult getLock(UUID userKey, UUID draftKey) throws AssetDraftException {
+        final Optional<RecordLockEntity> lock = this.recordLockRepository.findOneForDraft(draftKey);
+
+        if (lock.isPresent() && !lock.get().getOwner().getKey().equals(userKey)) {
+            throw new AssetDraftException(
+                AssetMessageCode.LOCK_EXISTS,
+                String.format("Record is already locked by user [%s]", lock.get().getOwner().getEmail())
+            );
+        }
+        if (!lock.isPresent()) {
+            final Integer recordId = this.draftRepository.getIdFromKey(draftKey);
+
+            this.recordLockRepository.create(EnumRecordLock.DRAFT, recordId, userKey);
+
+            return EnumLockResult.CREATED;
+        }
+
+        return EnumLockResult.EXISTS;
+    }
+
+    @Override
+    @Transactional
+    public void releaseLock(UUID userKey, UUID draftKey) throws AssetDraftException {
+        final Optional<RecordLockEntity> lock = this.recordLockRepository.findOneForDraft(draftKey);
+
+        if (lock.isPresent()) {
+            if (!lock.get().getOwner().getKey().equals(userKey)) {
+                throw new AssetDraftException(
+                    AssetMessageCode.LOCK_EXISTS,
+                    String.format("Record is already locked by user [%s]", lock.get().getOwner().getEmail())
+                );
+            }
+
+            recordLockRepository.delete(lock.get());
+        }
     }
 
 }

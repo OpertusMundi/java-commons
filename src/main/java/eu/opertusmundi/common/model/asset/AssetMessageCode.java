@@ -25,6 +25,7 @@ public enum AssetMessageCode implements MessageCode {
     HARVEST_ITEM_NOT_FOUND,
     ASSET_NOT_FOUND,
     DRAFT_FOR_PARENT_EXISTS,
+    LOCK_EXISTS,
     ;
 
     @Override

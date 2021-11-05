@@ -36,4 +36,10 @@ public class DraftFromAssetCommandDto implements Serializable {
     @NotEmpty
     private String pid;
 
+    /**
+     * True if the record must be locked when the command executes
+     */
+    @JsonIgnore
+    private boolean locked;
+
 }

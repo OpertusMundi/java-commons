@@ -55,6 +55,12 @@ public abstract class DraftApiCommandDto implements Serializable {
     @JsonIgnore
     private UUID ownerKey;
 
+    /**
+     * True if the record must be locked when the command executes
+     */
+    @JsonIgnore
+    private boolean locked;
+
     @Schema(description = "Command type", required = true)
     @NotNull
     private EnumDraftCommandType type;

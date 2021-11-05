@@ -82,6 +82,12 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
     @JsonIgnore
     private UUID draftKey;
 
+    /**
+     * True if the record must be locked when the command executes
+     */
+    @JsonIgnore
+    private boolean locked;
+
     @ArraySchema(
         arraySchema = @Schema(
             description = "Auxiliary files or additional resources to the dataset"
