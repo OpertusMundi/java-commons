@@ -28,6 +28,7 @@ import org.springframework.util.StreamUtils;
 
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto.Attributes;
+import eu.opertusmundi.common.model.catalogue.LayerStyle;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 
 @Service
@@ -48,18 +49,34 @@ public class DefaultWmsClient implements WmsClient {
                 return null;
             }
 
-            final String       prefix      = String.format("%s://%s", url.getProtocol(), url.getAuthority());
-            final List<String> styles      = new ArrayList<>();
-            final List<byte[]> styleImages = new ArrayList<>();
+            final String           prefix = String.format("%s://%s", url.getProtocol(), url.getAuthority());
+            final List<LayerStyle> styles = new ArrayList<>();
 
             for (final StyleImpl s : layer.getStyles()) {
+                final LayerStyle.LayerStyleBuilder builder = LayerStyle.builder()
+                    .abstractText(s.getAbstract() != null ? s.getAbstract().toString() : null)
+                    .name(s.getName())
+                    .title(s.getTitle() != null ? s.getTitle().toString() : null);
+
+                final List<LayerStyle.LegendUrl> legendUrls = new ArrayList<>();
+
                 for (final Object legendUrl : s.getLegendURLs()) {
                     final String styleUrl         = (String) legendUrl;
                     final String styleRelativeUrl = styleUrl.startsWith(prefix) ? StringUtils.removeStart(styleUrl, prefix) : styleUrl;
 
-                    styles.add(styleRelativeUrl);
-                    styleImages.add(this.getImage(styleUrl));
+                    final byte[] image = this.getImage(styleUrl);
+
+                    legendUrls.add(LayerStyle.LegendUrl.builder()
+                        .image(image)
+                        .url(styleRelativeUrl)
+                        .build()
+                    );
                 }
+
+                styles.add(builder
+                    .legendUrls(legendUrls)
+                    .build()
+                );
             }
 
             final List<ServiceResourceDto.Dimension> dimensions = layer.getDimensions().keySet().stream().map(name -> {
@@ -97,7 +114,6 @@ public class DefaultWmsClient implements WmsClient {
                 )
                 .serviceType(EnumSpatialDataServiceType.WMS)
                 .styles(styles)
-                .styleImages(styleImages)
                 .build();
         } catch (final Exception ex) {
             throw new OgcServiceClientException(OgcServiceMessageCode.UNKNOWN, ex);

@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import eu.opertusmundi.common.model.asset.EnumResourceType;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
+import eu.opertusmundi.common.model.catalogue.LayerStyle;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import lombok.AllArgsConstructor;
@@ -82,11 +83,7 @@ public class CatalogueResource implements Serializable {
 
     @JsonInclude(Include.NON_EMPTY)
     @JsonProperty("style")
-    private List<String> styles;
-
-    @JsonInclude(Include.NON_EMPTY)
-    @JsonProperty("style_image")
-    private List<byte[]> styleImages;
+    private List<LayerStyle> styles;
 
     @JsonInclude(Include.NON_NULL)
     private Geometry bbox;
