@@ -426,6 +426,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             try (final InputStream input = Files.newInputStream(resourcePath)) {
                 draft = this.addFileResource(resourceCommand, input);
+            } catch(final AssetDraftException ex) {
+                throw ex;
             } catch(final Exception ex) {
                 throw new AssetDraftException(
                     AssetMessageCode.API_COMMAND_RESOURCE_COPY,
@@ -1137,7 +1139,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         // Release lock if it was created only for the specific operation
         if (lock == EnumLockResult.CREATED) {
-            this.releaseLock(command.getDraftKey(), command.getDraftKey());
+            this.releaseLock(command.getOwnerKey(), command.getDraftKey());
         }
 
         return result;
