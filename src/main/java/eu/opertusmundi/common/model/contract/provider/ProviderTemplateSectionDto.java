@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.model.contract.provider;
 
 import java.io.Serializable;
+import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -26,5 +27,6 @@ public class ProviderTemplateSectionDto implements Serializable {
     private Integer option;
 
     @Schema(description = "Sub-option identifier")
-    private Integer subOption;
+    private List<Integer> subOption;
+    
 }

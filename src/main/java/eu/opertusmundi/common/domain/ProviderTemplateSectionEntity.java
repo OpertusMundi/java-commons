@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.domain;
 
+import java.util.List;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -12,6 +14,7 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
+import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 
 import com.vladmihalcea.hibernate.type.array.ListArrayType;
@@ -68,10 +71,15 @@ public class ProviderTemplateSectionEntity{
     @Getter
     private Integer option ;
 
-    @Column(name = "`sub_option`", updatable = false)
-    @Setter
+    @Type(type = "list-array")
+    @Column(
+        name = "subOption",
+        columnDefinition = "integer[]",
+        updatable = false
+    )
     @Getter
-    private Integer subOption ;
+    @Setter
+    private List<Integer> subOption;
 
     public ProviderTemplateSectionDto toDto() {
         final ProviderTemplateSectionDto s = new ProviderTemplateSectionDto();

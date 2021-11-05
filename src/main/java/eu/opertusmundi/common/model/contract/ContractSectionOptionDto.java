@@ -35,5 +35,9 @@ public class ContractSectionOptionDto implements Serializable {
     @Getter
     @Setter
     private String shortDescription;
+    
+    @Getter
+    @Setter
+    private Boolean mutexSuboptions;
 
 }
