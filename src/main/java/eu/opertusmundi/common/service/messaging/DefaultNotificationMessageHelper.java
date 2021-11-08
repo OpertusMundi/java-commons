@@ -3,7 +3,6 @@ package eu.opertusmundi.common.service.messaging;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +14,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ibm.icu.text.MessageFormat;
 
 import eu.opertusmundi.common.domain.NotificationTemplateEntity;
-import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.model.ServiceException;
 import eu.opertusmundi.common.model.message.EnumNotificationType;
 import eu.opertusmundi.common.model.message.client.NotificationMessageCode;
@@ -146,22 +144,20 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
     }
 
 	private ObjectNode populateOrderConfirmationModel(Map<String, Object> variables, ObjectNode data) {
-        final UUID 						payInKey  			= UUID.fromString((String) variables.get("payInKey"));
-        final Optional<PayInEntity>		payInEntity			= this.payInRepository.findOneEntityByKey(payInKey);
-        final HelpdeskPayInDto			helpDeskPayIn		= payInEntity.get().toHelpdeskDto(true);
-        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
-        final HelpdeskOrderItemDto 		orderItem 			= payInOrderItem.getOrder().getItems().get(0);
+        final UUID                      payInKey       = UUID.fromString((String) variables.get("payInKey"));
+        final HelpdeskPayInDto          helpDeskPayIn  = this.payInRepository.findOneObjectByKey(payInKey).get();
+        final HelpdeskOrderPayInItemDto payInOrderItem = (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
+        final HelpdeskOrderItemDto      orderItem      = payInOrderItem.getOrder().getItems().get(0);
 
     	data.put("orderId", orderItem.getOrderId());
         return data;
 	}
 
 	private ObjectNode populatePurchaseApprovedBySupplierModel(Map<String, Object> variables, ObjectNode data) {
-        final UUID 						payInKey  			= UUID.fromString((String) variables.get("payInKey"));
-        final Optional<PayInEntity>		payInEntity			= this.payInRepository.findOneEntityByKey(payInKey);
-        final HelpdeskPayInDto			helpDeskPayIn		= payInEntity.get().toHelpdeskDto(true);
-        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
-        final HelpdeskOrderItemDto 		orderItem 			= payInOrderItem.getOrder().getItems().get(0);
+        final UUID                      payInKey       = UUID.fromString((String) variables.get("payInKey"));
+        final HelpdeskPayInDto          helpDeskPayIn  = this.payInRepository.findOneObjectByKey(payInKey).get();
+        final HelpdeskOrderPayInItemDto payInOrderItem = (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
+        final HelpdeskOrderItemDto      orderItem      = payInOrderItem.getOrder().getItems().get(0);
 
     	data.put("assetName", orderItem.getDescription());
     	data.put("assetVersion", orderItem.getAssetVersion());
@@ -170,11 +166,10 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
 	}
 
 	private ObjectNode populatePurchaseRejectedBySupplierModel(Map<String, Object> variables, ObjectNode data) {
-        final UUID 						payInKey  			= UUID.fromString((String) variables.get("payInKey"));
-        final Optional<PayInEntity>		payInEntity			= this.payInRepository.findOneEntityByKey(payInKey);
-        final HelpdeskPayInDto			helpDeskPayIn		= payInEntity.get().toHelpdeskDto(true);
-        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
-        final HelpdeskOrderItemDto 		orderItem 			= payInOrderItem.getOrder().getItems().get(0);
+        final UUID                      payInKey       = UUID.fromString((String) variables.get("payInKey"));
+        final HelpdeskPayInDto          helpDeskPayIn  = this.payInRepository.findOneObjectByKey(payInKey).get();
+        final HelpdeskOrderPayInItemDto payInOrderItem = (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
+        final HelpdeskOrderItemDto      orderItem      = payInOrderItem.getOrder().getItems().get(0);
 
     	data.put("assetName", orderItem.getDescription());
     	data.put("assetVersion", orderItem.getAssetVersion());
@@ -183,11 +178,10 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
 	}
 
 	private ObjectNode populateDigitalDeliveryBySupplierModel(Map<String, Object> variables, ObjectNode data) {
-        final UUID 						payInKey  			= UUID.fromString((String) variables.get("payInKey"));
-        final Optional<PayInEntity>		payInEntity			= this.payInRepository.findOneEntityByKey(payInKey);
-        final HelpdeskPayInDto			helpDeskPayIn		= payInEntity.get().toHelpdeskDto(true);
-        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
-        final HelpdeskOrderItemDto 		orderItem 			= payInOrderItem.getOrder().getItems().get(0);
+        final UUID                      payInKey       = UUID.fromString((String) variables.get("payInKey"));
+        final HelpdeskPayInDto          helpDeskPayIn  = this.payInRepository.findOneObjectByKey(payInKey).get();
+        final HelpdeskOrderPayInItemDto payInOrderItem = (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
+        final HelpdeskOrderItemDto      orderItem      = payInOrderItem.getOrder().getItems().get(0);
 
     	data.put("assetName", orderItem.getDescription());
     	data.put("assetVersion", orderItem.getAssetVersion());
@@ -195,11 +189,10 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
 	}
 
 	private ObjectNode populatePhysicalDeliveryBySupplierModel(Map<String, Object> variables, ObjectNode data) {
-        final UUID 						payInKey  			= UUID.fromString((String) variables.get("payInKey"));
-        final Optional<PayInEntity>		payInEntity			= this.payInRepository.findOneEntityByKey(payInKey);
-        final HelpdeskPayInDto			helpDeskPayIn		= payInEntity.get().toHelpdeskDto(true);
-        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
-        final HelpdeskOrderItemDto 		orderItem 			= payInOrderItem.getOrder().getItems().get(0);
+        final UUID                      payInKey       = UUID.fromString((String) variables.get("payInKey"));
+        final HelpdeskPayInDto          helpDeskPayIn  = this.payInRepository.findOneObjectByKey(payInKey).get();
+        final HelpdeskOrderPayInItemDto payInOrderItem = (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
+        final HelpdeskOrderItemDto      orderItem      = payInOrderItem.getOrder().getItems().get(0);
 
     	data.put("assetName", orderItem.getDescription());
     	data.put("assetVersion", orderItem.getAssetVersion());
@@ -207,11 +200,10 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
 	}
 
 	private ObjectNode populateDigitalDeliveryByPlatformModel(Map<String, Object> variables, ObjectNode data) {
-        final UUID 						payInKey  			= UUID.fromString((String) variables.get("payInKey"));
-        final Optional<PayInEntity>		payInEntity			= this.payInRepository.findOneEntityByKey(payInKey);
-        final HelpdeskPayInDto			helpDeskPayIn		= payInEntity.get().toHelpdeskDto(true);
-        final HelpdeskOrderPayInItemDto payInOrderItem 		= (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
-        final HelpdeskOrderItemDto 		orderItem 			= payInOrderItem.getOrder().getItems().get(0);
+        final UUID                      payInKey       = UUID.fromString((String) variables.get("payInKey"));
+        final HelpdeskPayInDto          helpDeskPayIn  = this.payInRepository.findOneObjectByKey(payInKey).get();
+        final HelpdeskOrderPayInItemDto payInOrderItem = (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
+        final HelpdeskOrderItemDto      orderItem      = payInOrderItem.getOrder().getItems().get(0);
 
     	data.put("assetName", orderItem.getDescription());
     	data.put("assetVersion", orderItem.getAssetVersion());
