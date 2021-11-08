@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.domain;
 
+import java.util.stream.Collectors;
+
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -23,7 +25,7 @@ public class FreePayInEntity extends PayInEntity {
     }
 
     public void updateDto(PayInDto p) {
-
+        p.setConsumerKey(consumer.getKey());
         p.setCreatedOn(createdOn);
         p.setCurrency(currency);
         p.setExecutedOn(executedOn);
@@ -31,6 +33,7 @@ public class FreePayInEntity extends PayInEntity {
         p.setKey(key);
         p.setPayIn(payIn);
         p.setPaymentMethod(paymentMethod);
+        p.setProviderKey(items.stream().map(i -> i.getProvider().getKey()).distinct().collect(Collectors.toList()));
         p.setReferenceNumber(referenceNumber);
         p.setStatus(status);
         p.setStatusUpdatedOn(statusUpdatedOn);

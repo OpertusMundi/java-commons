@@ -2,6 +2,7 @@ package eu.opertusmundi.common.model.payment;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -26,6 +27,12 @@ public abstract class PayInDto {
      */
     @JsonIgnore
     protected String payIn;
+
+    @JsonIgnore
+    protected UUID consumerKey;
+
+    @JsonIgnore
+    protected List<UUID> providerKey;
 
     @Schema(description = "PayIn unique key")
     protected UUID key;

@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.domain;
 
+import java.util.stream.Collectors;
+
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -47,6 +49,7 @@ public class CardDirectPayInEntity extends PayInEntity {
     private String statementDescriptor;
 
     public void updateDto(PayInDto p) {
+        p.setConsumerKey(consumer.getKey());
         p.setCreatedOn(createdOn);
         p.setCurrency(currency);
         p.setExecutedOn(executedOn);
@@ -54,6 +57,7 @@ public class CardDirectPayInEntity extends PayInEntity {
         p.setKey(key);
         p.setPayIn(payIn);
         p.setPaymentMethod(paymentMethod);
+        p.setProviderKey(items.stream().map(i -> i.getProvider().getKey()).distinct().collect(Collectors.toList()));
         p.setReferenceNumber(referenceNumber);
         p.setStatus(status);
         p.setStatusUpdatedOn(statusUpdatedOn);
@@ -84,7 +88,7 @@ public class CardDirectPayInEntity extends PayInEntity {
         final ProviderCardDirectPayInDto p = new ProviderCardDirectPayInDto();
 
         this.updateDto(p);
-        
+
         p.setAlias(alias);
         p.setCard(card);
         p.setConsumer(consumer.getConsumer().toConsumerDto());
@@ -102,7 +106,7 @@ public class CardDirectPayInEntity extends PayInEntity {
         final HelpdeskCardDirectPayInDto p = new HelpdeskCardDirectPayInDto();
 
         this.updateDto(p);
-        
+
         p.setAlias(alias);
         p.setCard(card);
         p.setConsumer(consumer.getProfile().getConsumer().toDto());
