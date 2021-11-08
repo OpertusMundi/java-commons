@@ -103,18 +103,18 @@ public class MasterSectionHistoryEntity {
     private String descriptionOfChange;
 
     public String findOptionByIndex(int index) {
-        if (index < 0 || index >= this.options.size()) {
+        if (options == null || index < 0 || index >= options.size()) {
             return null;
         }
         return this.options.get(index).getBody();
     }
 
     public ContractSectionSubOptionDto findSubOptionByIndex(int oIndex, int sIndex) {
-        if (oIndex < 0 || oIndex >= this.options.size()) {
+        if (options == null || oIndex < 0 || oIndex >= options.size()) {
             return null;
         }
-        final List<ContractSectionSubOptionDto> subOptions = this.options.get(oIndex).getSubOptions();
-        if (sIndex < 0 || sIndex >= subOptions.size()) {
+        final List<ContractSectionSubOptionDto> subOptions = options.get(oIndex).getSubOptions();
+        if (subOptions == null || sIndex < 0 || sIndex >= subOptions.size()) {
             return null;
         }
         return subOptions.get(sIndex);
