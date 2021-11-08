@@ -40,6 +40,8 @@ import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.PaymentMessageCode;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskOrderPayInItemDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
 import eu.opertusmundi.common.model.pricing.CallPrePaidPricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.pricing.EnumPricingModel;
@@ -136,14 +138,14 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     @Retryable(include = {Exception.class}, maxAttempts = 3, backoff = @Backoff(delay = 2000, maxDelay = 3000))
     public String startOrderWithoutPayInWorkflow(UUID payInKey) {
         try {
-            final PayInEntity payIn = payInRepository.findOneEntityByKey(payInKey).orElse(null);
+            final HelpdeskPayInDto payIn = payInRepository.findOneObjectByKey(payInKey).orElse(null);
             Assert.isTrue(payIn.getItems().size() == 1, "Expected a single pay in item");
             Assert.isTrue(payIn.getTotalPrice().compareTo(BigDecimal.ZERO) == 0, "Expected total price to be 0");
 
             final EnumPaymentItemType type = payIn.getItems().get(0).getType();
             Assert.isTrue(type == EnumPaymentItemType.ORDER, "Expected an order pay in item");
 
-            final PayInOrderItemEntity payInItem = (PayInOrderItemEntity) payIn.getItems().get(0);
+            final HelpdeskOrderPayInItemDto payInItem = (HelpdeskOrderPayInItemDto) payIn.getItems().get(0);
 
             if (!StringUtils.isBlank(payIn.getProcessInstance())) {
                 // Workflow instance already exists
@@ -159,6 +161,9 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                 final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
                     .variableAsString(EnumProcessInstanceVariable.START_USER_KEY.getValue(), "")
                     .variableAsString("payInKey", payInKey.toString())
+                    .variableAsString("orderKey", ((HelpdeskOrderPayInItemDto) payIn.getItems().get(0)).getOrder().getKey().toString())
+                    .variableAsString("consumerKey", payIn.getConsumerKey().toString())
+                    .variableAsString("providerKey", payIn.getProviderKey().get(0).toString())
                     .variableAsString("payInStatus", EnumTransactionStatus.SUCCEEDED.toString())
                     .variableAsString("deliveryMethod", payInItem.getOrder().getDeliveryMethod().toString())
                     .build();
@@ -191,11 +196,11 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     @Retryable(include = {Exception.class}, maxAttempts = 3, backoff = @Backoff(delay = 2000, maxDelay = 3000))
     public String startOrderWithPayInWorkflow(UUID payInKey, String payInId, EnumTransactionStatus payInStatus) {
         try {
-            final PayInEntity payIn = payInRepository.findOneEntityByKey(payInKey).orElse(null);
+            final HelpdeskPayInDto payIn = payInRepository.findOneObjectByKey(payInKey).orElse(null);
             Assert.isTrue(payIn.getItems().size() == 1, "Expected a single pay in item");
             final EnumPaymentItemType type = payIn.getItems().get(0).getType();
             Assert.isTrue(type == EnumPaymentItemType.ORDER, "Expected an order pay in item");
-            final PayInOrderItemEntity payInItem = (PayInOrderItemEntity) payIn.getItems().get(0);
+            final HelpdeskOrderPayInItemDto payInItem = (HelpdeskOrderPayInItemDto) payIn.getItems().get(0);
 
             if (!StringUtils.isBlank(payIn.getProcessInstance())) {
                 // Workflow instance already exists
@@ -210,6 +215,9 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                 // Set variables
                 final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
                     .variableAsString(EnumProcessInstanceVariable.START_USER_KEY.getValue(), "")
+                    .variableAsString("orderKey", ((HelpdeskOrderPayInItemDto) payIn.getItems().get(0)).getOrder().getKey().toString())
+                    .variableAsString("consumerKey", payIn.getConsumerKey().toString())
+                    .variableAsString("providerKey", payIn.getProviderKey().get(0).toString())
                     .variableAsString("payInKey", payInKey.toString())
                     .variableAsString("payInId", payInId)
                     .variableAsString("payInStatus", payInStatus.toString())

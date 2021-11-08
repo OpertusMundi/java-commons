@@ -55,7 +55,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     @Query("SELECT p FROM PayIn p WHERE p.key = :key")
     Optional<PayInEntity> findOneEntityByKey(@Param("key") UUID key);
 
-    default Optional<PayInDto> findOneObjectByKey(UUID key) {
+    default Optional<HelpdeskPayInDto> findOneObjectByKey(UUID key) {
         return this.findOneEntityByKey(key).map(o -> o.toHelpdeskDto(true));
     }
 
