@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import com.ibm.icu.text.MessageFormat;
@@ -116,6 +117,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Map<String, Object> createModel(EnumMailType type, MailModelBuilder builder) {
         Assert.notNull(type, "Expected a non-null mail type");
 
@@ -259,7 +261,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .add("itemName", orderItemEntity.getDescription())
             .add("itemType", orderItemEntity.getType())
             .add("itemVersion", orderItemEntity.getAssetVersion())
-            .add("itemVendor", orderItemEntity.getProvider())
+            .add("itemVendor", orderItemEntity.getProvider().getProvider().getName())
             .add("itemPrice", orderItemEntity.getTotalPrice());
     }
 
