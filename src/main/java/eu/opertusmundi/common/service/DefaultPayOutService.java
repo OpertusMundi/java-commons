@@ -71,6 +71,7 @@ public class DefaultPayOutService implements PayOutService {
 
                 // Set variables
                 this.setStringVariable(variables, EnumProcessInstanceVariable.START_USER_KEY.getValue(), userKey.toString());
+                this.setStringVariable(variables, "providerKey", payOut.getProvider().getKey());
                 this.setStringVariable(variables, "payOutKey", payOutKey);
                 this.setStringVariable(variables, "payOutId", null);
                 this.setStringVariable(variables, "payOutStatus", payOut.getStatus().toString());
