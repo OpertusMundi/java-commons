@@ -1095,6 +1095,37 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		section.getBlocks().add(block);
     		section = generatePricingModelRestrictions(section, block, pricingModel);
     	}
+    	
+    	/* Placeholder pricing model */
+    	else if (pricingModel.getPricingModelType() == EnumPricingModel.UNDEFINED) {
+
+    		/* Add applicable price*/
+    		Block block = generateSingleStylePricingModelBlock(partPrice, BOLD);
+    		section.getBlocks().add(block);
+    		
+    		String text = "[Pricing information]";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);
+    		section.getBlocks().add(block);
+    		
+    		/* Add Delivery*/
+    		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);
+    		section.getBlocks().add(block);
+    		
+    		text = "[Delivery information]";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);
+    		section.getBlocks().add(block);
+    		
+    		/* Add restrictions*/
+    		block = generateSingleStylePricingModelBlock(partRestriction, BOLD);
+    		section.getBlocks().add(block);
+    		//section = generatePricingModelRestrictions(section, block, pricingModel);
+
+    		
+    		text = "[Restriction information]";
+    		block = generateSingleStylePricingModelBlock(text, NORMAL);
+    		section.getBlocks().add(block);
+    	}
+    	
 
     	return section;
 

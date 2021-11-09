@@ -53,30 +53,29 @@ public class DefaultContractParametersFactory implements ContractParametersFacto
     @Override
     public ContractParametersDto createWithPlaceholderData() {
 
-		final ContractParametersDto.Provider 		provider 		= new ContractParametersDto.Provider("Adaptas", "736 Jim Rosa Lane, San Francisco, CA 94108", "richardmsteffen@armyspy.com", "Richard M. Steffen", "012345678", "098765432");
-		final ContractParametersDto.Consumer 		consumer 		= new ContractParametersDto.Consumer("Life's Gold", "51, rue Adolphe Wurtz, 97420 LE PORT", "paulmstamper@teleworm.us", "Paul M. Stamper", "012345678", "632769332");
-		final ContractParametersDto.Product  		product 		= new ContractParametersDto.Product("bdb87e25-4ac9-4a1e-85be-df4dced3d286", "Lakes of Greece", "Vector dataset with complete collection of the lakes in Greece", "Yes", "Yes", "Immediate", "csv file, digital download", "0%");
+		final ContractParametersDto.Provider 		provider 		= new ContractParametersDto.Provider(
+				"[Supplier name]", "[Supplier professional address]", "[Supplier contact email]", 
+				"[Supplier contact person]", "[Supplier company registration number]", "[Supplier EU VAT number]");
+		final ContractParametersDto.Consumer 		consumer 		= new ContractParametersDto.Consumer(
+				"[Customer name]", "[Customer professional address]", "[Customer contact email]", 
+				"[Customer contact person]", "[Customer company registration number]", "[Customer EU VAT number]");
+		final ContractParametersDto.Product  		product 		= new ContractParametersDto.Product(
+				"[Applicable fees]", "[Product description]", "[Estimated delivery date]", 
+				"[Product ID]", "[Media and format of delivery]", "[Product name]", 
+				 "[Past versions included]", "[Updates included]");
 
-		final EnumPricingModel 		pricingModelType 				= EnumPricingModel.FIXED_PER_ROWS;
-		final String				pricingModelDescription 		= "The product includes only the current version, with no access to updates. ";
-        final EnumContinent[]		consumerRestrictionContinents	= {EnumContinent.EUROPE, EnumContinent.ASIA};
-        final String[]				consumerRestrictionCountries	= {"Greece"};
-        final EnumContinent[]		coverageRestrictionContinents	= {EnumContinent.AFRICA};
-        final String[]				coverageRestrictionCountries	= {"Germany"};
-        final String[]				domainRestrictions				= {"Domain1", "Domain2"};
-        final String				totalPrice						= "100";
-        final String				totalPriceExcludingTax			= "77";
-        final String				pricePerRows					= "10";
-        final String				pricePerPopulation				= "12";
-        final List<DiscountRateDto>	discountRates					= new ArrayList<DiscountRateDto>();
-        final DiscountRateDto dis1 = new DiscountRateDto();
-        dis1.setCount((long) 1000);
-        dis1.setDiscount(BigDecimal.valueOf(10));
-        discountRates.add(dis1);
-        final DiscountRateDto dis2 = new DiscountRateDto();
-        dis2.setCount((long) 9000);
-        dis2.setDiscount(BigDecimal.valueOf(15));
-        discountRates.add(dis2);
+		final EnumPricingModel 		pricingModelType 				= EnumPricingModel.UNDEFINED;
+		final String				pricingModelDescription 		= null;
+        final EnumContinent[]		consumerRestrictionContinents	= null;
+        final String[]				consumerRestrictionCountries	= null;
+        final EnumContinent[]		coverageRestrictionContinents	= null;
+        final String[]				coverageRestrictionCountries	= null;
+        final String[]				domainRestrictions				= null;
+        final String				totalPrice						= null;
+        final String				totalPriceExcludingTax			= null;
+        final String				pricePerRows					= null;
+        final String				pricePerPopulation				= null;
+        final List<DiscountRateDto>	discountRates					= null;
 		final ContractParametersDto.PricingModel	pricingModel	= new ContractParametersDto.PricingModel(
 					pricingModelType, pricingModelDescription, consumerRestrictionContinents, consumerRestrictionCountries,
 					coverageRestrictionContinents, coverageRestrictionCountries, domainRestrictions,
