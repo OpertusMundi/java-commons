@@ -26,12 +26,12 @@ public class PricingModelSettings {
     @JsonIgnore
     private boolean enabled;
 
-    @Schema(description = "`True` if this model exclusive i.e. cannot be listed with other pricing models")
+    @Schema(description = "`True` if this model is exclusive i.e. cannot be listed with other pricing models")
     private boolean exclusive;
 
     @ArraySchema(
         arraySchema = @Schema(
-            description = "Pricing models that are allowed to listed with this model. If `exclusive` is `True` "
+            description = "Pricing models that are allowed to be listed with this model. If `exclusive` is `True` "
                         + "this property is ignored."
         ),
         minItems = 0,

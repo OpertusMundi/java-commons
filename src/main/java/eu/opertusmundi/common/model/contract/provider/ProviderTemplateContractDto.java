@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import eu.opertusmundi.common.model.account.SimpleAccountDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryDto;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -27,44 +28,44 @@ import lombok.Setter;
 @Setter
 public class ProviderTemplateContractDto implements Serializable {
 
-    protected static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @JsonIgnore
-    protected Integer id;
+    private Integer id;
 
     @JsonIgnore
-    protected UUID contractRootKey;
+    private UUID contractRootKey;
 
     @JsonProperty("parentId")
     @JsonInclude(Include.NON_NULL)
     @Schema(description = "Parent template id")
-    protected UUID contractParentKey;
+    private UUID contractParentKey;
 
     @Schema(description = "Unique key")
-    protected UUID key;
+    private UUID key;
 
     @Schema(description = "Master template key")
-    protected UUID templateKey;
+    private UUID templateKey;
 
     @Schema(hidden = true, description = "The owner of this contract")
     @JsonInclude(Include.NON_NULL)
-    protected SimpleAccountDto owner;
+    private SimpleAccountDto owner;
 
     @Schema(description = "Title")
     @NotEmpty
-    protected String title;
+    private String title;
 
     @Schema(description = "Subtitle")
-    protected String subtitle;
+    private String subtitle;
 
     @Schema(description = "Version")
-    protected String version;
+    private String version;
 
     @Schema(description = "Date of creation in ISO format")
-    protected ZonedDateTime createdAt;
+    private ZonedDateTime createdAt;
 
     @Schema(description = "Date of last update in ISO format")
-    protected ZonedDateTime modifiedAt;
+    private ZonedDateTime modifiedAt;
 
     @Schema(description = "Sections")
     @ArraySchema(
@@ -74,11 +75,11 @@ public class ProviderTemplateContractDto implements Serializable {
         minItems = 0
     )
     @JsonInclude(Include.NON_EMPTY)
-    protected List<ProviderTemplateSectionDto> sections;
+    private List<ProviderTemplateSectionDto> sections;
 
     @Schema(description = "Parent master contract")
     @JsonInclude(Include.NON_NULL)
-    protected MasterContractHistoryDto masterContract;
+    private MasterContractHistoryDto masterContract;
 
     public void removeHelpdeskData() {
         this.owner = null;

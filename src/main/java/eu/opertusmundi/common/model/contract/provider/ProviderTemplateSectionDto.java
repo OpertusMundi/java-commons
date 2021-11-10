@@ -26,7 +26,7 @@ public class ProviderTemplateSectionDto implements Serializable {
     @Schema(description = "Option identifier")
     private Integer option;
 
-    @Schema(description = "Sub-option identifier")
+    @Schema(description = "Sub-option identifiers")
     private List<Integer> subOption;
-    
+
 }

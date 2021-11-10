@@ -31,6 +31,7 @@ public class MasterContractDto implements Serializable {
     @JsonInclude(Include.NON_NULL)
     protected Integer id;
 
+    @Hidden
     @JsonIgnore
     protected Integer contractRootId;
 
