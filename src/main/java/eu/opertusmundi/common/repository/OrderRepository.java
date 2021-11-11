@@ -81,6 +81,18 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     );
 
     /**
+     * Find an order created by a specific consumer
+     *
+     *
+     * @param consumerKey
+     * @param orderKey
+     * @return
+     */
+    default Optional<OrderDto> findObjectByKeyAndConsumerKey(UUID consumerKey, UUID orderKey) {
+        return this.findEntityByKeyAndConsumerKey(consumerKey, orderKey).map(o -> o.toConsumerDto(false, false));
+    }
+
+    /**
      * Find an order linked to a specific provider.
      *
      * Orders support only a single item. Provider orders are the ones that
