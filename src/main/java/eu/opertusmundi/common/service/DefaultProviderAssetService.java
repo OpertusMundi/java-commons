@@ -205,6 +205,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Override
+    @Transactional
     public AssetDraftDto findOneDraft(UUID ownerKey, UUID publisherKey, UUID draftKey, boolean lock) {
         Assert.notNull(ownerKey,     "Expected a non-null owner key");
         Assert.notNull(publisherKey, "Expected a non-null publisher key");
@@ -626,6 +627,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Override
+    @Transactional
     public void deleteDraft(UUID ownerKey, UUID publisherKey, UUID draftKey) throws AssetDraftException {
         try {
             this.ensureDraftAndStatus(ownerKey, publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
@@ -642,7 +644,6 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         }
     }
 
-    @Transactional
     private void deleteDraftData(UUID ownerKey, UUID publisherKey, UUID draftKey) throws AssetDraftException {
         this.ensureDraftAndStatus(ownerKey, publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
 
@@ -743,7 +744,6 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         this.reviewHelpDesk(publisherKey, draftKey, false, reason);
     }
 
-    @Transactional
     private void reviewHelpDesk(UUID publisherKey, UUID draftKey, boolean accepted, String reason) throws AssetDraftException {
         try {
             // Update draft
@@ -772,6 +772,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Override
+    @Transactional
     public void acceptProvider(AssetDraftReviewCommandDto command) throws AssetDraftException {
         // Update status BEFORE updating workflow instance to avoid race
         // condition
@@ -784,6 +785,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Override
+    @Transactional
     public void rejectProvider(AssetDraftReviewCommandDto command) throws AssetDraftException {
         // Update status BEFORE updating workflow instance to avoid race
         // condition
@@ -795,7 +797,6 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         this.reviewProviderSendMessage(command.getDraftKey(), newStatus, false, command.getReason());
     }
 
-    @Transactional
     private EnumProviderAssetDraftStatus reviewProviderSetStatus(
         UUID ownerKey, UUID publisherKey, UUID draftKey, boolean accepted, String reason
     ) throws AssetDraftException {
@@ -1053,6 +1054,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Override
+    @Transactional
     public void updateResourceIngestionData(
         UUID publisherKey, UUID draftKey, String resourceKey, ServerIngestResultResponseDto data
     ) throws AssetDraftException {
@@ -1080,6 +1082,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Override
+    @Transactional
     public void updateResourceIngestionData(
         UUID publisherKey, UUID draftKey, String resourceKey, ServerIngestPublishResponseDto data
     ) throws AssetDraftException {
@@ -1207,6 +1210,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Override
+    @Transactional
     public Path resolveDraftAdditionalResource(
         UUID ownerKey, UUID publisherKey, UUID draftKey, String resourceKey
     ) throws FileSystemException, AssetRepositoryException {
@@ -1249,6 +1253,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Override
+    @Transactional
     public MetadataProperty resolveDraftMetadataProperty(
         UUID ownerKey, UUID publisherKey, UUID draftKey, String resourceKey, String propertyName
     ) throws FileSystemException, AssetRepositoryException {
@@ -1273,7 +1278,6 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         return MetadataProperty.of(property.getType(), path);
     }
 
-    @Transactional
     private AssetDraftDto ensureDraftAndStatus(
         UUID ownerKey, UUID publisherKey, UUID assetKey, EnumProviderAssetDraftStatus status
     ) throws AssetDraftException {
@@ -1293,7 +1297,6 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         return draft;
     }
 
-    @Transactional
     private void consolidateResources(AssetDraftDto draft) {
         final CatalogueItemCommandDto          command             = draft.getCommand();
         final UUID                             ownerKey            = command.getOwnerKey();
@@ -1341,7 +1344,6 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         });
     }
 
-    @Transactional
     private FileResourceDto deleteResourceRecord(UUID ownerKey, UUID publisherKey, UUID draftKey, String resourceKey) {
         // The provider must have access to the selected draft and also the
         // draft must be editable
@@ -1350,7 +1352,6 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         return assetResourceRepository.delete(draftKey, resourceKey);
     }
 
-    @Transactional
     private AssetFileAdditionalResourceDto deleteAdditionalResourceRecord(UUID ownerKey, UUID publisherKey, UUID draftKey, String resourceKey) {
         // The provider must have access to the selected draft and also the
         // draft must be editable
@@ -1456,12 +1457,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         return PageResultDto.of(pageIndex, pageSize, page.getContent(), page.getTotalElements());
     }
 
-
     private String getMetadataPropertyFileName(String resourceKey, String propertyName, EnumMetadataPropertyType propertyType) {
         return StringUtils.joinWith(".", resourceKey, "property", propertyName, propertyType.getExtension());
     }
 
-    @Transactional
     private EnumLockResult getLock(UUID userKey, UUID draftKey) throws AssetDraftException {
         final Optional<RecordLockEntity> lock = this.recordLockRepository.findOneForDraft(draftKey);
 
