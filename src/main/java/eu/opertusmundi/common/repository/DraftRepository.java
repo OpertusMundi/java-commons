@@ -254,6 +254,18 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         this.saveAndFlush(draft);
     }
 
+    /**
+     * Updates ingestion data for an asset resource
+     * 
+     * If an entry already exists for the specified resource key, the operation
+     * does not update the asset metadata.
+     * 
+     * @param publisherKey
+     * @param draftKey
+     * @param resourceKey
+     * @param data
+     * @throws AssetDraftException
+     */
     @Transactional(readOnly = false)
     default void updateResourceIngestionData(
         UUID publisherKey, UUID draftKey, String resourceKey, ResourceIngestionDataDto data
@@ -282,7 +294,16 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
             draft.getCommand().setIngestionInfo(assetIngestionData);
         }
 
-        assetIngestionData.add(data);
+        // If a record already exists, ignore the update
+        final ResourceIngestionDataDto existing = draft.getCommand().getIngestionInfo().stream()
+            .filter(i -> i.getKey().equals(resourceKey))
+            .findFirst()
+            .orElse(null);
+        
+        if (existing == null) {
+            assetIngestionData.add(data);
+        }
+
         // NOTE: Workaround for updating ingestion data. Property command of entity
         // ProviderAssetDraftEntity is annotated with @Convert for serializing a
         // CatalogueItemCommandDto instance to JSON; Hence updating only the metadata
