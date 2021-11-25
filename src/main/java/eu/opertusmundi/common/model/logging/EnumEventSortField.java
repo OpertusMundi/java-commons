@@ -3,9 +3,9 @@ package eu.opertusmundi.common.model.logging;
 import lombok.Getter;
 
 public enum EnumEventSortField {
-    CLIENT_ADDRESS("clientAddress"),
-    TIMESTAMP("generated"),
-    USER_NAME("userName"),
+    APPLICATION("program-name"),
+    CLIENT_ADDRESS("fromhost"),
+    TIMESTAMP("timestamp"),
     ;
 
     @Getter
