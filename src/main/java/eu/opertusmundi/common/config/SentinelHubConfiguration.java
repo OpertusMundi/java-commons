@@ -16,7 +16,7 @@ import lombok.Setter;
 
 @Configuration
 @ConfigurationProperties(prefix = "opertusmundi.sentinel-hub", ignoreUnknownFields = true)
-@PropertySource(value = "classpath:config/sentinel-hub.properties", ignoreResourceNotFound = true)
+@PropertySource(value = "${opertusmundi.sentinel-hub.config}", ignoreResourceNotFound = true)
 @Getter
 @Setter
 @Validated
