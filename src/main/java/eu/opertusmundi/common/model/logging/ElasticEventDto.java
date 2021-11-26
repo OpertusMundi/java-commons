@@ -23,7 +23,7 @@ public class ElasticEventDto {
 
     private String clientAddress;
 
-    @JsonProperty("fromhost")
+    @JsonProperty("client-address")
     public void setClientAddress(String value) {
         this.clientAddress = value;
     }
@@ -112,5 +112,17 @@ public class ElasticEventDto {
     @Getter
     @Setter
     private ZonedDateTime timestamp;
+
+    private String userName;
+
+    @JsonProperty("client-username")
+    public void setUserName(String value) {
+        this.userName = value;
+    }
+
+    @JsonProperty("userName")
+    public String getUserName() {
+        return this.userName;
+    }
 
 }

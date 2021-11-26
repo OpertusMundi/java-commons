@@ -4,7 +4,7 @@ import lombok.Getter;
 
 public enum EnumEventSortField {
     APPLICATION("program-name"),
-    CLIENT_ADDRESS("fromhost"),
+    CLIENT_ADDRESS("client-address"),
     TIMESTAMP("timestamp"),
     ;
 

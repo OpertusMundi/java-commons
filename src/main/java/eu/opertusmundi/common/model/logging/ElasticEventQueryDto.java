@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import eu.opertusmundi.common.model.EnumSortingOrder;
@@ -21,7 +22,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Builder
-public class ElasticEVentQueryDto {
+public class ElasticEventQueryDto {
 
     @ArraySchema(
         arraySchema = @Schema(
@@ -33,9 +34,11 @@ public class ElasticEVentQueryDto {
     private Set<EnumEventLevel> levels;
 
     @Schema(description = "Time interval start", example = "2020-06-01")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate fromDate;
 
     @Schema(description = "Time interval end", example = "2020-06-30")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate toDate;
 
     @Schema(description = "Remote host IP addresses")
