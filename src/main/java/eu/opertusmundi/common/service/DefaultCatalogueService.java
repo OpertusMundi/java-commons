@@ -74,6 +74,7 @@ import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.repository.AssetAdditionalResourceRepository;
 import eu.opertusmundi.common.repository.AssetResourceRepository;
+import eu.opertusmundi.common.repository.AssetStatisticsRepository;
 import eu.opertusmundi.common.repository.FavoriteRepository;
 import eu.opertusmundi.common.repository.ProviderRepository;
 import eu.opertusmundi.common.repository.contract.ProviderTemplateContractHistoryRepository;
@@ -107,6 +108,9 @@ public class DefaultCatalogueService implements CatalogueService {
 
     @Autowired
     private ProviderRepository providerRepository;
+    
+    @Autowired
+    private StatisticsService statisticsService;
 
     @Autowired
     private AssetResourceRepository assetResourceRepository;
@@ -679,6 +683,9 @@ public class DefaultCatalogueService implements CatalogueService {
                     this.elasticSearchService.removeAsset(pid);
                 }
             }
+            
+            // Deactivate related statistics
+            this.statisticsService.updateStatisticsPublishAsset(pid);
 
             // Remove asset from the catalogue
             final CatalogueItemDetailsDto item = this.findOne(null, pid, publisherKey, false);
@@ -878,6 +885,8 @@ public class DefaultCatalogueService implements CatalogueService {
                 .findOneById(feature.getId())
                 .getBody()
                 .getResult();
+            
+            this.statisticsService.updateStatisticsPublishAsset(feature.getId());
 
             if (this.elasticSearchService != null) {
                 // For tabular assets, reset geometry
