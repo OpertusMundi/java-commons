@@ -93,16 +93,17 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     private CatalogueService catalogueService;
 
     @Override
+    @Transactional
     public ProviderOrderDto acceptOrder(OrderConfirmCommandDto command) throws OrderException {
         return this.confirmOrder(command.getPublisherKey(), command.getOrderKey(), true, null);
     }
 
     @Override
+    @Transactional
     public ProviderOrderDto rejectOrder(OrderConfirmCommandDto command) throws OrderException {
         return this.confirmOrder(command.getPublisherKey(), command.getOrderKey(), false, command.getReason());
     }
 
-    @Transactional
     private ProviderOrderDto confirmOrder(UUID publisherKey, UUID orderKey, boolean accepted, String rejectReason) throws OrderException {
         try {
             ProviderOrderDto order;

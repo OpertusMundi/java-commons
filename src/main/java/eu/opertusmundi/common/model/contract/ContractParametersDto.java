@@ -212,6 +212,7 @@ public class ContractParametersDto {
     private Provider     provider;
     private Product      product;
     private PricingModel pricingModel;
+    private String       referenceNumber;
 
     public ContractParametersDto() {
 

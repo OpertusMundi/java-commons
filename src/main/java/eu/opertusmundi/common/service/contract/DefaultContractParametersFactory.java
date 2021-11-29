@@ -1,7 +1,5 @@
 package eu.opertusmundi.common.service.contract;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,6 +42,7 @@ public class DefaultContractParametersFactory implements ContractParametersFacto
     		.provider(ContractParametersDto.Provider.from(provider))
     		.product(ContractParametersDto.Product.from(item, feature))
     		.pricingModel(ContractParametersDto.PricingModel.from(pricingModel))
+    		.referenceNumber(order.getReferenceNumber())
     		.build();
 
 
@@ -54,14 +53,14 @@ public class DefaultContractParametersFactory implements ContractParametersFacto
     public ContractParametersDto createWithPlaceholderData() {
 
 		final ContractParametersDto.Provider 		provider 		= new ContractParametersDto.Provider(
-				"[Supplier name]", "[Supplier professional address]", "[Supplier contact email]", 
+				"[Supplier name]", "[Supplier professional address]", "[Supplier contact email]",
 				"[Supplier contact person]", "[Supplier company registration number]", "[Supplier EU VAT number]");
 		final ContractParametersDto.Consumer 		consumer 		= new ContractParametersDto.Consumer(
-				"[Customer name]", "[Customer professional address]", "[Customer contact email]", 
+				"[Customer name]", "[Customer professional address]", "[Customer contact email]",
 				"[Customer contact person]", "[Customer company registration number]", "[Customer EU VAT number]");
 		final ContractParametersDto.Product  		product 		= new ContractParametersDto.Product(
-				"[Applicable fees]", "[Product description]", "[Estimated delivery date]", 
-				"[Product ID]", "[Media and format of delivery]", "[Product name]", 
+				"[Applicable fees]", "[Product description]", "[Estimated delivery date]",
+				"[Product ID]", "[Media and format of delivery]", "[Product name]",
 				 "[Past versions included]", "[Updates included]");
 
 		final EnumPricingModel 		pricingModelType 				= EnumPricingModel.UNDEFINED;

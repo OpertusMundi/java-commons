@@ -14,7 +14,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import eu.opertusmundi.common.model.account.SimpleAccountDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryDto;
-import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

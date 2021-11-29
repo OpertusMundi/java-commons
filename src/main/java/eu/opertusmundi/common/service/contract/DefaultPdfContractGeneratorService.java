@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
@@ -1095,37 +1096,37 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		section.getBlocks().add(block);
     		section = generatePricingModelRestrictions(section, block, pricingModel);
     	}
-    	
+
     	/* Placeholder pricing model */
     	else if (pricingModel.getPricingModelType() == EnumPricingModel.UNDEFINED) {
 
     		/* Add applicable price*/
     		Block block = generateSingleStylePricingModelBlock(partPrice, BOLD);
     		section.getBlocks().add(block);
-    		
+
     		String text = "[Pricing information]";
     		block = generateSingleStylePricingModelBlock(text, NORMAL);
     		section.getBlocks().add(block);
-    		
+
     		/* Add Delivery*/
     		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);
     		section.getBlocks().add(block);
-    		
+
     		text = "[Delivery information]";
     		block = generateSingleStylePricingModelBlock(text, NORMAL);
     		section.getBlocks().add(block);
-    		
+
     		/* Add restrictions*/
     		block = generateSingleStylePricingModelBlock(partRestriction, BOLD);
     		section.getBlocks().add(block);
     		//section = generatePricingModelRestrictions(section, block, pricingModel);
 
-    		
+
     		text = "[Restriction information]";
     		block = generateSingleStylePricingModelBlock(text, NORMAL);
     		section.getBlocks().add(block);
     	}
-    	
+
 
     	return section;
 
@@ -1779,7 +1780,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                 allBlocks = getOptionSuboptionBody(blocks);
 
                 /* Add sub option block separately if any exists */
-                if (section.getSubOption().size() > 0) {
+                if (!CollectionUtils.isEmpty(section.getSubOption())) {
                     for (int i = 0; i < section.getSubOption().size(); i++ ) {
                         subOptionJson = suboptions.get(section.getSubOption().get(i)).getBody();
                         obj           = objectMapper.readTree(subOptionJson);
