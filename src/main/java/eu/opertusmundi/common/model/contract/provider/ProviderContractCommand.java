@@ -14,7 +14,7 @@ import lombok.Setter;
 @Setter
 @Builder
 @JsonIgnoreType
-public class PrintProviderContractCommand {
+public class ProviderContractCommand {
 
     private UUID providerKey;
     

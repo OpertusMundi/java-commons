@@ -16,7 +16,7 @@ import lombok.Setter;
 @Setter
 @Builder
 @JsonIgnoreType
-public class PrintConsumerContractCommand {
+public class ConsumerContractCommand {
 
     private EnumContract type;
 

@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.pdfbox.multipdf.Overlay;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -50,8 +51,8 @@ import eu.opertusmundi.common.model.catalogue.client.EnumDeliveryMethod;
 import eu.opertusmundi.common.model.contract.ContractParametersDto;
 import eu.opertusmundi.common.model.contract.ContractParametersDto.PricingModel;
 import eu.opertusmundi.common.model.contract.ContractSectionSubOptionDto;
-import eu.opertusmundi.common.model.contract.consumer.PrintConsumerContractCommand;
-import eu.opertusmundi.common.model.contract.provider.PrintProviderContractCommand;
+import eu.opertusmundi.common.model.contract.consumer.ConsumerContractCommand;
+import eu.opertusmundi.common.model.contract.provider.ProviderContractCommand;
 import eu.opertusmundi.common.model.pricing.DiscountRateDto;
 import eu.opertusmundi.common.model.pricing.EnumContinent;
 import eu.opertusmundi.common.model.pricing.EnumPricingModel;
@@ -95,6 +96,9 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
     @Value("${opertusmundi.contract.font-bold-italic}")
     private String boldItalicFont;
+    
+    @Value("${opertusmundi.contract.watermark}")
+    private String watermark;
 
     @Autowired
     private ResourceLoader resourceLoader;
@@ -1658,7 +1662,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     }
 
     @Override
-    public byte[] renderConsumerPDF(ContractParametersDto contractParametersDto, PrintConsumerContractCommand command) throws IOException {
+    public byte[] renderConsumerPDF(ContractParametersDto contractParametersDto, ConsumerContractCommand command) throws IOException {
 
     	final UUID            				orderKey        	= command.getOrderKey();
     	final OrderEntity     				orderEntity     	= orderRepository.findOrderEntityByKey(orderKey).get();
@@ -1670,9 +1674,9 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
         /* Get contract */
         final ProviderTemplateContractHistoryEntity contract = contractRepository
-                .findByIdAndVersion(provider.getKey(), contractId, contractVersion).get();
+        		.findByIdAndVersion(provider.getKey(), contractId, contractVersion).get();
 
-    	final byte[] byteArray = renderPDF(contractParametersDto, contract, deliveryMethod);
+    	final byte[] byteArray = renderPDF(contractParametersDto, command.isDraft(), contract, EnumDeliveryMethod.DIGITAL_PLATFORM);
 
     	/* save contract to file*/
     	try (FileOutputStream fos = new FileOutputStream(command.getPath().toString())) {
@@ -1682,19 +1686,21 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     }
 
     @Override
-    public byte[] renderProviderPDF(ContractParametersDto contractParametersDto, PrintProviderContractCommand command) throws IOException {
+    public byte[] renderProviderPDF(ContractParametersDto contractParametersDto, ProviderContractCommand command) throws IOException {
         final ProviderTemplateContractHistoryEntity contract = contractRepository
             .findByKey(command.getProviderKey(), command.getContractKey())
             .get();
 
         final EnumDeliveryMethod deliveryMethod = EnumDeliveryMethod.DIGITAL_PLATFORM;
 
-        return renderPDF(contractParametersDto, contract, deliveryMethod);
+        return renderPDF(contractParametersDto, false, contract, deliveryMethod);
+
     }
 
 
     private byte[] renderPDF(
-        ContractParametersDto contractParametersDto, ProviderTemplateContractHistoryEntity contract, EnumDeliveryMethod deliveryMethod
+        ContractParametersDto contractParametersDto, boolean draft,
+        ProviderTemplateContractHistoryEntity contract, EnumDeliveryMethod deliveryMethod
     ) throws IOException {
         // Initialize all variables that are related to the PDF formatting
         final PDDocument          document = new PDDocument();
@@ -1708,6 +1714,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             InputStream boldFontIs = resourceLoader.getResource(boldFont).getInputStream();
             InputStream italicFontIs = resourceLoader.getResource(italicFont).getInputStream();
             InputStream boldItalicFontIs = resourceLoader.getResource(boldItalicFont).getInputStream();
+            InputStream watermarkIs = resourceLoader.getResource(watermark).getInputStream();
         ) {
             logo = IOUtils.toByteArray(logoIs);
 
@@ -1872,6 +1879,18 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             addMetadata(ctx);
             addHeaderAndFooter(ctx, title);
 
+            /* Add watermark if draft */
+            if (draft) {
+	            HashMap<Integer, String> overlayGuide = new HashMap<Integer, String>();
+	            for(int i=0; i < document.getNumberOfPages(); i++){
+	                overlayGuide.put(i+1, resourceLoader.getResource(watermark).getFile().getAbsolutePath());
+	            }
+	            Overlay overlay = new Overlay();
+	            overlay.setInputPDF(document);
+	            overlay.setOverlayPosition(Overlay.Position.BACKGROUND);
+	            overlay.overlay(overlayGuide);     
+	            //overlay.close();
+            }
             ctx.close();
 
             try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {

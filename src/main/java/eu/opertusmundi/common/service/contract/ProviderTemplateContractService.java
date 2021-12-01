@@ -6,7 +6,7 @@ import java.util.UUID;
 import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
-import eu.opertusmundi.common.model.contract.provider.PrintProviderContractCommand;
+import eu.opertusmundi.common.model.contract.provider.ProviderContractCommand;
 import eu.opertusmundi.common.model.contract.provider.EnumProviderContractSortField;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractCommandDto;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractDto;
@@ -115,6 +115,6 @@ public interface ProviderTemplateContractService {
      * @param command
      * @return
      */
-    byte[] print(PrintProviderContractCommand command);
+    byte[] print(ProviderContractCommand command);
 
 }

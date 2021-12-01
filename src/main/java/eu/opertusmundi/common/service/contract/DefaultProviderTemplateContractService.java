@@ -20,7 +20,7 @@ import eu.opertusmundi.common.model.contract.ContractMessageCode;
 import eu.opertusmundi.common.model.contract.ContractParametersDto;
 import eu.opertusmundi.common.model.contract.ContractServiceException;
 import eu.opertusmundi.common.model.contract.provider.EnumProviderContractSortField;
-import eu.opertusmundi.common.model.contract.provider.PrintProviderContractCommand;
+import eu.opertusmundi.common.model.contract.provider.ProviderContractCommand;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractCommandDto;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractDto;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractQuery;
@@ -135,7 +135,7 @@ public class DefaultProviderTemplateContractService implements ProviderTemplateC
     }
 
     @Override
-    public byte[] print(PrintProviderContractCommand command) {
+    public byte[] print(ProviderContractCommand command) {
         byte[] contractByteArray = null;
         try {
             final ContractParametersDto parameters = contractParametersFactory.createWithPlaceholderData();

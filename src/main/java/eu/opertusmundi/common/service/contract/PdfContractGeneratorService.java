@@ -3,8 +3,8 @@ package eu.opertusmundi.common.service.contract;
 import java.io.IOException;
 
 import eu.opertusmundi.common.model.contract.ContractParametersDto;
-import eu.opertusmundi.common.model.contract.consumer.PrintConsumerContractCommand;
-import eu.opertusmundi.common.model.contract.provider.PrintProviderContractCommand;
+import eu.opertusmundi.common.model.contract.consumer.ConsumerContractCommand;
+import eu.opertusmundi.common.model.contract.provider.ProviderContractCommand;
 
 public interface PdfContractGeneratorService {
 
@@ -17,8 +17,8 @@ public interface PdfContractGeneratorService {
      * @throws IOException
      */
 
-    public byte[] renderConsumerPDF(ContractParametersDto contractParametersDto, PrintConsumerContractCommand command) throws IOException;
+    public byte[] renderConsumerPDF(ContractParametersDto contractParametersDto, ConsumerContractCommand command) throws IOException;
     
-    public byte[] renderProviderPDF(ContractParametersDto contractParametersDto, PrintProviderContractCommand command) throws IOException;
+    public byte[] renderProviderPDF(ContractParametersDto contractParametersDto, ProviderContractCommand command) throws IOException;
     
 }
