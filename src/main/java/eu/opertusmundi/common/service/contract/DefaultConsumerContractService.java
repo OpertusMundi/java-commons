@@ -1,8 +1,12 @@
 package eu.opertusmundi.common.service.contract;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.nio.file.Path;
 
+import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -10,8 +14,8 @@ import org.springframework.util.Assert;
 import eu.opertusmundi.common.model.contract.ContractMessageCode;
 import eu.opertusmundi.common.model.contract.ContractParametersDto;
 import eu.opertusmundi.common.model.contract.ContractServiceException;
-import eu.opertusmundi.common.model.contract.consumer.PrintConsumerContractCommand;
-import eu.opertusmundi.common.model.contract.consumer.SignConsumerContractCommand;
+import eu.opertusmundi.common.model.contract.consumer.ConsumerContractCommand;
+import eu.opertusmundi.common.service.contract.SignPdfService;
 
 @Service
 @Transactional
@@ -25,9 +29,12 @@ public class DefaultConsumerContractService implements ConsumerContractService {
 
 	@Autowired
 	private ContractParametersFactory contractParametersFactory;
+	
+	@Autowired
+    private SignPdfService signatoryService;
 
     @Override
-    public void print(PrintConsumerContractCommand command) throws ContractServiceException {
+    public void print(ConsumerContractCommand command) throws ContractServiceException {
         try {
             Assert.isNull(command.getPath(), "Expected a null contract path");
 
@@ -53,30 +60,36 @@ public class DefaultConsumerContractService implements ConsumerContractService {
     }
 
     @Override
-    public void sign(SignConsumerContractCommand command) {
+    public void sign(ConsumerContractCommand command) {
         try {
-            Assert.isNull(command.getSourcePath(), "Expected a null source path");
-            Assert.isNull(command.getTargetPath(), "Expected a null target path");
+            Assert.isNull(command.getPath(), "Expected a null source path");
 
-            final Path sourcePath = this.contractFileManager.resolvePath(
+            final ContractParametersDto parameters = contractParametersFactory.create(command.getOrderKey());
+
+            final Path path = this.contractFileManager.resolvePath(
                 command.getUserId(),
                 command.getOrderKey(),
                 command.getItemIndex(),
                 false, true
             );
-            final Path targetPath = this.contractFileManager.resolvePath(
-                command.getUserId(),
-                command.getOrderKey(),
-                command.getItemIndex(),
-                true, false
-            );
-
-            command.setSourcePath(sourcePath);
-            command.setTargetPath(targetPath);
-
-            // TODO Auto-generated method stub
-            // TODO Remove assignment. Used only as placeholder
-            command.setTargetPath(sourcePath);
+            
+            command.setPath(path);
+            
+            final byte[] pdfByteArray = pdfService.renderConsumerPDF(parameters, command);
+            final int inputSize = (int) pdfByteArray.length;
+            final int estimatedOutputSize = (inputSize * 3) / 2;
+            
+            final ByteArrayOutputStream output = new ByteArrayOutputStream(estimatedOutputSize);
+            
+            PDDocument pdf = PDDocument.load(pdfByteArray);
+            
+            signatoryService.signWithVisibleSignature(pdf, output);
+            
+            /* save signed contract to file */
+        	try (FileOutputStream fos = new FileOutputStream(command.getPath().toString())) {
+                fos.write(output.toByteArray());
+            }
+            
         } catch (final ContractServiceException ex) {
             throw ex;
         } catch (final Exception ex) {
