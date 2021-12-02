@@ -11,6 +11,7 @@ public enum CatalogueServiceMessageCode implements MessageCode {
     HARVEST_ITEM_NOT_FOUND,
     ELASTIC_SERVICE,
     PUBLISHER_ASSET_OWNERSHIP,
+    DRAFT_INVALID_STATUS,
     ;
 
     @Override
