@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -12,6 +15,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -19,33 +23,45 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.client.utils.URIBuilder;
 import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
+import eu.opertusmundi.common.model.catalogue.client.WfsLayerSample;
 
 @Service
-public class DefaultWfsClient implements WfsClient {
+public class DefaultWfsClient extends AbstractOgcClient implements WfsClient {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultWfsClient.class);
+
+    @Value("${opertusmundi.wfs-client.parameters.sample-size:20}")
+    private int defaultSampleCount;
 
     @Autowired
     private HttpClient httpClient;
 
     @Autowired
     private XmlMapper xmlMapper;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Override
     public ServiceResourceDto getMetadata(
@@ -64,6 +80,71 @@ public class DefaultWfsClient implements WfsClient {
             this.handleException(ex);
         }
         return null;
+    }
+
+    @Override
+    public List<WfsLayerSample> getSamples(
+        URL url, String workspace, String layerName, List<Geometry> boundaries, Integer count, String userName, String password
+    ) throws OgcServiceClientException {
+        final List<WfsLayerSample> result = new ArrayList<>();
+
+        if(count == null) {
+            count = defaultSampleCount;
+        }
+
+        try {
+            for (final Geometry bbox : boundaries) {
+                final Envelope e    = bbox.getEnvelopeInternal();
+                // Sanitize latitude values to prevent ProjectionException:
+                // Latitude 90°00.0'S is too close to a pole
+                final double maxY = e.getMaxY() > 89.9999 ? 89.9999 : e.getMaxY();
+                final double minY = e.getMinY() < -89.9999 ? -89.9999 : e.getMinY();
+
+                final URI uri = new URIBuilder(url.toString())
+                        .clearParameters()
+                        .addParameter("SERVICE", "WFS")
+                        .addParameter("REQUEST", "GetFeature")
+                        .addParameter("VERSION", "2.0.0")
+                        .addParameter("TYPENAME", workspace + ":" + layerName)
+                        .addParameter("COUNT", Integer.toString(count))
+                        .addParameter("OUTPUTFORMAT", "application/json")
+                        .addParameter("SRSNAME", "EPSG:4326")
+                        .addParameter("BBOX", String.format("%f,%f,%f,%f,EPSG:4326", e.getMinX(), minY, e.getMaxX(), maxY))
+                        .build();
+
+
+                final RequestBuilder builder = this.getBuilder(HttpMethod.GET, uri);
+                final HttpUriRequest request = builder.build();
+
+                try (CloseableHttpResponse response = (CloseableHttpResponse) this.httpClient.execute(request)) {
+                    final int status = response.getStatusLine().getStatusCode();
+
+                    if (status >= 200 && status < 300) {
+                        try (InputStream contentStream = response.getEntity().getContent()) {
+                            final String   content = IOUtils.toString(contentStream, StandardCharsets.UTF_8);
+                            final JsonNode data    = this.objectMapper.readTree(content);
+
+                            ((ObjectNode) data).put("size", content.length());
+                            result.add(WfsLayerSample.of(bbox, data));
+                        }
+                    } else {
+                        throw new OgcServiceClientException(
+                            OgcServiceMessageCode.WFS_SERVICE_ERROR,
+                            String.format("Request has failed. [code=%s, reason=%s]",
+                                response.getStatusLine().getStatusCode(),
+                                response.getStatusLine().getReasonPhrase()
+                            )
+                        );
+                    }
+                }
+            }
+        } catch (final OgcServiceClientException ex) {
+            throw ex;
+        } catch (final Exception ex) {
+            throw new OgcServiceClientException(OgcServiceMessageCode.UNKNOWN, ex);
+        }
+
+        return result;
     }
 
     private void getServiceMetadata(
@@ -153,22 +234,6 @@ public class DefaultWfsClient implements WfsClient {
                     )
                 );
             }
-        }
-    }
-
-    private RequestBuilder getBuilder(HttpMethod method, URI uri) throws Exception {
-        switch (method) {
-            case POST :
-                return RequestBuilder.post(uri);
-            case GET :
-                return RequestBuilder.get(uri);
-            case DELETE :
-                return RequestBuilder.delete(uri);
-            default :
-                throw new OgcServiceClientException(
-                    OgcServiceMessageCode.HTTP_METHOD_NOT_SUPPORTED,
-                    String.format("HTTP method is not supported. [method=%s]", method)
-                );
         }
     }
 

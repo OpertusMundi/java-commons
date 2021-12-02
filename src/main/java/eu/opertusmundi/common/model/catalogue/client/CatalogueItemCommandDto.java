@@ -8,6 +8,8 @@ import java.util.UUID;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 
+import org.locationtech.jts.geom.Geometry;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
@@ -45,6 +47,8 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
         this.additionalResources = new ArrayList<>();
         this.pricingModels       = new ArrayList<>();
         this.resources           = new ArrayList<>();
+        this.sampleAreas         = new ArrayList<>();
+        this.visibility          = new ArrayList<>();
     }
 
     public CatalogueItemCommandDto(CatalogueFeature feature) {
@@ -53,6 +57,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
         this.additionalResources = new ArrayList<>();
         this.pricingModels       = new ArrayList<>();
         this.resources           = new ArrayList<>();
+        this.sampleAreas         = new ArrayList<>();
         this.title               = feature.getProperties().getTitle();
         this.type                = EnumAssetType.fromString(feature.getProperties().getType());
         this.version             = feature.getProperties().getVersion();
@@ -151,7 +156,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
         minItems = 0,
         uniqueItems = true
     )
-    private List<String> visibility = new ArrayList<>();
+    private List<String> visibility;
 
     @ArraySchema(
         arraySchema = @Schema(
@@ -164,6 +169,15 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
         })
     )
     private List<ResourceDto> resources;
+
+    @ArraySchema(
+        arraySchema = @Schema(
+            description = "Areas of interest (bounding boxes) for data sampling"
+        ),
+        minItems = 0,
+        uniqueItems = true
+    )
+    private List<ServiceResourceSampleAreaDto> sampleAreas;
 
     public CatalogueFeature toFeature() {
         return new CatalogueFeature(this);
@@ -210,6 +224,19 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
             } else {
                 existing.patch(resource);
             }
+    }
+
+    public void addServiceResourceSampleAreas(String id, List<Geometry> areas) {
+        final ServiceResourceSampleAreaDto existing = this.sampleAreas.stream()
+            .filter(r -> r.getId().equalsIgnoreCase(id))
+            .findFirst()
+            .orElse(null);
+
+        if (existing == null) {
+            this.sampleAreas.add(ServiceResourceSampleAreaDto.of(id, areas));
+        } else {
+            existing.setAreas(areas);
+        }
     }
 
 }

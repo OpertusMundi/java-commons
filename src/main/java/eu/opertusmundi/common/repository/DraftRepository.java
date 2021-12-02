@@ -29,7 +29,7 @@ import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
-import eu.opertusmundi.common.model.catalogue.client.CatalogueItemVisibilityCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemMetadataCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
@@ -186,7 +186,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
 
 
     @Transactional(readOnly = false)
-    default AssetDraftDto update(CatalogueItemVisibilityCommandDto command) throws AssetDraftException {
+    default AssetDraftDto update(CatalogueItemMetadataCommandDto command) throws AssetDraftException {
         Assert.notNull(command, "Expected a non-null command");
 
         final ZonedDateTime now = ZonedDateTime.now();
@@ -196,13 +196,27 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
-        if (draft.getStatus() != EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW) {
+
+        /*
+         * Update metadata only when status is:
+         * 
+         * PENDING_PROVIDER_REVIEW  : Provider update during review
+         * POST_PROCESSING          : Sample generation before publishing 
+         */
+        if (draft.getStatus() != EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW &&
+            draft.getStatus() != EnumProviderAssetDraftStatus.POST_PROCESSING
+        ) {
             throw new AssetDraftException(
                 AssetMessageCode.INVALID_STATE,
-                String.format("Expected status [PENDING_PROVIDER_REVIEW]. Found [%s]", draft.getStatus())
+                String.format("Expected status in [PENDING_PROVIDER_REVIEW, POST_PROCESSING]. Found [%s]", draft.getStatus())
             );
         }
-        draft.getCommand().setVisibility(command.getVisibility());
+        if (command.getVisibility() != null) {
+            draft.getCommand().setVisibility(command.getVisibility());
+        }
+        if (command.getSampleAreas() != null) {
+            draft.getCommand().addServiceResourceSampleAreas(command.getResourceKey().toString(), command.getSampleAreas());
+        }
         draft.setModifiedOn(now);
 
         this.saveAndFlush(draft);
@@ -256,10 +270,10 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
 
     /**
      * Updates ingestion data for an asset resource
-     * 
+     *
      * If an entry already exists for the specified resource key, the operation
      * does not update the asset metadata.
-     * 
+     *
      * @param publisherKey
      * @param draftKey
      * @param resourceKey
@@ -299,7 +313,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
             .filter(i -> i.getKey().equals(resourceKey))
             .findFirst()
             .orElse(null);
-        
+
         if (existing == null) {
             assetIngestionData.add(data);
         }

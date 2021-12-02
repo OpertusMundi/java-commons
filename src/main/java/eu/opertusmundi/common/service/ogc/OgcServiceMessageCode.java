@@ -3,6 +3,7 @@ package eu.opertusmundi.common.service.ogc;
 import eu.opertusmundi.common.model.MessageCode;
 
 public enum OgcServiceMessageCode implements MessageCode {
+    CONTENT_TYPE_NOT_SUPPORTED,
     HTTP_ERROR,
     HTTP_METHOD_NOT_SUPPORTED,
     IO_ERROR,

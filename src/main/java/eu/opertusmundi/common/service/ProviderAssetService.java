@@ -26,14 +26,14 @@ import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
-import eu.opertusmundi.common.model.catalogue.client.CatalogueItemSamplesCommandDto;
-import eu.opertusmundi.common.model.catalogue.client.CatalogueItemVisibilityCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemMetadataCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftFromAssetCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.UnpublishAssetCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
+import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestResultResponseDto;
 import eu.opertusmundi.common.model.payment.provider.ProviderAccountSubscriptionDto;
@@ -132,24 +132,14 @@ public interface ProviderAssetService {
     AssetDraftDto updateDraft(CatalogueItemCommandDto command) throws AssetDraftException;
 
     /**
-     * Set draft metadata property visibility
+     * Update draft metadata
      *
      * The status must be {@link EnumProviderAssetDraftStatus#PENDING_PROVIDER_REVIEW}
      *
      * @param command
      * @return
      */
-    AssetDraftDto updateDraftMetadataVisibility(CatalogueItemVisibilityCommandDto command) throws AssetDraftException;
-
-    /**
-     * Set draft metadata samples
-     *
-     * The status must be {@link EnumProviderAssetDraftStatus#PENDING_PROVIDER_REVIEW}
-     *
-     * @param command
-     * @return
-     */
-    AssetDraftDto updateDraftMetadataSamples(CatalogueItemSamplesCommandDto command) throws AssetDraftException;
+    AssetDraftDto updateDraftMetadata(CatalogueItemMetadataCommandDto command) throws AssetDraftException;
 
     /**
      * Delete a draft
@@ -424,4 +414,17 @@ public interface ProviderAssetService {
      * @throws AssetDraftException
      */
     void releaseLock(UUID userKey, UUID draftKey) throws AssetDraftException;
+
+    /**
+     * Get draft ingestion data
+     *
+     * This method is using caching. If the most recent updates are required,
+     * {@link #findOneDraft} should be used.
+     *
+     * @param publisherKey
+     * @param draftKey
+     * @return
+     */
+    List<ResourceIngestionDataDto> getServices(UUID publisherKey, UUID draftKey);
+
 }

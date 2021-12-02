@@ -3,6 +3,7 @@ package eu.opertusmundi.common.service.ogc;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,17 +13,29 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.client.utils.URIBuilder;
 import org.geotools.ows.wms.CRSEnvelope;
 import org.geotools.ows.wms.Layer;
 import org.geotools.ows.wms.StyleImpl;
 import org.geotools.ows.wms.WMSCapabilities;
 import org.geotools.ows.wms.WMSUtils;
 import org.geotools.ows.wms.WebMapServer;
+import org.geotools.ows.wms.request.GetMapRequest;
+import org.geotools.ows.wms.response.GetMapResponse;
 import org.geotools.ows.wms.xml.Dimension;
 import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 
@@ -30,9 +43,16 @@ import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto.Attributes;
 import eu.opertusmundi.common.model.catalogue.LayerStyle;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
+import eu.opertusmundi.common.model.catalogue.client.WmsLayerSample;
 
 @Service
-public class DefaultWmsClient implements WmsClient {
+public class DefaultWmsClient extends AbstractOgcClient implements WmsClient {
+
+    @Value("${opertusmundi.wms-client.parameters.width:800}")
+    private int imageWidth;
+
+    @Autowired
+    private HttpClient httpClient;
 
     @Override
     public ServiceResourceDto getMetadata(URL url, String typeName, String userName, String password) throws OgcServiceClientException {
@@ -115,6 +135,99 @@ public class DefaultWmsClient implements WmsClient {
                 .serviceType(EnumSpatialDataServiceType.WMS)
                 .styles(styles)
                 .build();
+        } catch (final Exception ex) {
+            throw new OgcServiceClientException(OgcServiceMessageCode.UNKNOWN, ex);
+        }
+    }
+
+    @Override
+    public List<WmsLayerSample> getSamples(
+        URL url, String layerName, List<Geometry> boundaries, String userName, String password
+    ) throws OgcServiceClientException {
+        final List<WmsLayerSample> result  = new ArrayList<>();
+
+        try {
+            final WebMapServer         wms     = new WebMapServer(url);
+            final GetMapRequest        request = wms.createGetMapRequest();
+
+            for (final Geometry bbox : boundaries) {
+                final Envelope e           = bbox.getEnvelopeInternal();
+                final double   ratio       = (e.getMaxY() - e.getMinY()) / (e.getMaxX() - e.getMinX());
+                final int      imageHeight = (int) (this.imageWidth * ratio);
+
+                request.setVersion("1.1.0");
+                request.setTransparent(true);
+                request.setFormat(MediaType.IMAGE_PNG_VALUE);
+                request.setSRS("EPSG:4326");
+                request.addLayer(layerName, "");
+                request.setDimensions(this.imageWidth, imageHeight);
+                request.setBBox(String.format("%f,%f,%f,%f", e.getMinX(), e.getMinY(), e.getMaxX(), e.getMaxY()));
+
+                final GetMapResponse response = wms.issueRequest(request);
+
+                if(!response.getContentType().equalsIgnoreCase(MediaType.IMAGE_PNG_VALUE)) {
+                    throw new OgcServiceClientException(
+                        OgcServiceMessageCode.CONTENT_TYPE_NOT_SUPPORTED,
+                        String.format(
+                            "Content type not supported [expected=%s, received=%s]",
+                            MediaType.IMAGE_PNG_VALUE, response.getContentType()
+                        )
+                    );
+                }
+                try (final InputStream in = response.getInputStream()) {
+                    final byte[] image = StreamUtils.copyToByteArray(in);
+                    result.add(WmsLayerSample.of(bbox, image));
+                }
+            }
+        } catch (final OgcServiceClientException ex) {
+            throw ex;
+        } catch (final Exception ex) {
+            throw new OgcServiceClientException(OgcServiceMessageCode.UNKNOWN, ex);
+        }
+
+        return result;
+    }
+
+    @Override
+    public byte[] getMap(URL url, String layerName, String bbox, int width, int height) throws OgcServiceClientException {
+        try {
+            final URI uri = new URIBuilder(url.toString())
+                .clearParameters()
+                .addParameter("SERVICE", "WMS")
+                .addParameter("VERSION", "1.1.1")
+                .addParameter("REQUEST", "GetMap")
+                .addParameter("FORMAT", MediaType.IMAGE_PNG_VALUE)
+                .addParameter("TRANSPARENT", "true")
+                .addParameter("LAYERS", layerName)
+                .addParameter("SRS", "EPSG:4326")
+                .addParameter("BBOX", bbox)
+                .addParameter("WIDTH", Integer.toString(width))
+                .addParameter("HEIGHT", Integer.toString(height))
+                .build();
+
+
+            final RequestBuilder builder = this.getBuilder(HttpMethod.GET, uri);
+            final HttpUriRequest request = builder.build();
+
+            try (CloseableHttpResponse response = (CloseableHttpResponse) this.httpClient.execute(request)) {
+                final int status = response.getStatusLine().getStatusCode();
+
+                if (status >= 200 && status < 300) {
+                    try (InputStream in = response.getEntity().getContent()) {
+                        return StreamUtils.copyToByteArray(in);
+                    }
+                } else {
+                    throw new OgcServiceClientException(
+                        OgcServiceMessageCode.WFS_SERVICE_ERROR,
+                        String.format("Request has failed. [code=%s, reason=%s]",
+                            response.getStatusLine().getStatusCode(),
+                            response.getStatusLine().getReasonPhrase()
+                        )
+                    );
+                }
+            }
+        } catch (final OgcServiceClientException ex) {
+            throw ex;
         } catch (final Exception ex) {
             throw new OgcServiceClientException(OgcServiceMessageCode.UNKNOWN, ex);
         }

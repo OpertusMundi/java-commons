@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
 import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
+import eu.opertusmundi.common.model.openapi.schema.CatalogueEndpointTypes;
 import eu.opertusmundi.common.model.openapi.schema.GeometryAsJson;
 import eu.opertusmundi.common.util.StreamUtils;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
@@ -98,7 +99,7 @@ public abstract class BaseCatalogueItemDto {
     @JsonProperty("abstract")
     private String abstractText;
 
-	@Schema(description = "Automated metadata")
+	@Schema(title = "Automated metadata", implementation = CatalogueEndpointTypes.JsonNodeMetadata.class)
 	@JsonInclude(Include.NON_NULL)
 	private JsonNode automatedMetadata;
 

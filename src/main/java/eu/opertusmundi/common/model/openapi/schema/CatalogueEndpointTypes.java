@@ -44,4 +44,12 @@ public class CatalogueEndpointTypes {
 
     }
 
+    public static class JsonNodeMetadata extends Object {
+
+    }
+
+    public static class JsonNodeSamples extends Object {
+
+    }
+
 }

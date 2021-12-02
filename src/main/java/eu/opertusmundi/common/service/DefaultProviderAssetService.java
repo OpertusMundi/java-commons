@@ -26,6 +26,7 @@ import org.locationtech.jts.io.WKTReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -75,8 +76,7 @@ import eu.opertusmundi.common.model.catalogue.CatalogueServiceMessageCode;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
-import eu.opertusmundi.common.model.catalogue.client.CatalogueItemSamplesCommandDto;
-import eu.opertusmundi.common.model.catalogue.client.CatalogueItemVisibilityCommandDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemMetadataCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromAssetCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromFileCommandDto;
@@ -540,7 +540,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     @Transactional
-    public AssetDraftDto updateDraftMetadataVisibility(CatalogueItemVisibilityCommandDto command) throws AssetDraftException {
+    public AssetDraftDto updateDraftMetadata(CatalogueItemMetadataCommandDto command) throws AssetDraftException {
         EnumLockResult lock = EnumLockResult.NONE;
 
         try {
@@ -560,64 +560,36 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             // Lock record
             lock = this.getLock(ownerKey, draftKey);
 
+            // Update metadata properties
             final AssetDraftDto result = this.draftRepository.update(command);
 
+            // Update samples
+            if (command.getSamples() != null && !command.getSamples().isNull()) {
+                final ResourceDto resource = draft.getCommand().getResources().stream()
+                    .filter(r -> r.getId().equals(command.getResourceKey().toString()))
+                    .findFirst()
+                    .orElse(null);
+
+                if (resource == null) {
+                    throw new AssetDraftException(AssetMessageCode.RESOURCE_NOT_FOUND, "Resource not found");
+                }
+
+                final String fileName = this.getMetadataPropertyFileName(
+                    command.getResourceKey().toString(), "samples", EnumMetadataPropertyType.JSON
+                );
+                final Path   path     = this.draftFileManager.resolveMetadataPropertyPath(
+                    command.getPublisherKey(), command.getDraftKey(), fileName
+                );
+
+                try {
+                    final String content = this.objectMapper.writeValueAsString(command.getSamples());
+                    FileUtils.writeStringToFile(path.toFile(), content, Charset.forName("UTF-8"));
+                } catch (final Exception ex) {
+                    throw new AssetDraftException(AssetMessageCode.IO_ERROR, "Failed to serialize and persist samples");
+                }
+            }
+
             return result;
-        } finally {
-            // Release lock only if it was created in this transaction
-            if (lock == EnumLockResult.CREATED) {
-                this.releaseLock(command.getOwnerKey(), command.getDraftKey());
-            }
-        }
-    }
-
-    @Override
-    @Transactional
-    public AssetDraftDto updateDraftMetadataSamples(CatalogueItemSamplesCommandDto command) throws AssetDraftException {
-        EnumLockResult lock = EnumLockResult.NONE;
-
-        try {
-            final UUID ownerKey     = command.getOwnerKey();
-            final UUID publisherKey = command.getPublisherKey();
-            final UUID draftKey     = command.getDraftKey();
-
-            // Check draft and owner
-            final ProviderAssetDraftEntity draft = ownerKey.equals(publisherKey)
-                ? this.draftRepository.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null)
-                : this.draftRepository.findOneByOwnerAndPublisherAndKey(ownerKey, publisherKey, draftKey).orElse(null);
-
-            if (draft == null) {
-                throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND, "Draft not found");
-            }
-
-            // Lock record
-            lock = this.getLock(ownerKey, draftKey);
-
-            // Check resource
-            final ResourceDto resource = draft.getCommand().getResources().stream()
-                .filter(r -> r.getId().equals(command.getResourceKey()))
-                .findFirst()
-                .orElse(null);
-
-            if (resource == null) {
-                throw new AssetDraftException(AssetMessageCode.RESOURCE_NOT_FOUND, "Resource not found");
-            }
-
-            final String fileName = this.getMetadataPropertyFileName(
-                command.getResourceKey(), "samples", EnumMetadataPropertyType.JSON
-            );
-            final Path   path     = this.draftFileManager.resolveMetadataPropertyPath(
-                command.getPublisherKey(), command.getDraftKey(), fileName
-            );
-
-            try {
-                final String content = this.objectMapper.writeValueAsString(command.getData());
-                FileUtils.writeStringToFile(path.toFile(), content, Charset.forName("UTF-8"));
-            } catch (final Exception ex) {
-                throw new AssetDraftException(AssetMessageCode.IO_ERROR, "Failed to serialize and persist samples");
-            }
-
-            return draft.toDto();
         } finally {
             // Release lock only if it was created in this transaction
             if (lock == EnumLockResult.CREATED) {
@@ -1496,6 +1468,15 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             recordLockRepository.delete(lock.get());
         }
+    }
+
+    @Override
+    @Cacheable(cacheNames = "draft-services", cacheManager = "defaultCacheManager", key = "'draft-' + #draftKey + '-' + #resourceKey")
+    public List<ResourceIngestionDataDto> getServices(UUID publisherKey, UUID draftKey) {
+        final AssetDraftDto                  draft    = this.findOneDraft(publisherKey, draftKey, false);
+        final List<ResourceIngestionDataDto> services = draft.getCommand().getIngestionInfo();
+
+        return services;
     }
 
 }
