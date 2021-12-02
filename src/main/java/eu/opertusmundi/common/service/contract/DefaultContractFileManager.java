@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
-import eu.opertusmundi.common.model.asset.AssetRepositoryException;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.file.FileSystemMessageCode;
 
@@ -24,8 +23,8 @@ public class DefaultContractFileManager implements ContractFileManager {
 
     @Override
     public Path resolvePath(
-        Integer userId, UUID orderKey, Integer itemIndex, boolean signed, boolean present
-    ) throws FileSystemException, AssetRepositoryException {
+        Integer userId, UUID orderKey, Integer itemIndex, boolean signed
+    ) throws FileSystemException {
         Assert.notNull(userId, "Expected a non-null user identifier");
         Assert.notNull(orderKey, "Expected a non-null order key");
         Assert.notNull(itemIndex, "Expected a non-null order item index");
@@ -37,13 +36,7 @@ public class DefaultContractFileManager implements ContractFileManager {
             final Path absolutePath = this.fileNamingStrategy.resolvePath(ctx);
             final File file         = absolutePath.toFile();
 
-            if (present && !file.exists()) {
-                throw new FileSystemException(FileSystemMessageCode.PATH_NOT_FOUND, "Contract file does not exist");
-            }
-
             return file.toPath();
-        } catch (final FileSystemException ex) {
-            throw ex;
         } catch (final Exception ex) {
             logger.error(String.format("Failed to resolve path [userId=%d, orderKey=%s, itemIndex=%d]", userId, orderKey, itemIndex), ex);
             throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "Failed to resolve contract path", ex);

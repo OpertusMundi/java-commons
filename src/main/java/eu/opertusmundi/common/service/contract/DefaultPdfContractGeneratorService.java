@@ -2,7 +2,6 @@ package eu.opertusmundi.common.service.contract;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -96,7 +95,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
     @Value("${opertusmundi.contract.font-bold-italic}")
     private String boldItalicFont;
-    
+
     @Value("${opertusmundi.contract.watermark}")
     private String watermark;
 
@@ -1663,26 +1662,20 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
     @Override
     public byte[] renderConsumerPDF(ContractParametersDto contractParametersDto, ConsumerContractCommand command) throws IOException {
+        final UUID            orderKey        = command.getOrderKey();
+        final OrderEntity     orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderItemEntity orderItemEntity = orderEntity.getItems().get(0);
+        final AccountEntity   provider        = orderItemEntity.getProvider();
+        final Integer         contractId      = orderItemEntity.getContractTemplateId();
+        final String          contractVersion = orderItemEntity.getContractTemplateVersion();
 
-    	final UUID            				orderKey        	= command.getOrderKey();
-    	final OrderEntity     				orderEntity     	= orderRepository.findOrderEntityByKey(orderKey).get();
-    	final OrderItemEntity 				orderItemEntity 	= orderEntity.getItems().get(0);
-    	final AccountEntity   				provider        	= orderItemEntity.getProvider();
-    	final Integer         				contractId      	= orderItemEntity.getContractTemplateId();
-    	final String          				contractVersion 	= orderItemEntity.getContractTemplateVersion();
-    	final EnumDeliveryMethod			deliveryMethod		= orderEntity.getDeliveryMethod();
-
-        /* Get contract */
+        // Get contract
         final ProviderTemplateContractHistoryEntity contract = contractRepository
-        		.findByIdAndVersion(provider.getKey(), contractId, contractVersion).get();
+    		.findByIdAndVersion(provider.getKey(), contractId, contractVersion).get();
 
-    	final byte[] byteArray = renderPDF(contractParametersDto, command.isDraft(), contract, EnumDeliveryMethod.DIGITAL_PLATFORM);
+        final byte[] result = renderPDF(contractParametersDto, command.isDraft(), contract, EnumDeliveryMethod.DIGITAL_PLATFORM);
 
-    	/* save contract to file*/
-    	try (FileOutputStream fos = new FileOutputStream(command.getPath().toString())) {
-            fos.write(byteArray);
-        }
-    	return byteArray;
+    	return result;
     }
 
     @Override
@@ -1692,11 +1685,10 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             .get();
 
         final EnumDeliveryMethod deliveryMethod = EnumDeliveryMethod.DIGITAL_PLATFORM;
+        final byte[]             result         = renderPDF(contractParametersDto, false, contract, deliveryMethod);
 
-        return renderPDF(contractParametersDto, false, contract, deliveryMethod);
-
+        return result;
     }
-
 
     private byte[] renderPDF(
         ContractParametersDto contractParametersDto, boolean draft,
@@ -1879,25 +1871,34 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             addMetadata(ctx);
             addHeaderAndFooter(ctx, title);
 
-            /* Add watermark if draft */
-            if (draft) {
-	            HashMap<Integer, String> overlayGuide = new HashMap<Integer, String>();
-	            for(int i=0; i < document.getNumberOfPages(); i++){
-	                overlayGuide.put(i+1, resourceLoader.getResource(watermark).getFile().getAbsolutePath());
-	            }
-	            Overlay overlay = new Overlay();
-	            overlay.setInputPDF(document);
-	            overlay.setOverlayPosition(Overlay.Position.BACKGROUND);
-	            overlay.overlay(overlayGuide);     
-	            //overlay.close();
-            }
+            // Release RenderContext before closing the document
             ctx.close();
 
-            try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
-                document.save(byteArrayOutputStream);
-                document.close();
+            // Optionally add an overlay page
+            try (final Overlay overlay = draft ? new Overlay() : null) {
+                // Add watermark if draft
+                if (draft) {
+                    final HashMap<Integer, String> overlayGuide = new HashMap<Integer, String>();
+                    for (int i = 0; i < document.getNumberOfPages(); i++) {
+                        overlayGuide.put(i + 1, resourceLoader.getResource(watermark).getFile().getAbsolutePath());
+                    }
+                    overlay.setInputPDF(document);
+                    overlay.setOverlayPosition(Overlay.Position.BACKGROUND);
+                    overlay.overlay(overlayGuide);
+                }
 
-                return byteArrayOutputStream.toByteArray();
+                try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+                    document.save(byteArrayOutputStream);
+                    document.close();
+
+                    // Close overlay if exists. Overlay must be closed after
+                    // releasing the document resources
+                    if (overlay != null) {
+                        overlay.close();
+                    }
+
+                    return byteArrayOutputStream.toByteArray();
+                }
             }
         }
     }

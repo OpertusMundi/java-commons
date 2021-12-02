@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
@@ -31,6 +32,7 @@ import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -41,57 +43,61 @@ import org.slf4j.LoggerFactory;
 abstract class BaseSignPdf implements SignatureInterface
 {
     protected static Logger logger = LoggerFactory.getLogger(BaseSignPdf.class);
-    
-    private PrivateKey privateKey;
-    
-    private X509Certificate[] certificateChain;
-    
+
+    static {
+        Security.addProvider(new BouncyCastleProvider());
+    }
+
+    private final PrivateKey privateKey;
+
+    private final X509Certificate[] certificateChain;
+
     private boolean externalSigning = false;
-        
+
     protected PrivateKey getPrivateKey()
     {
         return privateKey;
     }
-    
+
     public Certificate[] getCertificateChain()
     {
         return certificateChain;
     }
-    
+
     protected boolean isExternalSigning()
     {
         return externalSigning;
     }
-    
+
     protected void setExternalSigning(boolean externalSigning)
     {
         this.externalSigning = externalSigning;
     }
-    
+
     protected X500Principal getSubject()
     {
         return this.certificateChain[0].getSubjectX500Principal();
     }
-    
+
     protected String getSubjectCN() throws InvalidNameException
     {
-        X500Principal principal = getSubject();
-        LdapName dn = new LdapName(principal.getName(X500Principal.CANONICAL));
-        Rdn rdn = dn.getRdn(dn.size() - 1);
+        final X500Principal principal = getSubject();
+        final LdapName dn = new LdapName(principal.getName(X500Principal.CANONICAL));
+        final Rdn rdn = dn.getRdn(dn.size() - 1);
         return rdn.getType().equals("cn")? rdn.getValue().toString() : null;
     }
-    
+
     public BaseSignPdf(KeyStore keystore, String alias, char[] password) throws Exception
     {
         this.privateKey = (PrivateKey) keystore.getKey(alias, password);
         this.certificateChain = Arrays.stream(keystore.getCertificateChain(alias))
             .toArray(X509Certificate[]::new);
-        
-        X509Certificate certificate = this.certificateChain[0];
+
+        final X509Certificate certificate = this.certificateChain[0];
         certificate.checkValidity();
         checkCertificateUsage(certificate);
     }
-        
+
     /**
      * This method will be called from inside of the pdfbox and create the PKCS #7 signature.
      * The given InputStream contains the bytes that are given by the byte range.
@@ -109,36 +115,36 @@ abstract class BaseSignPdf implements SignatureInterface
     public byte[] sign(InputStream content) throws IOException
     {
         try {
-            CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
-            X509Certificate cert = (X509Certificate) certificateChain[0];
-            ContentSigner sha1Signer = new JcaContentSignerBuilder("SHA256WithRSA")
-                .setProvider("BC")
+            final CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+            final X509Certificate cert = certificateChain[0];
+            final ContentSigner sha1Signer = new JcaContentSignerBuilder("SHA256WithRSA")
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
                 .build(privateKey);
             gen.addSignerInfoGenerator(
                 new JcaSignerInfoGeneratorBuilder(
                     new JcaDigestCalculatorProviderBuilder().build()).build(sha1Signer, cert));
             gen.addCertificates(new JcaCertStore(Arrays.asList(certificateChain)));
-            
-            CMSProcessableByteArray msg = new CMSProcessableByteArray(IOUtils.toByteArray(content));
-            CMSSignedData signedData = gen.generate(msg, false);
-            
+
+            final CMSProcessableByteArray msg = new CMSProcessableByteArray(IOUtils.toByteArray(content));
+            final CMSSignedData signedData = gen.generate(msg, false);
+
             //// Use an external TimeStamp Authority (TSA)
             //// See https://svn.apache.org/viewvc/pdfbox/trunk/examples/src/main/java/org/apache/pdfbox/examples/signature/ValidationTimeStamp.java?revision=1818049&view=markup
             //if (tsaUrl != null && tsaUrl.length() > 0) {
             //    ValidationTimeStamp validation = new ValidationTimeStamp(tsaUrl);
             //    signedData = validation.addSignedTimeStamp(signedData);
             //}
-            
+
             return signedData.getEncoded();
         } catch (GeneralSecurityException | CMSException | OperatorCreationException e) {
             throw new IOException(e);
         }
     }
-    
+
     //
     // Utilities
     //
-    
+
     /**
      * Log if the certificate is not valid for signature usage. Doing this
      * anyway results in Adobe Reader failing to validate the PDF.
@@ -152,14 +158,14 @@ abstract class BaseSignPdf implements SignatureInterface
         // Check whether signer certificate is "valid for usage"
         // https://stackoverflow.com/a/52765021/535646
         // https://www.adobe.com/devnet-docs/acrobatetk/tools/DigSig/changes.html#id1
-        boolean[] keyUsage = x509Certificate.getKeyUsage();
+        final boolean[] keyUsage = x509Certificate.getKeyUsage();
         if (keyUsage != null && !keyUsage[0] && !keyUsage[1]) {
             // (unclear what "signTransaction" is)
             // https://tools.ietf.org/html/rfc5280#section-4.2.1.3
             logger.error("Certificate key usage does not include digitalSignature nor nonRepudiation");
         }
-        
-        List<String> extendedKeyUsage = x509Certificate.getExtendedKeyUsage();
+
+        final List<String> extendedKeyUsage = x509Certificate.getExtendedKeyUsage();
         if (extendedKeyUsage != null &&
             !extendedKeyUsage.contains(KeyPurposeId.id_kp_emailProtection.toString()) &&
             !extendedKeyUsage.contains(KeyPurposeId.id_kp_codeSigning.toString()) &&
@@ -179,10 +185,10 @@ abstract class BaseSignPdf implements SignatureInterface
      * @param x509Certificate
      * @throws java.security.cert.CertificateParsingException
      */
-    private static void checkTimeStampCertificateUsage(X509Certificate x509Certificate)
+    protected static void checkTimeStampCertificateUsage(X509Certificate x509Certificate)
         throws CertificateParsingException
     {
-        List<String> extendedKeyUsage = x509Certificate.getExtendedKeyUsage();
+        final List<String> extendedKeyUsage = x509Certificate.getExtendedKeyUsage();
         // https://tools.ietf.org/html/rfc5280#section-4.2.1.12
         if (extendedKeyUsage != null &&
             !extendedKeyUsage.contains(KeyPurposeId.id_kp_timeStamping.toString())) {
@@ -196,10 +202,10 @@ abstract class BaseSignPdf implements SignatureInterface
      * @param x509Certificate
      * @throws java.security.cert.CertificateParsingException
      */
-    private static void checkResponderCertificateUsage(X509Certificate x509Certificate)
+    protected static void checkResponderCertificateUsage(X509Certificate x509Certificate)
         throws CertificateParsingException
     {
-        List<String> extendedKeyUsage = x509Certificate.getExtendedKeyUsage();
+        final List<String> extendedKeyUsage = x509Certificate.getExtendedKeyUsage();
         // https://tools.ietf.org/html/rfc5280#section-4.2.1.12
         if (extendedKeyUsage != null &&
             !extendedKeyUsage.contains(KeyPurposeId.id_kp_OCSPSigning.toString())) {
@@ -210,22 +216,22 @@ abstract class BaseSignPdf implements SignatureInterface
     /**
      * Gets the last relevant signature in the document, i.e. the one with the
      * highest offset.
-     * 
+     *
      * @param document
      *            to get its last signature
      * @return last signature or null when none found
-     * @throws IOException 
+     * @throws IOException
      */
-    private static PDSignature getLastRelevantSignature(PDDocument document) throws IOException
+    protected static PDSignature getLastRelevantSignature(PDDocument document) throws IOException
     {
-        SortedMap<Integer, PDSignature> sortedMap = new TreeMap<>();
-        for (PDSignature signature : document.getSignatureDictionaries()) {
-            int sigOffset = signature.getByteRange()[1];
+        final SortedMap<Integer, PDSignature> sortedMap = new TreeMap<>();
+        for (final PDSignature signature : document.getSignatureDictionaries()) {
+            final int sigOffset = signature.getByteRange()[1];
             sortedMap.put(sigOffset, signature);
         }
         if (sortedMap.size() > 0) {
-            PDSignature lastSignature = sortedMap.get(sortedMap.lastKey());
-            COSBase type = lastSignature.getCOSObject().getItem(COSName.TYPE);
+            final PDSignature lastSignature = sortedMap.get(sortedMap.lastKey());
+            final COSBase type = lastSignature.getCOSObject().getItem(COSName.TYPE);
             if (type.equals(COSName.SIG) || type.equals(COSName.DOC_TIME_STAMP)) {
                 return lastSignature;
             }

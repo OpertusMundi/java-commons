@@ -9,16 +9,23 @@ import eu.opertusmundi.common.model.contract.provider.ProviderContractCommand;
 public interface PdfContractGeneratorService {
 
     /**
-     * Render contract PDF
+     * Render consumer contract PDF
      *
      * @param contractParametersDto
      * @param command
      * @return
      * @throws IOException
      */
+    byte[] renderConsumerPDF(ContractParametersDto contractParametersDto, ConsumerContractCommand command) throws IOException;
 
-    public byte[] renderConsumerPDF(ContractParametersDto contractParametersDto, ConsumerContractCommand command) throws IOException;
-    
-    public byte[] renderProviderPDF(ContractParametersDto contractParametersDto, ProviderContractCommand command) throws IOException;
-    
+    /**
+     * Render provider contract PDF
+     *
+     * @param contractParametersDto
+     * @param command
+     * @return
+     * @throws IOException
+     */
+    byte[] renderProviderPDF(ContractParametersDto contractParametersDto, ProviderContractCommand command) throws IOException;
+
 }
