@@ -92,6 +92,13 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
 
         return result;
     }
+    
+    @Override
+    public MasterContractDto cloneFromTemplate(int userId, int templateId) throws ApplicationException {
+        final MasterContractDto result = this.draftRepository.cloneFromHistory(userId, templateId);
+
+        return result;
+    }
 
     @Override
     @Transactional

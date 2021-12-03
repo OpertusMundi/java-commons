@@ -105,6 +105,38 @@ public interface MasterContractDraftRepository extends JpaRepository<MasterContr
 
         return this.saveAndFlush(e).toDto(true);
     }
+    
+    @Transactional(readOnly = false)
+    default MasterContractDto cloneFromHistory(int ownerId, int parentId) throws ApplicationException {
+        final MasterContractHistoryEntity parent = this.findMasterContractHistoryById(parentId).orElse(null);
+
+        if (parent == null) {
+            throw ApplicationException.fromMessage(
+                ContractMessageCode.HISTORY_NOT_FOUND, "Record not found"
+            );
+        }
+
+        if (parent.getStatus() == EnumContractStatus.HISTORY) {
+            throw ApplicationException.fromMessage(
+                ContractMessageCode.INVALID_STATUS,
+                "Found status [HISTORY]. Expected status in [ACTIVE, INACTIVE]"
+            );
+        }
+
+        final MasterContractDraftEntity e = MasterContractDraftEntity.from(parent);
+        e.setVersion("1");
+        e.setParent(null);
+
+        final HelpdeskAccountEntity owner = this.findAccountById(ownerId).orElse(null);
+        if (owner == null) {
+            throw ApplicationException.fromMessage(
+                ContractMessageCode.ACCOUNT_NOT_FOUND, "Record not found"
+            );
+        }
+        e.setOwner(owner);
+
+        return this.saveAndFlush(e).toDto(true);
+    }
 
 	@Transactional(readOnly = false)
 	default MasterContractDto saveFrom(MasterContractCommandDto c) throws ApplicationException {

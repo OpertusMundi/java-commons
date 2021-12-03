@@ -58,6 +58,15 @@ public interface MasterTemplateContractService {
      * @return
      */
     MasterContractDto createForTemplate(int userId, int templateId) throws ApplicationException;
+    
+    /**
+     * Create a new cloned draft from an existing master contract with new version history
+     *
+     * @param userId
+     * @param templateId
+     * @return
+     */
+    MasterContractDto cloneFromTemplate(int userId, int templateId) throws ApplicationException;
 
     /**
      * Disables a master contract
