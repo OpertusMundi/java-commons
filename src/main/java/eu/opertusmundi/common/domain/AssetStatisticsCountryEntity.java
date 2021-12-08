@@ -15,7 +15,7 @@ import lombok.Setter;
 
 @Entity(name = "AssetStatisticsCountry")
 @Table(schema = "analytics", name = "`asset_statistics_country`",
-	   uniqueConstraints = {@UniqueConstraint(name = "uq_asset_statistics_country_key", columnNames = {"`statistic`", "`countryCode`"})}
+	   uniqueConstraints = {@UniqueConstraint(name = "uq_asset_statistics_country_key", columnNames = {"`statistic`", "`country_code`"})}
 )
 @Getter
 @Setter

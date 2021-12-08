@@ -23,7 +23,7 @@ public interface CountryRepository extends JpaRepository<CountryEntity, Integer>
     @Query("Select c From CountryCapitalCity c order by c.name")
     List<CountryCapitalCityEntity> getCountryCapitalCities();
     
-    @Query("Select c From CountryEurope c where intersects(c.geometry, :geom)")
+    @Query("Select c From CountryEurope c where intersects(c.geometry, :geom) = true")
     List<CountryEntity> getCountriesWithinGeometry(Geometry geom);
     
     @Query("Select c From CountryEurope c where c.code in :codes")
