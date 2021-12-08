@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -21,7 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import eu.opertusmundi.common.domain.AssetStatisticsEntity;
-import eu.opertusmundi.common.domain.CountryEntity;
 import eu.opertusmundi.common.model.analytics.AssetViewQuery;
 import eu.opertusmundi.common.model.analytics.BaseQuery;
 import eu.opertusmundi.common.model.analytics.DataPoint;
@@ -293,7 +291,6 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
         }
 
         final DataSeries<BigDecimal>      result        = new DataSeries<>();
-        final List<String>                groupByFields = new ArrayList<>();
         final BaseQuery.TemporalDimension time          = query.getTime();
         final BaseQuery.SegmentDimension  segments      = query.getSegments();
         final List<String>                filters       = new ArrayList<>();

@@ -5,8 +5,6 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 import org.locationtech.jts.geom.Geometry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,9 +20,6 @@ import eu.opertusmundi.common.util.StreamUtils;
 
 @Service
 public class DefaultStatisticsService implements StatisticsService{
-
-    private static final Logger logger = LoggerFactory.getLogger(DefaultStatisticsService.class);
-
 
     @Autowired
     private CatalogueService catalogueService;
@@ -67,6 +62,5 @@ public class DefaultStatisticsService implements StatisticsService{
     public void updateStatisticsUnpublishAsset(String pid) {
     	this.assetStatisticsRepository.setStatisticInactive(pid);
     }
-
 
 }
