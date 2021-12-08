@@ -2,6 +2,7 @@ package eu.opertusmundi.common.repository;
 
 import java.util.List;
 
+import org.locationtech.jts.geom.Geometry;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -21,6 +22,12 @@ public interface CountryRepository extends JpaRepository<CountryEntity, Integer>
 
     @Query("Select c From CountryCapitalCity c order by c.name")
     List<CountryCapitalCityEntity> getCountryCapitalCities();
+    
+    @Query("Select c From CountryEurope c where intersects(c.geometry, :geom)")
+    List<CountryEntity> getCountriesWithinGeometry(Geometry geom);
+    
+    @Query("Select c From CountryEurope c where c.code in :codes")
+    List<CountryEntity> getCountriesByCode(List<String> codes);
 
     @Query("Select c From CountryEurope c order by c.name")
     List<CountryEuropeEntity> getEuropeCountries();

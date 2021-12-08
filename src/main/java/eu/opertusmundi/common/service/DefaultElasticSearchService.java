@@ -85,6 +85,8 @@ import org.elasticsearch.search.aggregations.bucket.composite.CompositeValuesSou
 import org.elasticsearch.search.aggregations.bucket.composite.TermsValuesSourceBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
+import org.elasticsearch.search.aggregations.metrics.Cardinality;
+import org.elasticsearch.search.aggregations.metrics.CardinalityAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.ParsedSum;
 import org.elasticsearch.search.aggregations.metrics.SumAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -111,10 +113,11 @@ import eu.opertusmundi.common.model.analytics.BaseQuery;
 import eu.opertusmundi.common.model.analytics.DataPoint;
 import eu.opertusmundi.common.model.analytics.DataSeries;
 import eu.opertusmundi.common.model.analytics.EnumAssetViewSource;
+import eu.opertusmundi.common.model.analytics.EnumCountCategory;
 import eu.opertusmundi.common.model.analytics.ProfileRecord;
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
-import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.elastic.CreateIndexCommand;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQuery;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQueryResult;
@@ -1303,17 +1306,29 @@ public class DefaultElasticSearchService implements ElasticSearchService {
     }
     
     @Override
-    public List<ImmutablePair<String, Integer>> findPopularAssets() {
+    public List<ImmutablePair<String, Integer>> findPopularAssetViewsAndSearches(AssetViewQuery query) {
+        Assert.notNull(query, "Expected a non-null query");
+        Assert.notNull(query.getSource(), "Expected a non-null source");
 
         try {
+        	
         	final List<ImmutablePair<String, Integer>> 	result 			= new ArrayList<ImmutablePair<String, Integer>>();
             final SearchSourceBuilder                   sourceBuilder   = new SearchSourceBuilder();
+            final EnumAssetViewSource                   source          = query.getSource();
             
-            // Sum of view_count group by id order by sum of view_count desc
-            SumAggregationBuilder 		sumOfView					= AggregationBuilders.sum("view_count").field("view_count");
+            String field = null;
+            // Popular views or popular searches
+            if (source == EnumAssetViewSource.VIEW) {
+            	field = "view_count";
+            } else if (source == EnumAssetViewSource.SEARCH) {
+            	field = "search_count";
+            }
+            
+            // Sum of view_count/search_count group by id order by sum of view_count/search_count desc
+            SumAggregationBuilder 		sumOfView					= AggregationBuilders.sum(field).field(field);
             TermsAggregationBuilder		termsAggregationBuilder		= AggregationBuilders.terms("id").
             															field("id.keyword").
-            															order(BucketOrder.aggregation("view_count", false)).
+            															order(BucketOrder.aggregation(field, false)).
             															subAggregation(sumOfView);
             termsAggregationBuilder.size(maxBucketCount);
             sourceBuilder.aggregation(termsAggregationBuilder);
@@ -1330,14 +1345,14 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             final Terms  			terms 			= searchResponse.getAggregations().get("id");
             
             for (final Terms.Bucket bucket : terms.getBuckets()) {
-            	result.add(new ImmutablePair<>(bucket.getKey().toString(), (int) ((ParsedSum) bucket.getAggregations().asMap().get("view_count")).getValue()));
+            	result.add(new ImmutablePair<>(bucket.getKey().toString(), (int) ((ParsedSum) bucket.getAggregations().asMap().get(field)).getValue()));
             }
 
             return result;
         } catch (final Exception ex) {
             throw new ElasticServiceException("Search operation has failed", ex);
         }
-    }    
+    }   
     
     @Override
     public List<ImmutablePair<String, Integer>> findPopularTerms() {
@@ -1378,5 +1393,47 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             throw new ElasticServiceException("Search operation has failed", ex);
         }
     }
+    
+    @Override
+    public long getCountOf(EnumCountCategory category) {
+
+        try {
+            
+            String fieldName = null;
+        	
+            switch (category) {
+            case ASSETS :
+            	fieldName = "id.keyword";
+            	break;
+            case VENDORS :
+            	fieldName = "publisherKey.keyword";
+                break;
+            }
+                
+            final SearchSourceBuilder  	sourceBuilder   = new SearchSourceBuilder();
+            
+            // Count of field
+            CardinalityAggregationBuilder valueCountAggregationBuilder	= AggregationBuilders.cardinality("agg").field(fieldName);
+            sourceBuilder.aggregation(valueCountAggregationBuilder);
+         
+            // Define index
+            final SearchRequest       searchRequest       = new SearchRequest(this.configuration.getAssetViewAggregateIndex().getName());
+            final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+            
+            // Aggregate
+            searchSourceBuilder.aggregation(valueCountAggregationBuilder).size(0);           
+            searchRequest.source(searchSourceBuilder);
+         
+            final SearchResponse	searchResponse 	= client.search(searchRequest, RequestOptions.DEFAULT);
+            final Cardinality  		agg  			= searchResponse.getAggregations().get("agg");
+            final long				result 			= agg.getValue();	
+            
+            System.out.println(result);
+
+            return result;
+        } catch (final Exception ex) {
+            throw new ElasticServiceException("Search operation has failed", ex);
+        }
+    } 
 
 }

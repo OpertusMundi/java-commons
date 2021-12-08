@@ -7,6 +7,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import eu.opertusmundi.common.model.analytics.AssetViewQuery;
 import eu.opertusmundi.common.model.analytics.DataSeries;
+import eu.opertusmundi.common.model.analytics.EnumCountCategory;
 import eu.opertusmundi.common.model.analytics.ProfileRecord;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQuery;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQueryResult;
@@ -209,12 +210,12 @@ public interface ElasticSearchService {
     DataSeries<BigDecimal> searchAssetViews(AssetViewQuery query) throws ElasticServiceException;
     
     /**
-     * Find popular assets
+     * Find popular asset views/searches
      *
      * @param 
      * @return
      */
-    public List<ImmutablePair<String, Integer>> findPopularAssets();
+    public List<ImmutablePair<String, Integer>> findPopularAssetViewsAndSearches(AssetViewQuery query)  throws ElasticServiceException;
     
     /**
      * Find popular terms
@@ -223,5 +224,13 @@ public interface ElasticSearchService {
      * @return
      */
     public List<ImmutablePair<String, Integer>> findPopularTerms();
+    
+    /**
+     * Find count of vendors/assets
+     *
+     * @param 
+     * @return
+     */
+    public long getCountOf(EnumCountCategory category);
 
 }
