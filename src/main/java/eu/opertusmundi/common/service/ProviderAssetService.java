@@ -78,13 +78,13 @@ public interface ProviderAssetService {
      * @param ownerKey
      * @param publisherKey
      * @param draftKey
-     * @param boolean lock
+     * @param boolean locked
      * @return
      */
-    AssetDraftDto findOneDraft(UUID ownerKey, UUID publisherKey, UUID draftKey, boolean lock);
+    AssetDraftDto findOneDraft(UUID ownerKey, UUID publisherKey, UUID draftKey, boolean locked);
 
-    default AssetDraftDto findOneDraft(UUID publisherKey, UUID draftKey, boolean lock) {
-        return this.findOneDraft(publisherKey, publisherKey, draftKey, lock);
+    default AssetDraftDto findOneDraft(UUID publisherKey, UUID draftKey, boolean locked) {
+        return this.findOneDraft(publisherKey, publisherKey, draftKey, locked);
     }
 
     /**

@@ -71,8 +71,10 @@ public class RecordLockEntity {
         l.setId(id);
         l.setOwnerEmail(this.owner.getEmail());
         l.setOwnerId(this.owner.getId());
+        l.setOwnerKey(this.owner.getKey());
         l.setRecordId(recordId);
         l.setRecordType(recordType);
+        l.setCreatedOn(grantedOn);
 
         return l;
     }

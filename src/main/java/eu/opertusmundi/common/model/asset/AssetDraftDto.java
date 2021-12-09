@@ -3,6 +3,11 @@ package eu.opertusmundi.common.model.asset;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
+import eu.opertusmundi.common.model.RecordLockDto;
 import eu.opertusmundi.common.model.account.ProviderDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
@@ -14,6 +19,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AssetDraftDto {
+
+    @JsonIgnore
+    private int id;
 
     @Schema(description=
           "Draft unique identifier. "
@@ -72,6 +80,10 @@ public class AssetDraftDto {
 
     @Schema(description = "Publisher details")
     private ProviderDto publisher;
+
+    @Schema(description = "Lock details. If a lock exists, the record type is always `DRAFT`")
+    @JsonInclude(Include.NON_NULL)
+    private RecordLockDto lock;
 
     public ResourceDto getResourceByKey(String key) {
         return this.getCommand().getResources().stream()

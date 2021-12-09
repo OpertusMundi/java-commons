@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
 import org.camunda.bpm.engine.rest.dto.task.TaskDto;
@@ -52,6 +53,7 @@ import eu.opertusmundi.common.model.EnumLockResult;
 import eu.opertusmundi.common.model.EnumRecordLock;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
+import eu.opertusmundi.common.model.RecordLockDto;
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.asset.AssetDraftReviewCommandDto;
@@ -180,6 +182,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         int pageIndex, int pageSize,
         EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order
     ) {
+        Assert.notNull(ownerKey, "Expected a non-null owner key");
+        Assert.notNull(publisherKey, "Expected a non-null publisher key");
+
         final Direction   direction   = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
         final PageRequest pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
 
@@ -193,7 +198,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             serviceType = null;
         }
 
-        final Page<ProviderAssetDraftEntity> entities = ownerKey == null || ownerKey.equals(publisherKey)
+        final Page<ProviderAssetDraftEntity> entities = ownerKey.equals(publisherKey)
             ? this.draftRepository.findAllByPublisherAndStatus(publisherKey, status, type, serviceType, pageRequest)
             : this.draftRepository.findAllByOwnerAndPublisherAndStatus(ownerKey, publisherKey, status, type, serviceType, pageRequest);
 
@@ -201,12 +206,24 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         final long                count   = items.getTotalElements();
         final List<AssetDraftDto> records = items.getContent();
 
+        // Get locks
+        final List<UUID>          keys  = records.stream().map(r -> r.getKey()).collect(Collectors.toList());
+        final List<RecordLockDto> locks = this.recordLockRepository.findAllForDraftsAsObjects(keys);
+
+        records.forEach(r -> {
+            final RecordLockDto lock = locks.stream()
+                .filter(l -> l.getRecordId() == r.getId())
+                .findFirst()
+                .orElse(null);
+            r.setLock(lock);
+        });
+
         return PageResultDto.of(pageIndex, pageSize, records, count);
     }
 
     @Override
     @Transactional
-    public AssetDraftDto findOneDraft(UUID ownerKey, UUID publisherKey, UUID draftKey, boolean lock) {
+    public AssetDraftDto findOneDraft(UUID ownerKey, UUID publisherKey, UUID draftKey, boolean locked) {
         Assert.notNull(ownerKey,     "Expected a non-null owner key");
         Assert.notNull(publisherKey, "Expected a non-null publisher key");
         Assert.notNull(draftKey,     "Expected a non-null draft key");
@@ -218,8 +235,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         final AssetDraftDto draft = e != null ? e.toDto() : null;
 
         // Optionally, lock the record
-        if (draft != null && lock) {
-            this.getLock(ownerKey, draftKey);
+        if (draft != null) {
+            final Pair<EnumLockResult, RecordLockDto> lock = this.getLock(ownerKey, draftKey, locked);
+            draft.setLock(lock.getRight());
         }
 
         return draft;
@@ -370,7 +388,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             // If required, get lock
             if (command.isLocked()) {
-                this.getLock(command.getOwnerKey(), draft.getKey());
+                final Pair<EnumLockResult, RecordLockDto> lock = this.getLock(command.getOwnerKey(), draft.getKey(), true);
+                draft.setLock(lock.getRight());
             }
 
             return draft;
@@ -438,7 +457,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             // If required, get lock
             if (command.isLocked()) {
-                this.getLock(command.getOwnerKey(), draft.getKey());
+                final Pair<EnumLockResult, RecordLockDto> lock = this.getLock(command.getOwnerKey(), draft.getKey(), true);
+                draft.setLock(lock.getRight());
             }
 
             return draft;
@@ -454,24 +474,27 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Override
     @Transactional
     public AssetDraftDto updateDraft(CatalogueItemCommandDto command) throws AssetDraftException {
-        EnumLockResult locked = EnumLockResult.NONE;
+        Pair<EnumLockResult, RecordLockDto> lock = null;
 
         // Always lock record for update operations
         if (command.getDraftKey() != null) {
-            locked = this.getLock(command.getOwnerKey(), command.getDraftKey());
+            lock = this.getLock(command.getOwnerKey(), command.getDraftKey(), true);
         }
 
         final AssetDraftDto draft = this.draftRepository.update(command);
 
         // For create operations, if a lock is required, get a lock after the
         // insertion of the new draft
-        if (locked == EnumLockResult.NONE && command.isLocked()) {
-            this.getLock(command.getOwnerKey(), draft.getKey());
+        if ((lock == null || lock.getLeft() == EnumLockResult.NONE) && command.isLocked()) {
+            lock = this.getLock(command.getOwnerKey(), draft.getKey(), true);
         }
 
         // For update operations, optionally release the lock
         if (command.getDraftKey() != null && !command.isLocked()) {
             this.releaseLock(command.getOwnerKey(), draft.getKey());
+        } else if (lock != null) {
+            // Set lock information to result
+            draft.setLock(lock.getRight());
         }
 
         // Consolidate file resources
@@ -527,7 +550,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             // If a lock is required for the new record, create one
             if (command.isLocked()) {
-                this.getLock(command.getOwnerKey(), draft.getKey());
+                final Pair<EnumLockResult, RecordLockDto> lock = this.getLock(command.getOwnerKey(), draft.getKey(), true);
+                draft.setLock(lock.getRight());
             }
 
             return draft;
@@ -541,7 +565,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Override
     @Transactional
     public AssetDraftDto updateDraftMetadata(CatalogueItemMetadataCommandDto command) throws AssetDraftException {
-        EnumLockResult lock = EnumLockResult.NONE;
+        Pair<EnumLockResult, RecordLockDto> lock = null;
 
         try {
             final UUID ownerKey     = command.getOwnerKey();
@@ -558,7 +582,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             }
 
             // Lock record
-            lock = this.getLock(ownerKey, draftKey);
+            lock = this.getLock(ownerKey, draftKey, true);
 
             // Update metadata properties
             final AssetDraftDto result = this.draftRepository.update(command);
@@ -589,10 +613,15 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 }
             }
 
+            // Set lock information
+            if (lock != null && lock.getLeft() == EnumLockResult.EXISTS) {
+                result.setLock(lock.getRight());
+            }
+
             return result;
         } finally {
             // Release lock only if it was created in this transaction
-            if (lock == EnumLockResult.CREATED) {
+            if (lock != null && lock.getLeft() == EnumLockResult.CREATED) {
                 this.releaseLock(command.getOwnerKey(), command.getDraftKey());
             }
         }
@@ -604,7 +633,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         try {
             this.ensureDraftAndStatus(ownerKey, publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
 
-            this.getLock(ownerKey, draftKey);
+            this.getLock(ownerKey, draftKey, true);
 
             // Delete data in transaction before deleting files
             this.deleteDraftData(ownerKey, publisherKey, draftKey);
@@ -639,7 +668,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
                 command.setDraftKey(draft.getKey());
             } else {
-                this.getLock(command.getOwnerKey(), command.getDraftKey());
+                this.getLock(command.getOwnerKey(), command.getDraftKey(), true);
             }
 
             // A draft must exist with status DRAFT
@@ -782,7 +811,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             }
 
             // Get lock
-            this.getLock(ownerKey, draftKey);
+            this.getLock(ownerKey, draftKey, true);
 
             if (draft.getStatus() != EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW &&
                 draft.getStatus() != EnumProviderAssetDraftStatus.POST_PROCESSING &&
@@ -1091,7 +1120,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         );
 
         // Lock record before update
-        final EnumLockResult lock = this.getLock(command.getOwnerKey(), command.getDraftKey());
+        final Pair<EnumLockResult, RecordLockDto> lock = this.getLock(command.getOwnerKey(), command.getDraftKey(), true);
 
         // Set category
         if (command.getCategory() == null) {
@@ -1113,8 +1142,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         final AssetDraftDto result = this.draftRepository.update(draft.getCommand());
 
         // Release lock if it was created only for the specific operation
-        if (lock == EnumLockResult.CREATED) {
+        if (lock != null && lock.getLeft() == EnumLockResult.CREATED) {
             this.releaseLock(command.getOwnerKey(), command.getDraftKey());
+        } else if (lock != null) {
+            draft.setLock(lock.getRight());
         }
 
         return result;
@@ -1140,7 +1171,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         );
 
         // Lock record before update
-        final EnumLockResult lock = this.getLock(command.getOwnerKey(), command.getDraftKey());
+        final Pair<EnumLockResult, RecordLockDto> lock = this.getLock(command.getOwnerKey(), command.getDraftKey(), true);
 
         // Update database link
         final AssetFileAdditionalResourceDto resource = assetAdditionalResourceRepository.update(command);
@@ -1157,8 +1188,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         final AssetDraftDto result = this.draftRepository.update(draft.getCommand());
 
         // Release lock if it was created only for the specific operation
-        if (lock == EnumLockResult.CREATED) {
+        if (lock != null && lock.getLeft() == EnumLockResult.CREATED) {
             this.releaseLock(command.getDraftKey(), command.getDraftKey());
+        } else if (lock != null) {
+            result.setLock(lock.getRight());
         }
 
         return result;
@@ -1433,24 +1466,23 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         return StringUtils.joinWith(".", resourceKey, "property", propertyName, propertyType.getExtension());
     }
 
-    private EnumLockResult getLock(UUID userKey, UUID draftKey) throws AssetDraftException {
-        final Optional<RecordLockEntity> lock = this.recordLockRepository.findOneForDraft(draftKey);
+    private Pair<EnumLockResult, RecordLockDto> getLock(UUID userKey, UUID draftKey, boolean required) throws AssetDraftException {
+        final RecordLockDto lock = this.recordLockRepository.findOneForDraftAsObject(draftKey).orElse(null);
 
-        if (lock.isPresent() && !lock.get().getOwner().getKey().equals(userKey)) {
+        if (required && lock != null && !lock.getOwnerKey().equals(userKey)) {
             throw new AssetDraftException(
                 AssetMessageCode.LOCK_EXISTS,
-                String.format("Record is already locked by user [%s]", lock.get().getOwner().getEmail())
+                String.format("Record is already locked by user [%s]", lock.getOwnerEmail())
             );
         }
-        if (!lock.isPresent()) {
-            final Integer recordId = this.draftRepository.getIdFromKey(draftKey);
+        if (required && lock == null) {
+            final Integer       recordId = this.draftRepository.getIdFromKey(draftKey);
+            final RecordLockDto newLock  = this.recordLockRepository.create(EnumRecordLock.DRAFT, recordId, userKey);
 
-            this.recordLockRepository.create(EnumRecordLock.DRAFT, recordId, userKey);
-
-            return EnumLockResult.CREATED;
+            return Pair.of(EnumLockResult.CREATED, newLock);
         }
 
-        return EnumLockResult.EXISTS;
+        return Pair.of(lock == null ? EnumLockResult.NONE : EnumLockResult.EXISTS, lock);
     }
 
     @Override
@@ -1462,7 +1494,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             if (!lock.get().getOwner().getKey().equals(userKey)) {
                 throw new AssetDraftException(
                     AssetMessageCode.LOCK_EXISTS,
-                    String.format("Record is already locked by user [%s]", lock.get().getOwner().getEmail())
+                    String.format("Record belongs to user [%s]", lock.get().getOwner().getEmail())
                 );
             }
 

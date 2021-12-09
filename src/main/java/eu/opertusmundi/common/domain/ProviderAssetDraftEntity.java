@@ -155,6 +155,7 @@ public class ProviderAssetDraftEntity {
         a.setCreatedOn(this.createdOn);
         a.setCommand(this.command);
         a.setHelpdeskRejectionReason(this.helpdeskRejectionReason);
+        a.setId(id);
         a.setIngested(this.ingested);
         a.setKey(this.key);
         a.setModifiedOn(this.modifiedOn);
