@@ -3,6 +3,8 @@ package eu.opertusmundi.common.domain;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -22,23 +24,24 @@ import lombok.Setter;
 public class AssetStatisticsCountryEntity {
 	
     @Id
+    @Column(name = "`id`", updatable = false)
     @SequenceGenerator(sequenceName = "analytics.asset_statistics_country_id_seq", name = "asset_statistics_country_id_seq", allocationSize = 1)
-    @NotNull
-    @Column(name = "`id`")
+    @GeneratedValue(generator = "asset_statistics_country_id_seq", strategy = GenerationType.SEQUENCE)
+    @Getter   
     private Integer id;
 
     @NotNull
-    @ManyToOne(targetEntity=AssetStatisticsEntity.class)
+    @ManyToOne(targetEntity = AssetStatisticsEntity.class)
     @JoinColumn(name = "`statistic`", nullable = false)
-    AssetStatisticsEntity statistic;
+    private AssetStatisticsEntity statistic;
 
     @NotNull
     @Column(name = "`country_code`", updatable = false)
     private String countryCode;
-	
+
     public AssetStatisticsCountryEntity(AssetStatisticsEntity statistic, String countryCode) {
-        this.statistic 		= statistic;
-        this.countryCode	= countryCode;
+        this.statistic   = statistic;
+        this.countryCode = countryCode;
     }
 
 }

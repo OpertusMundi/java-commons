@@ -11,6 +11,8 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
@@ -30,8 +32,10 @@ import lombok.Setter;
 public class AssetStatisticsEntity {
 
     @Id
+    @Column(name = "`id`", updatable = false)
     @SequenceGenerator(sequenceName = "analytics.asset_statistics_id_seq", name = "asset_statistics_id_seq", allocationSize = 1)
-    @Column(name = "`id`")
+    @GeneratedValue(generator = "asset_statistics_id_seq", strategy = GenerationType.SEQUENCE)
+    @Getter
     private Integer id;
 
     @NotNull
@@ -102,6 +106,6 @@ public class AssetStatisticsEntity {
     }
 
     public void addCountry(String countryCode) {
-    	this.countries.add(new AssetStatisticsCountryEntity(this, countryCode));
+        this.countries.add(new AssetStatisticsCountryEntity(this, countryCode));
     }
 }
