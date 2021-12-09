@@ -15,9 +15,9 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import eu.opertusmundi.common.domain.AssetStatisticsEntity;
-import eu.opertusmundi.common.domain.CountryEntity;
 import eu.opertusmundi.common.model.analytics.AssetStatisticsCommandDto;
 import eu.opertusmundi.common.model.analytics.AssetStatisticsDto;
+import eu.opertusmundi.common.model.spatial.CountryEuropeDto;
 
 
 @Repository
@@ -70,9 +70,8 @@ public interface AssetStatisticsRepository extends JpaRepository<AssetStatistics
         statistics.setSales(0);
         statistics.setActive(true);
         
-        final List<CountryEntity> countries = command.getCountries();
-        for (int i = 0 ; i < countries.size() ; i++) {
-        	statistics.addCountry(countries.get(i).getCode());
+        for (final CountryEuropeDto c : command.getCountries()) {
+            statistics.addCountry(c.getCode());
         }
 
         return this.saveAndFlush(statistics).toDto();
