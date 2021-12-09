@@ -684,7 +684,7 @@ public class DefaultCatalogueService implements CatalogueService {
             }
             
             // Deactivate related statistics
-            this.statisticsService.updateStatisticsPublishAsset(pid);
+            this.statisticsService.updateStatisticsUnpublishAsset(pid);
 
             // Remove asset from the catalogue
             final CatalogueItemDetailsDto item = this.findOne(null, pid, publisherKey, false);
@@ -885,6 +885,7 @@ public class DefaultCatalogueService implements CatalogueService {
                 .getBody()
                 .getResult();
             
+            // Update statistics
             this.statisticsService.updateStatisticsPublishAsset(feature.getId());
 
             if (this.elasticSearchService != null) {
