@@ -56,8 +56,8 @@ public class DefaultStatisticsService implements StatisticsService{
             }
         }
 
-        // Must set SRID to geometry before executing the query
-        if (geom.getSRID() == 0) {
+        // Set geometry SRID before executing the query
+        if (geom != null && geom.getSRID() == 0) {
             geom.setSRID(4326);
         }
         final List<CountryEuropeDto> countries = this.countryRepository.getCountriesWithinGeometry(geom).stream()
