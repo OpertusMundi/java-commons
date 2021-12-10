@@ -424,7 +424,8 @@ public interface ProviderAssetService {
      * @param publisherKey
      * @param draftKey
      * @return
+     * throws AssetDraftException if draft or ingestion data is not found
      */
-    List<ResourceIngestionDataDto> getServices(UUID publisherKey, UUID draftKey);
+    List<ResourceIngestionDataDto> getServices(UUID publisherKey, UUID draftKey) throws AssetDraftException;
 
 }

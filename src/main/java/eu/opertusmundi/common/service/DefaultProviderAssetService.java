@@ -35,6 +35,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -1500,10 +1501,32 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Override
-    @Cacheable(cacheNames = "draft-services", cacheManager = "defaultCacheManager", key = "'draft-' + #draftKey + '-' + #resourceKey")
-    public List<ResourceIngestionDataDto> getServices(UUID publisherKey, UUID draftKey) {
-        final AssetDraftDto                  draft    = this.findOneDraft(publisherKey, draftKey, false);
+    @Cacheable(
+        cacheNames = "draft-services",
+        cacheManager = "defaultCacheManager",
+        key = "'draft-' + #draftKey + '-' + #resourceKey"
+    )
+    public List<ResourceIngestionDataDto> getServices(UUID publisherKey, UUID draftKey) throws AssetDraftException {
+        final AssetDraftDto draft = this.findOneDraft(publisherKey, draftKey, false);
+
+        // Draft must exist
+        if (draft == null) {
+            throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND, "Draft not found");
+        }
+        // Draft status cannot be in [DRAFT, SUBMITTED]. Ingestion data may be
+        // missing or partially computed
+        if(draft.getStatus() == EnumProviderAssetDraftStatus.DRAFT ||
+           draft.getStatus() == EnumProviderAssetDraftStatus.SUBMITTED
+        ) {
+            throw new AssetDraftException(AssetMessageCode.INVALID_STATE, "Draft status cannot be in [DRAFT, SUBMITTED]");
+        }
+
         final List<ResourceIngestionDataDto> services = draft.getCommand().getIngestionInfo();
+
+        // Services must exist
+        if (CollectionUtils.isEmpty(services)) {
+            throw new AssetDraftException(AssetMessageCode.INVALID_STATE, "Ingestion data not found");
+        }
 
         return services;
     }
