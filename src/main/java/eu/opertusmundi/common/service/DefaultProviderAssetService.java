@@ -182,9 +182,6 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         int pageIndex, int pageSize,
         EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order
     ) {
-        Assert.notNull(ownerKey, "Expected a non-null owner key");
-        Assert.notNull(publisherKey, "Expected a non-null publisher key");
-
         final Direction   direction   = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
         final PageRequest pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
 
@@ -198,7 +195,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             serviceType = null;
         }
 
-        final Page<ProviderAssetDraftEntity> entities = ownerKey.equals(publisherKey)
+        final Page<ProviderAssetDraftEntity> entities = ownerKey == null || ownerKey.equals(publisherKey)
             ? this.draftRepository.findAllByPublisherAndStatus(publisherKey, status, type, serviceType, pageRequest)
             : this.draftRepository.findAllByOwnerAndPublisherAndStatus(ownerKey, publisherKey, status, type, serviceType, pageRequest);
 
