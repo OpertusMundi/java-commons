@@ -8,6 +8,7 @@ import java.nio.file.Path;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -30,8 +31,8 @@ public class DefaultConsumerContractService implements ConsumerContractService {
 	@Autowired
 	private ContractParametersFactory contractParametersFactory;
 
-	@Autowired
-    private SignPdfService signatoryService;
+	@Autowired(required = false)
+    private SignPdfService signPdfService;
 
     @Override
     public void print(ConsumerContractCommand command) throws ContractServiceException {
@@ -60,6 +61,9 @@ public class DefaultConsumerContractService implements ConsumerContractService {
     public void sign(ConsumerContractCommand command) {
         try {
             Assert.isNull(command.getPath(), "Expected a null source path");
+            
+            Assert.state(signPdfService != null,
+                "signPdfService is not present (is signatory keystore configured?)");
 
             final ContractParametersDto parameters = contractParametersFactory.create(command.getOrderKey());
 
@@ -76,7 +80,7 @@ public class DefaultConsumerContractService implements ConsumerContractService {
             try (final ByteArrayOutputStream output = new ByteArrayOutputStream(estimatedOutputSize)) {
                 final PDDocument pdf = PDDocument.load(pdfByteArray);
 
-                signatoryService.signWithVisibleSignature(pdf, output);
+                signPdfService.signWithVisibleSignature(pdf, output);
 
                 // Save signed contract to file
                 this.save(command.getPath(), output.toByteArray());

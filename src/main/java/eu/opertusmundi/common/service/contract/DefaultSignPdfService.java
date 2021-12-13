@@ -11,6 +11,7 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 @Service
+@ConditionalOnBean(name = "signatoryKeyStore")
 public class DefaultSignPdfService implements SignPdfService {
 
     @Autowired
