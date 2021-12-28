@@ -29,26 +29,37 @@ public class MangoPayWebhookHelper extends BaseMangoPayService {
     private static final Logger logger = LoggerFactory.getLogger(MangoPayWebhookHelper.class);
 
     private final List<EventType> eventTypes = Arrays.asList(
+        // KYC documents
+        EventType.KYC_SUCCEEDED,
+        EventType.KYC_FAILED,
+        EventType.KYC_OUTDATED,
         // Pay-ins
         EventType.PAYIN_NORMAL_SUCCEEDED,
         EventType.PAYIN_NORMAL_FAILED,
+        EventType.PAYIN_REFUND_SUCCEEDED,
+        EventType.PAYIN_REFUND_FAILED,
         // Pay-outs
         EventType.PAYOUT_NORMAL_SUCCEEDED,
         EventType.PAYOUT_NORMAL_FAILED,
         EventType.PAYOUT_REFUND_SUCCEEDED,
         EventType.PAYOUT_REFUND_FAILED,
         // Transfers
-        EventType.TRANSFER_NORMAL_CREATED,
         EventType.TRANSFER_NORMAL_FAILED,
         EventType.TRANSFER_NORMAL_SUCCEEDED,
-        // KYC
-        EventType.KYC_CREATED,
-        EventType.KYC_SUCCEEDED,
-        EventType.KYC_FAILED,
-        EventType.KYC_VALIDATION_ASKED,
-        EventType.KYC_OUTDATED,
+        EventType.TRANSFER_REFUND_SUCCEEDED,
+        EventType.TRANSFER_REFUND_FAILED,
+        // UBO declarations
+        EventType.UBO_DECLARATION_REFUSED,
+        EventType.UBO_DECLARATION_VALIDATED,
+        EventType.UBO_DECLARATION_INCOMPLETE,
+        // User KYC validation status
         EventType.USER_KYC_REGULAR,
-        EventType.USER_KYC_LIGHT
+        EventType.USER_KYC_LIGHT,
+        // User blocked
+        EventType.USER_INFLOWS_BLOCKED,
+        EventType.USER_INFLOWS_UNBLOCKED,
+        EventType.USER_OUTFLOWS_BLOCKED,
+        EventType.USER_OUTFLOWS_UNBLOCKED
     );
 
     public List<WebhookRegistration> getAll() throws PaymentException {
@@ -152,7 +163,7 @@ public class MangoPayWebhookHelper extends BaseMangoPayService {
             // Disable the web hook for every supported event type if one is
             // already registered
             for (final EventType eventType : eventTypes) {
-                Hook hook = hooks.stream()
+                final Hook hook = hooks.stream()
                     .filter(h -> h.getEventType() == eventType)
                     .findFirst()
                     .orElse(null);

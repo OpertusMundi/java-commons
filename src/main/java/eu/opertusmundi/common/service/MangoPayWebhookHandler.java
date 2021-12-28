@@ -30,37 +30,50 @@ public class MangoPayWebhookHandler {
         }
 
         switch (EventType.valueOf(eventType)) {
+            case KYC_SUCCEEDED :
+            case KYC_FAILED :
+            case KYC_OUTDATED :
+                // TODO: Notify user
+                break;
+
             case PAYIN_NORMAL_SUCCEEDED :
             case PAYIN_NORMAL_FAILED :
-                // Update PayIn
+                // Update PayIn status
                 this.paymentService.sendPayInStatusUpdateMessage(resourceId);
                 break;
 
-            case PAYOUT_NORMAL_SUCCEEDED:
-            case PAYOUT_NORMAL_FAILED:
+            case PAYIN_REFUND_SUCCEEDED :
+            case PAYIN_REFUND_FAILED :
+                // TODO: Update PayIn refund
+                break;
+
+            case PAYOUT_NORMAL_SUCCEEDED :
+            case PAYOUT_NORMAL_FAILED :
                 // Update PayOut
                 this.paymentService.sendPayOutStatusUpdateMessage(resourceId);
                 break;
 
-            case PAYOUT_REFUND_SUCCEEDED:
-            case PAYOUT_REFUND_FAILED:
+            case PAYOUT_REFUND_SUCCEEDED :
+            case PAYOUT_REFUND_FAILED :
                 // Update PayOut refund
                 this.paymentService.updatePayOutRefund(resourceId);
                 break;
 
-            case TRANSFER_NORMAL_CREATED:
-            case TRANSFER_NORMAL_FAILED:
-            case TRANSFER_NORMAL_SUCCEEDED:
+            case TRANSFER_NORMAL_FAILED :
+            case TRANSFER_NORMAL_SUCCEEDED :
                 // Update Transfer
                 this.paymentService.updateTransfer(resourceId);
                 break;
 
-            case KYC_CREATED :
-            case KYC_SUCCEEDED :
-            case KYC_FAILED :
-            case KYC_VALIDATION_ASKED :
-            case KYC_OUTDATED :
-                // Update KYC document
+            case TRANSFER_REFUND_SUCCEEDED :
+            case TRANSFER_REFUND_FAILED :
+                // TODO: Update transfer refund
+                break;
+
+            case UBO_DECLARATION_REFUSED :
+            case UBO_DECLARATION_VALIDATED :
+            case UBO_DECLARATION_INCOMPLETE :
+                // TODO: Notify user
                 break;
 
             case USER_KYC_REGULAR :
@@ -69,6 +82,13 @@ public class MangoPayWebhookHandler {
                 final UpdateKycLevelCommand command = UpdateKycLevelCommand.of(resourceId, date);
 
                 this.customerVerificationService.updateCustomerKycLevel(command);
+                break;
+
+            case USER_INFLOWS_BLOCKED :
+            case USER_INFLOWS_UNBLOCKED :
+            case USER_OUTFLOWS_BLOCKED :
+            case USER_OUTFLOWS_UNBLOCKED :
+                this.paymentService.updateUserBlockStatus(resourceId);
                 break;
 
             default :
