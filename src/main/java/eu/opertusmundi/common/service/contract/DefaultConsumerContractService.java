@@ -8,7 +8,6 @@ import java.nio.file.Path;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -61,7 +60,7 @@ public class DefaultConsumerContractService implements ConsumerContractService {
     public void sign(ConsumerContractCommand command) {
         try {
             Assert.isNull(command.getPath(), "Expected a null source path");
-            
+
             Assert.state(signPdfService != null,
                 "signPdfService is not present (is signatory keystore configured?)");
 

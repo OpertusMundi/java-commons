@@ -14,6 +14,7 @@ import javax.persistence.Table;
 
 import org.hibernate.annotations.Type;
 
+import eu.opertusmundi.common.model.account.ConsumerProfessionalCommandDto;
 import eu.opertusmundi.common.model.account.CustomerCommandDto;
 import eu.opertusmundi.common.model.account.CustomerDraftProfessionalDto;
 import eu.opertusmundi.common.model.account.EnumLegalPersonType;
@@ -29,6 +30,33 @@ public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
 
     protected CustomerDraftProfessionalEntity() {
         super(EnumMangopayUserType.PROFESSIONAL);
+    }
+
+    protected CustomerDraftProfessionalEntity(CustomerProfessionalEntity e, ConsumerProfessionalCommandDto c) {
+        super(EnumMangopayUserType.PROFESSIONAL);
+
+        this.additionalInfo      = c.getAdditionalInfo();
+        this.companyNumber       = c.getCompanyNumber();
+        this.companyType         = c.getCompanyType();
+        this.email               = c.getEmail();
+        this.headquartersAddress = AddressEmbeddable.from(c.getHeadquartersAddress());
+        this.legalPersonType     = c.getLegalPersonType();
+        this.representative      = CustomerRrepresentativeEmbeddable.from(c.getRepresentative());
+        this.logoImage           = c.getLogoImage();
+        this.logoImageMimeType   = c.getLogoImageMimeType();
+        this.name                = c.getName();
+        this.phone               = c.getPhone();
+        this.siteUrl             = c.getSiteUrl();
+
+        this.createdAt       = ZonedDateTime.now();
+        this.modifiedAt      = this.createdAt;
+
+        // Merge existing object. These properties are set only during the first
+        // successful registration with the payment service
+        if (e != null) {
+            this.paymentProviderUser   = e.paymentProviderUser;
+            this.paymentProviderWallet = e.paymentProviderWallet;
+        }
     }
 
     protected CustomerDraftProfessionalEntity(CustomerProfessionalEntity e, ProviderProfessionalCommandDto c) {
@@ -158,10 +186,29 @@ public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
     @Setter
     private String siteUrl;
 
-    @Override
-    public void update(CustomerCommandDto command) {
-        final ProviderProfessionalCommandDto p = (ProviderProfessionalCommandDto) command;
+    private void update(ConsumerProfessionalCommandDto p) {
+        this.additionalInfo    = p.getAdditionalInfo();
+        this.companyNumber     = p.getCompanyNumber();
+        this.companyType       = p.getCompanyType();
+        this.email             = p.getEmail();
+        this.legalPersonType   = p.getLegalPersonType();
+        this.logoImage         = p.getLogoImage();
+        this.logoImageMimeType = p.getLogoImageMimeType();
+        this.modifiedAt        = ZonedDateTime.now();
+        this.name              = p.getName();
+        this.phone             = p.getPhone();
+        this.siteUrl           = p.getSiteUrl();
 
+        if (p.getHeadquartersAddress() != null) {
+            this.headquartersAddress = AddressEmbeddable.from(p.getHeadquartersAddress());
+        }
+
+        if (p.getRepresentative() != null) {
+            this.representative = CustomerRrepresentativeEmbeddable.from(p.getRepresentative());
+        }
+    }
+
+    private void update(ProviderProfessionalCommandDto p) {
         this.additionalInfo    = p.getAdditionalInfo();
         this.companyNumber     = p.getCompanyNumber();
         this.companyType       = p.getCompanyType();
@@ -184,6 +231,23 @@ public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
 
         if (p.getRepresentative() != null) {
             this.representative = CustomerRrepresentativeEmbeddable.from(p.getRepresentative());
+        }
+    }
+
+    @Override
+    public void update(CustomerCommandDto command) {
+        switch (command.getCustomerType()) {
+            case CONSUMER :
+                final ConsumerProfessionalCommandDto c = (ConsumerProfessionalCommandDto) command;
+                this.update(c);
+                break;
+
+            case PROVIDER :
+                final ProviderProfessionalCommandDto p = (ProviderProfessionalCommandDto) command;
+
+                this.update(p);
+
+                break;
         }
     }
 

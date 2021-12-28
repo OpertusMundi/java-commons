@@ -64,6 +64,12 @@ public class HelpdeskPayInDto extends PayInDto {
     @JsonInclude(Include.NON_EMPTY)
     protected String providerResultMessage;
 
+    @Schema(description = "Requested 3DS version")
+    private String requested3dsVersion;
+
+    @Schema(description = "Applied 3DS version")
+    private String applied3dsVersion;
+
     public void addItem(HelpdeskPayInItemDto i) {
         this.items.add(i);
     }

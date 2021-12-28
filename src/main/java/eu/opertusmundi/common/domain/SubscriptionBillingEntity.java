@@ -97,7 +97,7 @@ public class SubscriptionBillingEntity {
         s.setFromDate(fromDate);
         s.setId(id);
         s.setSubscriptionId(this.getSubscription().getId());
-        s.setService(this.getSubscription().getService());
+        s.setService(this.getSubscription().getAsset());
         s.setSkuTotalCalls(skuTotalCalls);
         s.setSkuTotalRows(skuTotalRows);
         s.setToDate(toDate);

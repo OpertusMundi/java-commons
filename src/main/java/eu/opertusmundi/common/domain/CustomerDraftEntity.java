@@ -28,6 +28,7 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.account.ConsumerIndividualCommandDto;
+import eu.opertusmundi.common.model.account.ConsumerProfessionalCommandDto;
 import eu.opertusmundi.common.model.account.CustomerCommandDto;
 import eu.opertusmundi.common.model.account.CustomerDraftDto;
 import eu.opertusmundi.common.model.account.EnumCustomerRegistrationStatus;
@@ -142,7 +143,7 @@ public abstract class CustomerDraftEntity {
 
     public abstract void update(CustomerCommandDto command);
 
-    public static CustomerDraftEntity from(CustomerEntity current, CustomerCommandDto command) {
+    public static CustomerDraftEntity consumerOf(CustomerEntity current, CustomerCommandDto command) {
         switch (command.getType()) {
             case INDIVIDUAL : {
                 final CustomerIndividualEntity     e = (CustomerIndividualEntity) current;
@@ -152,13 +153,19 @@ public abstract class CustomerDraftEntity {
             }
             case PROFESSIONAL : {
                 final CustomerProfessionalEntity     e = (CustomerProfessionalEntity) current;
-                final ProviderProfessionalCommandDto c = (ProviderProfessionalCommandDto) command;
+                final ConsumerProfessionalCommandDto c = (ConsumerProfessionalCommandDto) command;
 
                 return new CustomerDraftProfessionalEntity(e, c);
             }
             default :
                 return null;
         }
+    }
+
+    public static CustomerDraftEntity providerOf(CustomerEntity current, ProviderProfessionalCommandDto command) {
+        final CustomerProfessionalEntity e = (CustomerProfessionalEntity) current;
+
+        return new CustomerDraftProfessionalEntity(e, command);
     }
 
 }

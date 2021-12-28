@@ -170,6 +170,16 @@ public abstract class CustomerEntity {
     @Setter
     protected ZonedDateTime walletFundsUpdatedOn;
 
+    @Column(name = "`blocked_inflows`")
+    @Getter
+    @Setter
+    protected boolean blockedInflows = false;
+
+    @Column(name = "`blocked_outflows`")
+    @Getter
+    @Setter
+    protected boolean blockedOutflows = false;
+
     public abstract CustomerDto toDto();
 
     public abstract ConsumerDto toConsumerDto();

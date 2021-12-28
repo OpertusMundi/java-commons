@@ -84,6 +84,6 @@ public interface OrderFulfillmentService {
      * @param payInKey
      * @throws Exception if order status update fails
      */
-    void updateConsumer(UUID payInKey) throws Exception;
+    void registerConsumerAssets(UUID payInKey) throws Exception;
 
 }

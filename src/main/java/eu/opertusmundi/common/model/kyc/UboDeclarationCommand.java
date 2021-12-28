@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreType;
 
+import eu.opertusmundi.common.model.account.EnumCustomerType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,12 +19,17 @@ import lombok.ToString;
 @JsonIgnoreType
 public class UboDeclarationCommand {
 
-    private UUID providerKey;
+    private UUID customerKey;
+
+    private EnumCustomerType customerType;
 
     private String uboDeclarationId;
 
-    public static UboDeclarationCommand of(UUID providerKey) {
-        return UboDeclarationCommand.builder().providerKey(providerKey).build();
+    public static UboDeclarationCommand of(UUID key, EnumCustomerType type) {
+        return UboDeclarationCommand.builder()
+            .customerKey(key)
+            .customerType(type)
+            .build();
     }
 
 }

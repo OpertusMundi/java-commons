@@ -42,7 +42,9 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         super(EnumMangopayUserType.PROFESSIONAL);
 
         this.additionalInfo        = c.getAdditionalInfo();
-        this.bankAccount           = CustomerBankAccountEmbeddable.from(c.getBankAccount());
+        if (c.getBankAccount() != null) {
+            this.bankAccount = CustomerBankAccountEmbeddable.from(c.getBankAccount());
+        }
         this.companyNumber         = c.getCompanyNumber();
         this.companyType           = c.getCompanyType();
         this.contract              = c.getContract();
@@ -72,7 +74,9 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         super(EnumMangopayUserType.PROFESSIONAL);
 
         this.additionalInfo        = e.getAdditionalInfo();
-        this.bankAccount           = e.getBankAccount().clone();
+        if (e.getBankAccount() != null) {
+            this.bankAccount = e.getBankAccount().clone();
+        }
         this.companyNumber         = e.getCompanyNumber();
         this.companyType           = e.getCompanyType();
         this.contract              = null;
@@ -153,19 +157,18 @@ public class CustomerProfessionalEntity extends CustomerEntity {
     @Setter
     private String companyNumber;
 
-    @NotNull
     @Embedded
     @AttributeOverrides({
         @AttributeOverride(name = "id",                      column = @Column(name = "`payment_provider_bank_account`")),
-        @AttributeOverride(name = "ownerName",               column = @Column(name = "`bank_account_owner_name`",                nullable = false)),
-        @AttributeOverride(name = "ownerAddress.line1",      column = @Column(name = "`bank_account_owner_address_line1`",       nullable = false)),
+        @AttributeOverride(name = "ownerName",               column = @Column(name = "`bank_account_owner_name`")),
+        @AttributeOverride(name = "ownerAddress.line1",      column = @Column(name = "`bank_account_owner_address_line1`")),
         @AttributeOverride(name = "ownerAddress.line2",      column = @Column(name = "`bank_account_owner_address_line2`")),
-        @AttributeOverride(name = "ownerAddress.city",       column = @Column(name = "`bank_account_owner_address_city`",        nullable = false)),
+        @AttributeOverride(name = "ownerAddress.city",       column = @Column(name = "`bank_account_owner_address_city`")),
         @AttributeOverride(name = "ownerAddress.region",     column = @Column(name = "`bank_account_owner_address_region`")),
-        @AttributeOverride(name = "ownerAddress.postalCode", column = @Column(name = "`bank_account_owner_address_postal_code`", nullable = false)),
-        @AttributeOverride(name = "ownerAddress.country",    column = @Column(name = "`bank_account_owner_address_country`",     nullable = false)),
-        @AttributeOverride(name = "iban",                    column = @Column(name = "`bank_account_iban`",                      nullable = false)),
-        @AttributeOverride(name = "bic",                     column = @Column(name = "`bank_account_bic`",                       nullable = false)),
+        @AttributeOverride(name = "ownerAddress.postalCode", column = @Column(name = "`bank_account_owner_address_postal_code`")),
+        @AttributeOverride(name = "ownerAddress.country",    column = @Column(name = "`bank_account_owner_address_country`")),
+        @AttributeOverride(name = "iban",                    column = @Column(name = "`bank_account_iban`")),
+        @AttributeOverride(name = "bic",                     column = @Column(name = "`bank_account_bic`")),
         @AttributeOverride(name = "tag",                     column = @Column(name = "`bank_account_tag`")),
     })
     @Getter
@@ -343,6 +346,8 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         if (this.bankAccount != null) {
             p.setBankAccount(this.bankAccount.toDto());
         }
+        p.setBlockedInflows(this.blockedInflows);
+        p.setBlockedOutflows(this.blockedOutflows);
         p.setCompanyNumber(this.companyNumber);
         p.setCompanyType(this.companyType);
         p.setContract(this.contract);
@@ -389,7 +394,9 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         final CustomerProfessionalEntity p = new CustomerProfessionalEntity();
 
         p.additionalInfo        = r.getAdditionalInfo();
-        p.bankAccount           = r.getBankAccount().clone();
+        if (r.getBankAccount() != null) {
+            p.bankAccount = r.getBankAccount().clone();
+        }
         p.companyNumber         = r.getCompanyNumber();
         p.companyType           = r.getCompanyType();
         p.contract              = null;

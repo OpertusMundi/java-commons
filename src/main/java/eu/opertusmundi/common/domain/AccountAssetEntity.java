@@ -32,6 +32,9 @@ public class AccountAssetEntity {
     @Getter
     private Integer id;
 
+    /**
+     * The owner of the asset
+     */
     @NotNull
     @ManyToOne(targetEntity = AccountEntity.class, fetch = FetchType.LAZY)
     @JoinColumn(name = "consumer", nullable = false)
@@ -39,6 +42,11 @@ public class AccountAssetEntity {
     @Setter
     private AccountEntity consumer;
 
+    /**
+     * The order linked to the purchase of the asset. If this record has been
+     * created due to an asset update, the order reference is set to the one of
+     * the initial purchase
+     */
     @NotNull
     @ManyToOne(targetEntity = OrderEntity.class)
     @JoinColumn(name = "`order`", nullable = false)
@@ -46,30 +54,53 @@ public class AccountAssetEntity {
     @Setter
     private OrderEntity order;
 
+    /**
+     * Asset unique identifier (PID)
+     */
     @NotNull
     @Column(name = "`asset`")
     @Getter
     @Setter
     private String asset;
 
+    /**
+     * Date of purchase. If this record is created due to an asset update, the
+     * date is set to the one of the initial purchase
+     */
     @NotNull
     @Column(name = "`purchased_on`")
     @Getter
     @Setter
     private ZonedDateTime purchasedOn;
 
+    /**
+     * The date the asset has been registered to the user account
+     */
     @NotNull
     @Column(name = "`added_on`")
     @Getter
     @Setter
     private ZonedDateTime addedOn;
 
+    /**
+     * Interval in years that the user is eligible to receive updates
+     *
+     * For `UPDATE` records, the value is set to the one of the initial
+     * registration.
+     *
+     * The value of the field must be greater than zero when comparing dates
+     * for determining update qualification.
+     */
     @NotNull
     @Column(name = "`update_interval`")
     @Getter
     @Setter
     private Integer updateInterval = 0;
 
+    /**
+     * The user is eligible to receive updates until this date. For `UPDATE`
+     * records, the value is set to the one of the initial registration
+     */
     @NotNull
     @Column(name = "`update_eligibility`")
     @Getter

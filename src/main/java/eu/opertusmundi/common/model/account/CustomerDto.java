@@ -54,4 +54,10 @@ public abstract class CustomerDto implements Serializable {
     @Schema(description = "Wallet last update. Wallet data is updated when a new PayIn, Transfer or PayOut is created.")
     protected ZonedDateTime walletFundsUpdatedOn;
 
+    @Schema(description = "Indicates if a user has her inflows (payins, incoming transfers) blocked")
+    protected boolean blockedInflows;
+
+    @Schema(description = "Indicates if a user has her outflows (payouts, outgoing transfers) blocked.")
+    protected boolean blockedOutflows;
+
 }

@@ -13,17 +13,20 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ConsumerProfessionalCommandDto extends CustomerCommandDto implements Serializable {
+public class ConsumerProfessionalCommandDto extends ConsumerCommandDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     protected ConsumerProfessionalCommandDto() {
         super(EnumMangopayUserType.PROFESSIONAL);
+
+        this.customerType = EnumCustomerType.CONSUMER;
     }
 
     private String additionalInfo;
 
     @NotNull
+    @Size(min = 1, max = 255)
     private String companyNumber;
 
     private String companyType;
@@ -46,6 +49,7 @@ public class ConsumerProfessionalCommandDto extends CustomerCommandDto implement
     private String logoImageMimeType;
 
     @NotEmpty
+    @Size(min = 1, max = 255)
     private String name;
 
     private String phone;

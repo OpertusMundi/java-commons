@@ -27,6 +27,7 @@ import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
 import eu.opertusmundi.common.model.account.EnumAssetSource;
+import eu.opertusmundi.common.model.account.EnumSubscriptionStatus;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.order.ConsumerOrderDto;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
@@ -353,7 +354,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
      * the BPM engine
      */
     @Override
-    public void updateConsumer(UUID payInKey) throws Exception {
+    public void registerConsumerAssets(UUID payInKey) throws Exception {
         final PayInEntity payIn = payInRepository.findOneEntityByKey(payInKey).orElse(null);
 
         // Update account profile
@@ -419,15 +420,16 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         }
 
         // Register asset to consumer's account
-        final AccountAssetEntity reg = new AccountAssetEntity();
+        final AccountAssetEntity reg        = new AccountAssetEntity();
+        final ZonedDateTime      purchaseOn = payIn.getExecutedOn();
 
-        reg.setAddedOn(ZonedDateTime.now());
+        reg.setAddedOn(purchaseOn);
         reg.setAsset(orderItem.getAssetId());
         reg.setConsumer(payIn.getConsumer());
         reg.setOrder(order);
-        reg.setPurchasedOn(payIn.getExecutedOn());
+        reg.setPurchasedOn(purchaseOn);
         reg.setSource(EnumAssetSource.PURCHASE);
-        reg.setUpdateEligibility(payIn.getExecutedOn());
+        reg.setUpdateEligibility(purchaseOn);
         reg.setUpdateInterval(0);
 
         if (pricingModel.getModel().getType() == EnumPricingModel.FIXED) {
@@ -435,7 +437,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             final Integer                     yearsOfUpdates    = fixedPricingModel.getYearsOfUpdates();
 
             if (fixedPricingModel.getYearsOfUpdates() > 0) {
-                reg.setUpdateEligibility(payIn.getExecutedOn().plusYears(yearsOfUpdates));
+                reg.setUpdateEligibility(purchaseOn.plusYears(yearsOfUpdates));
                 reg.setUpdateInterval(yearsOfUpdates);
             }
         }
@@ -464,13 +466,19 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         final AccountSubscriptionEntity sub = new AccountSubscriptionEntity();
 
         sub.setAddedOn(now);
+        sub.setAsset(orderItem.getAssetId());
+        sub.setCancelledOn(null);
         sub.setConsumer(payIn.getConsumer());
-        sub.setProvider(orderItem.getProvider());
+        sub.setExpiresOn(null);
+        sub.setLastPayinDate(order.getPayin().getExecutedOn());
+        sub.setNextPayinDate(null);
         sub.setOrder(order);
-        sub.setService(orderItem.getAssetId());
-        sub.setUpdatedOn(now);
+        sub.setProvider(orderItem.getProvider());
+        sub.setRecurringPayIn(null);
         sub.setSegment(asset.getTopicCategory().stream().findFirst().orElse(null));
         sub.setSource(renewal ? EnumAssetSource.UPDATE : EnumAssetSource.PURCHASE);
+        sub.setStatus(EnumSubscriptionStatus.ACTIVE);
+        sub.setUpdatedOn(now);
 
         // Register call/rows SKUs
         final QuotationParametersDto params = pricingModel.getParameters();
@@ -483,6 +491,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
                 sku = new AccountSubscriptionSkuEntity();
                 sku.setPurchasedCalls(callTier.getCount());
+                sku.setPurchasedRows(0);
 
                 break;
 
@@ -491,7 +500,8 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                 final PrePaidTierDto rowTier = prePaidRowModel.getPrePaidTiers().get(params.getPrePaidTier());
 
                 sku = new AccountSubscriptionSkuEntity();
-                sku.setPurchasedCalls(rowTier.getCount());
+                sku.setPurchasedCalls(0);
+                sku.setPurchasedRows(rowTier.getCount());
 
                 break;
 

@@ -4,6 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import eu.opertusmundi.common.model.payment.BrowserInfoDto;
+import eu.opertusmundi.common.model.payment.EnumRecurringPaymentType;
+import eu.opertusmundi.common.model.payment.PayInAddressDto;
+import eu.opertusmundi.common.model.payment.PayInRecurringRegistrationDto;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -34,5 +38,20 @@ public class ConsumerCardDirectPayInDto extends ConsumerPayInDto {
     @Schema(description = "Redirect URL if 3-D Secure validation is required")
     @JsonInclude(Include.NON_NULL)
     private String secureModeRedirectURL;
+
+    @Schema(description = "Information related to the user billing address")
+    private PayInAddressDto billing;
+
+    @Schema(description = "Information related to the user shipping address")
+    private PayInAddressDto shipping;
+
+    @Schema(description = "Browser information required by 3DS2 integration")
+    private BrowserInfoDto browserInfo;
+
+    @Schema(description = "Recurring payment information")
+    private PayInRecurringRegistrationDto recurringPayment;
+
+    @Schema(description = "Recurring payment type")
+    private EnumRecurringPaymentType recurringPaymentType;
 
 }

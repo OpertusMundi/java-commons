@@ -32,6 +32,7 @@ import eu.opertusmundi.common.domain.PayInOrderItemEntity;
 import eu.opertusmundi.common.domain.PayInStatusEntity;
 import eu.opertusmundi.common.model.payment.BankwirePayInCommand;
 import eu.opertusmundi.common.model.payment.CardDirectPayInCommand;
+import eu.opertusmundi.common.model.payment.EnumRecurringPaymentType;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.FreePayInCommand;
 import eu.opertusmundi.common.model.payment.PayInDto;
@@ -294,14 +295,17 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         final CardDirectPayInEntity payin    = new CardDirectPayInEntity();
 
         // Do not save card alias to our database!
+        payin.setApplied3dsVersion(command.getApplied3dsVersion());
         payin.setCard(command.getCardId());
         payin.setConsumer(consumer);
         payin.setCreatedOn(command.getCreatedOn());
         payin.setCurrency(order.getCurrency());
         payin.setExecutedOn(command.getExecutedOn());
+        payin.setIpAddress(command.getIpAddress());
         payin.setKey(command.getPayInKey());
         payin.setPayIn(command.getPayIn());
         payin.setReferenceNumber(command.getReferenceNumber());
+        payin.setRequested3dsVersion(command.getRequested3dsVersion());
         payin.setResultCode(command.getResultCode());
         payin.setResultMessage(command.getResultMessage());
         payin.setStatementDescriptor(command.getStatementDescriptor());
@@ -310,6 +314,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         payin.setTotalPrice(order.getTotalPrice());
         payin.setTotalPriceExcludingTax(order.getTotalPriceExcludingTax());
         payin.setTotalTax(order.getTotalTax());
+        payin.setRecurringPaymentType(EnumRecurringPaymentType.NONE);
 
         final PayInStatusEntity status = new PayInStatusEntity();
         status.setPayin(payin);

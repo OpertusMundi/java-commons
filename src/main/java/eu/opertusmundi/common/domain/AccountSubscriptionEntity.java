@@ -22,6 +22,7 @@ import javax.validation.constraints.NotNull;
 
 import eu.opertusmundi.common.model.account.AccountSubscriptionDto;
 import eu.opertusmundi.common.model.account.EnumAssetSource;
+import eu.opertusmundi.common.model.account.EnumSubscriptionStatus;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import eu.opertusmundi.common.model.payment.consumer.ConsumerAccountSubscriptionDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskAccountSubscriptionDto;
@@ -72,10 +73,10 @@ public class AccountSubscriptionEntity {
     private final List<AccountSubscriptionSkuEntity> skus = new ArrayList<>();
 
     @NotNull
-    @Column(name = "`service`")
+    @Column(name = "`asset`")
     @Getter
     @Setter
-    private String service;
+    private String asset;
 
     @NotNull
     @Column(name = "`added_on`")
@@ -88,6 +89,16 @@ public class AccountSubscriptionEntity {
     @Getter
     @Setter
     private ZonedDateTime updatedOn;
+
+    @Column(name = "`expires_on`")
+    @Getter
+    @Setter
+    private ZonedDateTime expiresOn;
+
+    @Column(name = "`cancelled_on`")
+    @Getter
+    @Setter
+    private ZonedDateTime cancelledOn;
 
     @NotNull
     @Column(name = "`source`")
@@ -102,13 +113,37 @@ public class AccountSubscriptionEntity {
     @Setter
     private EnumTopicCategory segment;
 
+    @NotNull
+    @Column(name = "`status`")
+    @Enumerated(EnumType.STRING)
+    @Getter
+    @Setter
+    private EnumSubscriptionStatus status;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payin_recurring_registration")
+    @Getter
+    @Setter
+    private PayInRecurringRegistrationEntity recurringPayIn;
+
+    @NotNull
+    @Column(name = "`last_payin_date`")
+    @Getter
+    @Setter
+    private ZonedDateTime lastPayinDate;
+
+    @Column(name = "`next_payin_date`")
+    @Getter
+    @Setter
+    private ZonedDateTime nextPayinDate;
+
     public void updateDto(AccountSubscriptionDto s) {
         s.setAddedOn(addedOn);
         s.setId(id);
         s.setKey(order.getKey());
         s.setOrderId(order.getId());
         s.setSegment(segment);
-        s.setServiceId(service);
+        s.setAssetId(asset);
         s.setSource(source);
         s.setUpdatedOn(updatedOn);
     }

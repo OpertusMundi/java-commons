@@ -13,11 +13,11 @@ import org.springframework.util.Assert;
 
 import eu.opertusmundi.common.model.account.AccountDto;
 import eu.opertusmundi.common.model.account.ActivationTokenDto;
-import eu.opertusmundi.common.model.account.CustomerCommandDto;
+import eu.opertusmundi.common.model.account.ConsumerCommandDto;
+import eu.opertusmundi.common.model.account.ConsumerProfessionalCommandDto;
 import eu.opertusmundi.common.model.account.CustomerDto;
 import eu.opertusmundi.common.model.account.EnumActivationTokenType;
 import eu.opertusmundi.common.model.account.EnumMangopayUserType;
-import eu.opertusmundi.common.model.account.ProviderProfessionalCommandDto;
 import eu.opertusmundi.common.model.analytics.ProfileRecord;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.repository.AccountRepository;
@@ -44,12 +44,12 @@ public class DefaultConsumerRegistrationService extends AbstractCustomerRegistra
 
     @Override
     @Transactional
-    public AccountDto updateRegistration(CustomerCommandDto command) throws IllegalArgumentException {
+    public AccountDto updateRegistration(ConsumerCommandDto command) throws IllegalArgumentException {
         Assert.notNull(command, "Expected a non-null command");
 
         if (command.getType() == EnumMangopayUserType.PROFESSIONAL) {
-            final ProviderProfessionalCommandDto providerCommand = (ProviderProfessionalCommandDto) command;
-            providerCommand.setLogoImage(imageUtils.resizeImage(providerCommand.getLogoImage(), providerCommand.getLogoImageMimeType()));
+            final ConsumerProfessionalCommandDto consumerCommand = (ConsumerProfessionalCommandDto) command;
+            consumerCommand.setLogoImage(imageUtils.resizeImage(consumerCommand.getLogoImage(), consumerCommand.getLogoImageMimeType()));
         }
 
         final AccountDto account = this.accountRepository.updateConsumerRegistration(command);
@@ -59,12 +59,12 @@ public class DefaultConsumerRegistrationService extends AbstractCustomerRegistra
 
     @Override
     @Transactional
-    public AccountDto submitRegistration(CustomerCommandDto command) throws IllegalArgumentException {
+    public AccountDto submitRegistration(ConsumerCommandDto command) throws IllegalArgumentException {
         Assert.notNull(command, "Expected a non-null command");
 
         if (command.getType() == EnumMangopayUserType.PROFESSIONAL) {
-            final ProviderProfessionalCommandDto providerCommand = (ProviderProfessionalCommandDto) command;
-            providerCommand.setLogoImage(imageUtils.resizeImage(providerCommand.getLogoImage(), providerCommand.getLogoImageMimeType()));
+            final ConsumerProfessionalCommandDto consumerCommand = (ConsumerProfessionalCommandDto) command;
+            consumerCommand.setLogoImage(imageUtils.resizeImage(consumerCommand.getLogoImage(), consumerCommand.getLogoImageMimeType()));
         }
 
         final AccountDto account         = this.accountRepository.submitConsumerRegistration(command);

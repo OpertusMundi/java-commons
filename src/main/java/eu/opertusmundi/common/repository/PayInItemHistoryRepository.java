@@ -67,7 +67,7 @@ public interface PayInItemHistoryRepository extends JpaRepository<PayInItemHisto
         }
         if (subBilling != null) {
             // TODO: Implement
-            e.setAssetId(subBilling.getSubscription().getService());
+            e.setAssetId(subBilling.getSubscription().getAsset());
             e.setAssetType(EnumOrderItemType.SERVICE);
             e.setPayInCountry(subBilling.getSubscription().getConsumer().getCountry());
             e.setPayInTotalPrice(subBilling.getTotalPrice());

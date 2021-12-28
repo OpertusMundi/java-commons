@@ -182,6 +182,8 @@ public class CustomerIndividualEntity extends CustomerEntity {
 
         c.setAddress(this.address.toDto());
         c.setBirthdate(this.birthdate);
+        c.setBlockedInflows(this.blockedInflows);
+        c.setBlockedOutflows(this.blockedOutflows);
         c.setContract(this.contract);
         c.setCountryOfResidence(this.countryOfResidence);
         c.setCreatedAt(this.createdAt);

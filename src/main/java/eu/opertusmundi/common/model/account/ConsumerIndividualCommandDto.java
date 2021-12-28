@@ -6,6 +6,7 @@ import java.time.ZonedDateTime;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -14,18 +15,22 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public final class ConsumerIndividualCommandDto extends CustomerCommandDto implements Serializable {
+public final class ConsumerIndividualCommandDto extends ConsumerCommandDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     protected ConsumerIndividualCommandDto() {
         super(EnumMangopayUserType.INDIVIDUAL);
+
+        this.customerType = EnumCustomerType.CONSUMER;
     }
 
     @NotEmpty
+    @Size(min = 1, max = 100)
     private String firstName;
 
     @NotEmpty
+    @Size(min = 1, max = 100)
     private String lastName;
 
     @Valid

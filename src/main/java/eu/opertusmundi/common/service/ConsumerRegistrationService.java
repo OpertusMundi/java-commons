@@ -3,7 +3,7 @@ package eu.opertusmundi.common.service;
 import java.util.UUID;
 
 import eu.opertusmundi.common.model.account.AccountDto;
-import eu.opertusmundi.common.model.account.CustomerCommandDto;
+import eu.opertusmundi.common.model.account.ConsumerCommandDto;
 
 public interface ConsumerRegistrationService {
 
@@ -13,7 +13,7 @@ public interface ConsumerRegistrationService {
      * @param command The consumer update command
      * @return
      */
-    AccountDto updateRegistration(CustomerCommandDto command);
+    AccountDto updateRegistration(ConsumerCommandDto command);
 
     /**
      * Submit consumer data for updating user profile
@@ -21,7 +21,7 @@ public interface ConsumerRegistrationService {
      * @param command The consumer update command
      * @return
      */
-    AccountDto submitRegistration(CustomerCommandDto command);
+    AccountDto submitRegistration(ConsumerCommandDto command);
 
     /**
      * Cancel pending consumer registration request

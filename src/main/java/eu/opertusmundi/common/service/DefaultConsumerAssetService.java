@@ -18,8 +18,8 @@ import eu.opertusmundi.common.model.asset.EnumConsumerAssetSortField;
 import eu.opertusmundi.common.model.asset.EnumConsumerSubSortField;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
-import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
+import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.repository.AccountAssetRepository;
 import eu.opertusmundi.common.repository.AccountSubscriptionRepository;
 
@@ -110,20 +110,20 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
             return PageResultDto.empty(PageRequestDto.of(pageIndex, pageSize));
         }
 
-        final String[]               pid    = records.stream().map(a -> a.getServiceId()).distinct().toArray(String[]::new);
+        final String[]               pid    = records.stream().map(a -> a.getAssetId()).distinct().toArray(String[]::new);
         final List<CatalogueItemDetailsDto> assets = this.catalogueService.findAllById(pid);
 
         // Add catalogue items to records
         records.forEach(r -> {
             final CatalogueItemDto item = assets.stream()
-                .filter(a -> a.getId().equals(r.getServiceId()))
+                .filter(a -> a.getId().equals(r.getAssetId()))
                 .findFirst()
                 .orElse(null);
 
             if(item == null) {
                 throw new ConsumerServiceException(ConsumerServiceMessageCode.CATALOGUE_ITEM_NOT_FOUND, String.format(
                     "Catalogue item not found [userKey=%s, accountAsset=%d, assetPid=%s]" ,
-                    userKey, r.getId(), r.getServiceId()
+                    userKey, r.getId(), r.getAssetId()
                 ));
             }
             // Remove superfluous data
@@ -170,12 +170,12 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
             return result;
         }
 
-        final List<CatalogueItemDetailsDto> assets = this.catalogueService.findAllById(new String[]{result.getServiceId()});
+        final List<CatalogueItemDetailsDto> assets = this.catalogueService.findAllById(new String[]{result.getAssetId()});
 
         if(assets.isEmpty()) {
             throw new ConsumerServiceException(ConsumerServiceMessageCode.CATALOGUE_ITEM_NOT_FOUND, String.format(
                 "Catalogue item not found [userKey=%s, assetPid=%s]" ,
-                userKey,result.getServiceId()
+                userKey,result.getAssetId()
             ));
         }
         result.setItem(assets.get(0));

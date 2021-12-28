@@ -35,7 +35,7 @@ import eu.opertusmundi.common.model.EnumRole;
 import eu.opertusmundi.common.model.EnumVendorRole;
 import eu.opertusmundi.common.model.account.AccountDto;
 import eu.opertusmundi.common.model.account.AccountProfileCommandDto;
-import eu.opertusmundi.common.model.account.CustomerCommandDto;
+import eu.opertusmundi.common.model.account.ConsumerCommandDto;
 import eu.opertusmundi.common.model.account.EnumActivationStatus;
 import eu.opertusmundi.common.model.account.EnumCustomerRegistrationStatus;
 import eu.opertusmundi.common.model.account.PlatformAccountCommandDto;
@@ -119,7 +119,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     default Page<AccountDto> findAllConsumersObjects(String email, Pageable pageable, boolean includeHelpdeskData) {
         return this.findAllConsumers(email, pageable).map(e -> e.toDto(includeHelpdeskData));
     }
-    
+
     @Query("SELECT a FROM Account a "
          + "LEFT OUTER JOIN a.profile p "
          + "LEFT OUTER JOIN p.provider pr "
@@ -131,7 +131,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     default Page<AccountDto> findAllProvidersObjects(String email, Pageable pageable, boolean includeHelpdeskData) {
         return this.findAllProviders(email, pageable).map(e -> e.toDto(includeHelpdeskData));
     }
-    
+
     @Query("SELECT a FROM Account a "
          + "LEFT OUTER JOIN a.profile pp "
          + "LEFT OUTER JOIN a.parent ap "
@@ -362,18 +362,18 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     }
 
     @Transactional(readOnly = false)
-    default AccountDto updateConsumerRegistration(CustomerCommandDto command)  throws IllegalArgumentException {
+    default AccountDto updateConsumerRegistration(ConsumerCommandDto command)  throws IllegalArgumentException {
         return this.updateConsumerRegistration(command, EnumCustomerRegistrationStatus.DRAFT);
     }
 
     @Transactional(readOnly = false)
-    default AccountDto submitConsumerRegistration(CustomerCommandDto command)  throws IllegalArgumentException {
+    default AccountDto submitConsumerRegistration(ConsumerCommandDto command)  throws IllegalArgumentException {
         return this.updateConsumerRegistration(command, EnumCustomerRegistrationStatus.SUBMITTED);
     }
 
     @Transactional(readOnly = false)
     default AccountDto updateConsumerRegistration(
-        CustomerCommandDto command, EnumCustomerRegistrationStatus status
+        ConsumerCommandDto command, EnumCustomerRegistrationStatus status
     ) throws IllegalArgumentException {
         final AccountEntity        account = this.findById(command.getUserId()).orElse(null);
         final AccountProfileEntity profile = account.getProfile();
@@ -383,7 +383,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
 
         if (registration == null || registration.isProcessed()) {
             // Create new registration
-            registration = CustomerDraftEntity.from(profile.getConsumer(), command);
+            registration = CustomerDraftEntity.consumerOf(profile.getConsumer(), command);
             registration.setAccount(account);
 
             profile.setConsumerRegistration(registration);
@@ -399,7 +399,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
                 registration.setStatus(EnumCustomerRegistrationStatus.CANCELLED);
 
                 // Create new registration
-                registration = CustomerDraftEntity.from(profile.getConsumer(), command);
+                registration = CustomerDraftEntity.consumerOf(profile.getConsumer(), command);
                 registration.setAccount(account);
 
                 profile.setConsumerRegistration(registration);
@@ -513,7 +513,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
 
         if (registration == null || registration.isProcessed()) {
             // Create new registration
-            registration = (CustomerDraftProfessionalEntity) CustomerDraftEntity.from(profile.getProvider(), command);
+            registration = (CustomerDraftProfessionalEntity) CustomerDraftEntity.providerOf(profile.getProvider(), command);
             registration.setAccount(account);
 
             profile.setProviderRegistration(registration);

@@ -19,16 +19,19 @@ import eu.opertusmundi.common.model.payment.CardDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationCommandDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationDto;
 import eu.opertusmundi.common.model.payment.ClientDto;
+import eu.opertusmundi.common.model.payment.ClientWalletDto;
 import eu.opertusmundi.common.model.payment.EnumPayInItemSortField;
 import eu.opertusmundi.common.model.payment.EnumPayInSortField;
 import eu.opertusmundi.common.model.payment.EnumPayOutSortField;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
+import eu.opertusmundi.common.model.payment.EventDto;
 import eu.opertusmundi.common.model.payment.FreePayInCommand;
 import eu.opertusmundi.common.model.payment.PayInDto;
 import eu.opertusmundi.common.model.payment.PayOutCommandDto;
 import eu.opertusmundi.common.model.payment.PayOutDto;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.TransferDto;
+import eu.opertusmundi.common.model.payment.UserBlockedStatusDto;
 import eu.opertusmundi.common.model.payment.UserCardCommand;
 import eu.opertusmundi.common.model.payment.UserCommand;
 import eu.opertusmundi.common.model.payment.UserPaginationCommand;
@@ -55,6 +58,23 @@ public interface  PaymentService {
      * @throws PaymentException
      */
     ClientDto getClient() throws PaymentException;
+
+    /**
+     * Get client wallets
+     *
+     * @return
+     * @throws PaymentException
+     */
+    List<ClientWalletDto> getClientWallets() throws PaymentException;
+
+    /**
+     * Get payment provider events
+     *
+     * @param days
+     * @return
+     * @throws PaymentException
+     */
+    List<EventDto> getEvents(int days) throws PaymentException;
 
     /**
      * Create a new user in the external payment service and link it to a
@@ -125,7 +145,7 @@ public interface  PaymentService {
      * @return
      * @throws PaymentException
      */
-    List<CardDto> getRegisteredCards(UserPaginationCommand command) throws PaymentException;
+    List<CardDto> getCardRegistrations(UserPaginationCommand command) throws PaymentException;
 
     /**
      * Get user registered card
@@ -134,7 +154,7 @@ public interface  PaymentService {
      * @return
      * @throws PaymentException
      */
-    CardDto getRegisteredCard(UserCardCommand command) throws PaymentException;
+    CardDto getCardRegistration(UserCardCommand command) throws PaymentException;
 
     /**
      * Deactivate card
@@ -411,5 +431,31 @@ public interface  PaymentService {
     PageResultDto<PayOutDto> findAllProviderPayOuts(
         UUID userKey, EnumTransactionStatus status, int pageIndex, int pageSize, EnumPayOutSortField orderBy, EnumSortingOrder order
     );
+
+    /**
+     * Get user block status
+     *
+     * @param userKey
+     * @return
+     * @throws PaymentException
+     */
+    UserBlockedStatusDto getUserBlockStatus(UUID userKey) throws PaymentException;
+
+    /**
+     * Updates user block status
+     *
+     * @param providerUserId
+     * @throws PaymentException
+     */
+    void updateUserBlockStatus(String providerUserId) throws PaymentException;
+    
+    /**
+     * Updates user block status
+     *
+     * @param userKey
+     * @param type
+     * @throws PaymentException
+     */
+    void updateUserBlockStatus(UUID userKey, EnumCustomerType type) throws PaymentException;
 
 }

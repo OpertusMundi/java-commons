@@ -2,25 +2,18 @@ package eu.opertusmundi.common.model.account;
 
 import java.util.UUID;
 
+import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
-@JsonTypeInfo(
-    use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type"
-)
-@JsonSubTypes({
-    @Type(name = "INDIVIDUAL", value = ConsumerIndividualCommandDto.class),
-    @Type(name = "PROFESSIONAL", value = ProviderProfessionalCommandDto.class),
-})
 @Getter
 @Setter
 public abstract class CustomerCommandDto {
@@ -36,12 +29,9 @@ public abstract class CustomerCommandDto {
     @JsonIgnore
     protected UUID contract;
 
-    @Schema(description = "Customer email address")
-    @NotEmpty
-    protected String email;
-
     @JsonIgnore
-    protected Integer userId;
+    @Setter(AccessLevel.PRIVATE)
+    protected EnumCustomerType customerType;
 
     @JsonIgnore
     protected String paymentProviderUser;
@@ -49,7 +39,16 @@ public abstract class CustomerCommandDto {
     @JsonIgnore
     protected String paymentProviderWallet;
 
-    @Schema(description = "Customer type")
+    @JsonIgnore
+    protected Integer userId;
+
+    @Schema(description = "Customer email address")
+    @NotEmpty
+    @Email
+    @Size(min = 1, max = 255)
+    protected String email;
+
+    @Schema(description = "MANGOPAY user type")
     @NotNull
     protected EnumMangopayUserType type;
 

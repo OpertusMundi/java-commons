@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -30,13 +32,16 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import com.mangopay.core.Address;
+import com.mangopay.core.FilterEvents;
 import com.mangopay.core.Money;
 import com.mangopay.core.Pagination;
 import com.mangopay.core.ResponseException;
+import com.mangopay.core.Sorting;
 import com.mangopay.core.enumerations.BankAccountType;
 import com.mangopay.core.enumerations.CardType;
 import com.mangopay.core.enumerations.CountryIso;
 import com.mangopay.core.enumerations.CurrencyIso;
+import com.mangopay.core.enumerations.EventType;
 import com.mangopay.core.enumerations.FundsType;
 import com.mangopay.core.enumerations.KycLevel;
 import com.mangopay.core.enumerations.LegalPersonType;
@@ -45,17 +50,20 @@ import com.mangopay.core.enumerations.PayInExecutionType;
 import com.mangopay.core.enumerations.PayInPaymentType;
 import com.mangopay.core.enumerations.PersonType;
 import com.mangopay.core.enumerations.SecureMode;
+import com.mangopay.core.enumerations.SortDirection;
 import com.mangopay.core.interfaces.BankAccountDetails;
 import com.mangopay.entities.BankAccount;
 import com.mangopay.entities.Card;
 import com.mangopay.entities.CardRegistration;
 import com.mangopay.entities.Client;
+import com.mangopay.entities.Event;
 import com.mangopay.entities.IdempotencyResponse;
 import com.mangopay.entities.PayIn;
 import com.mangopay.entities.PayOut;
 import com.mangopay.entities.Refund;
 import com.mangopay.entities.Transfer;
 import com.mangopay.entities.User;
+import com.mangopay.entities.UserBlockStatus;
 import com.mangopay.entities.UserLegal;
 import com.mangopay.entities.UserNatural;
 import com.mangopay.entities.Wallet;
@@ -97,16 +105,19 @@ import eu.opertusmundi.common.model.order.HelpdeskOrderDto;
 import eu.opertusmundi.common.model.order.OrderCommand;
 import eu.opertusmundi.common.model.order.OrderDto;
 import eu.opertusmundi.common.model.payment.BankwirePayInCommand;
+import eu.opertusmundi.common.model.payment.BlockStatusDto;
 import eu.opertusmundi.common.model.payment.CardDirectPayInCommand;
 import eu.opertusmundi.common.model.payment.CardDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationCommandDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationDto;
 import eu.opertusmundi.common.model.payment.ClientDto;
+import eu.opertusmundi.common.model.payment.ClientWalletDto;
 import eu.opertusmundi.common.model.payment.EnumPayInItemSortField;
 import eu.opertusmundi.common.model.payment.EnumPayInSortField;
 import eu.opertusmundi.common.model.payment.EnumPayOutSortField;
 import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
+import eu.opertusmundi.common.model.payment.EventDto;
 import eu.opertusmundi.common.model.payment.FreePayInCommand;
 import eu.opertusmundi.common.model.payment.PayInDto;
 import eu.opertusmundi.common.model.payment.PayInItemDto;
@@ -117,6 +128,7 @@ import eu.opertusmundi.common.model.payment.PayOutStatusUpdateCommand;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.PaymentMessageCode;
 import eu.opertusmundi.common.model.payment.TransferDto;
+import eu.opertusmundi.common.model.payment.UserBlockedStatusDto;
 import eu.opertusmundi.common.model.payment.UserCardCommand;
 import eu.opertusmundi.common.model.payment.UserCommand;
 import eu.opertusmundi.common.model.payment.UserPaginationCommand;
@@ -130,10 +142,12 @@ import eu.opertusmundi.common.model.payment.provider.ProviderPayInItemDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.repository.AccountRepository;
+import eu.opertusmundi.common.repository.CustomerRepository;
 import eu.opertusmundi.common.repository.OrderRepository;
 import eu.opertusmundi.common.repository.PayInItemHistoryRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
 import eu.opertusmundi.common.repository.PayOutRepository;
+import eu.opertusmundi.common.util.StreamUtils;
 
 @Service
 @Transactional
@@ -155,6 +169,9 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
     @Autowired
     private AccountRepository accountRepository;
+
+    @Autowired
+    private CustomerRepository customerRepository;
 
     @Autowired
     private OrderRepository orderRepository;
@@ -189,6 +206,119 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         } catch (final Exception ex) {
             throw this.wrapException("Get client", ex);
         }
+    }
+
+    @Override
+    public List<ClientWalletDto> getClientWallets() throws PaymentException {
+        try {
+            final List<ClientWalletDto> result        = new ArrayList<>();
+            final List<Wallet>          feeWallets    = this.api.getClientApi().getWallets(FundsType.FEES, new Pagination(0, 20));
+            final List<Wallet>          creditWallets = this.api.getClientApi().getWallets(FundsType.CREDIT, new Pagination(0, 20));
+
+            StreamUtils.from(feeWallets).map(ClientWalletDto::from).forEach(result::add);
+            StreamUtils.from(creditWallets).map(ClientWalletDto::from).forEach(result::add);
+
+            return result;
+        } catch (final Exception ex) {
+            throw this.wrapException("Get client wallets", ex);
+        }
+    }
+
+    @Override
+    public List<EventDto> getEvents(int days) throws PaymentException {
+        try {
+            final long afterDate = ZonedDateTime.now()
+                .minusDays(Math.min(days, 40))
+                .withZoneSameInstant(ZoneOffset.UTC)
+                .toEpochSecond();
+
+            // Set filters
+            final FilterEvents filter = new FilterEvents();
+            filter.setAfterDate(afterDate);
+            filter.setType(EventType.ALL);
+
+            // Set pagination
+            final Pagination pagination = new Pagination(1, 100);
+
+            // Set sorting
+            final Sorting sort = new Sorting();
+            sort.addField("Date", SortDirection.desc);
+
+            final List<Event>    events = this.api.getEventApi().get(filter, pagination, sort);
+            final List<EventDto> result = StreamUtils.from(events).map(EventDto::from).collect(Collectors.toList());
+
+            return result;
+        } catch (final Exception ex) {
+            throw this.wrapException("Get events", ex);
+        }
+    }
+
+    @Override
+    public UserBlockedStatusDto getUserBlockStatus(UUID userKey) throws PaymentException {
+        try {
+            final AccountEntity              account  = this.getAccount(userKey);
+            final CustomerEntity             consumer = account.getConsumer();
+            final CustomerProfessionalEntity provider = account.getProvider();
+
+            final String consumerId = consumer == null ? null : consumer.getPaymentProviderUser();
+            final String providerId = provider == null ? null : provider.getPaymentProviderUser();
+
+            final BlockStatusDto consumerStatus = this.getUserBlockStatus(consumerId);
+            final BlockStatusDto providerStatus = this.getUserBlockStatus(providerId);
+
+            return UserBlockedStatusDto.of(consumerStatus, providerStatus);
+        } catch (final Exception ex) {
+            throw this.wrapException("Get user block status", ex, userKey);
+        }
+    }
+
+    @Override
+    public void updateUserBlockStatus(String userId) throws PaymentException {
+        try {
+            final CustomerEntity customer = this.customerRepository.findCustomerByProviderUserId(userId).orElse(null);
+
+            this.ensureCustomer(customer, userId);
+
+            final BlockStatusDto status = this.getUserBlockStatus(userId);
+
+            customer.setBlockedInflows(status.getInflows());
+            customer.setBlockedOutflows(status.getOutflows());
+
+            this.customerRepository.saveAndFlush(customer);
+        } catch (final Exception ex) {
+            throw this.wrapException("Update user block status", ex, userId);
+        }
+    }
+
+    @Override
+    public void updateUserBlockStatus(UUID userKey, EnumCustomerType type) throws PaymentException {
+        try {
+            final AccountEntity  account  = this.accountRepository.findOneByKey(userKey).orElse(null);
+            final CustomerEntity customer = type == EnumCustomerType.CONSUMER ? account.getConsumer() : account.getProvider();
+
+            this.ensureCustomer(customer, userKey);
+
+            final BlockStatusDto status = this.getUserBlockStatus(customer.getPaymentProviderUser());
+
+            customer.setBlockedInflows(status.getInflows());
+            customer.setBlockedOutflows(status.getOutflows());
+
+            this.customerRepository.saveAndFlush(customer);
+        } catch (final Exception ex) {
+            throw this.wrapException("Update user block status", ex, userKey);
+        }
+    }
+
+    private BlockStatusDto getUserBlockStatus(@Nullable String userId) throws Exception {
+        if (StringUtils.isBlank(userId)) {
+            return null;
+        }
+        final UserBlockStatus status = this.api.getUserApi().getRegulatory(userId);
+        final BlockStatusDto  result = BlockStatusDto.of(
+            status.getActionCode(), status.getScopeBlocked().getInflows(), status.getScopeBlocked().getOutflows()
+        );
+
+        return result;
     }
 
     @Override
@@ -377,7 +507,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             // Registration must be of type PROFESSIONAL
             if (registration.getType() != EnumMangopayUserType.PROFESSIONAL) {
                 throw new PaymentException(
-                    String.format("[MANGOPAY] Cannot create bank account for user [%s] of type [%s]", registration.getType(), command.getUserKey())
+                    String.format("[MANGOPAY] Cannot create bank account for user [%s] of type [%s]", account.getEmail(), registration.getType())
                 );
             }
 
@@ -411,7 +541,6 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             // Update registration
             profRegistration.getBankAccount().setId(bankAccount.getId());
             profRegistration.getBankAccount().setTag(bankAccount.getTag());
-
 
             this.accountRepository.saveAndFlush(account);
 
@@ -467,7 +596,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 final BankAccount currentBankAccount = this.api.getUserApi().getBankAccount(mangoPayUserId, mangoPayBankAccountId);
 
                 // Deactivate the current bank account of the provider
-                this.deactivateAccount(mangoPayUserId, currentBankAccount);
+                this.deactivateBankAccount(mangoPayUserId, currentBankAccount);
                 customer.getBankAccount().setId(null);
 
                 this.accountRepository.saveAndFlush(account);
@@ -488,7 +617,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final AccountEntity              account  = this.getAccount(command.getUserKey());
             final CustomerProfessionalEntity customer = account.getProfile().getProvider();
 
-            this.ensureCostumer(customer, command.getUserKey());
+            this.ensureCustomer(customer, command.getUserKey());
 
             final int               page           = command.getPage() < 1 ? 1 : command.getPage();
             final int               size           = command.getSize() < 1 ? 10 : command.getSize();
@@ -506,12 +635,12 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     @Override
-    public List<CardDto> getRegisteredCards(UserPaginationCommand command) {
+    public List<CardDto> getCardRegistrations(UserPaginationCommand command) {
         try {
             final AccountEntity  account  = this.getAccount(command.getUserKey());
             final CustomerEntity customer = account.getProfile().getConsumer();
 
-            this.ensureCostumer(customer, command.getUserKey());
+            this.ensureCustomer(customer, command.getUserKey());
 
             final int        page           = command.getPage() < 1 ? 1 : command.getPage();
             final int        size           = command.getSize() < 1 ? 10 : command.getSize();
@@ -529,12 +658,12 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     @Override
-    public CardDto getRegisteredCard(UserCardCommand command) {
+    public CardDto getCardRegistration(UserCardCommand command) {
         try {
             final AccountEntity  account  = this.getAccount(command.getUserKey());
             final CustomerEntity customer = account.getProfile().getConsumer();
 
-            this.ensureCostumer(customer, command.getUserKey());
+            this.ensureCustomer(customer, command.getUserKey());
 
             final String mangoPayUserId = customer.getPaymentProviderUser();
             final Card   card           = this.api.getCardApi().get(command.getCardId());
@@ -560,7 +689,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final AccountEntity  account  = this.getAccount(command.getUserKey());
             final CustomerEntity customer = account.getProfile().getConsumer();
 
-            this.ensureCostumer(customer, command.getUserKey());
+            this.ensureCustomer(customer, command.getUserKey());
 
             final Card card = this.api.getCardApi().get(command.getCardId());
 
@@ -580,7 +709,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final AccountEntity  account  = this.getAccount(command.getUserKey());
             final CustomerEntity customer = account.getProfile().getConsumer();
 
-            this.ensureCostumer(customer, command.getUserKey());
+            this.ensureCustomer(customer, command.getUserKey());
 
             final String           mangoPayUserId      = customer.getPaymentProviderUser();
             final CardRegistration registrationRequest = new CardRegistration();
@@ -603,7 +732,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final AccountEntity  account  = this.getAccount(command.getUserKey());
             final CustomerEntity customer = account.getProfile().getConsumer();
 
-            this.ensureCostumer(customer, command.getUserKey());
+            this.ensureCustomer(customer, command.getUserKey());
 
             final CardRegistration registrationRequest = new CardRegistration();
             registrationRequest.setId(command.getRegistrationId());
@@ -705,7 +834,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final CustomerEntity provider = account.getProvider();
 
             if (consumer != null) {
-                this.ensureCostumer(consumer, userKey);
+                this.ensureCustomer(consumer, userKey);
 
                 final String    walletId = consumer.getPaymentProviderWallet();
                 final Wallet    wallet   = this.api.getWalletApi().get(walletId);
@@ -715,7 +844,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 consumer.setWalletFundsUpdatedOn(ZonedDateTime.now());
             }
             if (provider != null) {
-                this.ensureCostumer(provider, userKey);
+                this.ensureCustomer(provider, userKey);
 
                 final String    walletId = provider.getPaymentProviderWallet();
                 final Wallet    wallet   = this.api.getWalletApi().get(walletId);
@@ -745,7 +874,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final AccountEntity  account  = this.accountRepository.findOneByKey(userKey).orElse(null);
             final CustomerEntity customer = type == EnumCustomerType.CONSUMER ? account.getConsumer() : account.getProvider();
 
-            this.ensureCostumer(customer, userKey);
+            this.ensureCustomer(customer, userKey);
 
             final String    walletId = customer.getPaymentProviderWallet();
             final Wallet    wallet   = this.api.getWalletApi().get(walletId);
@@ -809,7 +938,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final OrderEntity    order          = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).orElse(null);
 
             // Check customer
-            this.ensureCostumer(customer, command.getUserKey());
+            this.ensureCustomer(customer, command.getUserKey());
 
             // Check order
             this.ensureOrderForPayIn(order, command.getOrderKey());
@@ -877,7 +1006,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final OrderEntity    order          = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).orElse(null);
 
             // Check customer
-            this.ensureCostumer(customer, command.getUserKey());
+            this.ensureCustomer(customer, command.getUserKey());
 
             // Check order
             this.ensureOrderForPayIn(order, command.getOrderKey());
@@ -910,12 +1039,12 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     @Override
     public PayInDto createPayInCardDirectForOrder(CardDirectPayInCommand command) throws PaymentException {
         try {
-            final AccountEntity  account        = this.getAccount(command.getUserKey());
-            final CustomerEntity customer       = account.getProfile().getConsumer();
-            final OrderEntity    order          = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).orElse(null);
+            final AccountEntity  account  = this.getAccount(command.getUserKey());
+            final CustomerEntity customer = account.getProfile().getConsumer();
+            final OrderEntity    order    = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).orElse(null);
 
             // Check customer
-            this.ensureCostumer(customer, command.getUserKey());
+            this.ensureCustomer(customer, command.getUserKey());
 
             // Check order
             this.ensureOrderForPayIn(order, command.getOrderKey());
@@ -923,7 +1052,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final String idempotencyKey = order.getKey().toString();
 
             // Get card
-            final CardDto card = this.getRegisteredCard(UserCardCommand.of(command.getUserKey(), command.getCardId()));
+            final CardDto card = this.getCardRegistration(UserCardCommand.of(command.getUserKey(), command.getCardId()));
 
             // Update command with order properties
 
@@ -955,10 +1084,12 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             // Update command with payment information
             final PayInExecutionDetailsDirect executionDetails = (PayInExecutionDetailsDirect) payInResponse.getExecutionDetails();
 
+            command.setApplied3dsVersion(executionDetails.getApplied3DSVersion());
             command.setPayIn(payInResponse.getId());
-            command.setStatus(EnumTransactionStatus.from(payInResponse.getStatus()));
+            command.setRequested3dsVersion(executionDetails.getRequested3DSVersion());
             command.setResultCode(payInResponse.getResultCode());
             command.setResultMessage(payInResponse.getResultMessage());
+            command.setStatus(EnumTransactionStatus.from(payInResponse.getStatus()));
             // MANGOPAY returns dates as integer numbers that represent the
             // number of seconds since the Unix Epoch
             command.setCreatedOn(ZonedDateTime.ofInstant(Instant.ofEpochSecond(payInResponse.getCreationDate()), ZoneOffset.UTC));
@@ -991,7 +1122,17 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
             // Add client-only information (card alias is never saved in our
             // database)
-            result.setAlias(card.getAlias());
+            if (card != null) {
+                result.setAlias(card.getAlias());
+            }
+
+            /*
+             * Since we have set SecureMode=FORCE, we expect SecureModeNeeded to
+             * be TRUE and a non-null SecureModeRedirectUrl returned by the API
+             * call
+             *
+             * See: https://docs.mangopay.com/guide/3ds2-integration
+             */
             result.setSecureModeRedirectURL(executionDetails.getSecureModeRedirectUrl());
 
             return result;
@@ -1550,14 +1691,44 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         final String mangoPayWalletId = customer.getPaymentProviderWallet();
 
         final PayInPaymentDetailsCard paymentDetails = new PayInPaymentDetailsCard();
+        paymentDetails.setBrowserInfo(command.getBrowserInfo().toMangoPayBrowserInfo());
         paymentDetails.setCardType(CardType.CB_VISA_MASTERCARD);
         paymentDetails.setCardId(command.getCardId());
+        paymentDetails.setIpAddress(command.getIpAddress());
         paymentDetails.setStatementDescriptor(command.getStatementDescriptor());
+        if (command.getShipping() != null) {
+            paymentDetails.setShipping(command.getShipping().toMangoPayShipping());
+        }
 
         final PayInExecutionDetailsDirect executionDetails = new PayInExecutionDetailsDirect();
+        if (command.getBilling() != null) {
+            executionDetails.setBilling(command.getBilling().toMangoPayBilling());
+        }
         executionDetails.setCardId(command.getCardId());
-        executionDetails.setSecureMode(SecureMode.DEFAULT);
+
+        /*
+         * Previously, a transaction (PayIn or PreAuthorization) would generally
+         * not be subject to strong customer authentication if
+         * SecureMode=DEFAULT and the payment amount was inferior to your 3DS
+         * limit. Since 1st January 2021, we can no longer guarantee this
+         * frictionless payment experience – including on low amount
+         * transactions for card verification.
+         *
+         * See: https://docs.mangopay.com/guide/3ds2-integration
+         */
+        executionDetails.setSecureMode(SecureMode.FORCE);
+
         executionDetails.setSecureModeReturnUrl(this.buildSecureModeReturnUrl(command));
+
+        /*
+         * This feature is for sandbox testing and will not be available in
+         * production. In production, the only change will be that
+         * Applied3DSVersion will give the value “V1” before we activate your
+         * flows to 3DS2 and the value “V2_1” after activation.
+         *
+         * https://docs.mangopay.com/guide/3ds2-testing-in-sandbox
+         */
+        executionDetails.setRequested3DSVersion("V2_1");
 
         final PayIn result = new PayIn();
         result.setAuthorId(mangoPayUserId);
@@ -1583,7 +1754,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         return baseUrl + "webhooks/payins/" + command.getPayInKey().toString();
     }
 
-    private void deactivateAccount(String userId, BankAccount bankAccount) throws PaymentException {
+    private void deactivateBankAccount(String userId, BankAccount bankAccount) throws PaymentException {
         Assert.notNull(bankAccount, "Expected a non-null bank account");
 
         // Check if this is a retry
@@ -1828,8 +1999,17 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         return result;
     }
 
-    private void ensureCostumer(CustomerEntity consumer, UUID key) throws PaymentException {
-        if (consumer == null) {
+    private void ensureCustomer(CustomerEntity customer, String id) throws PaymentException {
+        if (customer == null) {
+            throw new PaymentException(
+                PaymentMessageCode.PROVIDER_USER_NOT_FOUND,
+                String.format("[MANGOPAY] Customer was not found for MANGOPAY user with resource id [%s]", id)
+            );
+        }
+    }
+
+    private void ensureCustomer(CustomerEntity customer, UUID key) throws PaymentException {
+        if (customer == null) {
             throw new PaymentException(
                 PaymentMessageCode.PLATFORM_CUSTOMER_NOT_FOUND,
                 String.format("[MANGOPAY] Customer registration was not found for account with key [%s]", key)

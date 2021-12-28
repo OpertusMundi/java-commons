@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Size;
 
 import com.mangopay.core.Address;
 import com.mangopay.core.enumerations.CountryIso;
@@ -20,17 +21,22 @@ public class AddressCommandDto implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @NotBlank
+    @Size(min = 1, max = 255)
     private String line1;
 
+    @Size(min = 0, max = 255)
     private String line2;
-    
+
     @NotBlank
+    @Size(min = 1, max = 255)
     private String city;
 
     @NotEmpty
+    @Size(min = 1, max = 255)
     private String region;
 
     @NotBlank
+    @Size(min = 1, max = 50)
     private String postalCode;
 
     @Schema(
@@ -39,7 +45,7 @@ public class AddressCommandDto implements Serializable {
     )
     @NotBlank
     private String country;
-    
+
     public Address toMangoPayAddress() {
         final Address a = new Address();
 

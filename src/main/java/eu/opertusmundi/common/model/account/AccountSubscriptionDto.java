@@ -27,7 +27,7 @@ public abstract class AccountSubscriptionDto {
     private UUID key;
 
     @Schema(description = "Service PID")
-    private String serviceId;
+    private String assetId;
 
     @Schema(description = "When the subscription was registered to the user account")
     private ZonedDateTime addedOn;

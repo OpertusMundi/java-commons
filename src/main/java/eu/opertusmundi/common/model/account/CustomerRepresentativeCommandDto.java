@@ -3,6 +3,7 @@ package eu.opertusmundi.common.model.account;
 import java.io.Serializable;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -14,6 +15,7 @@ public class CustomerRepresentativeCommandDto extends CustomerRepresentativeBase
     private static final long serialVersionUID = 1L;
 
     @Valid
+    @NotNull
     private AddressCommandDto address;
 
 }

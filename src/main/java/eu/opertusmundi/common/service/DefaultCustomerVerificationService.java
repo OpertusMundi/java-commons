@@ -169,12 +169,13 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
     @Override
     public PageResultDto<UboDeclarationDto> findAllUboDeclarations(UboQueryCommand command) throws CustomerVerificationException {
         Assert.notNull(command, "Expected a non-null command");
-        Assert.notNull(command.getProviderKey(), "Expected a non-null provider key");
+        Assert.notNull(command.getCustomerKey(), "Expected a non-null customer key");
+        Assert.notNull(command.getCustomerType(), "Expected a non-null customer type");
 
         try {
             final int     page           = command.getPageIndex() < 0 ? 0 : command.getPageIndex();
             final int     size           = command.getPageSize() < 1 ? 10 : command.getPageSize();
-            final String  mangoPayUserId = this.resolveMangopayUserId(command.getProviderKey(), EnumCustomerType.PROVIDER);
+            final String  mangoPayUserId = this.resolveMangopayUserId(command.getCustomerKey(), command.getCustomerType());
 
             final Sorting sorting = new Sorting();
             sorting.addField("CreationDate", SortDirection.desc);
@@ -199,11 +200,12 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
     @Override
     public UboDeclarationDto findOneUboDeclaration(UboDeclarationCommand command) throws CustomerVerificationException {
         Assert.notNull(command, "Expected a non-null command");
-        Assert.notNull(command.getProviderKey(), "Expected a non-null provider key");
+        Assert.notNull(command.getCustomerKey(), "Expected a non-null provider key");
+        Assert.notNull(command.getCustomerType(), "Expected a non-null customer type");
         Assert.hasText(command.getUboDeclarationId(), "Expected a non-blank UBO declaration id");
 
         try {
-            final String         mangoPayUserId = this.resolveMangopayUserId(command.getProviderKey(), EnumCustomerType.PROVIDER);
+            final String         mangoPayUserId = this.resolveMangopayUserId(command.getCustomerKey(), command.getCustomerType());
             final UboDeclaration uboDeclaration = this.api.getUboDeclarationApi().get(mangoPayUserId, command.getUboDeclarationId());
 
             return UboDeclarationDto.from(uboDeclaration, true);
@@ -215,10 +217,11 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
     @Override
     public UboDeclarationDto createUboDeclaration(UboDeclarationCommand command) throws CustomerVerificationException {
         Assert.notNull(command, "Expected a non-null command");
-        Assert.notNull(command.getProviderKey(), "Expected a non-null provider key");
+        Assert.notNull(command.getCustomerKey(), "Expected a non-null provider key");
+        Assert.notNull(command.getCustomerType(), "Expected a non-null customer type");
 
         try {
-            final String         mangoPayUserId = this.resolveMangopayUserId(command.getProviderKey(), EnumCustomerType.PROVIDER);
+            final String         mangoPayUserId = this.resolveMangopayUserId(command.getCustomerKey(), command.getCustomerType());
             final UboDeclaration uboDeclaration = this.api.getUboDeclarationApi().create(mangoPayUserId);
 
             return UboDeclarationDto.from(uboDeclaration, true);
@@ -230,11 +233,12 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
     @Override
     public UboDto addUbo(UboCommandDto command) throws CustomerVerificationException {
         Assert.notNull(command, "Expected a non-null command");
-        Assert.notNull(command.getProviderKey(), "Expected a non-null provider key");
+        Assert.notNull(command.getCustomerKey(), "Expected a non-null provider key");
+        Assert.notNull(command.getCustomerType(), "Expected a non-null customer type");
         Assert.hasText(command.getUboDeclarationId(), "Expected a non-blank UBO declaration id");
 
         try {
-            final String mangoPayUserId = this.resolveMangopayUserId(command.getProviderKey(), EnumCustomerType.PROVIDER);
+            final String mangoPayUserId = this.resolveMangopayUserId(command.getCustomerKey(), command.getCustomerType());
             final Ubo    ubo            = this.api.getUboDeclarationApi().createUbo(
                 mangoPayUserId, command.getUboDeclarationId(), command.toMangoPayUbo()
             );
@@ -260,12 +264,13 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
 
     private UboDto updateUboImpl(UboCommandDto command) throws CustomerVerificationException {
         Assert.notNull(command, "Expected a non-null command");
-        Assert.notNull(command.getProviderKey(), "Expected a non-null provider key");
+        Assert.notNull(command.getCustomerKey(), "Expected a non-null provider key");
+        Assert.notNull(command.getCustomerType(), "Expected a non-null customer type");
         Assert.hasText(command.getUboDeclarationId(), "Expected a non-blank UBO declaration id");
         Assert.hasText(command.getUboId(), "Expected a non-blank ubo id");
 
         try {
-            final String mangoPayUserId = this.resolveMangopayUserId(command.getProviderKey(), EnumCustomerType.PROVIDER);
+            final String mangoPayUserId = this.resolveMangopayUserId(command.getCustomerKey(), command.getCustomerType());
             final Ubo    ubo            = this.api.getUboDeclarationApi().updateUbo(
                 mangoPayUserId, command.getUboDeclarationId(), command.toMangoPayUbo()
             );
@@ -279,11 +284,12 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
     @Override
     public UboDeclarationDto submitUboDeclaration(UboDeclarationCommand command) throws CustomerVerificationException {
         Assert.notNull(command, "Expected a non-null command");
-        Assert.notNull(command.getProviderKey(), "Expected a non-null provider key");
+        Assert.notNull(command.getCustomerKey(), "Expected a non-null provider key");
+        Assert.notNull(command.getCustomerType(), "Expected a non-null customer type");
         Assert.hasText(command.getUboDeclarationId(), "Expected a non-blank UBO declaration id");
 
         try {
-            final String         mangoPayUserId = this.resolveMangopayUserId(command.getProviderKey(), EnumCustomerType.PROVIDER);
+            final String         mangoPayUserId = this.resolveMangopayUserId(command.getCustomerKey(), command.getCustomerType());
             final UboDeclaration uboDeclaration = this.api.getUboDeclarationApi().submitForValidation(
                 mangoPayUserId, command.getUboDeclarationId()
             );

@@ -14,6 +14,7 @@ import com.mangopay.entities.Ubo;
 
 import eu.opertusmundi.common.model.account.AddressCommandDto;
 import eu.opertusmundi.common.model.account.BirthplaceCommandDto;
+import eu.opertusmundi.common.model.account.EnumCustomerType;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -26,7 +27,7 @@ import lombok.ToString;
 public class UboCommandDto {
 
     @JsonIgnore
-    private UUID providerKey;
+    private UUID customerKey;
 
     @JsonIgnore
     private String uboDeclarationId;
@@ -36,6 +37,10 @@ public class UboCommandDto {
 
     @JsonIgnore
     private boolean active = true;
+
+    @NotNull
+    @Schema(description = "The customer type", required = true)
+    private EnumCustomerType customerType;
 
     @NotBlank
     @Schema(description = "The name of the UBO", required = true)
@@ -52,7 +57,7 @@ public class UboCommandDto {
 
     @NotBlank
     @Schema(
-        description = "The UBO's nationality. ISO 3166-1 alpha-2 format is expected", 
+        description = "The UBO's nationality. ISO 3166-1 alpha-2 format is expected",
         required = true,
         externalDocs = @ExternalDocumentation(url = "https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2")
     )
