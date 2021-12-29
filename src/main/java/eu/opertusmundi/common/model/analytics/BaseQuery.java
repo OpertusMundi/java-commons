@@ -1,16 +1,13 @@
 package eu.opertusmundi.common.model.analytics;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import javax.validation.constraints.NotNull;
+import javax.validation.Valid;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -22,68 +19,19 @@ import lombok.Setter;
 @Setter
 public class BaseQuery {
 
-    public enum EnumTemporalUnit {
-        YEAR,
-        MONTH,
-        WEEK,
-        DAY,
-        ;
-    }
-
-    @Getter
-    @Setter
-    public static class TemporalDimension {
-
-        @Schema(description = "Time interval unit", required = true)
-        @NotNull
-        private EnumTemporalUnit unit;
-
-        @Schema(description = "Min date in YYYY-MM-DD ISO format")
-        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-        private LocalDate min;
-
-        @Schema(description = "Max date in YYYY-MM-DD ISO format")
-        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-        private LocalDate max;
-
-    }
-
-    @Getter
-    @Setter
-    public static class SpatialDimension {
-
-        @Schema(description = "True if grouping based on country codes must be performed")
-        private boolean enabled;
-
-        @Schema(description = "Country codes in ISO 3166-1 alpha-2 format. If one or more codes are "
-                            + "specified, data will be filtered using the specified codes")
-        private List<String> codes;
-
-    }
-
-    @Getter
-    @Setter
-    public static class SegmentDimension {
-
-        @Schema(description = "True if grouping based on segment codes must be performed")
-        private boolean enabled;
-
-        @Schema(description = "If one or more segments are selected, data will be filtered using the "
-                            + "specified segments")
-        private List<EnumTopicCategory> segments;
-
-    }
-
     @Schema(description = "Temporal dimension constraints")
     @JsonInclude(Include.NON_NULL)
+    @Valid
     private TemporalDimension time;
 
     @Schema(description = "Spatial dimension constraints")
     @JsonInclude(Include.NON_NULL)
+    @Valid
     private SpatialDimension areas;
 
     @Schema(description = "Segment dimension constraints")
     @JsonInclude(Include.NON_NULL)
+    @Valid
     private SegmentDimension segments;
 
     @ArraySchema(

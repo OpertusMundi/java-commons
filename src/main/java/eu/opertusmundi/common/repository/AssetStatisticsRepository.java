@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.repository;
 
+import java.math.BigDecimal;
 import java.time.temporal.WeekFields;
 import java.util.List;
 import java.util.Locale;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import eu.opertusmundi.common.domain.AssetStatisticsEntity;
 import eu.opertusmundi.common.model.analytics.AssetStatisticsCommandDto;
 import eu.opertusmundi.common.model.analytics.AssetStatisticsDto;
+import eu.opertusmundi.common.model.analytics.BigDecimalDataPoint;
 import eu.opertusmundi.common.model.spatial.CountryEuropeDto;
 
 
@@ -26,38 +28,42 @@ public interface AssetStatisticsRepository extends JpaRepository<AssetStatistics
 
     @Query("SELECT a FROM AssetStatistics a WHERE a.id = :id")
     Optional<AssetStatisticsEntity> findAssetStatisticsById(Integer id);
-    
+
     @Query("SELECT a FROM AssetStatistics a WHERE a.pid = :pid")
     Page<AssetStatisticsEntity> findAllByPid(String pid, Pageable page);
-    
+
     @Query("SELECT SUM(a.maxPrice) FROM AssetStatistics a "
        	 + "WHERE a.active is true")
-    List<AssetStatisticsEntity> findTotalFileAssetValue();
-    
-    @Query("SELECT a.year, SUM(a.maxPrice) FROM AssetStatistics a "
+    Optional<BigDecimal> findTotalFileAssetValue();
+
+    @Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, SUM(a.maxPrice)) "
+         + "FROM AssetStatistics a "
     	 + "WHERE a.active is true "
          + "GROUP BY a.year")
-    List<AssetStatisticsEntity> findTotalFileAssetValuePerYear();
-    
-    @Query("SELECT a.year, a.month, SUM(a.maxPrice) FROM AssetStatistics a "
+    List<BigDecimalDataPoint> findTotalFileAssetValuePerYear();
+
+    @Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, a.month, SUM(a.maxPrice)) "
+         + "FROM AssetStatistics a "
     	 + "WHERE a.active is true "
          + "GROUP BY a.year, a.month")
-    List<AssetStatisticsEntity> findTotalFileAssetValuePerMonth();
-    
-    @Query("SELECT a.year, a.month, a.week, SUM(a.maxPrice) FROM AssetStatistics a "
+    List<BigDecimalDataPoint> findTotalFileAssetValuePerMonth();
+
+    @Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, a.month, a.week, SUM(a.maxPrice)) "
+         + "FROM AssetStatistics a "
     	 + "WHERE a.active is true "
          + "GROUP BY a.year, a.month, a.week")
-    List<AssetStatisticsEntity> findTotalFileAssetValuePerWeek();
-    
-    @Query("SELECT a.year, a.month, a.week, a.day, SUM(a.maxPrice) FROM AssetStatistics a "
+    List<BigDecimalDataPoint> findTotalFileAssetValuePerWeek();
+
+    @Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, a.month, a.week, a.day, SUM(a.maxPrice)) "
+         + "FROM AssetStatistics a "
     	 + "WHERE a.active is true "
          + "GROUP BY a.year, a.month, a.week, a.day")
-    List<AssetStatisticsEntity> findTotalFileAssetValuePerDay();
-    
+    List<BigDecimalDataPoint> findTotalFileAssetValuePerDay();
+
     @Transactional(readOnly = false)
     default AssetStatisticsDto create(AssetStatisticsCommandDto command) {
         final AssetStatisticsEntity statistics = new AssetStatisticsEntity();
-        
+
         statistics.setPid(command.getPid());
         statistics.setSegment(command.getSegment());
         statistics.setPublicationDate(command.getPublicationDate());
@@ -69,14 +75,14 @@ public interface AssetStatisticsRepository extends JpaRepository<AssetStatistics
         statistics.setDownloads(0);
         statistics.setSales(0);
         statistics.setActive(true);
-        
+
         for (final CountryEuropeDto c : command.getCountries()) {
             statistics.addCountry(c.getCode());
         }
 
         return this.saveAndFlush(statistics).toDto();
     }
-    
+
     @Modifying
     @Transactional(readOnly = false)
     @Query("UPDATE AssetStatistics a "

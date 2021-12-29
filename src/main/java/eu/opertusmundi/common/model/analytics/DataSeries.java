@@ -17,7 +17,7 @@ public class DataSeries<T> {
 
     @Schema(description = "Request time unit")
     @JsonInclude(Include.NON_NULL)
-    private BaseQuery.EnumTemporalUnit timeUnit;
+    private EnumTemporalUnit timeUnit;
 
     @ArraySchema(
         arraySchema = @Schema(
@@ -32,7 +32,7 @@ public class DataSeries<T> {
         return DataSeries.empty(null);
     }
 
-    public static <T> DataSeries<T> empty(BaseQuery.EnumTemporalUnit timeUnit) {
+    public static <T> DataSeries<T> empty(EnumTemporalUnit timeUnit) {
         final DataSeries<T> result = new DataSeries<T>();
         result.setTimeUnit(timeUnit);
         return result;

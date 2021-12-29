@@ -109,12 +109,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.opertusmundi.common.config.ElasticConfiguration;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.analytics.AssetViewQuery;
-import eu.opertusmundi.common.model.analytics.BaseQuery;
 import eu.opertusmundi.common.model.analytics.DataPoint;
 import eu.opertusmundi.common.model.analytics.DataSeries;
 import eu.opertusmundi.common.model.analytics.EnumAssetViewSource;
 import eu.opertusmundi.common.model.analytics.EnumCountCategory;
+import eu.opertusmundi.common.model.analytics.EnumTemporalUnit;
 import eu.opertusmundi.common.model.analytics.ProfileRecord;
+import eu.opertusmundi.common.model.analytics.SegmentDimension;
+import eu.opertusmundi.common.model.analytics.SpatialDimension;
+import eu.opertusmundi.common.model.analytics.TemporalDimension;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
@@ -551,7 +554,8 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             throw new ElasticServiceException("Failed to add asset to index", ex);
         }
     }
-    
+
+    @Override
     public CatalogueFeature findAsset(String id) throws ElasticServiceException {
         try {
             final String     indexName = this.configuration.getAssetIndex().getName();
@@ -695,7 +699,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
                 }
                 query.must(tempBool);
             }
-            
+
             // Check service type
             List<QueryBuilder> serviceTypeQueries = null;
             if (serviceType != null && !serviceType.isEmpty()) {
@@ -709,7 +713,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
                 }
                 query.must(tempBool);
             }
-            
+
             // Check price
             List<QueryBuilder> priceQueries = null;
             if (freeDataset != null || minPrice != null || maxPrice != null) {
@@ -863,7 +867,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
 	            if (scales != null && !scales.isEmpty()) {
 	                for (int i = 0; i < scales.size(); i++) {
 	                    scaleQueries.add(QueryBuilders.matchQuery("properties.scales.scale", scales.get(i)));
-	                }	
+	                }
 	            }
 	            if (minScale != null && maxScale != null) {
 	            	scaleQueries.add(QueryBuilders.boolQuery().must(QueryBuilders.rangeQuery("properties.scales.scale").from(minScale).to(maxScale)));
@@ -878,7 +882,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
                 }
                 query.must(tempBool);
             }
-            
+
             // Check if asset is open
             if (openDataset != null && openDataset) {
             	query.must(QueryBuilders.matchQuery("properties.open_dataset", true));
@@ -1018,9 +1022,9 @@ public class DefaultElasticSearchService implements ElasticSearchService {
         try {
             final DataSeries<BigDecimal>                result                 = new DataSeries<>();
             final List<String>                          groupByFields          = new ArrayList<>();
-            final BaseQuery.TemporalDimension           time                   = query.getTime();
-            final BaseQuery.SpatialDimension            spatial                = query.getAreas();
-            final BaseQuery.SegmentDimension            segments               = query.getSegments();
+            final TemporalDimension                     time                   = query.getTime();
+            final SpatialDimension                      spatial                = query.getAreas();
+            final SegmentDimension                      segments               = query.getSegments();
             final List<UUID>                            publishers             = query.getPublishers();
             final List<String>                          assets                 = query.getAssets();
             final EnumAssetViewSource                   source                 = query.getSource();
@@ -1040,22 +1044,22 @@ public class DefaultElasticSearchService implements ElasticSearchService {
                 // Apply temporal dimension grouping
                 result.setTimeUnit(time.getUnit());
 
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.YEAR.ordinal()) {
+                if (time.getUnit().ordinal() >= EnumTemporalUnit.YEAR.ordinal()) {
                     groupByFields.add("year");
                     aggregationByYear = new TermsValuesSourceBuilder("year").field("year");
                     sources.add(aggregationByYear);
                 }
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.MONTH.ordinal()) {
+                if (time.getUnit().ordinal() >= EnumTemporalUnit.MONTH.ordinal()) {
                     groupByFields.add("month");
                     aggregationByMonth = new TermsValuesSourceBuilder("month").field("month");
                     sources.add(aggregationByMonth);
                 }
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.WEEK.ordinal()) {
+                if (time.getUnit().ordinal() >= EnumTemporalUnit.WEEK.ordinal()) {
                     groupByFields.add("week");
                     aggregationByWeek = new TermsValuesSourceBuilder("week").field("week");
                     sources.add(aggregationByWeek);
                 }
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.DAY.ordinal()) {
+                if (time.getUnit().ordinal() >= EnumTemporalUnit.DAY.ordinal()) {
                     groupByFields.add("day");
                     aggregationByDay = new TermsValuesSourceBuilder("day").field("day");
                     sources.add(aggregationByDay);
@@ -1078,16 +1082,16 @@ public class DefaultElasticSearchService implements ElasticSearchService {
                     maxWeek  = time.getMax().get(WeekFields.of(Locale.getDefault()).weekOfYear());
                     maxDay   = time.getMax().getDayOfMonth();
 
-                    if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.YEAR.ordinal()) {
+                    if (time.getUnit().ordinal() >= EnumTemporalUnit.YEAR.ordinal()) {
                         filterQuery.must(QueryBuilders.rangeQuery("year").gte(minYear).lte(maxYear));
                     }
-                    if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.MONTH.ordinal()) {
+                    if (time.getUnit().ordinal() >= EnumTemporalUnit.MONTH.ordinal()) {
                         filterQuery.must(QueryBuilders.rangeQuery("month").gte(minMonth).lte(maxMonth));
                     }
-                    if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.WEEK.ordinal()) {
+                    if (time.getUnit().ordinal() >= EnumTemporalUnit.WEEK.ordinal()) {
                         filterQuery.must(QueryBuilders.rangeQuery("week").gte(minWeek).lte(maxWeek));
                     }
-                    if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.DAY.ordinal()) {
+                    if (time.getUnit().ordinal() >= EnumTemporalUnit.DAY.ordinal()) {
                         filterQuery.must(QueryBuilders.rangeQuery("day").gte(minDay).lte(maxDay));
                     }
                 }
@@ -1246,12 +1250,12 @@ public class DefaultElasticSearchService implements ElasticSearchService {
     }
 
     private DataPoint<BigDecimal> mapObjectToDataPoint(AssetViewQuery query, CompositeAggregation.Bucket bucket) {
-        final BaseQuery.TemporalDimension time       = query.getTime();
-        final BaseQuery.SpatialDimension  spatial    = query.getAreas();
-        final BaseQuery.SegmentDimension  segments   = query.getSegments();
-        final List<UUID>                  publishers = query.getPublishers();
-        final List<String>                assets     = query.getAssets();
-        final EnumAssetViewSource         source     = query.getSource();
+        final TemporalDimension   time       = query.getTime();
+        final SpatialDimension    spatial    = query.getAreas();
+        final SegmentDimension    segments   = query.getSegments();
+        final List<UUID>          publishers = query.getPublishers();
+        final List<String>        assets     = query.getAssets();
+        final EnumAssetViewSource source     = query.getSource();
 
         final DataPoint<BigDecimal> p = new DataPoint<>();
 
@@ -1260,16 +1264,16 @@ public class DefaultElasticSearchService implements ElasticSearchService {
         if (time != null) {
             p.setTime(new DataPoint.TimeInstant());
 
-            if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.YEAR.ordinal()) {
+            if (time.getUnit().ordinal() >= EnumTemporalUnit.YEAR.ordinal()) {
                 p.getTime().setYear((Integer) bucket.getKey().get("year"));
             }
-            if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.MONTH.ordinal()) {
+            if (time.getUnit().ordinal() >= EnumTemporalUnit.MONTH.ordinal()) {
                 p.getTime().setMonth((Integer) bucket.getKey().get("month"));
             }
-            if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.WEEK.ordinal()) {
+            if (time.getUnit().ordinal() >= EnumTemporalUnit.WEEK.ordinal()) {
                 p.getTime().setWeek((Integer) bucket.getKey().get("week"));
             }
-            if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.DAY.ordinal()) {
+            if (time.getUnit().ordinal() >= EnumTemporalUnit.DAY.ordinal()) {
                 p.getTime().setDay((Integer) bucket.getKey().get("day"));
             }
         }
@@ -1304,18 +1308,18 @@ public class DefaultElasticSearchService implements ElasticSearchService {
 
         return p;
     }
-    
+
     @Override
     public List<ImmutablePair<String, Integer>> findPopularAssetViewsAndSearches(AssetViewQuery query) {
         Assert.notNull(query, "Expected a non-null query");
         Assert.notNull(query.getSource(), "Expected a non-null source");
 
         try {
-        	
+
         	final List<ImmutablePair<String, Integer>> 	result 			= new ArrayList<ImmutablePair<String, Integer>>();
             final SearchSourceBuilder                   sourceBuilder   = new SearchSourceBuilder();
             final EnumAssetViewSource                   source          = query.getSource();
-            
+
             String field = null;
             // Popular views or popular searches
             if (source == EnumAssetViewSource.VIEW) {
@@ -1323,27 +1327,27 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             } else if (source == EnumAssetViewSource.SEARCH) {
             	field = "search_count";
             }
-            
+
             // Sum of view_count/search_count group by id order by sum of view_count/search_count desc
-            SumAggregationBuilder 		sumOfView					= AggregationBuilders.sum(field).field(field);
-            TermsAggregationBuilder		termsAggregationBuilder		= AggregationBuilders.terms("id").
+            final SumAggregationBuilder 		sumOfView					= AggregationBuilders.sum(field).field(field);
+            final TermsAggregationBuilder		termsAggregationBuilder		= AggregationBuilders.terms("id").
             															field("id.keyword").
             															order(BucketOrder.aggregation(field, false)).
             															subAggregation(sumOfView);
             termsAggregationBuilder.size(maxBucketCount);
             sourceBuilder.aggregation(termsAggregationBuilder);
-         
+
             // Define index
             final SearchRequest       searchRequest       = new SearchRequest(this.configuration.getAssetViewAggregateIndex().getName());
             final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-            
+
             // Aggregate
-            searchSourceBuilder.aggregation(termsAggregationBuilder).size(0);           
+            searchSourceBuilder.aggregation(termsAggregationBuilder).size(0);
             searchRequest.source(searchSourceBuilder);
-         
+
             final SearchResponse	searchResponse 	= client.search(searchRequest, RequestOptions.DEFAULT);
             final Terms  			terms 			= searchResponse.getAggregations().get("id");
-            
+
             for (final Terms.Bucket bucket : terms.getBuckets()) {
             	result.add(new ImmutablePair<>(bucket.getKey().toString(), (int) ((ParsedSum) bucket.getAggregations().asMap().get(field)).getValue()));
             }
@@ -1352,8 +1356,8 @@ public class DefaultElasticSearchService implements ElasticSearchService {
         } catch (final Exception ex) {
             throw new ElasticServiceException("Search operation has failed", ex);
         }
-    }   
-    
+    }
+
     @Override
     public List<ImmutablePair<String, Integer>> findPopularTerms() {
 
@@ -1362,23 +1366,23 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             TermsValuesSourceBuilder                    aggregationByTerm   	= null;
             final List<CompositeValuesSourceBuilder<?>> sources                	= new ArrayList<CompositeValuesSourceBuilder<?>>();
             final SearchSourceBuilder                   sourceBuilder          	= new SearchSourceBuilder();
-            
+
             // Create the GROUP BY query statement
             aggregationByTerm = new TermsValuesSourceBuilder("query").field("query.keyword");
-            sources.add(aggregationByTerm);    
-            
+            sources.add(aggregationByTerm);
+
             // Count
-            CompositeAggregationBuilder compositeAggregationBuilder = new CompositeAggregationBuilder("groupby", sources);
+            final CompositeAggregationBuilder compositeAggregationBuilder = new CompositeAggregationBuilder("groupby", sources);
             compositeAggregationBuilder.size(maxBucketCount);
             sourceBuilder.aggregation(compositeAggregationBuilder);
-            
+
             // Define index
             final SearchRequest       searchRequest       = new SearchRequest(this.configuration.getAssetViewIndex().getName());
             final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-            
+
             // Aggregate
             searchSourceBuilder.aggregation(compositeAggregationBuilder).size(0);
-            
+
             searchRequest.source(searchSourceBuilder);
 
             final SearchResponse       searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
@@ -1393,14 +1397,14 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             throw new ElasticServiceException("Search operation has failed", ex);
         }
     }
-    
+
     @Override
     public long getCountOf(EnumCountCategory category) {
 
         try {
-            
+
             String fieldName = null;
-        	
+
             switch (category) {
             case ASSETS :
             	fieldName = "id.keyword";
@@ -1409,31 +1413,31 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             	fieldName = "publisherKey.keyword";
                 break;
             }
-                
+
             final SearchSourceBuilder  	sourceBuilder   = new SearchSourceBuilder();
-            
+
             // Count of field
-            CardinalityAggregationBuilder valueCountAggregationBuilder	= AggregationBuilders.cardinality("agg").field(fieldName);
+            final CardinalityAggregationBuilder valueCountAggregationBuilder	= AggregationBuilders.cardinality("agg").field(fieldName);
             sourceBuilder.aggregation(valueCountAggregationBuilder);
-         
+
             // Define index
             final SearchRequest       searchRequest       = new SearchRequest(this.configuration.getAssetViewAggregateIndex().getName());
             final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-            
+
             // Aggregate
-            searchSourceBuilder.aggregation(valueCountAggregationBuilder).size(0);           
+            searchSourceBuilder.aggregation(valueCountAggregationBuilder).size(0);
             searchRequest.source(searchSourceBuilder);
-         
+
             final SearchResponse	searchResponse 	= client.search(searchRequest, RequestOptions.DEFAULT);
             final Cardinality  		agg  			= searchResponse.getAggregations().get("agg");
-            final long				result 			= agg.getValue();	
-            
+            final long				result 			= agg.getValue();
+
             System.out.println(result);
 
             return result;
         } catch (final Exception ex) {
             throw new ElasticServiceException("Search operation has failed", ex);
         }
-    } 
+    }
 
 }

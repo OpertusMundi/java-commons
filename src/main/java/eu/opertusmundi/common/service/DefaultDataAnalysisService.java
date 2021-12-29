@@ -19,15 +19,22 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import eu.opertusmundi.common.domain.AssetStatisticsEntity;
+import eu.opertusmundi.common.model.analytics.AssetTotalValueQuery;
 import eu.opertusmundi.common.model.analytics.AssetViewQuery;
-import eu.opertusmundi.common.model.analytics.BaseQuery;
+import eu.opertusmundi.common.model.analytics.BigDecimalDataPoint;
+import eu.opertusmundi.common.model.analytics.CoverageQuery;
 import eu.opertusmundi.common.model.analytics.DataPoint;
 import eu.opertusmundi.common.model.analytics.DataSeries;
+import eu.opertusmundi.common.model.analytics.EnumTemporalUnit;
 import eu.opertusmundi.common.model.analytics.SalesQuery;
+import eu.opertusmundi.common.model.analytics.SegmentDimension;
+import eu.opertusmundi.common.model.analytics.SpatialDimension;
+import eu.opertusmundi.common.model.analytics.TemporalDimension;
+import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import eu.opertusmundi.common.model.spatial.CountryCapitalCityDto;
 import eu.opertusmundi.common.repository.AssetStatisticsRepository;
 import eu.opertusmundi.common.repository.CountryRepository;
+import eu.opertusmundi.common.util.StreamUtils;
 
 @Service
 public class DefaultDataAnalysisService implements DataAnalysisService, InitializingBean {
@@ -39,7 +46,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 
     @Autowired
     private CountryRepository countryRepository;
-    
+
     @Autowired
     private AssetStatisticsRepository assetStatisticsRepository;
 
@@ -67,31 +74,31 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
             return DataSeries.<BigInteger>empty();
         }
 
-        final DataSeries<BigDecimal>      result        = new DataSeries<>();
-        final List<String>                groupByFields = new ArrayList<>();
-        final BaseQuery.TemporalDimension time          = query.getTime();
-        final BaseQuery.SpatialDimension  spatial       = query.getAreas();
-        final BaseQuery.SegmentDimension  segments      = query.getSegments();
-        final List<UUID>                  publishers    = query.getPublishers();
-        final List<String>                assets        = query.getAssets();
-        final List<String>                filters       = new ArrayList<>();
-        final List<Object>                args          = new ArrayList<>();
+        final DataSeries<BigDecimal> result        = new DataSeries<>();
+        final List<String>           groupByFields = new ArrayList<>();
+        final TemporalDimension      time          = query.getTime();
+        final SpatialDimension       spatial       = query.getAreas();
+        final SegmentDimension       segments      = query.getSegments();
+        final List<UUID>             publishers    = query.getPublishers();
+        final List<String>           assets        = query.getAssets();
+        final List<String>           filters       = new ArrayList<>();
+        final List<Object>           args          = new ArrayList<>();
 
         if (time != null) {
             // Apply temporal dimension grouping
             if (time.getUnit() != null) {
                 result.setTimeUnit(time.getUnit());
 
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.YEAR.ordinal()) {
+                if (time.getUnit().ordinal() >= EnumTemporalUnit.YEAR.ordinal()) {
                     groupByFields.add("payin_year");
                 }
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.MONTH.ordinal()) {
+                if (time.getUnit().ordinal() >= EnumTemporalUnit.MONTH.ordinal()) {
                     groupByFields.add("payin_month");
                 }
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.WEEK.ordinal()) {
+                if (time.getUnit().ordinal() >= EnumTemporalUnit.WEEK.ordinal()) {
                     groupByFields.add("payin_week");
                 }
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.DAY.ordinal()) {
+                if (time.getUnit().ordinal() >= EnumTemporalUnit.DAY.ordinal()) {
                     groupByFields.add("payin_day");
                 }
             }
@@ -226,11 +233,11 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
     }
 
     private DataPoint<BigDecimal> mapObjectToDataPoint(SalesQuery query, Object[] o) {
-        final BaseQuery.TemporalDimension time       = query.getTime();
-        final BaseQuery.SpatialDimension  spatial    = query.getAreas();
-        final BaseQuery.SegmentDimension  segments   = query.getSegments();
-        final List<UUID>                  publishers = query.getPublishers();
-        final List<String>                assets     = query.getAssets();
+        final TemporalDimension time       = query.getTime();
+        final SpatialDimension  spatial    = query.getAreas();
+        final SegmentDimension  segments   = query.getSegments();
+        final List<UUID>        publishers = query.getPublishers();
+        final List<String>      assets     = query.getAssets();
 
         final DataPoint<BigDecimal> p     = new DataPoint<>();
         int                         index = 0;
@@ -241,16 +248,16 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
             if (time.getUnit() != null) {
                 p.setTime(new DataPoint.TimeInstant());
 
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.YEAR.ordinal()) {
+                if (time.getUnit().ordinal() >= EnumTemporalUnit.YEAR.ordinal()) {
                     p.getTime().setYear((Integer) o[index++]);
                 }
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.MONTH.ordinal()) {
+                if (time.getUnit().ordinal() >= EnumTemporalUnit.MONTH.ordinal()) {
                     p.getTime().setMonth((Integer) o[index++]);
                 }
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.WEEK.ordinal()) {
+                if (time.getUnit().ordinal() >= EnumTemporalUnit.WEEK.ordinal()) {
                     p.getTime().setWeek((Integer) o[index++]);
                 }
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.DAY.ordinal()) {
+                if (time.getUnit().ordinal() >= EnumTemporalUnit.DAY.ordinal()) {
                     p.getTime().setDay((Integer) o[index++]);
                 }
             }
@@ -283,21 +290,21 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 
         return p;
     }
-    
+
     @Override
-    public DataSeries<?> executeCoverage(BaseQuery query) {
+    public DataSeries<?> executeCoverage(CoverageQuery query) {
         if (query == null) {
             return DataSeries.<BigInteger>empty();
         }
 
-        final DataSeries<BigDecimal>      result        = new DataSeries<>();
-        final BaseQuery.TemporalDimension time          = query.getTime();
-        final BaseQuery.SegmentDimension  segments      = query.getSegments();
-        final List<String>                filters       = new ArrayList<>();
-        final List<Object>                args          = new ArrayList<>();
+        final DataSeries<BigDecimal>  result   = new DataSeries<>();
+        final TemporalDimension       time     = query.getTime();
+        final List<EnumTopicCategory> segments = query.getSegments();
+        final List<String>            filters  = new ArrayList<>();
+        final List<Object>            args     = new ArrayList<>();
 
+        // Apply filtering
         if (time != null) {
-            // Apply temporal dimension filtering
             if (time.getMin() != null) {
                 filters.add("publication_date >= ?");
                 args.add(time.getMin().atTime(0, 0, 0).atZone(ZoneId.of("UTC")));
@@ -307,6 +314,10 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
                 args.add(time.getMax().atTime(0, 0, 0).atZone(ZoneId.of("UTC")));
             }
         }
+        if (segments != null && !segments.isEmpty()) {
+            filters.add("segment in (" + StringUtils.repeat("?", ", ", segments.size()) + ")");
+            segments.stream().map(Object::toString).forEach(args::add);
+        }
 
         String sqlString = "select country_code , count(*) ";
 
@@ -314,8 +325,8 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
         sqlString += "inner join \"analytics\".asset_statistics_country as c ";
         sqlString += "on s.id = c.statistic ";
 
-        if (segments != null) {
-            sqlString += "where " + "segment in (" + StringUtils.repeat("?", ", ", segments.getSegments().size()) + ")" + " ";
+        if (filters.size() > 0) {
+            sqlString += "where      " + String.join(" and ", filters) + " ";
         }
 
         sqlString += "group by c.country_code;";
@@ -350,79 +361,52 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
     private DataPoint<BigDecimal> mapObjectToDataPoint(Object[] o) {
 
         final DataPoint<BigDecimal> p = new DataPoint<>();
-        
+
         p.setLocation(DataPoint.Location.of((String) o[0]));
         p.setValue(BigDecimal.valueOf(((BigInteger) o[1]).longValue()));
 
         return p;
     }
-    
+
     @Override
-    public DataSeries<?> executeTotalPrice(BaseQuery query) {
+    public DataSeries<?> executeTotalAssetValue(AssetTotalValueQuery query) {
         if (query == null) {
             return DataSeries.<BigInteger>empty();
         }
-        
-        final DataSeries<BigDecimal>      	result       	= new DataSeries<>();
-        final BaseQuery.TemporalDimension 	time         	= query.getTime();
-        
-        List<AssetStatisticsEntity>			assetStatistics = new ArrayList<AssetStatisticsEntity>();
 
-        if (time != null) {
+        final DataSeries<BigDecimal> result          = new DataSeries<>();
+        final TemporalDimension      time            = query.getTime();
+        List<BigDecimalDataPoint>    assetStatistics = new ArrayList<>();
+
+        if (time != null && time.getUnit() != null) {
             // Apply temporal dimension grouping
-            if (time.getUnit() != null) {
-                result.setTimeUnit(time.getUnit());
+            result.setTimeUnit(time.getUnit());
 
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.YEAR.ordinal()) {
-                	assetStatistics = this.assetStatisticsRepository.findTotalFileAssetValuePerYear();
-                }
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.MONTH.ordinal()) {
-                	assetStatistics = this.assetStatisticsRepository.findTotalFileAssetValuePerMonth();
-                }
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.WEEK.ordinal()) {
-                	assetStatistics = this.assetStatisticsRepository.findTotalFileAssetValuePerWeek();
-                }
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.DAY.ordinal()) {
-                	assetStatistics = this.assetStatisticsRepository.findTotalFileAssetValuePerDay();
-                }
+            switch (time.getUnit()) {
+                case YEAR :
+                    assetStatistics = this.assetStatisticsRepository.findTotalFileAssetValuePerYear();
+                    break;
+                case MONTH :
+                    assetStatistics = this.assetStatisticsRepository.findTotalFileAssetValuePerMonth();
+                    break;
+                case WEEK :
+                    assetStatistics = this.assetStatisticsRepository.findTotalFileAssetValuePerWeek();
+                    break;
+                case DAY :
+                    assetStatistics = this.assetStatisticsRepository.findTotalFileAssetValuePerDay();
+                    break;
             }
+            StreamUtils.from(assetStatistics).forEach(result.getPoints()::add);
         } else {
-        	assetStatistics = this.assetStatisticsRepository.findTotalFileAssetValue();
+            final BigDecimal            value = this.assetStatisticsRepository.findTotalFileAssetValue().orElse(BigDecimal.ZERO);
+            final DataPoint<BigDecimal> p     = new DataPoint<>();
+
+            p.setValue(value);
+
+            result.getPoints().add(p);
         }
-        
-        for (int i = 0 ; i < assetStatistics.size() ; i++) {
-            result.getPoints().add(this.mapObjectToDataPoint(query, assetStatistics.get(i)));
-        }
-        
+
         return result;
     }
-    
-    private DataPoint<BigDecimal> mapObjectToDataPoint(BaseQuery query, AssetStatisticsEntity as) {
-        final BaseQuery.TemporalDimension time       = query.getTime();
 
-        final DataPoint<BigDecimal> p     = new DataPoint<>();
-
-        if (time != null) {
-            if (time.getUnit() != null) {
-                p.setTime(new DataPoint.TimeInstant());
-
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.YEAR.ordinal()) {
-                    p.getTime().setYear((Integer) as.getYear());
-                }
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.MONTH.ordinal()) {
-                    p.getTime().setMonth((Integer) as.getMonth());
-                }
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.WEEK.ordinal()) {
-                    p.getTime().setWeek((Integer) as.getWeek());
-                }
-                if (time.getUnit().ordinal() >= BaseQuery.EnumTemporalUnit.DAY.ordinal()) {
-                    p.getTime().setDay((Integer) as.getDay());
-                }
-            }
-        }
-        
-        p.setValue(BigDecimal.valueOf(((BigDecimal) as.getMaxPrice()).longValue()));
-
-        return p;
-    }
 }
