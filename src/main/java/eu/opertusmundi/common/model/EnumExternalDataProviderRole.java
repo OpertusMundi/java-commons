@@ -2,33 +2,30 @@ package eu.opertusmundi.common.model;
 
 import java.util.Arrays;
 
+import lombok.Getter;
+
 /**
- * Vendor account specific roles
+ * Roles for external data provider integration
  *
  * The values of this enumeration must be a subset of the values in {@link EnumRole}
  */
-public enum EnumVendorRole {
+public enum EnumExternalDataProviderRole {
 
     /**
-     * Organizational role for vendor accounts. Required for successful login
+     * Sentinel Hub {@link https://www.sentinel-hub.com/}
      */
-    ROLE_VENDOR_USER,
-    /**
-     * Organizational role for vendor provider accounts
-     */
-    ROLE_VENDOR_PROVIDER,
-    /**
-     * Organizational role for vendor consumer accounts
-     */
-    ROLE_VENDOR_CONSUMER,
-    /**
-     * Organizational role for vendor analytics accounts
-     */
-    ROLE_VENDOR_ANALYTICS,
+    ROLE_SENTINEL_HUB("Sentinel Hub data provider"),
     ;
 
-    public static EnumVendorRole fromString(String value) {
-        return Arrays.stream(EnumVendorRole.values())
+    private EnumExternalDataProviderRole(String description) {
+        this.description = description;
+    }
+
+    @Getter
+    private String description;
+
+    public static EnumExternalDataProviderRole fromString(String value) {
+        return Arrays.stream(EnumExternalDataProviderRole.values())
             .filter(r -> r.name().equalsIgnoreCase(value))
             .findFirst()
             .orElse(null);

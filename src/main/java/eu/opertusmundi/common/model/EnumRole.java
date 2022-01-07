@@ -3,15 +3,12 @@ package eu.opertusmundi.common.model;
 import java.util.Arrays;
 
 public enum EnumRole {
+    // Marketplace roles
 
     /**
      * Default role. Required for successful login
      */
     ROLE_USER,
-    /**
-     * Platform administrator
-     */
-    ROLE_ADMIN,
     /**
      * Role for enabling additional features for development
      */
@@ -28,6 +25,9 @@ public enum EnumRole {
      * Helpdesk account
      */
     ROLE_HELPDESK,
+
+    // Vendor organization roles
+
     /**
      * Organizational role for vendor accounts. Required for successful login
      */
@@ -44,6 +44,13 @@ public enum EnumRole {
      * Organizational role for vendor analytics accounts
      */
     ROLE_VENDOR_ANALYTICS,
+
+    // External data provider roles
+
+    /**
+     * Sentinel Hub {@link https://www.sentinel-hub.com/}
+     */
+    ROLE_SENTINEL_HUB,
     ;
 
     public static EnumRole fromString(String value) {
