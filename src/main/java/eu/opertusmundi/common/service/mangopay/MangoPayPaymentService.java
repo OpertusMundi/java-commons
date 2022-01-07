@@ -1,4 +1,4 @@
-package eu.opertusmundi.common.service;
+package eu.opertusmundi.common.service.mangopay;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -147,6 +147,10 @@ import eu.opertusmundi.common.repository.OrderRepository;
 import eu.opertusmundi.common.repository.PayInItemHistoryRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
 import eu.opertusmundi.common.repository.PayOutRepository;
+import eu.opertusmundi.common.service.CatalogueService;
+import eu.opertusmundi.common.service.OrderFulfillmentService;
+import eu.opertusmundi.common.service.PayOutService;
+import eu.opertusmundi.common.service.QuotationService;
 import eu.opertusmundi.common.util.StreamUtils;
 
 @Service

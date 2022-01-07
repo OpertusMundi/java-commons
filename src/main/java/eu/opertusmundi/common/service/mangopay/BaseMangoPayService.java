@@ -1,4 +1,4 @@
-package eu.opertusmundi.common.service;
+package eu.opertusmundi.common.service.mangopay;
 
 import javax.annotation.PostConstruct;
 

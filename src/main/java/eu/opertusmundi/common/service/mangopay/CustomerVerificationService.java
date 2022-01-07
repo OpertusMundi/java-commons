@@ -1,4 +1,4 @@
-package eu.opertusmundi.common.service;
+package eu.opertusmundi.common.service.mangopay;
 
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.account.CustomerDto;
