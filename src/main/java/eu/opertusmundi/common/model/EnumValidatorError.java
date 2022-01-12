@@ -17,6 +17,7 @@ public enum EnumValidatorError {
     ReferenceNotFound("Reference record was not found"),
     ResourceNotFound("The resource referenced by the property does not exist"),
 
+    NotNull("The value is required"),
     NotEmpty("The value must not be null or empty"),
     Size("The size of the collection is not supported"),
     ;

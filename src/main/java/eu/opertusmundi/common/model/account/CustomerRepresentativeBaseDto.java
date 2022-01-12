@@ -7,6 +7,7 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+import eu.opertusmundi.common.validation.IsoCountryCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,9 +19,11 @@ public class CustomerRepresentativeBaseDto {
     protected ZonedDateTime birthdate;
 
     @NotEmpty
+    @IsoCountryCode
     protected String countryOfResidence;
 
     @NotEmpty
+    @IsoCountryCode
     protected String nationality;
 
     @Email

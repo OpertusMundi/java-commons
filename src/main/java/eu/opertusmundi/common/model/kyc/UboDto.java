@@ -20,7 +20,7 @@ public class UboDto {
 
     @Schema(description = "UBO's unique identifier")
     private String id;
-    
+
     @Schema(description = "The name of the UBO")
     private String firstName;
 
@@ -31,7 +31,7 @@ public class UboDto {
     private AddressDto address;
 
     @Schema(
-        description = "The UBO's nationality in ISO 3166-1 alpha-2 format", 
+        description = "The UBO's nationality in ISO 3166-1 alpha-2 format",
         externalDocs = @ExternalDocumentation(url = "https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2")
     )
     private String nationality;

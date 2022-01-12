@@ -8,6 +8,7 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+import eu.opertusmundi.common.validation.IsoCountryCode;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -45,6 +46,7 @@ public final class ConsumerIndividualCommandDto extends ConsumerCommandDto imple
         externalDocs = @ExternalDocumentation(url = "https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2")
     )
     @NotEmpty
+    @IsoCountryCode
     private String nationality;
 
     @Schema(
@@ -52,6 +54,7 @@ public final class ConsumerIndividualCommandDto extends ConsumerCommandDto imple
         externalDocs = @ExternalDocumentation(url = "https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2")
     )
     @NotEmpty
+    @IsoCountryCode
     private String countryOfResidence;
 
     @Schema(description = "Consumer occupation")

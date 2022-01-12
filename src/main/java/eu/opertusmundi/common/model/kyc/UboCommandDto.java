@@ -9,12 +9,13 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.mangopay.core.enumerations.CountryIso;
 import com.mangopay.entities.Ubo;
 
 import eu.opertusmundi.common.model.account.AddressCommandDto;
 import eu.opertusmundi.common.model.account.BirthplaceCommandDto;
 import eu.opertusmundi.common.model.account.EnumCustomerType;
+import eu.opertusmundi.common.util.MangopayUtils;
+import eu.opertusmundi.common.validation.IsoCountryCode;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -56,6 +57,7 @@ public class UboCommandDto {
     private AddressCommandDto address;
 
     @NotBlank
+    @IsoCountryCode
     @Schema(
         description = "The UBO's nationality. ISO 3166-1 alpha-2 format is expected",
         required = true,
@@ -88,17 +90,9 @@ public class UboCommandDto {
         u.setFirstName(firstName);
         u.setId(uboId);
         u.setLastName(lastName);
-        u.setNationality(this.stringToCountryIso(nationality));
+        u.setNationality(MangopayUtils.countryFromString(nationality));
 
         return u;
     }
 
-    private CountryIso stringToCountryIso(String value) {
-        for (final CountryIso v : CountryIso.values()) {
-            if (v.name().equalsIgnoreCase(value)) {
-                return v;
-            }
-        }
-        return null;
-    }
 }

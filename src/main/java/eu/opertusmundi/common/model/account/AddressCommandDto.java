@@ -7,8 +7,9 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 
 import com.mangopay.core.Address;
-import com.mangopay.core.enumerations.CountryIso;
 
+import eu.opertusmundi.common.util.MangopayUtils;
+import eu.opertusmundi.common.validation.IsoCountryCode;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -44,6 +45,7 @@ public class AddressCommandDto implements Serializable {
         externalDocs = @ExternalDocumentation(url = "https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2")
     )
     @NotBlank
+    @IsoCountryCode
     private String country;
 
     public Address toMangoPayAddress() {
@@ -52,20 +54,11 @@ public class AddressCommandDto implements Serializable {
         a.setAddressLine1(this.getLine1());
         a.setAddressLine2(this.getLine2());
         a.setCity(this.getCity());
-        a.setCountry(this.stringToCountryIso(this.getCountry()));
+        a.setCountry(MangopayUtils.countryFromString(this.getCountry()));
         a.setPostalCode(this.getPostalCode());
         a.setRegion(this.getRegion());
 
         return a;
-    }
-
-    private CountryIso stringToCountryIso(String value) {
-        for (final CountryIso v : CountryIso.values()) {
-            if (v.name().equalsIgnoreCase(value)) {
-                return v;
-            }
-        }
-        return null;
     }
 
 }

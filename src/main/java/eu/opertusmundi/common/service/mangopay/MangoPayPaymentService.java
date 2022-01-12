@@ -39,7 +39,6 @@ import com.mangopay.core.ResponseException;
 import com.mangopay.core.Sorting;
 import com.mangopay.core.enumerations.BankAccountType;
 import com.mangopay.core.enumerations.CardType;
-import com.mangopay.core.enumerations.CountryIso;
 import com.mangopay.core.enumerations.CurrencyIso;
 import com.mangopay.core.enumerations.EventType;
 import com.mangopay.core.enumerations.FundsType;
@@ -151,6 +150,7 @@ import eu.opertusmundi.common.service.CatalogueService;
 import eu.opertusmundi.common.service.OrderFulfillmentService;
 import eu.opertusmundi.common.service.PayOutService;
 import eu.opertusmundi.common.service.QuotationService;
+import eu.opertusmundi.common.util.MangopayUtils;
 import eu.opertusmundi.common.util.StreamUtils;
 
 @Service
@@ -1802,12 +1802,12 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
         u.setAddress(this.createAddress(r.getAddress()));
         u.setBirthday(r.getBirthdate().toEpochSecond());
-        u.setCountryOfResidence(this.stringToCountryIso(r.getCountryOfResidence()));
+        u.setCountryOfResidence(MangopayUtils.countryFromString(r.getCountryOfResidence()));
         u.setEmail(r.getEmail());
         u.setFirstName(r.getFirstName());
         u.setId(id);
         u.setLastName(r.getLastName());
-        u.setNationality(this.stringToCountryIso(r.getNationality()));
+        u.setNationality(MangopayUtils.countryFromString(r.getNationality()));
         u.setOccupation(r.getOccupation());
         u.setTag(a.getKey().toString());
 
@@ -1834,11 +1834,11 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         u.setLegalPersonType(this.enumToLegalPersonType(r.getLegalPersonType()));
         u.setLegalRepresentativeAddress(this.createAddress(lr.getAddress()));
         u.setLegalRepresentativeBirthday(lr.getBirthdate().toEpochSecond());
-        u.setLegalRepresentativeCountryOfResidence(this.stringToCountryIso(lr.getCountryOfResidence()));
+        u.setLegalRepresentativeCountryOfResidence(MangopayUtils.countryFromString(lr.getCountryOfResidence()));
         u.setLegalRepresentativeEmail(lr.getEmail());
         u.setLegalRepresentativeFirstName(lr.getFirstName());
         u.setLegalRepresentativeLastName(lr.getLastName());
-        u.setLegalRepresentativeNationality(this.stringToCountryIso(lr.getNationality()));
+        u.setLegalRepresentativeNationality(MangopayUtils.countryFromString(lr.getNationality()));
         u.setName(r.getName());
         u.setTag(a.getKey().toString());
 
@@ -1854,7 +1854,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         a.setAddressLine1(e.getLine1());
         a.setAddressLine2(e.getLine2());
         a.setCity(e.getCity());
-        a.setCountry(this.stringToCountryIso(e.getCountry()));
+        a.setCountry(MangopayUtils.countryFromString(e.getCountry()));
         a.setPostalCode(e.getPostalCode());
         a.setRegion(e.getRegion());
 
@@ -1912,15 +1912,6 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         }
 
         throw new PaymentException(String.format("[MANGOPAY] No active registration found for key [%s]", key));
-    }
-
-    private CountryIso stringToCountryIso(String value) {
-        for (final CountryIso v : CountryIso.values()) {
-            if (v.name().equalsIgnoreCase(value)) {
-                return v;
-            }
-        }
-        return null;
     }
 
     private LegalPersonType enumToLegalPersonType(EnumLegalPersonType t) {

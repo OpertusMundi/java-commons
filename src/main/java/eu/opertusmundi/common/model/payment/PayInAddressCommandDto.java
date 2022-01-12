@@ -2,14 +2,16 @@ package eu.opertusmundi.common.model.payment;
 
 import java.io.Serializable;
 
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 import com.mangopay.core.Address;
 import com.mangopay.core.Billing;
 import com.mangopay.core.Shipping;
-import com.mangopay.core.enumerations.CountryIso;
 
+import eu.opertusmundi.common.util.MangopayUtils;
+import eu.opertusmundi.common.validation.IsoCountryCode;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -51,6 +53,8 @@ public class PayInAddressCommandDto implements Serializable {
         description = "The Country of the Address",
         externalDocs = @ExternalDocumentation(url = "https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2")
     )
+    @NotBlank
+    @IsoCountryCode
     private String country;
 
     private Address toMangoPayAddress() {
@@ -59,7 +63,7 @@ public class PayInAddressCommandDto implements Serializable {
         a.setAddressLine1(this.line1);
         a.setAddressLine2(this.line2);
         a.setCity(this.city);
-        a.setCountry(this.stringToCountryIso(this.country));
+        a.setCountry(MangopayUtils.countryFromString(this.country));
         a.setPostalCode(this.postalCode);
         a.setRegion(this.region);
 
@@ -84,15 +88,6 @@ public class PayInAddressCommandDto implements Serializable {
         s.setLastName(lastName);
 
         return s;
-    }
-
-    private CountryIso stringToCountryIso(String value) {
-        for (final CountryIso v : CountryIso.values()) {
-            if (v.name().equalsIgnoreCase(value)) {
-                return v;
-            }
-        }
-        return null;
     }
 
 }
