@@ -67,7 +67,7 @@ public abstract class DraftApiCommandDto implements Serializable {
 
     @Schema(description = "Service type", allowableValues = {"WMS", "WFS", "DATA_API"}, required = true)
     @NotNull
-    private String serviceType;
+    private EnumSpatialDataServiceType serviceType;
 
     @Schema(description = "A name given to the resource", required = true)
     @NotEmpty
