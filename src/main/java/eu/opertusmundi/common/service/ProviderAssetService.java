@@ -23,6 +23,7 @@ import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.MetadataProperty;
 import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
+import eu.opertusmundi.common.model.asset.UserFileResourceCommandDto;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
@@ -257,9 +258,24 @@ public interface ProviderAssetService {
     ) throws AssetDraftException;
 
     /**
+     * Adds a file resource from the user's file system
+     *
+     * @param command Resource metadata. If a file with the same name already exists for the asset, it is overwritten
+     *
+     * @return The updated draft
+     *
+     * @throws FileSystemException
+     * @throws AssetRepositoryException
+     * @throws AssetDraftException
+     */
+    AssetDraftDto addFileResource(
+        UserFileResourceCommandDto command
+    ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
+
+    /**
      * Uploads a file resource to the selected asset
      *
-     * @param command Resource metadata. If a file with the same name already already exists for the asset, it is overwritten
+     * @param command Resource metadata. If a file with the same name already exists for the asset, it is overwritten
      * @param input An input stream of the uploaded file. The caller should close the stream.
      *
      * @return The updated draft

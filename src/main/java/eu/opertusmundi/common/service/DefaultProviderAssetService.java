@@ -74,6 +74,7 @@ import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.model.asset.MetadataProperty;
 import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
+import eu.opertusmundi.common.model.asset.UserFileResourceCommandDto;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceMessageCode;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
@@ -1104,6 +1105,62 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
             throw new AssetDraftException(AssetMessageCode.ERROR, "Failed to publish asset", ex);
         }
+    }
+
+    @Override
+    @Transactional
+    public AssetDraftDto addFileResource(
+        UserFileResourceCommandDto command
+    ) throws FileSystemException, AssetRepositoryException, AssetDraftException {
+        // The provider must have access to the selected draft and also the
+        // draft must be editable
+        AssetDraftDto draft = this.ensureDraftAndStatus(
+            command.getOwnerKey(), command.getPublisherKey(), command.getDraftKey(), EnumProviderAssetDraftStatus.DRAFT
+        );
+
+        // Lock record before update
+        final Pair<EnumLockResult, RecordLockDto> lock = this.getLock(command.getOwnerKey(), command.getDraftKey(), true);
+
+        // Resolve resource file
+        final FilePathCommand fileCommand = FilePathCommand.builder()
+            .path(command.getPath())
+            .userId(command.getUserId())
+            .build();
+
+        final Path path = this.userFileManager.resolveFilePath(fileCommand);
+
+        // Add resource
+        final FileResourceCommandDto resourceCommand = new FileResourceCommandDto();
+
+        resourceCommand.setCategory(draft.getType());
+        resourceCommand.setCrs(command.getCrs());
+        resourceCommand.setDraftKey(draft.getKey());
+        resourceCommand.setEncoding(command.getEncoding());
+        resourceCommand.setFileName(command.getFileName());
+        resourceCommand.setFormat(command.getFormat());
+        resourceCommand.setOwnerKey(command.getOwnerKey());
+        resourceCommand.setPublisherKey(command.getPublisherKey());
+        resourceCommand.setSize(command.getSize());
+
+        try (final InputStream input = Files.newInputStream(path)) {
+            draft = this.addFileResource(resourceCommand, input);
+        } catch(final AssetDraftException ex) {
+            throw ex;
+        } catch(final Exception ex) {
+            throw new AssetDraftException(
+                AssetMessageCode.API_COMMAND_RESOURCE_COPY,
+                String.format("Failed to copy resource file [%s]", command.getPath()), ex
+            );
+        }
+
+        // Release lock if it was created only for the specific operation
+        if (lock != null && lock.getLeft() == EnumLockResult.CREATED) {
+            this.releaseLock(command.getOwnerKey(), command.getDraftKey());
+        } else if (lock != null) {
+            draft.setLock(lock.getRight());
+        }
+
+        return draft;
     }
 
     @Override
