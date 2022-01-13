@@ -20,6 +20,7 @@ import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.OrderItemEntity;
 import eu.opertusmundi.common.domain.OrderStatusEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
+import eu.opertusmundi.common.model.EnumReferenceType;
 import eu.opertusmundi.common.model.order.ConsumerOrderDto;
 import eu.opertusmundi.common.model.order.EnumOrderItemType;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
@@ -31,6 +32,7 @@ import eu.opertusmundi.common.model.order.OrderException;
 import eu.opertusmundi.common.model.order.OrderMessageCode;
 import eu.opertusmundi.common.model.order.OrderShippingCommandDto;
 import eu.opertusmundi.common.model.order.ProviderOrderDto;
+import eu.opertusmundi.common.util.MangopayUtils;
 import io.jsonwebtoken.lang.Assert;
 
 @Repository
@@ -289,6 +291,11 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
         }
 
         order.getItems().add(item);
+
+        this.saveAndFlush(order);
+
+        // Compute reference number from database key
+        order.setReferenceNumber(MangopayUtils.createReferenceNumber(EnumReferenceType.ORDER, order.getId()));
 
         this.saveAndFlush(order);
 

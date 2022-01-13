@@ -960,7 +960,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             // MANGOPAY expects not decimal values e.g. 100,50 is formatted as a
             // integer 10050
             command.setDebitedFunds(order.getTotalPrice().multiply(BigDecimal.valueOf(100L)).intValue());
-            command.setReferenceNumber(this.createReferenceNumber());
+            command.setReferenceNumber(order.getReferenceNumber());
 
             // Funds must be greater than 0
             if (command.getDebitedFunds() <= 0) {
@@ -1026,8 +1026,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 return payIn.toConsumerDto(true);
             }
 
-            command.setReferenceNumber(this.createReferenceNumber());
-
+            command.setReferenceNumber(order.getReferenceNumber());
 
             // Create database record
             final PayInDto result = this.payInRepository.createFreePayInForOrder(command);
@@ -1063,7 +1062,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             // MANGOPAY expects not decimal values e.g. 100,50 is formatted as a
             // integer 10050
             command.setDebitedFunds(order.getTotalPrice().multiply(BigDecimal.valueOf(100L)).intValue());
-            command.setReferenceNumber(this.createReferenceNumber());
+            command.setReferenceNumber(order.getReferenceNumber());
             command.setStatementDescriptor(this.createStatementDescriptor(command));
 
             // Funds must be greater than 0
@@ -1444,10 +1443,6 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             // Fees are applied in Transfers.
             command.setFees(BigDecimal.ZERO);
 
-            // Generate unique reference number and create PayOut locally
-            final String bankWireRef = this.createReferenceNumber();
-
-            command.setBankWireRef(bankWireRef);
             final PayOutDto payout = this.payOutRepository.createPayOut(command);
 
             // Start PayOut workflow instance
@@ -1963,23 +1958,6 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
     protected PaymentException wrapException(String operation, Exception ex, Object command) {
         return super.wrapException(operation, ex, command, logger);
-    }
-
-    // TODO: Move to new service
-    // TODO: Review reference number generation algorithm
-
-    private String createReferenceNumber() {
-        final String digits     = "123456789ABCDEFGHIJKLMNPQRSTUVWXYZ";
-        final int    targetBase = digits.length();
-        long         value      = ZonedDateTime.now().toInstant().toEpochMilli();
-        String       result     = "";
-
-        do {
-            result = digits.charAt((int) (value % targetBase)) + result;
-            value  = value / targetBase;
-        } while (value > 0);
-
-        return result;
     }
 
     // TODO: Move to new service (?)

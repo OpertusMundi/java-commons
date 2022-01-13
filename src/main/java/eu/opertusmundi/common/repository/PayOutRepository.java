@@ -21,11 +21,13 @@ import org.springframework.transaction.annotation.Transactional;
 import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.PayOutEntity;
 import eu.opertusmundi.common.domain.PayOutStatusEntity;
+import eu.opertusmundi.common.model.EnumReferenceType;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PayOutCommandDto;
 import eu.opertusmundi.common.model.payment.PayOutDto;
 import eu.opertusmundi.common.model.payment.PayOutStatusUpdateCommand;
 import eu.opertusmundi.common.model.payment.PaymentException;
+import eu.opertusmundi.common.util.MangopayUtils;
 import io.jsonwebtoken.lang.Assert;
 
 @Repository
@@ -109,7 +111,7 @@ public interface PayOutRepository extends JpaRepository<PayOutEntity, Integer> {
 
         final PayOutEntity payout = new PayOutEntity();
 
-        payout.setBankwireRef(command.getBankWireRef());
+        payout.setBankwireRef("N/A");
         payout.setCurrency("EUR");
         payout.setDebitedFunds(command.getDebitedFunds());
         payout.setPlatformFees(command.getFees());
@@ -125,6 +127,8 @@ public interface PayOutRepository extends JpaRepository<PayOutEntity, Integer> {
         payout.getStatusHistory().add(status);
 
         this.saveAndFlush(payout);
+
+        payout.setBankwireRef(MangopayUtils.createReferenceNumber(EnumReferenceType.PAYOUT, payout.getId()));
 
         return payout.toDto();
     }

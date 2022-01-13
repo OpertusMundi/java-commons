@@ -32,7 +32,4 @@ public class PayOutCommandDto {
     @JsonIgnore
     private BigDecimal fees;
 
-    @JsonIgnore
-    private String bankWireRef;
-
 }
