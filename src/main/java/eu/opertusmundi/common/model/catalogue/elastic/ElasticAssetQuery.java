@@ -8,9 +8,9 @@ import org.locationtech.jts.geom.Coordinate;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import eu.opertusmundi.common.model.EnumSortingOrder;
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
-import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -58,7 +58,7 @@ public class ElasticAssetQuery {
 
     @Schema(description = "Maximum price (excluding VAT)")
     private Integer maxPrice;
-    
+
     @Schema(description = "Used for declaring free datasets")
     private Boolean freeDataset;
 
@@ -112,10 +112,12 @@ public class ElasticAssetQuery {
     private EnumSortingOrder order;
 
     @Schema(description = "Pagination page index", defaultValue = "0")
-    private Optional<Integer> page;
+    @Builder.Default
+    private Optional<Integer> page = Optional.empty();
 
     @Schema(description = "Pagination page size", defaultValue = "10")
-    private Optional<Integer> size;
+    @Builder.Default
+    private Optional<Integer> size = Optional.empty();
 
     @Schema(description = "Mode of coverage search")
     private EnumSpatialOperation spatialOperation;
