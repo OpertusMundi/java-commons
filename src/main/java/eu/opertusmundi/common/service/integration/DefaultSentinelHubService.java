@@ -1,7 +1,11 @@
 package eu.opertusmundi.common.service.integration;
 
+import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -9,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cloud.openfeign.FeignClientsConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
@@ -17,6 +22,8 @@ import org.springframework.stereotype.Service;
 import eu.opertusmundi.common.config.SentinelHubConfiguration;
 import eu.opertusmundi.common.feign.client.SentinelHubFeignClient;
 import eu.opertusmundi.common.model.sinergise.CatalogueResponseDto;
+import eu.opertusmundi.common.model.sinergise.SubscriptionPlanDto;
+import eu.opertusmundi.common.model.sinergise.SubscriptionPlanDto.Billing;
 import eu.opertusmundi.common.model.sinergise.client.ClientCatalogueQueryDto;
 import eu.opertusmundi.common.model.sinergise.server.SentinelHubException;
 import eu.opertusmundi.common.model.sinergise.server.SentinelHubExceptionMessageCode;
@@ -143,6 +150,34 @@ public class DefaultSentinelHubService implements SentinelHubService {
 
             throw SentinelHubException.wrap(ex);
         }
+    }
+
+    @Override
+    @Cacheable(
+        cacheNames = "sentinel-hub-subscription-plans",
+        cacheManager = "defaultCacheManager",
+        key = "'sentinel-hub-subscription-plans'"
+    )
+    public List<SubscriptionPlanDto> getSubscriptionPlans() {
+        final SubscriptionPlanDto plan = SubscriptionPlanDto.builder()
+            .id(UUID.randomUUID().toString())
+            .title("Exploration")
+            .billing(Billing.builder()
+                .annually(BigDecimal.valueOf(300))
+                .monthly(BigDecimal.valueOf(25))
+                .build()
+            )
+            .description("Non-Commercial / Research")
+            .features(Arrays.<String[]>asList(
+                new String[] {"All free features"},
+                new String[] {"OGC standard WMS / WCS / WMTS / WFS", "API for advanced features","Configuration Utility tool"}
+            ))
+            .license("Creative Commons Attribution-NonCommercial 4.0 International License")
+            .build();
+
+        final List<SubscriptionPlanDto> result = Arrays.asList(plan);
+
+        return result;
     }
 
 }

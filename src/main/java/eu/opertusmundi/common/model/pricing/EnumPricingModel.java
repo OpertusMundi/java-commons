@@ -49,21 +49,11 @@ public enum EnumPricingModel {
      * Pay per row, optional define reverse block rate pricing
      */
     PER_ROW_WITH_BLOCK_RATE,
-    /**
-     * Subscription based billing
-     */
-    SUBSCRIPTION,
-    /**
-     * Custom pricing model used for external data provider integration
-     */
-    CUSTOM,
 
     // Sentinel Hub
 
     /**
      * Sentinel Hub open data collections {@link https://www.sentinel-hub.com/}
-     *
-     * Mapped to a pricing model command of type {@link #SUBSCRIPTION}
      */
     SENTINEL_HUB_SUBSCRIPTION,
     /**

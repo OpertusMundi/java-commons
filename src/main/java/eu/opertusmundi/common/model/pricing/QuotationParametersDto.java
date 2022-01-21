@@ -1,79 +1,55 @@
 package eu.opertusmundi.common.model.pricing;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import eu.opertusmundi.common.model.pricing.integration.SHImageQuotationParametersDto;
+import eu.opertusmundi.common.model.pricing.integration.SHSubscriptionQuotationParametersDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-@Schema(description = "Quotation parameters bag with all user and system defined parameters")
-@Getter
-@Setter
+@Schema(description = "User-defined quotation parameters")
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type", defaultImpl = EmptyQuotationParametersDto.class
+)
+@JsonSubTypes({
+    @Type(name = "UNDEFINED", value = EmptyQuotationParametersDto.class),
+    @Type(name = "FIXED_PER_ROWS", value = FixedRowQuotationParametersDto.class),
+    @Type(name = "FIXED_FOR_POPULATION", value = FixedPopulationQuotationParametersDto.class),
+    @Type(name = "PER_CALL_WITH_PREPAID", value = CallPrePaidQuotationParametersDto.class),
+    @Type(name = "PER_ROW_WITH_PREPAID", value = RowPrePaidQuotationParametersDto.class),
+    // External Data Provider pricing models
+    @Type(name = "SENTINEL_HUB_SUBSCRIPTION", value = SHSubscriptionQuotationParametersDto.class),
+    @Type(name = "SENTINEL_HUB_IMAGES", value = SHImageQuotationParametersDto.class),
+})
 @ToString
-public class QuotationParametersDto extends QuotationParametersCommandDto implements Serializable {
+public class QuotationParametersDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * Tax percent set automatically by the platform
-     */
-    @JsonIgnore
-    protected BigDecimal taxPercent;
+    protected QuotationParametersDto() {
+        this.type = EnumPricingModel.UNDEFINED;
+    }
 
-    @Schema(description = "System parameters")
-    @JsonInclude(Include.NON_NULL)
-    private SystemParameters systemParams;
+    protected QuotationParametersDto(EnumPricingModel type) {
+        this.type = type;
+    }
 
-    @Schema(description = "Dynamic system-defined parameters set during the creation of a quotation such as the selected number of rows or population")
-    @NoArgsConstructor
+    @Schema(
+        description = "Discriminator field used for deserializing the model to the appropriate data type. "
+                    + "The type of the quotation parameters must match the type of the pricing model to which "
+                    + "they are applied.",
+        example = "FIXED"
+    )
+    @JsonDeserialize(using = EnumPricingModel.Deserializer.class)
     @Getter
     @Setter
-    @ToString
-    public static class SystemParameters implements Serializable {
-
-        private static final long serialVersionUID = 1L;
-
-        @Schema(description = "System-defined parameter of the number of rows selected. If the pricing model does not support "
-                            + "number of rows parameter, this property is not set")
-        @JsonInclude(Include.NON_NULL)
-        private Long rows;
-
-        @Schema(description = "System-defined parameter of the size of selected population. If the pricing model does not "
-                            + "support population size parameter, this property is not set")
-        @JsonInclude(Include.NON_NULL)
-        private Long population;
-
-        @Schema(description = "System-defined parameter of the selected percent of total population. If the pricing model does not "
-                            + "support population size parameter, this property is not set")
-        @JsonInclude(Include.NON_NULL)
-        private Integer populationPercent;
-
-        public static SystemParameters fromRows(long rows) {
-            final SystemParameters p = new SystemParameters();
-            p.setRows(rows);
-            return p;
-        }
-
-        public static SystemParameters fromPopulation(long population, int populationPercent) {
-            final SystemParameters p = new SystemParameters();
-            p.setPopulation(population);
-            p.setPopulationPercent(populationPercent);
-            return p;
-        }
-    }
-
-    public static QuotationParametersDto from(QuotationParametersCommandDto command) {
-        final QuotationParametersDto p = new QuotationParametersDto();
-        p.nuts        = command.getNuts();
-        p.prePaidTier = command.getPrePaidTier();
-        return p;
-    }
+    private EnumPricingModel type;
 
 }

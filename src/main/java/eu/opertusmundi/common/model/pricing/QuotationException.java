@@ -18,6 +18,10 @@ public final class QuotationException extends ServiceException {
         super(code, message);
     }
 
+    public QuotationException(QuotationMessageCode code, String pattern, Object ...formatArgs) {
+        super(code, String.format(pattern, formatArgs));
+    }
+
     public QuotationException(String message, Throwable cause) {
         this(QuotationMessageCode.ERROR, message, cause);
     }

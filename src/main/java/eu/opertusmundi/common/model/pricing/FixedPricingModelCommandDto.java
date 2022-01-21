@@ -38,33 +38,37 @@ public class FixedPricingModelCommandDto extends BasePricingModelCommandDto {
     protected BigDecimal totalPriceExcludingTax;
 
     @Override
+    protected void checkUserParametersType(QuotationParametersDto params) throws QuotationException {
+        // Pricing model does not support user parameters. No action is required
+    }
+
+    @Override
     public void validate() throws QuotationException {
         // No validation is required
     }
 
     @Override
     public void validate(QuotationParametersDto params, boolean ignoreMissing) throws QuotationException {
+        this.checkUserParametersType(params);
+
         // No validation is required
     }
 
     @Override
-    public  EffectivePricingModelDto compute(QuotationParametersDto params) {
-        final EffectivePricingModelDto result    = EffectivePricingModelDto.from(this, params);
-        final QuotationDto             quotation = new QuotationDto();
+    public EffectivePricingModelDto compute(QuotationParametersDto userParams, SystemQuotationParametersDto systemParams) {
+        this.checkUserParametersType(userParams);
 
-        quotation.setTaxPercent(params.getTaxPercent().intValue());
+        final QuotationDto quotation = new QuotationDto();
 
+        quotation.setTaxPercent(systemParams.getTaxPercent().intValue());
         quotation.setTotalPriceExcludingTax(this.totalPriceExcludingTax);
-
         quotation.setTax(quotation.getTotalPriceExcludingTax()
-            .multiply(params.getTaxPercent())
+            .multiply(systemParams.getTaxPercent())
             .divide(new BigDecimal(100))
             .setScale(2, RoundingMode.HALF_UP)
         );
 
-        result.setQuotation(quotation);
-
-        return result;
+        return EffectivePricingModelDto.from(this, userParams, systemParams, quotation);
     }
 
 }

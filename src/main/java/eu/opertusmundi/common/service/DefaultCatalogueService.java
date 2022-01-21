@@ -77,6 +77,7 @@ import eu.opertusmundi.common.repository.AssetResourceRepository;
 import eu.opertusmundi.common.repository.FavoriteRepository;
 import eu.opertusmundi.common.repository.ProviderRepository;
 import eu.opertusmundi.common.repository.contract.ProviderTemplateContractHistoryRepository;
+import eu.opertusmundi.common.service.integration.DataProviderManager;
 import feign.FeignException;
 
 @Service
@@ -107,7 +108,7 @@ public class DefaultCatalogueService implements CatalogueService {
 
     @Autowired
     private ProviderRepository providerRepository;
-    
+
     @Autowired
     private StatisticsService statisticsService;
 
@@ -132,6 +133,9 @@ public class DefaultCatalogueService implements CatalogueService {
     @Autowired
     private QuotationService quotationService;
 
+    @Autowired
+    private DataProviderManager dataProviderManager;
+
     @Override
     public CatalogueResult<CatalogueItemDto> findAll(RequestContext ctx, CatalogueAssetQuery request) throws CatalogueServiceException {
         Assert.notNull(request, "Expected a non-null request");
@@ -149,7 +153,7 @@ public class DefaultCatalogueService implements CatalogueService {
             }
 
             // Process response
-            final CatalogueResult<CatalogueItemDto> response = this.createSearchResult(
+            final CatalogueResult<CatalogueItemDto> response = this.featureCollectionToCatalogueResult(
                 request.getPage(), request.getSize(),
                 catalogueResponse.getResult().getItems(), catalogueResponse.getResult().getTotal(),
                 (item) -> new CatalogueItemDto(item),
@@ -195,7 +199,7 @@ public class DefaultCatalogueService implements CatalogueService {
                 .filter(f -> !f.getId().equals(id))
                 .collect(Collectors.toList());
 
-            final CatalogueResult<CatalogueItemDto> response = this.createSearchResult(
+            final CatalogueResult<CatalogueItemDto> response = this.featureCollectionToCatalogueResult(
                 0, features.size(),
                 features, features.size(),
                 (item) -> new CatalogueItemDto(item),
@@ -230,7 +234,7 @@ public class DefaultCatalogueService implements CatalogueService {
 
         try {
             if (this.elasticSearchService == null) {
-                return this.createSearchResult(
+                return this.featureCollectionToCatalogueResult(
                     request.getPage().orElse(0), request.getSize().orElse(10),
                     Collections.emptyList(), 0,
                     (item) -> new CatalogueItemDto(item),
@@ -241,7 +245,7 @@ public class DefaultCatalogueService implements CatalogueService {
             final ElasticAssetQueryResult result = elasticSearchService.searchAssets(request);
 
             // Process response
-            final CatalogueResult<CatalogueItemDto> response = this.createSearchResult(
+            final CatalogueResult<CatalogueItemDto> response = this.featureCollectionToCatalogueResult(
                 request.getPage().orElse(0), request.getSize().orElse(10),
                 result.getAssets(), result.getTotal(),
                 (item) -> new CatalogueItemDto(item),
@@ -258,8 +262,6 @@ public class DefaultCatalogueService implements CatalogueService {
             throw CatalogueServiceException.wrap(ex);
         }
     }
-
-    // TODO: Restrict automated metadata visibility
 
     @Override
     public List<CatalogueItemDetailsDto> findAllById(String[] id) throws CatalogueServiceException {
@@ -315,7 +317,7 @@ public class DefaultCatalogueService implements CatalogueService {
             }
 
             // Process response
-            final CatalogueResult<CatalogueItemDraftDto> response = this.createSearchResult(
+            final CatalogueResult<CatalogueItemDraftDto> response = this.featureCollectionToCatalogueResult(
                 request.getPage(), request.getSize(),
                 catalogueResponse.getResult().getItems(), catalogueResponse.getResult().getTotal(),
                 (item) -> new CatalogueItemDraftDto(item),
@@ -338,6 +340,7 @@ public class DefaultCatalogueService implements CatalogueService {
             throw CatalogueServiceException.wrap(ex);
         }
     }
+
     @Override
     public CatalogueItemDetailsDto findOne(
         RequestContext ctx, String id, UUID publisherKey, boolean includeAutomatedMetadata
@@ -415,7 +418,7 @@ public class DefaultCatalogueService implements CatalogueService {
         if (!includeAutomatedMetadata) {
             item.setAutomatedMetadata(null);
             item.setVisibility(null);
-        } else if (item.getVisibility() != null) {
+        } else if (item.getVisibility() != null && !item.getAutomatedMetadata().isNull()) {
             final ArrayNode metadataArray = (ArrayNode) item.getAutomatedMetadata();
             for (int i = 0; i < metadataArray.size(); i++) {
                 final ObjectNode metadata = (ObjectNode) metadataArray.get(i);
@@ -640,7 +643,7 @@ public class DefaultCatalogueService implements CatalogueService {
             }
 
             // Process response
-            final CatalogueResult<CatalogueItemDto> response = this.createSearchResult(
+            final CatalogueResult<CatalogueItemDto> response = this.featureCollectionToCatalogueResult(
                 pageIndex, pageSize,
                 catalogueResponse.getResult().getItems(), catalogueResponse.getResult().getTotal(),
                 (item) -> new CatalogueItemDto(item),
@@ -682,7 +685,7 @@ public class DefaultCatalogueService implements CatalogueService {
                     this.elasticSearchService.removeAsset(pid);
                 }
             }
-            
+
             // Deactivate related statistics
             this.statisticsService.updateStatisticsUnpublishAsset(pid);
 
@@ -753,7 +756,7 @@ public class DefaultCatalogueService implements CatalogueService {
      * @param includeProviders
      * @return
      */
-    private <T extends CatalogueItemDto> CatalogueResult<T> createSearchResult(
+    private <T extends CatalogueItemDto> CatalogueResult<T> featureCollectionToCatalogueResult(
         int pageIndex, int pageSize,
         List<CatalogueFeature> features, long total,
         Function<CatalogueFeature, T> converter,
@@ -817,6 +820,9 @@ public class DefaultCatalogueService implements CatalogueService {
      * @param item
      */
     private void refreshPricingModels(CatalogueItemDto item) {
+        // Inject pricing models from external data providers
+        dataProviderManager.updatePricingModels(item);
+
         final List<BasePricingModelCommandDto> models = item.getPricingModels();
 
         if (models.isEmpty()) {
@@ -884,7 +890,7 @@ public class DefaultCatalogueService implements CatalogueService {
                 .findOneById(feature.getId())
                 .getBody()
                 .getResult();
-            
+
             // Update statistics
             this.statisticsService.updateStatisticsPublishAsset(feature.getId());
 
@@ -922,7 +928,7 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     private void logViews(RequestContext ctx, List<CatalogueItemDto> items, String query, EnumAssetViewSource source) {
-        if (ctx.isIgnoreLogging()) {
+        if (ctx == null || ctx.isIgnoreLogging()) {
             return;
         }
 

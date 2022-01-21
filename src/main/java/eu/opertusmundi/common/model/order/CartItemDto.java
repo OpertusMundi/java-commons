@@ -70,7 +70,7 @@ public class CartItemDto {
 
     @JsonIgnore
     public QuotationParametersDto getQuotationParameters() {
-        return pricingModel.getParameters();
+        return pricingModel.getUserParameters();
     }
 
 }

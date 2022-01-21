@@ -22,7 +22,6 @@ import eu.opertusmundi.common.domain.OrderStatusEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.model.EnumReferenceType;
 import eu.opertusmundi.common.model.order.ConsumerOrderDto;
-import eu.opertusmundi.common.model.order.EnumOrderItemType;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
 import eu.opertusmundi.common.model.order.HelpdeskOrderDto;
 import eu.opertusmundi.common.model.order.OrderCommand;
@@ -276,19 +275,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
         item.setTotalPrice(command.getQuotation().getQuotation().getTotalPrice());
         item.setTotalPriceExcludingTax(command.getQuotation().getQuotation().getTotalPriceExcludingTax());
         item.setTotalTax(command.getQuotation().getQuotation().getTax());
-        switch (command.getAsset().getType()) {
-            case RASTER :
-            case TABULAR :
-            case NETCDF :
-            case VECTOR :
-                item.setType(EnumOrderItemType.ASSET);
-                break;
-            case SERVICE :
-                item.setType(EnumOrderItemType.SERVICE);
-                break;
-            default :
-                throw new Exception(String.format("Asset type [%s] is not supported", command.getAsset().getType()));
-        }
+        item.setType(command.getAsset().getType().getOrderItemType());
 
         order.getItems().add(item);
 

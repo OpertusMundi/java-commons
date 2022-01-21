@@ -5,22 +5,40 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
+import eu.opertusmundi.common.model.pricing.FixedPopulationQuotationParametersDto;
+import eu.opertusmundi.common.model.pricing.FixedRowQuotationParametersDto;
+import eu.opertusmundi.common.model.pricing.QuotationDto;
 import eu.opertusmundi.common.model.pricing.QuotationException;
 import eu.opertusmundi.common.model.pricing.QuotationMessageCode;
-import eu.opertusmundi.common.model.pricing.QuotationParametersCommandDto;
 import eu.opertusmundi.common.model.pricing.QuotationParametersDto;
-import eu.opertusmundi.common.model.pricing.QuotationParametersDto.SystemParameters;
+import eu.opertusmundi.common.model.pricing.SystemQuotationParametersDto;
+import eu.opertusmundi.common.service.integration.DataProviderManager;
+import io.jsonwebtoken.lang.Assert;
 
 @Service
 public class DefaultQuotationService implements QuotationService {
 
+    private static final Logger logger = LoggerFactory.getLogger(DefaultQuotationService.class);
+
     // TODO: Set from configuration
     private final BigDecimal tax = new BigDecimal(24);
+
+    private final DataProviderManager dataProviderManager;
+
+    @Autowired
+    public DefaultQuotationService(DataProviderManager dataProviderManager) {
+        this.dataProviderManager = dataProviderManager;
+    }
 
     @Override
     public void validate(BasePricingModelCommandDto model) throws QuotationException {
@@ -34,32 +52,39 @@ public class DefaultQuotationService implements QuotationService {
 
     @Override
     public EffectivePricingModelDto createQuotation(
-        CatalogueItemDto asset, UUID pricingModelKey, QuotationParametersCommandDto command, boolean ignoreMissing
+        CatalogueItemDto asset, UUID pricingModelKey, QuotationParametersDto userParams, boolean ignoreMissing
     ) throws QuotationException {
         try {
-            final BasePricingModelCommandDto pricingModel = asset.getPricingModels().stream()
+            final BasePricingModelCommandDto model = asset.getPricingModels().stream()
                 .filter(m -> m.getKey().equals(pricingModelKey))
                 .findFirst()
                 .orElse(null);
 
-            if(pricingModel == null) {
+            if(model == null) {
                 throw new QuotationException(
                     QuotationMessageCode.PRICING_MODEL_NOT_FOUND,
                     String.format("Pricing model [%s] not found", pricingModelKey)
                 );
             }
-            final QuotationParametersDto params = QuotationParametersDto.from(command);
 
-            // Inject required parameters
-            this.injectParameters(pricingModel, params);
+            // Get system parameters
+            final SystemQuotationParametersDto systemParams = this.getSystemParameters(model, userParams);
 
             // Validate parameters
-            this.validate(pricingModel, params, ignoreMissing);
+            this.validate(model, userParams, ignoreMissing);
 
-            return pricingModel.compute(params);
+            // Check if an external data provider can create a quotation
+            final QuotationDto quotation = this.dataProviderManager.createQuotation(model, userParams, systemParams);
+            if (quotation != null) {
+                return EffectivePricingModelDto.from(model, userParams, systemParams, quotation);
+            }
+
+            return model.compute(userParams, systemParams);
         } catch(final QuotationException ex) {
             throw ex;
         } catch(final Exception ex) {
+            logger.error("Quotation failed", ex);
+
             throw new QuotationException("Quotation failed", ex);
         }
     }
@@ -68,15 +93,12 @@ public class DefaultQuotationService implements QuotationService {
     public List<EffectivePricingModelDto> createQuotation(CatalogueItemDto asset) throws QuotationException {
         return asset.getPricingModels().stream()
             .map(m -> {
-                final QuotationParametersDto params = new QuotationParametersDto();
-
-                // Inject required parameters
-                this.injectParameters(m, params);
+                final SystemQuotationParametersDto systemParams = this.getSystemParameters(m, null);
 
                 // Compute default quotations without parameters. No
                 // parameter validation is required. Some pricing model may
-                // return empty result
-                return m.compute(params);
+                // return an empty result
+                return m.compute(null, systemParams);
             })
             .collect(Collectors.toList());
     }
@@ -85,31 +107,57 @@ public class DefaultQuotationService implements QuotationService {
      * Injects dynamic parameters to a quotation command object e.g. row count
      * or population
      *
-     * @param command
+     * @param model
+     * @param params
+     * @return
      */
-    private void injectParameters(BasePricingModelCommandDto command, QuotationParametersDto params) {
-        params.setTaxPercent(tax);
-
-        switch (command.getType()) {
+    private SystemQuotationParametersDto getSystemParameters(
+        BasePricingModelCommandDto model, @Nullable QuotationParametersDto userParams
+    ) {
+        switch (model.getType()) {
             case FIXED_PER_ROWS :
-                // TODO: Compute rows based on NUTS codes
-                if (params.getNuts() != null && params.getNuts().size() > 0) {
-                    params.setSystemParams(SystemParameters.fromRows(10000L));
-                }
-                break;
+                return this.getRowCount(model, userParams);
 
             case FIXED_FOR_POPULATION :
-                // TODO: Compute population based on NUTS codes
-                if (params.getNuts() != null && params.getNuts().size() > 0) {
-                    params.setSystemParams(SystemParameters.fromPopulation(500000L, 20));
-                }
-
-                break;
+                return this.getPopulation(model, userParams);
 
             default :
                 // No operation
-                break;
+                return SystemQuotationParametersDto.of(tax);
         }
+    }
+
+    private SystemQuotationParametersDto getRowCount(BasePricingModelCommandDto model, @Nullable QuotationParametersDto params) {
+        // TODO: Compute rows based on NUTS codes
+
+        if (params == null) {
+            return null;
+        }
+
+        Assert.isInstanceOf(FixedRowQuotationParametersDto.class, params);
+
+        final FixedRowQuotationParametersDto typedParams = (FixedRowQuotationParametersDto) params;
+        if (typedParams.getNuts() != null && typedParams.getNuts().size() > 0) {
+            return SystemQuotationParametersDto.ofRows(tax, 10000L);
+        }
+
+        return null;
+    }
+
+    private SystemQuotationParametersDto getPopulation(BasePricingModelCommandDto model, @Nullable QuotationParametersDto params) {
+        // TODO: Compute population based on NUTS codes
+
+        if (params == null) {
+            return null;
+        }
+
+        Assert.isInstanceOf(FixedPopulationQuotationParametersDto.class, params);
+
+        final FixedPopulationQuotationParametersDto typedParams = (FixedPopulationQuotationParametersDto) params;
+        if (typedParams.getNuts() != null && typedParams.getNuts().size() > 0) {
+            return SystemQuotationParametersDto.ofPopulation(tax, 500000L, 20);
+        }
+        return null;
     }
 
 }

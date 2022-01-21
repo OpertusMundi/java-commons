@@ -44,12 +44,14 @@ import eu.opertusmundi.common.model.payment.PaymentMessageCode;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskOrderPayInItemDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
 import eu.opertusmundi.common.model.pricing.CallPrePaidPricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.CallPrePaidQuotationParametersDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.pricing.EnumPricingModel;
 import eu.opertusmundi.common.model.pricing.FixedPricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.PrePaidTierDto;
 import eu.opertusmundi.common.model.pricing.QuotationParametersDto;
 import eu.opertusmundi.common.model.pricing.RowPrePaidPricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.RowPrePaidQuotationParametersDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.repository.AccountAssetRepository;
 import eu.opertusmundi.common.repository.AccountSubscriptionRepository;
@@ -383,15 +385,16 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         final OrderItemEntity         orderItem = order.getItems().get(0);
         final CatalogueItemDetailsDto asset      = this.catalogueService.findOne(null, orderItem.getAssetId(), null, false);
 
-        switch(asset.getType()) {
-            case RASTER :
-            case TABULAR :
-            case NETCDF :
-            case VECTOR :
+        if (!asset.getType().isRegisteredOnPurchase()) {
+            // No registration required
+            return;
+        }
+        switch (asset.getType().getOrderItemType()) {
+            case ASSET :
                 this.registerAsset(payIn, payInItem, asset);
                 break;
 
-            case SERVICE :
+            case SUBSCRIPTION :
                 this.registerSubscription(payIn, payInItem, asset);
                 break;
 
@@ -412,7 +415,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
         // Check if the order item is already registered
         final AccountAssetEntity ownedAsset = accountAssetRepository.findAllByUserKeyAndAssetId(userKey, orderItem.getAssetId()).stream()
-            .filter(a -> a.getOrder().getId().equals(order.getId()))
+            .filter(a -> !a.getOrder().getId().equals(order.getId()))
             .findFirst().orElse(null);
         // TODO: Update existing asset i.e. update update years of free updates
         if (ownedAsset != null) {
@@ -455,7 +458,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
         // Check if a subscription is already active
         final AccountSubscriptionEntity activeSubscription = accountSubscriptionRepository.findAllByConsumerAndServiceId(userKey, orderItem.getAssetId()).stream()
-            .filter(s -> s.getOrder().getId().equals(order.getId()))
+            .filter(s -> !s.getOrder().getId().equals(order.getId()))
             .findFirst().orElse(null);
         final boolean renewal = activeSubscription != null;
 
@@ -481,13 +484,14 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         sub.setUpdatedOn(now);
 
         // Register call/rows SKUs
-        final QuotationParametersDto params = pricingModel.getParameters();
+        final QuotationParametersDto params = pricingModel.getUserParameters();
         AccountSubscriptionSkuEntity sku    = null;
 
         switch (pricingModel.getModel().getType()) {
             case PER_CALL_WITH_PREPAID :
                 final CallPrePaidPricingModelCommandDto prePaidCallModel = (CallPrePaidPricingModelCommandDto) pricingModel.getModel();
-                final PrePaidTierDto callTier = prePaidCallModel.getPrePaidTiers().get(params.getPrePaidTier());
+                final CallPrePaidQuotationParametersDto typedParams1 = (CallPrePaidQuotationParametersDto) params;
+                final PrePaidTierDto callTier = prePaidCallModel.getPrePaidTiers().get(typedParams1.getPrePaidTier());
 
                 sku = new AccountSubscriptionSkuEntity();
                 sku.setPurchasedCalls(callTier.getCount());
@@ -497,7 +501,8 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
             case PER_ROW_WITH_PREPAID :
                 final RowPrePaidPricingModelCommandDto prePaidRowModel = (RowPrePaidPricingModelCommandDto) pricingModel.getModel();
-                final PrePaidTierDto rowTier = prePaidRowModel.getPrePaidTiers().get(params.getPrePaidTier());
+                final RowPrePaidQuotationParametersDto typedParams2 = (RowPrePaidQuotationParametersDto) params;
+                final PrePaidTierDto rowTier = prePaidRowModel.getPrePaidTiers().get(typedParams2.getPrePaidTier());
 
                 sku = new AccountSubscriptionSkuEntity();
                 sku.setPurchasedCalls(0);

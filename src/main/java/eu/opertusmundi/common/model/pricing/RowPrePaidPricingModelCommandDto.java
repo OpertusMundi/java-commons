@@ -10,6 +10,7 @@ import javax.validation.constraints.Digits;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+import io.jsonwebtoken.lang.Assert;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -48,6 +49,16 @@ public class RowPrePaidPricingModelCommandDto extends BasePricingModelCommandDto
     private List<PrePaidTierDto> prePaidTiers;
 
     @Override
+    protected void checkUserParametersType(QuotationParametersDto params) throws QuotationException {
+        // Pricing model and quotation parameters (if not null) must have the same type
+        if (params != null && !(params instanceof RowPrePaidQuotationParametersDto)) {
+            throw new QuotationException(QuotationMessageCode.INVALID_PARAMETER_TYPE, String.format(
+                "Invalid parameter type [expected=%s, found=%s]", this.getType(), params.getType()
+            ));
+        }
+    }
+
+    @Override
     public void validate() throws QuotationException {
         if (this.prePaidTiers != null) {
             for (int i = 1; i < this.prePaidTiers.size(); i++) {
@@ -71,7 +82,10 @@ public class RowPrePaidPricingModelCommandDto extends BasePricingModelCommandDto
 
     @Override
     public void validate(QuotationParametersDto params, boolean ignoreMissing) throws QuotationException {
-        final Integer tier = params.getPrePaidTier();
+        this.checkUserParametersType(params);
+
+        final RowPrePaidQuotationParametersDto typedParams = (RowPrePaidQuotationParametersDto) params;
+        final Integer                          tier        = typedParams.getPrePaidTier();
 
         if (tier == null && ignoreMissing) {
             return;
@@ -87,14 +101,22 @@ public class RowPrePaidPricingModelCommandDto extends BasePricingModelCommandDto
     }
 
     @Override
-    public  EffectivePricingModelDto compute(QuotationParametersDto params) {
-        final EffectivePricingModelDto result = EffectivePricingModelDto.from(this, params);
+    public EffectivePricingModelDto compute(QuotationParametersDto userParams, SystemQuotationParametersDto systemParams) {
+        this.checkUserParametersType(userParams);
 
-        if (params.getPrePaidTier() != null) {
-            final PrePaidTierDto tier = this.prePaidTiers.get(params.getPrePaidTier());
+        if (userParams == null) {
+            return EffectivePricingModelDto.from(this, userParams, systemParams);
+        }
+
+        Assert.isInstanceOf(RowPrePaidQuotationParametersDto.class, userParams);
+
+        final RowPrePaidQuotationParametersDto typedParams = (RowPrePaidQuotationParametersDto) userParams;
+
+        if (typedParams.getPrePaidTier() != null) {
+            final PrePaidTierDto tier = this.prePaidTiers.get(typedParams.getPrePaidTier());
             final QuotationDto quotation = new QuotationDto();
 
-            quotation.setTaxPercent(params.getTaxPercent().intValue());
+            quotation.setTaxPercent(systemParams.getTaxPercent().intValue());
             quotation.setTotalPriceExcludingTax(this.getPrice()
                 .multiply(BigDecimal.valueOf(tier.getCount()))
                 .multiply(BigDecimal.valueOf(100).subtract(tier.getDiscount()))
@@ -103,15 +125,15 @@ public class RowPrePaidPricingModelCommandDto extends BasePricingModelCommandDto
             );
 
             quotation.setTax(quotation.getTotalPriceExcludingTax()
-                .multiply(params.getTaxPercent())
+                .multiply(systemParams.getTaxPercent())
                 .divide(new BigDecimal(100))
                 .setScale(2, RoundingMode.HALF_UP)
             );
 
-            result.setQuotation(quotation);
+            return EffectivePricingModelDto.from(this, userParams, systemParams, quotation);
         }
 
-        return result;
+        return EffectivePricingModelDto.from(this, userParams, systemParams);
     }
 
 }

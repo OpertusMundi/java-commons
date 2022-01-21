@@ -7,7 +7,6 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.pricing.QuotationException;
-import eu.opertusmundi.common.model.pricing.QuotationParametersCommandDto;
 import eu.opertusmundi.common.model.pricing.QuotationParametersDto;
 
 public interface QuotationService {
@@ -38,13 +37,13 @@ public interface QuotationService {
      * specified asset
      * @param asset
      * @param pricingModelKey
-     * @param params
+     * @param userParams
      * @param ignoreMissing If true, any missing parameters are ignored; Otherwise an exception is thrown
      * @return
      * @throws QuotationException
      */
     EffectivePricingModelDto createQuotation(
-        CatalogueItemDto asset, UUID pricingModelKey, QuotationParametersCommandDto params, boolean ignoreMissing
+        CatalogueItemDto asset, UUID pricingModelKey, QuotationParametersDto userParams, boolean ignoreMissing
     ) throws QuotationException;
 
     /**

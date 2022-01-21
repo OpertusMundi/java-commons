@@ -783,7 +783,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
             // Create quotation
             final EffectivePricingModelDto quotation = quotationService.createQuotation(
-                asset, cartItemPricingModel.getModel().getKey(), cartItemPricingModel.getParameters(), false
+                asset, cartItemPricingModel.getModel().getKey(), cartItemPricingModel.getUserParameters(), false
             );
 
             // Create command

@@ -11,27 +11,33 @@ public class FreePricingModelCommandDto extends BasePricingModelCommandDto {
     }
 
     @Override
+    protected void checkUserParametersType(QuotationParametersDto params) throws QuotationException {
+        // Pricing model does not support user parameters. No action is required
+    }
+
+    @Override
     public void validate() throws QuotationException {
         // No validation is required
     }
 
     @Override
     public void validate(QuotationParametersDto params, boolean ignoreMissing) throws QuotationException {
+        this.checkUserParametersType(params);
+
         // No validation is required
     }
 
     @Override
-    public EffectivePricingModelDto compute(QuotationParametersDto params) {
-        final EffectivePricingModelDto result    = EffectivePricingModelDto.from(this, params);
+    public EffectivePricingModelDto compute(QuotationParametersDto userParams, SystemQuotationParametersDto systemParams) {
+        this.checkUserParametersType(userParams);
+
         final QuotationDto             quotation = new QuotationDto();
 
-        quotation.setTaxPercent(params.getTaxPercent().intValue());
+        quotation.setTaxPercent(systemParams.getTaxPercent().intValue());
         quotation.setTotalPriceExcludingTax(new BigDecimal(0));
         quotation.setTax(new BigDecimal(0));
 
-        result.setQuotation(quotation);
-
-        return result;
+        return EffectivePricingModelDto.from(this, userParams, systemParams, quotation);
     }
 
 }

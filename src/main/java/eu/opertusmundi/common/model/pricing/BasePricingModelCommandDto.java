@@ -3,14 +3,19 @@ package eu.opertusmundi.common.model.pricing;
 import java.io.Serializable;
 import java.util.UUID;
 
+import javax.annotation.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import eu.opertusmundi.common.model.pricing.integration.SHImagePricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.integration.SHSubscriptionPricingModelCommandDto;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -26,7 +31,11 @@ import lombok.Setter;
     @Type(name = "PER_CALL_WITH_BLOCK_RATE", value = CallBlockRatePricingModelCommandDto.class),
     @Type(name = "PER_ROW_WITH_PREPAID", value = RowPrePaidPricingModelCommandDto.class),
     @Type(name = "PER_ROW_WITH_BLOCK_RATE", value = RowBlockRatePricingModelCommandDto.class),
+    // External Data Provider pricing models
+    @Type(name = "SENTINEL_HUB_SUBSCRIPTION", value = SHSubscriptionPricingModelCommandDto.class),
+    @Type(name = "SENTINEL_HUB_IMAGES", value = SHImagePricingModelCommandDto.class),
 })
+@AllArgsConstructor
 public abstract class BasePricingModelCommandDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -46,7 +55,7 @@ public abstract class BasePricingModelCommandDto implements Serializable {
     )
     @Getter
     @Setter
-    protected UUID key;
+    private UUID key;
 
     @Schema(
         description = "Discriminator field used for deserializing the model to the appropriate data type",
@@ -55,7 +64,7 @@ public abstract class BasePricingModelCommandDto implements Serializable {
     @JsonDeserialize(using = EnumPricingModel.Deserializer.class)
     @Getter
     @Setter
-    protected EnumPricingModel type;
+    private EnumPricingModel type;
 
     @ArraySchema(
         arraySchema = @Schema(
@@ -66,7 +75,7 @@ public abstract class BasePricingModelCommandDto implements Serializable {
     )
     @Getter
     @Setter
-    protected String[] domainRestrictions;
+    private String[] domainRestrictions;
 
     @ArraySchema(
         arraySchema = @Schema(
@@ -77,7 +86,7 @@ public abstract class BasePricingModelCommandDto implements Serializable {
     )
     @Getter
     @Setter
-    protected EnumContinent[] coverageRestrictionContinents;
+    private EnumContinent[] coverageRestrictionContinents;
 
     @ArraySchema(
         arraySchema = @Schema(
@@ -88,7 +97,7 @@ public abstract class BasePricingModelCommandDto implements Serializable {
     )
     @Getter
     @Setter
-    protected EnumContinent[] consumerRestrictionContinents;
+    private EnumContinent[] consumerRestrictionContinents;
 
     @ArraySchema(
         arraySchema = @Schema(
@@ -103,7 +112,7 @@ public abstract class BasePricingModelCommandDto implements Serializable {
     )
     @Getter
     @Setter
-    protected String[] coverageRestrictionCountries;
+    private String[] coverageRestrictionCountries;
 
     @ArraySchema(
         arraySchema = @Schema(
@@ -118,7 +127,15 @@ public abstract class BasePricingModelCommandDto implements Serializable {
     )
     @Getter
     @Setter
-    protected String[] consumerRestrictionCountries;
+    private String[] consumerRestrictionCountries;
+
+    /**
+     * Check if user parameters type is compatible with the pricing model
+     *
+     * @param params
+     * @throws QuotationException
+     */
+    protected abstract void checkUserParametersType(QuotationParametersDto params) throws QuotationException;
 
     /**
      * Validate model
@@ -134,16 +151,19 @@ public abstract class BasePricingModelCommandDto implements Serializable {
      * @param ignoreMissing Do not validate missing parameters
      * @throws QuotationException
      */
-    public abstract void validate(QuotationParametersDto params, boolean ignoreMissing) throws QuotationException;
+    public abstract void validate(@Nullable QuotationParametersDto params, boolean ignoreMissing) throws QuotationException;
 
     /**
      * Computes the effective pricing model given a valid quotation parameters
      * object
      *
-     *
-     * @param params
+     * @param userParams Pricing model specific quotation parameters set by the user
+     * @param systemParams Pricing model specific quotation parameters set by the system
      * @return
+     * @throws QuotationException
      */
-    public abstract EffectivePricingModelDto compute(QuotationParametersDto params);
+    public abstract EffectivePricingModelDto compute(
+        @Nullable QuotationParametersDto userParams, SystemQuotationParametersDto systemParams
+    ) throws QuotationException;
 
 }

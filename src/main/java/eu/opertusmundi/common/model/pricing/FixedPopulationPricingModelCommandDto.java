@@ -61,6 +61,16 @@ public class FixedPopulationPricingModelCommandDto extends BasePricingModelComma
     private List<DiscountRateDto> discountRates;
 
     @Override
+    protected void checkUserParametersType(QuotationParametersDto params) throws QuotationException {
+        // Pricing model and quotation parameters (if not null) must have the same type
+        if (params != null && !(params instanceof FixedPopulationQuotationParametersDto)) {
+            throw new QuotationException(QuotationMessageCode.INVALID_PARAMETER_TYPE, String.format(
+                "Invalid parameter type [expected=%s, found=%s]", this.getType(), params.getType()
+            ));
+        }
+    }
+
+    @Override
     public void validate() throws QuotationException {
         if (this.discountRates != null) {
             for (int i = 1; i < this.discountRates.size(); i++) {
@@ -84,45 +94,49 @@ public class FixedPopulationPricingModelCommandDto extends BasePricingModelComma
 
     @Override
     public void validate(QuotationParametersDto params, boolean ignoreMissing) throws QuotationException {
-        if (!ignoreMissing && CollectionUtils.isEmpty(params.getNuts())) {
+        this.checkUserParametersType(params);
+
+        final FixedPopulationQuotationParametersDto typedParams = (FixedPopulationQuotationParametersDto) params;
+
+        if (!ignoreMissing && CollectionUtils.isEmpty(typedParams.getNuts())) {
             throw new QuotationException(QuotationMessageCode.NO_NUTS_SELECTED, "At least a region must be selected");
         }
     }
 
     @Override
-    public  EffectivePricingModelDto compute(QuotationParametersDto params) {
-        final EffectivePricingModelDto result = EffectivePricingModelDto.from(this, params);
+    public EffectivePricingModelDto compute(QuotationParametersDto userParams, SystemQuotationParametersDto systemParams) {
+        this.checkUserParametersType(userParams);
 
-        if (params.getSystemParams() != null && params.getSystemParams().getPopulation() != null) {
+        if (systemParams != null && systemParams.getPopulation() != null) {
             final QuotationDto quotation = new QuotationDto();
             BigDecimal         discount  = BigDecimal.ZERO;
 
-            quotation.setTaxPercent(params.getTaxPercent().intValue());
+            quotation.setTaxPercent(systemParams.getTaxPercent().intValue());
 
             if (this.discountRates != null) {
                 for (final DiscountRateDto r : this.discountRates) {
-                    if (params.getSystemParams().getPopulation() > r.getCount()) {
+                    if (systemParams.getPopulation() > r.getCount()) {
                         discount = r.getDiscount();
                     }
                 }
             }
             quotation.setTotalPriceExcludingTax(this.getPrice()
-                .multiply(BigDecimal.valueOf(params.getSystemParams().getPopulation()))
+                .multiply(BigDecimal.valueOf(systemParams.getPopulation()))
                 .multiply(BigDecimal.valueOf(100).subtract(discount))
                 .divide(new BigDecimal(100))
                 .setScale(2, RoundingMode.HALF_UP)
             );
 
             quotation.setTax(quotation.getTotalPriceExcludingTax()
-                .multiply(params.getTaxPercent())
+                .multiply(systemParams.getTaxPercent())
                 .divide(new BigDecimal(100))
                 .setScale(2, RoundingMode.HALF_UP)
             );
 
-            result.setQuotation(quotation);
+            return EffectivePricingModelDto.from(this, userParams, systemParams, quotation);
         }
 
-        return result;
+        return EffectivePricingModelDto.from(this, userParams, systemParams);
     }
 
 }
