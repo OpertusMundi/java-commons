@@ -19,6 +19,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemStatistics;
 import eu.opertusmundi.common.model.catalogue.client.EnumConformity;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
+import eu.opertusmundi.common.model.catalogue.integration.Extensions;
 import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.util.StreamUtils;
@@ -33,7 +34,7 @@ public class CatalogueFeatureProperties {
 
     public CatalogueFeatureProperties(CatalogueItemCommandDto command) {
         this.abstractText                 = command.getAbstractText();
-        this.automatedMetadata            = command.getAutomatedMetadata().deepCopy();
+        this.automatedMetadata            = command.getAutomatedMetadata() == null ? null : command.getAutomatedMetadata().deepCopy();
         this.conformity                   = command.getConformity() != null
             ? command.getConformity().getValue()
             : EnumConformity.NOT_EVALUATED.getValue();
@@ -43,6 +44,7 @@ public class CatalogueFeatureProperties {
         this.deliveryMethod               = command.getDeliveryMethod() != null
             ? command.getDeliveryMethod().getValue().toString()
             : null;
+        this.extensions                   = command.getExtensions();
         this.format                       = command.getFormat();
         this.ingestionInfo                = command.getIngestionInfo();
         this.language                     = command.getLanguage();
@@ -119,6 +121,7 @@ public class CatalogueFeatureProperties {
     private List<CatalogueAdditionalResource> additionalResources;
 
     @JsonProperty("automated_metadata")
+    @JsonInclude(Include.NON_NULL)
     private JsonNode automatedMetadata;
 
     @JsonInclude(Include.NON_EMPTY)
@@ -148,6 +151,10 @@ public class CatalogueFeatureProperties {
     @JsonInclude(Include.NON_NULL)
     private String deliveryMethod;
 
+    @JsonInclude(Include.NON_NULL)
+    private Extensions extensions;
+
+    @JsonInclude(Include.NON_EMPTY)
     private String format;
 
     @JsonProperty("ingestion_info")

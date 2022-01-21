@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 import eu.opertusmundi.common.model.EnumRole;
+import eu.opertusmundi.common.model.order.EnumOrderItemType;
 import eu.opertusmundi.common.model.pricing.EnumPricingModel;
 import lombok.Getter;
 
@@ -14,45 +15,59 @@ public enum EnumAssetType {
     /**
      * A collection of existing assets
      */
-    BUNDLE                          (false, "bundle",   "A collection of existing assets"),
+    BUNDLE                          (false, "bundle",   EnumOrderItemType.ASSET,        "A collection of existing assets"),
     /**
      * A set of data formats for array-oriented scientific data
      */
-    NETCDF                          (true,  "netcdf",   "A set of data formats for array-oriented scientific data"),
+    NETCDF                          (true,  "netcdf",   EnumOrderItemType.ASSET,        "A set of data formats for array-oriented scientific data"),
     /**
      * Raster dataset
      */
-    RASTER                          (true,  "raster",   "Raster dataset"),
+    RASTER                          (true,  "raster",   EnumOrderItemType.ASSET,        "Raster dataset"),
     /**
      * OGC/Topio service
      */
-    SERVICE                         (false, "service",  "OGC/Topio service"),
+    SERVICE                         (false, "service",  EnumOrderItemType.SUBSCRIPTION, "OGC/Topio service"),
     /**
      * Tabular dataset
      */
-    TABULAR                         (true,  "tabular",  "Tabular data"),
+    TABULAR                         (true,  "tabular",  EnumOrderItemType.ASSET,        "Tabular data"),
     /**
      * Vector dataset
      */
-    VECTOR                          (true,  "vector",   "Vector dataset"),
+    VECTOR                          (true,  "vector",   EnumOrderItemType.ASSET,        "Vector dataset"),
 
     // Extended asset types for Sentinel Hub integration
 
     /**
      * Sentinel Hub open data collections
      */
-    SENTINEL_HUB_OPEN_DATA          (false, true, "sentinel-hub-open-data",       "Sentinel Hub open data collections",   false,
+    SENTINEL_HUB_OPEN_DATA(
+        false,
+        true,
+        "sentinel-hub-open-data",
+        EnumOrderItemType.SUBSCRIPTION,
+        "Sentinel Hub open data collections",
+        false,
         EnumRole.ROLE_SENTINEL_HUB,
-        Arrays.asList(EnumPricingModel.SUBSCRIPTION),
-        Arrays.asList(EnumDeliveryMethod.DIGITAL_PROVIDER)
+        Arrays.asList(EnumPricingModel.SENTINEL_HUB_SUBSCRIPTION),
+        Arrays.asList(EnumDeliveryMethod.DIGITAL_PROVIDER),
+        true
     ),
     /**
      * Sentinel Hub commercial data
      */
-    SENTINEL_HUB_COMMERCIAL_DATA    (false, true, "sentinel-hub-commercial-data", "Sentinel Hub commercial data",         false,
+    SENTINEL_HUB_COMMERCIAL_DATA(
+        false,
+        true,
+        "sentinel-hub-commercial-data",
+        EnumOrderItemType.ASSET,
+        "Sentinel Hub commercial data",
+        false,
         EnumRole.ROLE_SENTINEL_HUB,
-        Arrays.asList(EnumPricingModel.CUSTOM),
-        Arrays.asList(EnumDeliveryMethod.DIGITAL_PROVIDER)
+        Arrays.asList(EnumPricingModel.SENTINEL_HUB_IMAGES),
+        Arrays.asList(EnumDeliveryMethod.DIGITAL_PROVIDER),
+        false
     ),
     ;
 
@@ -88,6 +103,18 @@ public enum EnumAssetType {
     private final EnumRole requiredRole;
 
     /**
+     * The order item type of the asset type
+     */
+    @Getter
+    private final EnumOrderItemType orderItemType;
+
+    /**
+     * `True` if an asset/subscription should be registered to the user account on purchase
+     */
+    @Getter
+    private final boolean registeredOnPurchase;
+
+    /**
      * List of allowed pricing models
      */
     @Getter
@@ -105,19 +132,21 @@ public enum EnumAssetType {
     @Getter
     private final boolean dynamicPricingModels;
 
-    private EnumAssetType(boolean primary, String value, String description) {
-        this(primary, false, value, description, true, null, Collections.emptyList(), Collections.emptyList());
+    private EnumAssetType(boolean primary, String value, EnumOrderItemType orderItemType, String description) {
+        this(primary, false, value, orderItemType, description, true, null, Collections.emptyList(), Collections.emptyList(), true);
     }
 
     private EnumAssetType(
-        boolean primary, boolean dynamicPricingModels, String value, String description, boolean resourceRequired,
-        EnumRole requiredRole, List<EnumPricingModel> allowedPricingModels, List<EnumDeliveryMethod> allowedDeliveryMethods
+        boolean primary, boolean dynamicPricingModels, String value, EnumOrderItemType orderItemType, String description, boolean resourceRequired,
+        EnumRole requiredRole, List<EnumPricingModel> allowedPricingModels, List<EnumDeliveryMethod> allowedDeliveryMethods, boolean registeredOnPurchase
     ) {
         this.allowedPricingModels   = allowedPricingModels;
         this.allowedDeliveryMethods = allowedDeliveryMethods;
         this.description            = description;
         this.dynamicPricingModels   = dynamicPricingModels;
+        this.orderItemType          = orderItemType;
         this.primary                = primary;
+        this.registeredOnPurchase   = registeredOnPurchase;
         this.requiredRole           = requiredRole;
         this.resourceRequired       = resourceRequired;
         this.value                  = value;

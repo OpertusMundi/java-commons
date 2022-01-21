@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 
+import eu.opertusmundi.common.model.catalogue.integration.Extensions;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
@@ -36,6 +37,7 @@ public class CatalogueItemDto extends BaseCatalogueItemDto implements Serializab
 
         this.id = feature.getId();
 
+        this.extensions    = props.getExtensions();
         this.pricingModels = Optional.ofNullable(props.getPricingModels()).orElse(Collections.emptyList());
         this.publisherId   = props.getPublisherId();
         this.statistics    = props.getStatistics();
@@ -52,6 +54,12 @@ public class CatalogueItemDto extends BaseCatalogueItemDto implements Serializab
             this.setGeometry(null);
         }
     }
+
+    @Schema(description = "Collection of custom properties required for external data provider integration")
+    @Getter
+    @Setter
+    @JsonInclude(Include.NON_NULL)
+    private Extensions extensions;
 
     @Schema(description = "Catalogue item identifier (PID)")
     @Getter

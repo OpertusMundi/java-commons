@@ -7,10 +7,13 @@ import java.util.UUID;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
 import org.locationtech.jts.geom.Geometry;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
 import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceDto;
@@ -20,7 +23,9 @@ import eu.opertusmundi.common.model.asset.EnumResourceType;
 import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
+import eu.opertusmundi.common.model.catalogue.integration.Extensions;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
+import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
 import eu.opertusmundi.common.model.openapi.schema.AssetEndpointTypes;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.CallBlockRatePricingModelCommandDto;
@@ -54,14 +59,17 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
     public CatalogueItemCommandDto(CatalogueFeature feature) {
         super(feature);
 
+        final CatalogueFeatureProperties props = feature.getProperties();
+
         this.additionalResources = new ArrayList<>();
+        this.extensions          = props.getExtensions();
         this.pricingModels       = new ArrayList<>();
         this.resources           = new ArrayList<>();
         this.sampleAreas         = new ArrayList<>();
-        this.title               = feature.getProperties().getTitle();
-        this.type                = EnumAssetType.fromString(feature.getProperties().getType());
-        this.version             = feature.getProperties().getVersion();
-        this.visibility          = feature.getProperties().getVisibility();
+        this.title               = props.getTitle();
+        this.type                = EnumAssetType.fromString(props.getType());
+        this.version             = props.getVersion();
+        this.visibility          = props.getVisibility();
     }
 
     /**
@@ -106,6 +114,11 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
     @Schema(description = "Contract template key")
     private UUID contractTemplateKey;
 
+    @Schema(description = "Collection of custom properties required for external data provider integration")
+    @JsonInclude(Include.NON_NULL)
+    @Valid
+    private Extensions extensions;
+
     @Schema(
         description = "True if the resource files should be imported into PostGIS database and published using WMS/WFS "
                     + "endpoints. Ingest operation is only supported for formats of category `VECTOR`",
@@ -143,6 +156,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
     private String title;
 
     @Schema(description = "The nature or genre of the resource", required = true)
+    @NotNull
     private EnumAssetType type;
 
     @Schema(description = "Version of the resource", required = true)
