@@ -1244,7 +1244,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         // Release lock if it was created only for the specific operation
         if (lock != null && lock.getLeft() == EnumLockResult.CREATED) {
-            this.releaseLock(command.getDraftKey(), command.getDraftKey());
+            this.releaseLock(command.getOwnerKey(), command.getDraftKey());
         } else if (lock != null) {
             result.setLock(lock.getRight());
         }
