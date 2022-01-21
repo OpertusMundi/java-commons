@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
@@ -48,5 +49,6 @@ public class ProviderTemplateContractCommandDto implements Serializable {
         ),
         minItems = 0
     )
+    @Valid
     private List<ProviderTemplateSectionDto> sections;
 }
