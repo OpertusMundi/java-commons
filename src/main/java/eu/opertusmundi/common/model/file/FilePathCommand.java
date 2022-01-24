@@ -23,6 +23,6 @@ public class FilePathCommand {
     private String path;
 
     @JsonIgnore
-    private Integer userId;
+    private String userName;
 
 }

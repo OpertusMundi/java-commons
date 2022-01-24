@@ -18,7 +18,7 @@ public class UserFileResourceCommandDto extends ResourceCommandDto implements Se
     private static final long serialVersionUID = 1L;
 
     @JsonIgnore
-    private Integer userId;
+    private String userName;
 
     @JsonIgnore
     private Long size;

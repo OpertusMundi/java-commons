@@ -406,7 +406,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             // Resolve resource file
             final FilePathCommand fileCommand = FilePathCommand.builder()
                 .path(command.getPath())
-                .userId(command.getUserId())
+                .userName(command.getUserName())
                 .build();
 
             final Path resourcePath = this.userFileManager.resolveFilePath(fileCommand);
@@ -1124,7 +1124,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         // Resolve resource file
         final FilePathCommand fileCommand = FilePathCommand.builder()
             .path(command.getPath())
-            .userId(command.getUserId())
+            .userName(command.getUserName())
             .build();
 
         final Path path = this.userFileManager.resolveFilePath(fileCommand);

@@ -33,10 +33,10 @@ public abstract class DraftApiCommandDto implements Serializable {
     }
 
     /**
-     * The authenticated user id
+     * The authenticated user name (email)
      */
     @JsonIgnore
-    private Integer userId;
+    private String userName;
 
     /**
      * The publisher key

@@ -20,7 +20,9 @@ import eu.opertusmundi.common.model.file.UserFileNamingStrategyContext;
 @Service
 public class DefaultUserFileNamingStrategy extends AbstractFileNamingStrategy<UserFileNamingStrategyContext> {
 
-    private final Pattern pattern = Pattern.compile("^(\\/?[a-zA-Z_\\-0-9]+)+(\\.[a-zA-Z0-9]+|\\/?)?$");
+    private final Pattern strictPattern = Pattern.compile("^(\\/{0,1}[a-zA-Z_\\-0-9]+)+(\\.[a-zA-Z0-9]+|\\/?)?$");
+
+    private final Pattern lenientPattern = Pattern.compile("^(\\/{0,1}\\.?[a-zA-Z_\\-0-9]+)+(\\.[a-zA-Z0-9]+|\\/?)?$");
 
     @Value("${opertus-mundi.file-system.max-depth:8}")
     private int maxDepth;
@@ -35,7 +37,7 @@ public class DefaultUserFileNamingStrategy extends AbstractFileNamingStrategy<Us
     public Path getDir(UserFileNamingStrategyContext ctx) throws IOException {
         Assert.notNull(ctx, "Expected a non-null context");
 
-        final Path baseDir = this.userDirectory.resolve(Integer.toString(ctx.getId()));
+        final Path baseDir = this.userDirectory.resolve(ctx.getUserName());
 
         if (ctx.isCreateIfNotExists() && !Files.exists(baseDir)) {
             try {
@@ -50,7 +52,7 @@ public class DefaultUserFileNamingStrategy extends AbstractFileNamingStrategy<Us
     }
 
     @Override
-    protected void validatePath(String path) throws FileSystemException {
+    protected void validatePath(UserFileNamingStrategyContext ctx, String path) throws FileSystemException {
         final String[] parts = StringUtils.split(path, "/");
 
         if (parts.length > this.maxDepth) {
@@ -67,7 +69,7 @@ public class DefaultUserFileNamingStrategy extends AbstractFileNamingStrategy<Us
                 );
             }
         }
-        final Matcher matcher = this.pattern.matcher(path);
+        final Matcher matcher = (ctx.isStrict() ? this.strictPattern : this.lenientPattern).matcher(path);
         if (!matcher.matches()) {
             throw new FileSystemException(
                 FileSystemMessageCode.INVALID_PATH,

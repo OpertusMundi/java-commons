@@ -50,18 +50,18 @@ public class DefaultUserFileManager implements UserFileManager {
     @Override
     public DirectoryDto browse(FilePathCommand command) throws FileSystemException {
         Assert.notNull(command, "Expected a non-null command");
-        Assert.notNull(command.getUserId(), "Expected a non-null user id");
+        Assert.hasText(command.getUserName(), "Expected a non-null user name");
         Assert.isTrue(!StringUtils.isBlank(command.getPath()), "Expected a non-empty path");
 
         try {
-            final UserFileNamingStrategyContext ctx     = UserFileNamingStrategyContext.of(command.getUserId(), true);
+            final UserFileNamingStrategyContext ctx    = UserFileNamingStrategyContext.of(command.getUserName(), true);
             final Path                          target = command.getPath().equals("/")
                 ? this.fileNamingStrategy.getDir(ctx)
                 : this.fileNamingStrategy.resolvePath(ctx, command.getPath());
 
             return this.directoryTraverse.getDirectoryInfo(target);
         } catch (final Exception ex) {
-            logger.error(String.format("Failed to load files. [userId=%d, path=%s]", command.getUserId(), command.getPath()), ex);
+            logger.error(String.format("Failed to load files. [userName=%s, path=%s]", command.getUserName(), command.getPath()), ex);
 
             throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
@@ -70,14 +70,14 @@ public class DefaultUserFileManager implements UserFileManager {
     @Override
     public void createPath(FilePathCommand command) throws FileSystemException {
         Assert.notNull(command, "Expected a non-null command");
-        Assert.notNull(command.getUserId(), "Expected a non-null user id");
+        Assert.hasText(command.getUserName(), "Expected a non-null user name");
 
         try {
             if (StringUtils.isEmpty(command.getPath())) {
                 throw new FileSystemException(FileSystemMessageCode.PATH_IS_EMPTY, "A path is required");
             }
 
-            final UserFileNamingStrategyContext ctx = UserFileNamingStrategyContext.of(command.getUserId());
+            final UserFileNamingStrategyContext ctx = UserFileNamingStrategyContext.of(command.getUserName());
             final Path                          dir = this.fileNamingStrategy.resolvePath(ctx, command.getPath());
 
             if (Files.exists(dir)) {
@@ -92,7 +92,7 @@ public class DefaultUserFileManager implements UserFileManager {
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
-            logger.error(String.format("Failed to create path. [userId=%d, path=%s]", command.getUserId(), command.getPath()), ex);
+            logger.error(String.format("Failed to create path. [userName=%s, path=%s]", command.getUserName(), command.getPath()), ex);
 
             throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
@@ -101,11 +101,11 @@ public class DefaultUserFileManager implements UserFileManager {
     @Override
     public void uploadFile(InputStream input, FileUploadCommand command) throws FileSystemException {
         Assert.notNull(command, "Expected a non-null command");
-        Assert.notNull(command.getUserId(), "Expected a non-null user id");
+        Assert.hasText(command.getUserName(), "Expected a non-null user name");
         Assert.isTrue(command.getSize() > 0, "Expected file size to be greater than 0");
 
         try  {
-            final UserFileNamingStrategyContext ctx         = UserFileNamingStrategyContext.of(command.getUserId());
+            final UserFileNamingStrategyContext ctx         = UserFileNamingStrategyContext.of(command.getUserName());
             final Path                          userDir     = this.fileNamingStrategy.getDir(ctx);
             final DirectoryDto                  userDirInfo = this.directoryTraverse.getDirectoryInfo(userDir);
 
@@ -155,14 +155,14 @@ public class DefaultUserFileManager implements UserFileManager {
     @Override
     public void deletePath(FilePathCommand command) throws FileSystemException {
         Assert.notNull(command, "Expected a non-null command");
-        Assert.notNull(command.getUserId(), "Expected a non-null user id");
+        Assert.hasText(command.getUserName(), "Expected a non-null user name");
 
         try {
             if (StringUtils.isEmpty(command.getPath())) {
                 throw new FileSystemException(FileSystemMessageCode.PATH_IS_EMPTY, "A path is required");
             }
 
-            final UserFileNamingStrategyContext ctx          = UserFileNamingStrategyContext.of(command.getUserId());
+            final UserFileNamingStrategyContext ctx          = UserFileNamingStrategyContext.of(command.getUserName());
             final Path                          absolutePath = this.fileNamingStrategy.resolvePath(ctx, command.getPath());
             final File                          file         = absolutePath.toFile();
 
@@ -184,14 +184,14 @@ public class DefaultUserFileManager implements UserFileManager {
     @Override
     public Path resolveFilePath(FilePathCommand command) throws FileSystemException {
         Assert.notNull(command, "Expected a non-null command");
-        Assert.notNull(command.getUserId(), "Expected a non-null user id");
+        Assert.hasText(command.getUserName(), "Expected a non-null user name");
 
         try {
             if (StringUtils.isEmpty(command.getPath())) {
                 throw new FileSystemException(FileSystemMessageCode.PATH_IS_EMPTY, "A path to the file is required");
             }
 
-            final UserFileNamingStrategyContext ctx          = UserFileNamingStrategyContext.of(command.getUserId());
+            final UserFileNamingStrategyContext ctx          = UserFileNamingStrategyContext.of(command.getUserName());
             final Path                          absolutePath = this.fileNamingStrategy.resolvePath(ctx, command.getPath());
             final File                          file         = absolutePath.toFile();
 
@@ -205,7 +205,7 @@ public class DefaultUserFileManager implements UserFileManager {
         } catch (final FileSystemException ex) {
             throw ex;
         } catch (final Exception ex) {
-            logger.warn("Failed to resolve path. [userId={}, path={}]", command.getUserId(), command.getPath());
+            logger.warn("Failed to resolve path. [userName={}, path={}]", command.getUserName(), command.getPath());
 
             throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }

@@ -1,25 +1,31 @@
 package eu.opertusmundi.common.model.file;
 
 import lombok.Getter;
-import lombok.Setter;
 
-@Getter
-@Setter
 public class UserFileNamingStrategyContext extends FileNamingStrategyContext {
 
-    protected UserFileNamingStrategyContext(int id, boolean createIfNotExists) {
+    protected UserFileNamingStrategyContext(String userName, boolean strict, boolean createIfNotExists) {
         super(createIfNotExists);
 
-        this.id = id;
+        this.userName = userName;
+        this.strict   = strict;
     }
 
-    private int id;
+    @Getter
+    private final boolean strict;
 
-    public static UserFileNamingStrategyContext of(int id) {
-        return new UserFileNamingStrategyContext(id, false);
+    @Getter
+    private final String userName;
+
+    public static UserFileNamingStrategyContext of(String userName) {
+        return new UserFileNamingStrategyContext(userName, true, false);
     }
 
-    public static UserFileNamingStrategyContext of(int id, boolean createIfNotExists) {
-        return new UserFileNamingStrategyContext(id, createIfNotExists);
+    public static UserFileNamingStrategyContext of(String userName, boolean strict) {
+        return new UserFileNamingStrategyContext(userName, strict, false);
+    }
+
+    public static UserFileNamingStrategyContext of(String userName, boolean strict, boolean createIfNotExists) {
+        return new UserFileNamingStrategyContext(userName, strict, createIfNotExists);
     }
 }

@@ -30,14 +30,14 @@ public abstract class AbstractFileNamingStrategy<C extends FileNamingStrategyCon
         Assert.notNull(ctx, "Expected a non-null context");
         Assert.notNull(relativePath, "Expected a non-null path");
 
-        this.validatePath(relativePath.toString());
+        this.validatePath(ctx, relativePath.toString());
 
         final Path baseDir = this.getDir(ctx);
 
         return Paths.get(baseDir.toString(), relativePath.toString());
     }
 
-    protected void validatePath(String path) throws FileSystemException {
+    protected void validatePath(C ctx, String path) throws FileSystemException {
 
     }
 

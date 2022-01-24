@@ -31,6 +31,6 @@ public class FileUploadCommand {
     private long size;
 
     @JsonIgnore
-    private int userId;
+    private String userName;
 
 }
