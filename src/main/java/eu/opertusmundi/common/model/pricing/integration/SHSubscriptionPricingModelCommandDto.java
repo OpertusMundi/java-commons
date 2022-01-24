@@ -55,14 +55,14 @@ public class SHSubscriptionPricingModelCommandDto extends BasePricingModelComman
         this.monthlyPriceExcludingTax = monthlyPriceExcludingTax;
     }
 
-    @Schema(description = "Price excluding tax", required = true)
+    @Schema(description = "Monthly price excluding tax", required = true)
     @DecimalMin(value = "0.00", inclusive = false)
     @Digits(integer = 6, fraction = 2)
     @Getter
     @Setter
     private BigDecimal monthlyPriceExcludingTax;
 
-    @Schema(description = "Price excluding tax", required = true)
+    @Schema(description = "Annual price excluding tax", required = true)
     @DecimalMin(value = "0.00", inclusive = false)
     @Digits(integer = 6, fraction = 2)
     @Getter

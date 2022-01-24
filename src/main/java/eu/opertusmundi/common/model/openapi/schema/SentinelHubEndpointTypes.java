@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.model.openapi.schema;
 
+import java.util.List;
+
 import eu.opertusmundi.common.model.RestResponse;
 import eu.opertusmundi.common.model.sinergise.CatalogueResponseDto;
 import eu.opertusmundi.common.model.sinergise.SubscriptionPlanDto;
@@ -13,7 +15,7 @@ public class SentinelHubEndpointTypes {
     }
 
     @Schema(description = "Available subscription plans")
-    public static class SentinelHubSubscriptionResponse extends RestResponse<SubscriptionPlanDto> {
+    public static class SentinelHubSubscriptionResponse extends RestResponse<List<SubscriptionPlanDto>> {
 
     }
 

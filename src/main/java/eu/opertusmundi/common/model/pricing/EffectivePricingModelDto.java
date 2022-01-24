@@ -2,7 +2,9 @@ package eu.opertusmundi.common.model.pricing;
 
 import java.io.Serializable;
 
+import eu.opertusmundi.common.model.pricing.integration.SHImagePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.integration.SHImageQuotationParametersDto;
+import eu.opertusmundi.common.model.pricing.integration.SHSubscriptionPricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.integration.SHSubscriptionQuotationParametersDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -23,6 +25,9 @@ public final class EffectivePricingModelDto implements Serializable {
         CallBlockRatePricingModelCommandDto.class,
         RowPrePaidPricingModelCommandDto.class,
         RowBlockRatePricingModelCommandDto.class,
+        SHImagePricingModelCommandDto.class,
+        SHSubscriptionPricingModelCommandDto.class,
+
     })
     private BasePricingModelCommandDto model;
 
