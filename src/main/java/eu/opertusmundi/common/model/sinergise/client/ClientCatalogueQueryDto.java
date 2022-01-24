@@ -42,10 +42,10 @@ public class ClientCatalogueQueryDto {
     private BigDecimal[] bbox;
 
     @Schema(description = "Interval start date-time. Date and time expressions adhere to RFC 3339.")
-    private ZonedDateTime fromDatetime;
+    private ZonedDateTime fromDateTime;
 
     @Schema(description = "Interval end date-time. Date and time expressions adhere to RFC 3339.")
-    private ZonedDateTime toDatetime;
+    private ZonedDateTime toDateTime;
 
     @Schema(implementation = GeometryAsJson.class, description = "Spatial search")
     private Geometry intersects;
@@ -84,11 +84,11 @@ public class ClientCatalogueQueryDto {
     public String getDateTime() {
         String result = null;
 
-        if ((fromDatetime == null) && (toDatetime == null)) {
+        if ((fromDateTime == null) && (toDateTime == null)) {
             return result;
         }
-        result = fromDatetime == null ? "../" : fromDatetime.toOffsetDateTime().toString() + "/";
-        result = toDatetime == null ? result + ".." : result + toDatetime.toOffsetDateTime().toString();
+        result = fromDateTime == null ? "../" : fromDateTime.toOffsetDateTime().toString() + "/";
+        result = toDateTime == null ? result + ".." : result + toDateTime.toOffsetDateTime().toString();
 
         return result;
     }
