@@ -12,7 +12,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class PayInRecurringRegistrationStatusDto {
+public class RecurringRegistrationStatusDto {
 
     @JsonIgnore
     private Integer id;

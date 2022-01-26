@@ -22,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.BankAccountEmbeddable;
 import eu.opertusmundi.common.domain.BankWirePayInEntity;
+import eu.opertusmundi.common.domain.BillingAddressEmbeddable;
+import eu.opertusmundi.common.domain.BrowserInfoEmbeddable;
 import eu.opertusmundi.common.domain.CardDirectPayInEntity;
 import eu.opertusmundi.common.domain.CartEntity;
 import eu.opertusmundi.common.domain.FreePayInEntity;
@@ -29,10 +31,11 @@ import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
+import eu.opertusmundi.common.domain.PayInRecurringRegistrationEntity;
 import eu.opertusmundi.common.domain.PayInStatusEntity;
+import eu.opertusmundi.common.domain.ShippingAddressEmbeddable;
 import eu.opertusmundi.common.model.payment.BankwirePayInCommand;
 import eu.opertusmundi.common.model.payment.CardDirectPayInCommand;
-import eu.opertusmundi.common.model.payment.EnumRecurringPaymentType;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.FreePayInCommand;
 import eu.opertusmundi.common.model.payment.PayInDto;
@@ -62,6 +65,9 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
 
     @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE i.order.key = :key")
     Optional<PayInEntity> findOneByOrderKey(@Param("key") UUID key);
+
+    @Query("SELECT r FROM PayInRecurringRegistration r WHERE r.providerRegistration = :id")
+    Optional<PayInRecurringRegistrationEntity> findRecurringRegistrationById(String id);
 
     /**
      * Find a consumer PayIn
@@ -291,6 +297,9 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         Assert.notNull(order, "Expected a non-null order");
         Assert.notNull(order.getItems().size() == 1, "Expected a single order item");
 
+        final PayInRecurringRegistrationEntity registration = this.findRecurringRegistrationById(command.getRecurringPayinRegistrationId())
+            .orElse(null);
+
         final AccountEntity         consumer = order.getConsumer();
         final CardDirectPayInEntity payin    = new CardDirectPayInEntity();
 
@@ -314,7 +323,18 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         payin.setTotalPrice(order.getTotalPrice());
         payin.setTotalPriceExcludingTax(order.getTotalPriceExcludingTax());
         payin.setTotalTax(order.getTotalTax());
-        payin.setRecurringPaymentType(EnumRecurringPaymentType.NONE);
+        payin.setRecurringPaymentType(command.getRecurringTransactionType());
+        payin.setRecurringPayment(registration);
+
+        if (command.getBilling() != null) {
+            payin.setBillingAddress(BillingAddressEmbeddable.from(command.getBilling()));
+        }
+        if (command.getShipping() != null) {
+            payin.setShippingAddress(ShippingAddressEmbeddable.from(command.getShipping()));
+        }
+        if (command.getBrowserInfo() != null) {
+            payin.setBrowserInfo(BrowserInfoEmbeddable.from(command.getBrowserInfo()));
+        }
 
         final PayInStatusEntity status = new PayInStatusEntity();
         status.setPayin(payin);

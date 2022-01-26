@@ -3,6 +3,7 @@ package eu.opertusmundi.common.model.payment;
 import eu.opertusmundi.common.model.MessageCode;
 
 public enum PaymentMessageCode implements MessageCode {
+    NOT_IMPLEMENTED,
     API_ERROR,
     ASSET_NOT_FOUND,
     CART_IS_EMPTY,
@@ -21,6 +22,7 @@ public enum PaymentMessageCode implements MessageCode {
     VALIDATION_ERROR,
     WEB_HOOK_NOT_SUPPORTED,
     ZERO_AMOUNT,
+    CARD_NOT_FOUND,
     ;
 
     @Override

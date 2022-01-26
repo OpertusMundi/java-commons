@@ -16,7 +16,7 @@ import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
 import eu.opertusmundi.common.model.payment.EnumRecurringPaymentStatus;
-import eu.opertusmundi.common.model.payment.PayInRecurringRegistrationStatusDto;
+import eu.opertusmundi.common.model.payment.RecurringRegistrationStatusDto;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -32,7 +32,7 @@ public class PayInRecurringRegistrationStatusEntity {
     private Integer id;
 
     @NotNull
-    @ManyToOne(targetEntity = PayInEntity.class)
+    @ManyToOne
     @JoinColumn(name = "registration", nullable = false)
     @Getter
     @Setter
@@ -51,8 +51,8 @@ public class PayInRecurringRegistrationStatusEntity {
     @Setter
     private ZonedDateTime statusUpdatedOn;
 
-    public PayInRecurringRegistrationStatusDto toDto() {
-        final PayInRecurringRegistrationStatusDto s = new PayInRecurringRegistrationStatusDto();
+    public RecurringRegistrationStatusDto toDto() {
+        final RecurringRegistrationStatusDto s = new RecurringRegistrationStatusDto();
 
         s.setId(id);
         s.setRegistration(registration.getId());

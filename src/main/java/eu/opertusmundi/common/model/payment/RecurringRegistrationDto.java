@@ -14,7 +14,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class PayInRecurringRegistrationDto {
+public class RecurringRegistrationDto {
 
     @JsonIgnore
     private Integer id;
@@ -25,7 +25,7 @@ public class PayInRecurringRegistrationDto {
 
     private List<PayInDto> payins = new ArrayList<>();
 
-    private List<PayInRecurringRegistrationStatusDto> statusHistory = new ArrayList<>();
+    private List<RecurringRegistrationStatusDto> statusHistory = new ArrayList<>();
 
     private String providerCard;
 

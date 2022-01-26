@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.model.payment;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
@@ -22,7 +23,7 @@ public class BankwirePayInCommand extends PayInCommand {
 
     @Builder
     public BankwirePayInCommand(
-        UUID userKey, UUID orderKey, Integer debitedFunds, String referenceNumber, String payIn,
+        UUID userKey, UUID orderKey, BigDecimal debitedFunds, String referenceNumber, String payIn,
         ZonedDateTime createdOn, EnumTransactionStatus status, ZonedDateTime executedOn, String resultCode, String resultMessage,
         String wireReference, BankAccountDto bankAccount
     ) {

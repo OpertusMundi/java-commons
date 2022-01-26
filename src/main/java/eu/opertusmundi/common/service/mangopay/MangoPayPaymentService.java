@@ -19,7 +19,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -56,7 +55,6 @@ import com.mangopay.entities.Card;
 import com.mangopay.entities.CardRegistration;
 import com.mangopay.entities.Client;
 import com.mangopay.entities.Event;
-import com.mangopay.entities.IdempotencyResponse;
 import com.mangopay.entities.PayIn;
 import com.mangopay.entities.PayOut;
 import com.mangopay.entities.Refund;
@@ -99,6 +97,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.location.Location;
 import eu.opertusmundi.common.model.order.CartDto;
 import eu.opertusmundi.common.model.order.CartItemDto;
+import eu.opertusmundi.common.model.order.EnumOrderItemType;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
 import eu.opertusmundi.common.model.order.HelpdeskOrderDto;
 import eu.opertusmundi.common.model.order.OrderCommand;
@@ -115,6 +114,8 @@ import eu.opertusmundi.common.model.payment.EnumPayInItemSortField;
 import eu.opertusmundi.common.model.payment.EnumPayInSortField;
 import eu.opertusmundi.common.model.payment.EnumPayOutSortField;
 import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
+import eu.opertusmundi.common.model.payment.EnumRecurringPaymentFrequency;
+import eu.opertusmundi.common.model.payment.EnumRecurringPaymentType;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.EventDto;
 import eu.opertusmundi.common.model.payment.FreePayInCommand;
@@ -126,6 +127,8 @@ import eu.opertusmundi.common.model.payment.PayOutDto;
 import eu.opertusmundi.common.model.payment.PayOutStatusUpdateCommand;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.PaymentMessageCode;
+import eu.opertusmundi.common.model.payment.RecurringRegistrationCreateCommand;
+import eu.opertusmundi.common.model.payment.RecurringRegistrationDto;
 import eu.opertusmundi.common.model.payment.TransferDto;
 import eu.opertusmundi.common.model.payment.UserBlockedStatusDto;
 import eu.opertusmundi.common.model.payment.UserCardCommand;
@@ -140,6 +143,8 @@ import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
 import eu.opertusmundi.common.model.payment.provider.ProviderPayInItemDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
+import eu.opertusmundi.common.model.pricing.QuotationParametersDto;
+import eu.opertusmundi.common.model.pricing.SubscriptionQuotationParameters;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.CustomerRepository;
 import eu.opertusmundi.common.repository.OrderRepository;
@@ -161,15 +166,6 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
     // TODO: Set from configuration
     private final BigDecimal feePercent = new BigDecimal(5);
-
-    /**
-     * This is the URL where users are automatically redirected after 3D secure
-     * validation (if activated)
-     *
-     * See: https://docs.mangopay.com/endpoints/v2.01/payins#e278_create-a-card-direct-payin
-     */
-    @Value("${opertusmundi.payments.mangopay.secure-mode-return-url:}")
-    private String secureModeReturnUrl;
 
     @Autowired
     private AccountRepository accountRepository;
@@ -200,6 +196,9 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
     @Autowired
     private PayOutService payOutService;
+
+    @Autowired
+    private RecurringPaymentService recurringPaymentService;
 
     @Override
     public ClientDto getClient() throws PaymentException {
@@ -959,11 +958,11 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
             // MANGOPAY expects not decimal values e.g. 100,50 is formatted as a
             // integer 10050
-            command.setDebitedFunds(order.getTotalPrice().multiply(BigDecimal.valueOf(100L)).intValue());
+            command.setDebitedFunds(order.getTotalPrice());
             command.setReferenceNumber(order.getReferenceNumber());
 
             // Funds must be greater than 0
-            if (command.getDebitedFunds() <= 0) {
+            if (command.getDebitedFunds().compareTo(BigDecimal.ZERO) <= 0) {
                 throw new PaymentException(PaymentMessageCode.ZERO_AMOUNT, "[TOPIO] PayIn amount must be greater than 0");
             }
 
@@ -1035,7 +1034,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
             return result;
         } catch (final Exception ex) {
-            throw this.wrapException("Create PayIn Free", ex, command);
+            throw this.wrapException("Create PayIn Free", ex, command, logger);
         }
     }
 
@@ -1052,32 +1051,110 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             // Check order
             this.ensureOrderForPayIn(order, command.getOrderKey());
 
-            final String idempotencyKey = order.getKey().toString();
+            // Set command properties from customer/order
+            // MANGOPAY expects not decimal values e.g. 100,50 is formatted as a
+            // integer 10050
 
+            command.setCreditedUserId(customer.getPaymentProviderUser());
+            command.setCreditedWalletId(customer.getPaymentProviderWallet());
+            command.setDebitedFunds(order.getTotalPrice());
+            command.setIdempotencyKey(order.getKey().toString());
+            command.setRecurringTransactionType(EnumRecurringPaymentType.NONE);
+            command.setReferenceNumber(order.getReferenceNumber());
+            command.setStatementDescriptor(MangopayUtils.createStatementDescriptor(command));
+
+            // Configure recurring payments
+            this.configureRecurringPayment(order, command);
+
+            if (command.isRecurring()) {
+                return this.createCardDirectRecurringPayment(command);
+            } else {
+                return this.createCardDirectPayment(order, command);
+            }
+        } catch (final PaymentException ex) {
+            throw ex;
+        } catch (final Exception ex) {
+            throw this.wrapException("Create PayIn Card Direct", ex);
+        }
+    }
+
+    private PayInDto createCardDirectRecurringPayment(CardDirectPayInCommand command) throws PaymentException {
+        final String idempotencyKeyPrefix       = command.getIdempotencyKey().replace("-", "");
+        final String idempotencyKeyRegistration = idempotencyKeyPrefix + "R";
+        final String idempotencyKeyPayment      = idempotencyKeyPrefix + "P";
+
+        // Create idempotency keys for registration and payment operations
+
+        // See https://docs.mangopay.com/guide/idempotency-support
+        Assert.isTrue(idempotencyKeyRegistration.length() <= 36, "Idempotency Key must be between 16 and 36 characters");
+        Assert.isTrue(idempotencyKeyPayment.length() <= 36, "Idempotency Key must be between 16 and 36 characters");
+
+        // Get card
+        final CardDto card = this.getCardRegistration(UserCardCommand.of(command.getUserKey(), command.getCardId()));
+
+        // Update command with order properties
+        if (card == null) {
+            throw new PaymentException(PaymentMessageCode.CARD_NOT_FOUND, "Card registration was not found");
+        } else {
+            command.setCardAlias(card.getAlias());
+        }
+
+        // Funds must be greater than 0
+        if (command.getDebitedFunds().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new PaymentException(PaymentMessageCode.ZERO_AMOUNT, "[TOPIO] PayIn amount must be greater than 0");
+        }
+
+        final RecurringRegistrationCreateCommand registrationCommand = RecurringRegistrationCreateCommand.builder()
+            .authorId(command.getCreditedUserId())
+            .billingAddress(command.getBilling())
+            .cardId(card.getId())
+            .creditedWalletId(command.getCreditedWalletId())
+            .endDate(null)
+            .firstTransactionDebitedFunds(command.getDebitedFunds())
+            .frequency(command.getRecurringPaymentfrequency())
+            .idempotencyKey(idempotencyKeyRegistration)
+            .migrate(false)
+            .orderKey(command.getOrderKey())
+            .shippingAddress(command.getShipping())
+            .userKey(command.getUserKey())
+            .build();
+
+        final RecurringRegistrationDto registration = this.recurringPaymentService.initializeRegistration(registrationCommand);
+        command.setIdempotencyKey(idempotencyKeyPayment);
+        command.setRecurringPayinRegistrationId(registration.getProviderRegistration());
+        command.setRecurringTransactionType(EnumRecurringPaymentType.CIT);
+
+        final PayInDto result = this.recurringPaymentService.createConsumerPayIn(command);
+
+        return result;
+    }
+
+    private PayInDto createCardDirectPayment(OrderEntity order, CardDirectPayInCommand command) throws PaymentException {
+        try {
             // Get card
             final CardDto card = this.getCardRegistration(UserCardCommand.of(command.getUserKey(), command.getCardId()));
 
-            // Update command with order properties
+            // Update command with order/customer properties
 
-            // MANGOPAY expects not decimal values e.g. 100,50 is formatted as a
-            // integer 10050
-            command.setDebitedFunds(order.getTotalPrice().multiply(BigDecimal.valueOf(100L)).intValue());
-            command.setReferenceNumber(order.getReferenceNumber());
-            command.setStatementDescriptor(this.createStatementDescriptor(command));
+            if (card == null) {
+                throw new PaymentException(PaymentMessageCode.CARD_NOT_FOUND, "Card registration was not found");
+            } else {
+                command.setCardAlias(card.getAlias());
+            }
 
             // Funds must be greater than 0
-            if (command.getDebitedFunds() <= 0) {
+            if (command.getDebitedFunds().compareTo(BigDecimal.ZERO) <= 0) {
                 throw new PaymentException(PaymentMessageCode.ZERO_AMOUNT, "[TOPIO] PayIn amount must be greater than 0");
             }
 
             // Check if this is a retry operation
-            PayIn payInResponse = this.<PayIn>getResponse(idempotencyKey);
+            PayIn payInResponse = this.<PayIn>getResponse(command.getIdempotencyKey());
 
             // Create a new PayIn if needed
             if (payInResponse == null) {
-                final PayIn payInRequest = this.createCardDirectPayIn(customer, command);
+                final PayIn payInRequest = this.createCardDirectPayIn(command);
 
-                payInResponse = this.api.getPayInApi().create(idempotencyKey, payInRequest);
+                payInResponse = this.api.getPayInApi().create(command.getIdempotencyKey(), payInRequest);
             } else {
                 // Override PayIn key with existing one from the payment
                 // provider
@@ -1111,13 +1188,13 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 result = (ConsumerCardDirectPayInDto) this.payInRepository.createCardDirectPayInForOrder(command);
 
                 // Link PayIn record to order
-                this.orderRepository.setPayIn(command.getOrderKey(), result.getPayIn(), account.getKey());
+                this.orderRepository.setPayIn(command.getOrderKey(), result.getPayIn(), command.getUserKey());
 
                 // Update order status if we have a valid response i.e.
                 // 3D-Secure validation was skipped
                 if (result.getStatus() != EnumTransactionStatus.CREATED) {
                     this.orderRepository.setStatus(
-                        order.getKey(),
+                        command.getOrderKey(),
                         result.getStatus().toOrderStatus(order.getDeliveryMethod())
                     );
                 }
@@ -1125,9 +1202,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
             // Add client-only information (card alias is never saved in our
             // database)
-            if (card != null) {
-                result.setAlias(card.getAlias());
-            }
+            result.setAlias(command.getCardAlias());
 
             /*
              * Since we have set SecureMode=FORCE, we expect SecureModeNeeded to
@@ -1140,7 +1215,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
             return result;
         } catch (final Exception ex) {
-            throw this.wrapException("Create PayIn Card Direct", ex, command);
+            throw this.wrapException("Create Card Direct PayIn", ex, command, logger);
         }
     }
 
@@ -1662,33 +1737,14 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         return result;
     }
 
-    private PayIn createBankWirePayIn(CustomerEntity customer, BankwirePayInCommand command) {
-        final String mangoPayUserId   = customer.getPaymentProviderUser();
-        final String mangoPayWalletId = customer.getPaymentProviderWallet();
-
-        final PayInPaymentDetailsBankWire paymentDetails = new PayInPaymentDetailsBankWire();
-        paymentDetails.setDeclaredDebitedFunds(new Money(CurrencyIso.EUR, command.getDebitedFunds()));
-        paymentDetails.setDeclaredFees(new Money(CurrencyIso.EUR, 0));
-
-        final PayInExecutionDetailsDirect executionDetails = new PayInExecutionDetailsDirect();
-
-        final PayIn result = new PayIn();
-        result.setAuthorId(mangoPayUserId);
-        result.setCreditedUserId(mangoPayUserId);
-        result.setCreditedWalletId(mangoPayWalletId);
-        result.setExecutionDetails(executionDetails);
-        result.setExecutionType(PayInExecutionType.DIRECT);
-        result.setPaymentDetails(paymentDetails);
-        result.setTag(command.getPayInKey().toString());
-        result.setPaymentType(PayInPaymentType.BANK_WIRE);
-
-        return result;
-    }
-
-    private PayIn createCardDirectPayIn(CustomerEntity customer, CardDirectPayInCommand command) {
-        final String mangoPayUserId   = customer.getPaymentProviderUser();
-        final String mangoPayWalletId = customer.getPaymentProviderWallet();
-
+    /**
+     * Create a MANGOPAY PayIn object
+     *
+     * @param command
+     * @return
+     */
+    @Override
+    protected PayIn createCardDirectPayIn(CardDirectPayInCommand command) {
         final PayInPaymentDetailsCard paymentDetails = new PayInPaymentDetailsCard();
         paymentDetails.setBrowserInfo(command.getBrowserInfo().toMangoPayBrowserInfo());
         paymentDetails.setCardType(CardType.CB_VISA_MASTERCARD);
@@ -1730,10 +1786,12 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         executionDetails.setRequested3DSVersion("V2_1");
 
         final PayIn result = new PayIn();
-        result.setAuthorId(mangoPayUserId);
-        result.setCreditedUserId(mangoPayUserId);
-        result.setCreditedWalletId(mangoPayWalletId);
-        result.setDebitedFunds(new Money(CurrencyIso.EUR, command.getDebitedFunds()));
+        result.setAuthorId(command.getCreditedUserId());
+        result.setCreditedUserId(command.getCreditedUserId());
+        result.setCreditedWalletId(command.getCreditedWalletId());
+        result.setDebitedFunds(new Money(
+            CurrencyIso.EUR, command.getDebitedFunds().multiply(BigDecimal.valueOf(100L)).intValue()
+        ));
         result.setExecutionDetails(executionDetails);
         result.setExecutionType(PayInExecutionType.DIRECT);
         result.setFees(new Money(CurrencyIso.EUR, 0));
@@ -1744,13 +1802,29 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         return result;
     }
 
-    private String buildSecureModeReturnUrl(CardDirectPayInCommand command) {
-        String baseUrl = this.secureModeReturnUrl;
-        if (!baseUrl.endsWith("/")) {
-            baseUrl += "/";
-        }
+    private PayIn createBankWirePayIn(CustomerEntity customer, BankwirePayInCommand command) {
+        final String mangoPayUserId   = customer.getPaymentProviderUser();
+        final String mangoPayWalletId = customer.getPaymentProviderWallet();
 
-        return baseUrl + "webhooks/payins/" + command.getPayInKey().toString();
+        final PayInPaymentDetailsBankWire paymentDetails = new PayInPaymentDetailsBankWire();
+        paymentDetails.setDeclaredDebitedFunds(new Money(
+            CurrencyIso.EUR, command.getDebitedFunds().multiply(BigDecimal.valueOf(100L)).intValue()
+        ));
+        paymentDetails.setDeclaredFees(new Money(CurrencyIso.EUR, 0));
+
+        final PayInExecutionDetailsDirect executionDetails = new PayInExecutionDetailsDirect();
+
+        final PayIn result = new PayIn();
+        result.setAuthorId(mangoPayUserId);
+        result.setCreditedUserId(mangoPayUserId);
+        result.setCreditedWalletId(mangoPayWalletId);
+        result.setExecutionDetails(executionDetails);
+        result.setExecutionType(PayInExecutionType.DIRECT);
+        result.setPaymentDetails(paymentDetails);
+        result.setTag(command.getPayInKey().toString());
+        result.setPaymentType(PayInPaymentType.BANK_WIRE);
+
+        return result;
     }
 
     private void deactivateBankAccount(String userId, BankAccount bankAccount) throws PaymentException {
@@ -1926,50 +2000,12 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         return String.format("Default wallet");
     }
 
-    /**
-     * Get existing response for an idempotency key
-     *
-     * See: https://docs.mangopay.com/guide/idempotency-support
-     *
-     * @param <T>
-     * @param idempotencyKey
-     * @return
-     * @throws Exception
-     */
-    @SuppressWarnings("unchecked")
-    private <T> T getResponse(String idempotencyKey) throws Exception {
-        try {
-            final IdempotencyResponse r = this.api.getIdempotencyApi().get(idempotencyKey);
-
-            switch (r.getStatusCode()) {
-                case "200" :
-                    return (T) r.getResource();
-                default :
-                    return null;
-            }
-        } catch (final ResponseException ex) {
-            return null;
-        }
-    }
-
     private PaymentException wrapException(String operation, Exception ex) {
         return super.wrapException(operation, ex, null, logger);
     }
 
     protected PaymentException wrapException(String operation, Exception ex, Object command) {
         return super.wrapException(operation, ex, command, logger);
-    }
-
-    // TODO: Move to new service (?)
-    // TODO: Review statement descriptor generation algorithm
-
-    private String createStatementDescriptor(CardDirectPayInCommand command) {
-        // Use reference number as the statement descriptor
-        final String result = command.getReferenceNumber();
-
-        Assert.isTrue(result.length() < 11, "Statement descriptor can be up to 10 characters long");
-
-        return result;
     }
 
     private void ensureCustomer(CustomerEntity customer, String id) throws PaymentException {
@@ -2009,6 +2045,8 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 key, order.getStatus(), validStatus
             ));
         }
+
+        Assert.isTrue(order.getItems().size() == 1, "Expected only a single item in the order");
     }
 
     private PayInEntity ensurePayIn(String providerPayInId) {
@@ -2057,6 +2095,22 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             return ZonedDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneOffset.UTC);
         }
         return null;
+    }
+
+    private void configureRecurringPayment(OrderEntity order, CardDirectPayInCommand command) {
+        // Recurring payments are supported only for subscriptions
+        if (order.getItems().get(0).getType() != EnumOrderItemType.SUBSCRIPTION) {
+            return;
+        }
+        // The quotation parameters must support recurring payments
+        final QuotationParametersDto parameters = order.getItems().get(0).getPricingModel().getUserParameters();
+        if (!SubscriptionQuotationParameters.class.isAssignableFrom(parameters.getClass())) {
+            return;
+        }
+        final EnumRecurringPaymentFrequency frequency = ((SubscriptionQuotationParameters) parameters).getFrequency();
+
+        command.setRecurring(true);
+        command.setRecurringPaymentfrequency(frequency);
     }
 
 }

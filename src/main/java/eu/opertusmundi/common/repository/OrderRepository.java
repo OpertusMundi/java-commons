@@ -330,11 +330,9 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
      *
      * @param orderKey
      * @param status
-     * @param when
-     * @throws Exception
      */
     @Transactional(readOnly = false)
-    default void setStatus(UUID orderKey, EnumOrderStatus status) throws Exception {
+    default void setStatus(UUID orderKey, EnumOrderStatus status) {
         final OrderEntity order = this.findOrderEntityByKey(orderKey).orElse(null);
 
         // Update only on status changes

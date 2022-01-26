@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.model.payment;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
@@ -21,7 +22,7 @@ public class FreePayInCommand extends PayInCommand {
 
     @Builder
     public FreePayInCommand(UUID userKey, UUID orderKey, String referenceNumber, ZonedDateTime createdOn) {
-        super(userKey, orderKey, 0, referenceNumber, null, createdOn, EnumTransactionStatus.SUCCEEDED, createdOn, null, null);
+        super(userKey, orderKey, BigDecimal.ZERO, referenceNumber, null, createdOn, EnumTransactionStatus.SUCCEEDED, createdOn, null, null);
     }
 
 }

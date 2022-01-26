@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import eu.opertusmundi.common.model.payment.BrowserInfoDto;
 import eu.opertusmundi.common.model.payment.EnumRecurringPaymentType;
 import eu.opertusmundi.common.model.payment.PayInAddressDto;
-import eu.opertusmundi.common.model.payment.PayInRecurringRegistrationDto;
+import eu.opertusmundi.common.model.payment.RecurringRegistrationDto;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -49,7 +49,7 @@ public class ConsumerCardDirectPayInDto extends ConsumerPayInDto {
     private BrowserInfoDto browserInfo;
 
     @Schema(description = "Recurring payment information")
-    private PayInRecurringRegistrationDto recurringPayment;
+    private RecurringRegistrationDto recurringPayment;
 
     @Schema(description = "Recurring payment type")
     private EnumRecurringPaymentType recurringPaymentType;

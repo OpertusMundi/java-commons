@@ -21,6 +21,7 @@ import org.springframework.util.Assert;
 import eu.opertusmundi.common.domain.AccountAssetEntity;
 import eu.opertusmundi.common.domain.AccountSubscriptionEntity;
 import eu.opertusmundi.common.domain.AccountSubscriptionSkuEntity;
+import eu.opertusmundi.common.domain.CardDirectPayInEntity;
 import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.OrderItemEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
@@ -236,8 +237,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             return instance.getId();
         } catch(final Exception ex) {
             logger.error(
-                "Failed to start workflow instance [workflow={}, businessKey={}, ex={}]",
-                WORKFLOW_PROCESS_ORDER_WITH_PAYMENT, payInKey, ex.getMessage()
+                String.format("Failed to start workflow instance [workflow=%s, businessKey=%s]", WORKFLOW_PROCESS_ORDER_WITH_PAYMENT, payInKey), ex
             );
         }
 
@@ -524,6 +524,15 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         }
 
         this.accountSubscriptionRepository.save(sub);
+        
+        // Link subscription to recurring payment if one exists
+        if (payIn instanceof CardDirectPayInEntity) {
+            final CardDirectPayInEntity cardPayIn = (CardDirectPayInEntity) payIn;
+
+            cardPayIn.getRecurringPayment().setSubscription(sub);
+
+            this.payInRepository.saveAndFlush(cardPayIn);
+        }
     }
 
 }

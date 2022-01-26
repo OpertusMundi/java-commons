@@ -21,8 +21,12 @@ public final class PaymentException extends ServiceException {
         super(code, "An unhandled exception has occurred");
     }
 
-    public PaymentException(String message) {
+    public PaymentException() {
         super(PaymentMessageCode.API_ERROR, "An unhandled exception has occurred");
+    }
+
+    public PaymentException(String message) {
+        super(PaymentMessageCode.API_ERROR, message);
     }
 
     public PaymentException(PaymentMessageCode code, String message) {
@@ -47,7 +51,7 @@ public final class PaymentException extends ServiceException {
     }
 
     public PaymentException(PaymentMessageCode code, String message, ResponseException cause) {
-        this(code, message, cause, cause.getApiMessage(), cause.getErrors());      
+        this(code, message, cause, cause.getApiMessage(), cause.getErrors());
     }
 
 }

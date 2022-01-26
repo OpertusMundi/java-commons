@@ -31,7 +31,7 @@ import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.payment.EnumRecurringPaymentFrequency;
 import eu.opertusmundi.common.model.payment.EnumRecurringPaymentStatus;
-import eu.opertusmundi.common.model.payment.PayInRecurringRegistrationDto;
+import eu.opertusmundi.common.model.payment.RecurringRegistrationDto;
 import eu.opertusmundi.common.util.StreamUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -39,6 +39,7 @@ import lombok.Setter;
 @Entity(name = "PayInRecurringRegistration")
 @Table(schema = "billing", name = "`payin_recurring_registration`", uniqueConstraints = {
     @UniqueConstraint(name = "uq_payin_recurring_registration_key", columnNames = {"`key`"}),
+    @UniqueConstraint(name = "uq_payin_recurring_registration_provider_id", columnNames = {"`provider_registration`"}),
 })
 public class PayInRecurringRegistrationEntity {
 
@@ -59,25 +60,11 @@ public class PayInRecurringRegistrationEntity {
     /**
      * Reference to the subscription linked to this registration
      */
-    @NotNull
     @ManyToOne(targetEntity = AccountSubscriptionEntity.class, fetch = FetchType.EAGER)
-    @JoinColumn(name = "subscription", nullable = false)
+    @JoinColumn(name = "subscription")
     @Getter
     @Setter
     private AccountSubscriptionEntity subscription;
-
-    /**
-     * Collection of PayIn records linked to this registration
-     */
-    @OneToMany(
-        mappedBy = "recurringPayment",
-        fetch = FetchType.LAZY,
-        cascade = CascadeType.ALL,
-        orphanRemoval = true
-    )
-    @Getter
-    @Setter
-    private List<CardDirectPayInEntity> payins = new ArrayList<>();
 
     @OneToMany(
         mappedBy = "registration",
@@ -118,7 +105,6 @@ public class PayInRecurringRegistrationEntity {
     @Setter
     private String currency;
 
-    @NotNull
     @Column(name = "`end_date`")
     @Getter
     @Setter
@@ -134,20 +120,17 @@ public class PayInRecurringRegistrationEntity {
     @NotNull
     @Column(name = "`fixed_next_amount`")
     @Getter
-    @Setter
-    private boolean fixedNextAmount = true;
+    private final boolean fixedNextAmount = true;
 
     @NotNull
     @Column(name = "`fractioned_payment`")
     @Getter
-    @Setter
-    private boolean fractionedPayment = false;
+    private final boolean fractionedPayment = false;
 
     @NotNull
     @Column(name = "`migration`")
     @Getter
-    @Setter
-    private boolean migration = false;
+    private final boolean migration = false;
 
     @Embedded
     @AttributeOverrides({
@@ -198,8 +181,10 @@ public class PayInRecurringRegistrationEntity {
     @Setter
     private ZonedDateTime statusUpdatedOn;
 
-    private void updateDto(PayInRecurringRegistrationDto r, boolean includeDetails) {
-        r.setBillingAddress(billingAddress.toDto());
+    private void updateDto(RecurringRegistrationDto r, boolean includeDetails) {
+        if (billingAddress != null) {
+            r.setBillingAddress(billingAddress.toDto());
+        }
         r.setCreatedOn(createdOn);
         r.setCurrency(currency);
         r.setEndDate(endDate);
@@ -213,49 +198,47 @@ public class PayInRecurringRegistrationEntity {
         r.setNextTransactionDebitedFunds(nextTransactionDebitedFunds);
         r.setProviderCard(providerCard);
         r.setProviderRegistration(providerRegistration);
-        r.setShippingAddress(shippingAddress.toDto());
+        if (shippingAddress != null) {
+            r.setShippingAddress(shippingAddress.toDto());
+        }
         r.setStatus(status);
         r.setStatusUpdatedOn(statusUpdatedOn);
 
         if (includeDetails) {
-            StreamUtils.from(statusHistory).map(PayInRecurringRegistrationStatusEntity::toDto).forEach(r.getStatusHistory()::add);
+            StreamUtils.from(this.getStatusHistory())
+                .map(PayInRecurringRegistrationStatusEntity::toDto)
+                .forEach(r.getStatusHistory()::add);
         }
     }
 
-    public PayInRecurringRegistrationDto toConsumerDto(boolean includeDetails) {
-        final PayInRecurringRegistrationDto r = new PayInRecurringRegistrationDto();
+    public RecurringRegistrationDto toConsumerDto(boolean includeDetails) {
+        final RecurringRegistrationDto r = new RecurringRegistrationDto();
         this.updateDto(r, includeDetails);
 
-        r.setSubscription(subscription.toConsumerDto(includeDetails));
-
-        if (includeDetails) {
-            StreamUtils.from(payins).map(p -> p.toConsumerDto(false)).forEach(r.getPayins()::add);
-        }
-
-        return r;
-    }
-
-    public PayInRecurringRegistrationDto toProviderDto(boolean includeDetails) {
-        final PayInRecurringRegistrationDto r = new PayInRecurringRegistrationDto();
-        this.updateDto(r, includeDetails);
-
-        r.setSubscription(subscription.toProviderDto());
-
-        if (includeDetails) {
-            StreamUtils.from(payins).map(p -> p.toProviderDto(false)).forEach(r.getPayins()::add);
+        if (subscription != null) {
+            r.setSubscription(subscription.toConsumerDto(includeDetails));
         }
 
         return r;
     }
 
-    public PayInRecurringRegistrationDto toHelpdeskDto(boolean includeDetails) {
-        final PayInRecurringRegistrationDto r = new PayInRecurringRegistrationDto();
+    public RecurringRegistrationDto toProviderDto(boolean includeDetails) {
+        final RecurringRegistrationDto r = new RecurringRegistrationDto();
         this.updateDto(r, includeDetails);
 
-        r.setSubscription(subscription.toHelpdeskDto());
+        if (subscription != null) {
+            r.setSubscription(subscription.toProviderDto());
+        }
 
-        if (includeDetails) {
-            StreamUtils.from(payins).map(p -> p.toHelpdeskDto(false)).forEach(r.getPayins()::add);
+        return r;
+    }
+
+    public RecurringRegistrationDto toHelpdeskDto(boolean includeDetails) {
+        final RecurringRegistrationDto r = new RecurringRegistrationDto();
+        this.updateDto(r, includeDetails);
+
+        if (subscription != null) {
+            r.setSubscription(subscription.toHelpdeskDto());
         }
 
         return r;
