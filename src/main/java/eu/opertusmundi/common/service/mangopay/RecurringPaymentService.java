@@ -73,4 +73,11 @@ public interface RecurringPaymentService {
      */
     PayInDto createMerchantPayIn(CardDirectPayInCommand command) throws PaymentException;
 
+    /**
+     * Update registration status
+     *
+     * @param registrationProviderId
+     */
+    void updateStatus(String registrationProviderId);
+
 }

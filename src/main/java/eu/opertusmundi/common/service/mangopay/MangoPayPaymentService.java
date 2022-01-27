@@ -72,6 +72,7 @@ import com.mangopay.entities.subentities.PayOutPaymentDetailsBankWire;
 
 import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.AddressEmbeddable;
+import eu.opertusmundi.common.domain.CardDirectPayInEntity;
 import eu.opertusmundi.common.domain.CustomerBankAccountEmbeddable;
 import eu.opertusmundi.common.domain.CustomerDraftEntity;
 import eu.opertusmundi.common.domain.CustomerDraftIndividualEntity;
@@ -83,6 +84,7 @@ import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
+import eu.opertusmundi.common.domain.PayInRecurringRegistrationEntity;
 import eu.opertusmundi.common.domain.PayInSubscriptionBillingItemEntity;
 import eu.opertusmundi.common.domain.PayOutEntity;
 import eu.opertusmundi.common.model.EnumSortingOrder;
@@ -1280,6 +1282,17 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             // Update consumer wallet if PayIn was successful
             if (result.getStatus() == EnumTransactionStatus.SUCCEEDED) {
                 this.updateCustomerWalletFunds(payInEntity.getConsumer().getKey(), EnumCustomerType.CONSUMER);
+            }
+
+            // Update recurring PayIn registration status (if one is linked to
+            // the updated PayIn)
+            if (payInEntity instanceof CardDirectPayInEntity) {
+                final CardDirectPayInEntity            cardPayInEntity = (CardDirectPayInEntity) payInEntity;
+                final PayInRecurringRegistrationEntity registration    = cardPayInEntity.getRecurringPayment();
+
+                if (registration != null) {
+                    this.recurringPaymentService.updateStatus(registration.getProviderRegistration());
+                }
             }
 
             return result;

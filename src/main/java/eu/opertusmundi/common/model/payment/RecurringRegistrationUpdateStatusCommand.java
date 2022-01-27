@@ -1,7 +1,5 @@
 package eu.opertusmundi.common.model.payment;
 
-import java.util.UUID;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreType;
 
 import lombok.AllArgsConstructor;
@@ -14,7 +12,7 @@ import lombok.Getter;
 @Builder
 public class RecurringRegistrationUpdateStatusCommand {
 
-    private final UUID registrationKey;
+    private final String registrationId;
 
     private final EnumRecurringPaymentStatus status;
 

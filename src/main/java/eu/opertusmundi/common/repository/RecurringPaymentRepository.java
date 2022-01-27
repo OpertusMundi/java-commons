@@ -28,6 +28,9 @@ public interface RecurringPaymentRepository extends JpaRepository<PayInRecurring
     @Query("SELECT r FROM PayInRecurringRegistration r WHERE r.key = :key")
     Optional<PayInRecurringRegistrationEntity> findOneEntityByKey(UUID key);
 
+    @Query("SELECT r FROM PayInRecurringRegistration r WHERE r.providerRegistration = :id")
+    Optional<PayInRecurringRegistrationEntity> findOneEntityByProviderId(String id);
+
     default Optional<RecurringRegistrationDto> findOneObjectByKey(UUID key) {
         return this.findOneEntityByKey(key).map(o -> o.toHelpdeskDto(true));
     }
@@ -69,10 +72,9 @@ public interface RecurringPaymentRepository extends JpaRepository<PayInRecurring
         return registration.toConsumerDto(true);
     }
 
-
     @Transactional(readOnly = false)
     default RecurringRegistrationDto updateStatus(RecurringRegistrationUpdateStatusCommand command) throws PaymentException {
-        final PayInRecurringRegistrationEntity registration = this.findOneEntityByKey(command.getRegistrationKey()).orElse(null);
+        final PayInRecurringRegistrationEntity registration = this.findOneEntityByProviderId(command.getRegistrationId()).orElse(null);
 
         // Update only on status changes
         if (registration.getStatus() == command.getStatus()) {

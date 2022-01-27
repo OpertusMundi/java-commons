@@ -36,6 +36,7 @@ import eu.opertusmundi.common.model.payment.PaymentMessageCode;
 import eu.opertusmundi.common.model.payment.RecurringRegistrationCreateCommand;
 import eu.opertusmundi.common.model.payment.RecurringRegistrationDto;
 import eu.opertusmundi.common.model.payment.RecurringRegistrationUpdateCommandDto;
+import eu.opertusmundi.common.model.payment.RecurringRegistrationUpdateStatusCommand;
 import eu.opertusmundi.common.model.payment.consumer.ConsumerCardDirectPayInDto;
 import eu.opertusmundi.common.repository.OrderRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
@@ -102,7 +103,7 @@ public class MangoPayRecurringPaymentService extends BaseMangoPayService impleme
                 return result;
             }
         } catch(final Exception ex) {
-            throw this.wrapException("Create Recurring Payment Registration", ex);
+            throw this.wrapException("Create Recurring PayIn Registration", ex);
         }
     }
 
@@ -209,7 +210,7 @@ public class MangoPayRecurringPaymentService extends BaseMangoPayService impleme
         } catch(final PaymentException ex) {
             throw ex;
         } catch(final Exception ex) {
-            throw new PaymentException(PaymentMessageCode.API_ERROR, ex.getMessage());
+            throw this.wrapException("Create CIT PayIn", ex, command, logger);
         }
     }
 
@@ -274,7 +275,23 @@ public class MangoPayRecurringPaymentService extends BaseMangoPayService impleme
         } catch(final PaymentException ex) {
             throw ex;
         } catch(final Exception ex) {
-            throw new PaymentException(PaymentMessageCode.API_ERROR, ex.getMessage());
+            throw this.wrapException("Create MIT PayIn", ex, command, logger);
+        }
+    }
+
+    @Override
+    public void updateStatus(String  registrationProviderId) {
+        try {
+            final RecurringPaymentExtended registration = this.api.getPayInApi().getRecurringPayment(registrationProviderId);
+
+            final RecurringRegistrationUpdateStatusCommand command = RecurringRegistrationUpdateStatusCommand.builder()
+                .registrationId(registrationProviderId)
+                .status(EnumRecurringPaymentStatus.from(registration.getStatus()))
+                .build();
+
+            this.recurringPaymentRepository.updateStatus(command);
+        } catch (final Exception ex) {
+            throw this.wrapException("Update Recurring PayIn Registration status", ex, registrationProviderId, logger);
         }
     }
 
