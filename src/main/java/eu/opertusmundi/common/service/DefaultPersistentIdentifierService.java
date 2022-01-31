@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.github.slugify.Slugify;
 
 import eu.opertusmundi.common.feign.client.PersistentIdentifierServiceFeignClient;
 import eu.opertusmundi.common.model.pid.AssetRegistrationDto;
@@ -31,17 +30,11 @@ public class DefaultPersistentIdentifierService implements PersistentIdentifierS
     private ObjectProvider<PersistentIdentifierServiceFeignClient> pidClient;
 
     @Override
-    public Integer registerUser(String name) throws PersistentIdentifierServiceException {
+    public Integer registerUser(String name, String namespace) throws PersistentIdentifierServiceException {
         try {
-            final Slugify s = new Slugify()
-                .withTransliterator(true)
-                .withLowerCase(true);
-
-            final String userNamespace = s.slugify(name);
-
             final RegisterUserCommandDto command = RegisterUserCommandDto.builder()
                 .name(name)
-                .userNamespace(userNamespace)
+                .userNamespace(namespace)
                 .build();
 
             final ResponseEntity<UserRegistrationDto> e = pidClient.getObject().registerUser(command);

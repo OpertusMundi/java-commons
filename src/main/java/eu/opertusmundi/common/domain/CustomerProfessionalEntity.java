@@ -104,12 +104,14 @@ public class CustomerProfessionalEntity extends CustomerEntity {
 
     @NotNull
     @Embedded
-    @AttributeOverrides({@AttributeOverride(name = "line1", column = @Column(name = "`headquarters_address_line1`", nullable = false)),
-            @AttributeOverride(name = "line2", column = @Column(name = "`headquarters_address_line2`")),
-            @AttributeOverride(name = "city", column = @Column(name = "`headquarters_address_city`", nullable = false)),
-            @AttributeOverride(name = "region", column = @Column(name = "`headquarters_address_region`", nullable = false)),
-            @AttributeOverride(name = "postalCode", column = @Column(name = "`headquarters_address_postal_code`", nullable = false)),
-            @AttributeOverride(name = "country", column = @Column(name = "`headquarters_address_country`", nullable = false)),})
+    @AttributeOverrides({
+        @AttributeOverride(name = "line1", column = @Column(name = "`headquarters_address_line1`", nullable = false)),
+        @AttributeOverride(name = "line2", column = @Column(name = "`headquarters_address_line2`")),
+        @AttributeOverride(name = "city", column = @Column(name = "`headquarters_address_city`", nullable = false)),
+        @AttributeOverride(name = "region", column = @Column(name = "`headquarters_address_region`", nullable = false)),
+        @AttributeOverride(name = "postalCode", column = @Column(name = "`headquarters_address_postal_code`", nullable = false)),
+        @AttributeOverride(name = "country", column = @Column(name = "`headquarters_address_country`", nullable = false)),
+    })
     @Getter
     @Setter
     private AddressEmbeddable headquartersAddress;
@@ -131,6 +133,12 @@ public class CustomerProfessionalEntity extends CustomerEntity {
     @Getter
     @Setter
     private Integer pidServiceUserId;
+
+    @NotNull
+    @Column(name = "`pid_namespace`")
+    @Getter
+    @Setter
+    private String pidNamespace;
 
     @Embedded
     @AttributeOverrides({

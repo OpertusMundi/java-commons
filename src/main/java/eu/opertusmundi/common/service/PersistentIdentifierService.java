@@ -6,16 +6,16 @@ public interface PersistentIdentifierService {
 
     /**
      * Register provider to persistent identifier service
-     * 
+     *
      * @param name
-     * @param nameSpace
+     * @param namespace
      * @return
      */
-    Integer registerUser(String name) throws PersistentIdentifierServiceException;
+    Integer registerUser(String name, String namespace) throws PersistentIdentifierServiceException;
 
     /**
      * Register asset type
-     * 
+     *
      * @param id
      * @param description
      */
@@ -23,7 +23,7 @@ public interface PersistentIdentifierService {
 
     /**
      * Register asset
-     * 
+     *
      * @param localId
      * @param ownerId
      * @param assetType
@@ -35,7 +35,7 @@ public interface PersistentIdentifierService {
 
     /**
      * Register asset
-     * 
+     *
      * @param localId
      * @param ownerId
      * @param assetType

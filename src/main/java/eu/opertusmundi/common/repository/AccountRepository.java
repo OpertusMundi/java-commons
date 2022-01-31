@@ -42,6 +42,7 @@ import eu.opertusmundi.common.model.account.PlatformAccountCommandDto;
 import eu.opertusmundi.common.model.account.ProviderProfessionalCommandDto;
 import eu.opertusmundi.common.model.account.ProviderProfileCommandDto;
 import eu.opertusmundi.common.model.account.VendorAccountCommandDto;
+import eu.opertusmundi.common.util.TextUtils;
 
 @Repository
 @Transactional(readOnly = true)
@@ -576,6 +577,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
             provider.setAccount(account);
             provider.setCreatedAt(now);
             provider.setModifiedAt(now);
+            provider.setPidNamespace(TextUtils.slugify(registration.getName()));
             provider.setPidServiceUserId(pidServiceUserId);
             provider.setTermsAccepted(true);
             provider.setTermsAcceptedAt(now);
