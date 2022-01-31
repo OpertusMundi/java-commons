@@ -105,7 +105,7 @@ public class RowPrePaidPricingModelCommandDto extends BasePricingModelCommandDto
         this.checkUserParametersType(userParams);
 
         if (userParams == null) {
-            return EffectivePricingModelDto.from(this, userParams, systemParams);
+            return EffectivePricingModelDto.from(this, new EmptyQuotationParametersDto(), systemParams);
         }
 
         Assert.isInstanceOf(RowPrePaidQuotationParametersDto.class, userParams);
