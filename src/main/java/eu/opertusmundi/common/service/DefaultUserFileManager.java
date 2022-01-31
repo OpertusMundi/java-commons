@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.service;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -54,8 +55,11 @@ public class DefaultUserFileManager implements UserFileManager {
         Assert.isTrue(!StringUtils.isBlank(command.getPath()), "Expected a non-empty path");
 
         try {
-            final UserFileNamingStrategyContext ctx    = UserFileNamingStrategyContext.of(command.getUserName(), true);
-            final Path                          target = command.getPath().equals("/")
+            final UserFileNamingStrategyContext ctx = UserFileNamingStrategyContext.of(command.getUserName());
+
+            this.initializeFileSystem(ctx);
+
+            final Path target = command.getPath().equals("/")
                 ? this.fileNamingStrategy.getDir(ctx)
                 : this.fileNamingStrategy.resolvePath(ctx, command.getPath());
 
@@ -211,20 +215,28 @@ public class DefaultUserFileManager implements UserFileManager {
         }
     }
 
+    private void initializeFileSystem(UserFileNamingStrategyContext ctx) throws IOException {
+        final Path path = this.fileNamingStrategy.getDir(ctx);
+        if (!Files.exists(path)) {
+            Files.createDirectories(path);
+            Files.setPosixFilePermissions(path, DEFAULT_DIRECTORY_PERMISSIONS);
+        }
+    }
+
     private long parseSize(String size) {
         Assert.hasText(size, "Size must not be empty");
 
         size = size.toUpperCase(Locale.ENGLISH);
         if (size.endsWith("KB")) {
-            return Long.valueOf(size.substring(0, size.length() - 2)) * 1024;
+            return Long.parseLong(size.substring(0, size.length() - 2)) * 1024;
         }
         if (size.endsWith("MB")) {
-            return Long.valueOf(size.substring(0, size.length() - 2)) * 1024 * 1024;
+            return Long.parseLong(size.substring(0, size.length() - 2)) * 1024 * 1024;
         }
         if (size.endsWith("GB")) {
-            return Long.valueOf(size.substring(0, size.length() - 2)) * 1024 * 1024 * 1024;
+            return Long.parseLong(size.substring(0, size.length() - 2)) * 1024 * 1024 * 1024;
         }
-        return Long.valueOf(size);
+        return Long.parseLong(size);
     }
 
 }
