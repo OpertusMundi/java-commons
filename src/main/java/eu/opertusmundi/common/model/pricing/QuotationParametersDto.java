@@ -2,6 +2,7 @@ package eu.opertusmundi.common.model.pricing;
 
 import java.io.Serializable;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -49,7 +50,15 @@ public class QuotationParametersDto implements Serializable {
     )
     @JsonDeserialize(using = EnumPricingModel.Deserializer.class)
     @Getter
+    private final EnumPricingModel type;
+
+    /**
+     * The user who requests the quotation; The value is injected by the
+     * controller
+     */
+    @JsonIgnore
+    @Getter
     @Setter
-    private EnumPricingModel type;
+    private String userName;
 
 }
