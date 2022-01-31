@@ -39,7 +39,7 @@ public class CartAddCommandDto {
 
     @Schema(description = "Pricing model unique key", required = true)
     @NotNull
-    private UUID pricingModelKey;
+    private String pricingModelKey;
 
     @Schema(
         description = "Quotation parameters",

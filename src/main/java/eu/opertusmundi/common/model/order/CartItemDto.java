@@ -64,7 +64,7 @@ public class CartItemDto {
     private EffectivePricingModelDto pricingModel;
 
     @JsonIgnore
-    public UUID getPricingModelKey() {
+    public String getPricingModelKey() {
         return pricingModel.getModel().getKey();
     }
 

@@ -1,7 +1,5 @@
 package eu.opertusmundi.common.model.pricing;
 
-import java.util.UUID;
-
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -26,7 +24,7 @@ public class QuotationCommandDto {
 
     @Schema(description = "Pricing model unique key")
     @NotNull
-    private UUID pricingModelKey;
+    private String pricingModelKey;
 
     @Schema(
         description = "Quotation parameters",

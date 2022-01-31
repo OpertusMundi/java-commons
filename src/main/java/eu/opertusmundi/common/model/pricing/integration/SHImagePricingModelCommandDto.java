@@ -1,7 +1,5 @@
 package eu.opertusmundi.common.model.pricing.integration;
 
-import java.util.UUID;
-
 import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
@@ -27,7 +25,7 @@ public class SHImagePricingModelCommandDto extends BasePricingModelCommandDto {
 
     @Builder
     public SHImagePricingModelCommandDto(
-        UUID key,
+        String key,
         String[] domainRestrictions,
         EnumContinent[] coverageRestrictionContinents,
         EnumContinent[] consumerRestrictionContinents,

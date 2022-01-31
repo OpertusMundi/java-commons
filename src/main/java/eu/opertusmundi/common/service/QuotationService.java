@@ -1,7 +1,6 @@
 package eu.opertusmundi.common.service;
 
 import java.util.List;
-import java.util.UUID;
 
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
@@ -43,7 +42,7 @@ public interface QuotationService {
      * @throws QuotationException
      */
     EffectivePricingModelDto createQuotation(
-        CatalogueItemDto asset, UUID pricingModelKey, QuotationParametersDto userParams, boolean ignoreMissing
+        CatalogueItemDto asset, String pricingModelKey, QuotationParametersDto userParams, boolean ignoreMissing
     ) throws QuotationException;
 
     /**
