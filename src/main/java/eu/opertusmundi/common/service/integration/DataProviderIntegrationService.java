@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.service.integration;
 
+import java.util.UUID;
+
 import javax.annotation.Nullable;
 
 import org.springframework.validation.Errors;
@@ -42,4 +44,10 @@ public interface DataProviderIntegrationService {
         BasePricingModelCommandDto model, QuotationParametersDto userParams, SystemQuotationParametersDto systemParams
     ) throws QuotationException;
 
+    /**
+     * Register assets
+     *
+     * @param payInKey
+     */
+    void registerAsset(UUID payInKey);
 }
