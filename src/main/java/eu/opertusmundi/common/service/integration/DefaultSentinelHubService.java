@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ import org.springframework.cloud.openfeign.FeignClientsConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import eu.opertusmundi.common.config.SentinelHubConfiguration;
 import eu.opertusmundi.common.feign.client.SentinelHubFeignClient;
@@ -25,6 +27,11 @@ import eu.opertusmundi.common.model.sinergise.CatalogueResponseDto;
 import eu.opertusmundi.common.model.sinergise.SubscriptionPlanDto;
 import eu.opertusmundi.common.model.sinergise.SubscriptionPlanDto.Billing;
 import eu.opertusmundi.common.model.sinergise.client.ClientCatalogueQueryDto;
+import eu.opertusmundi.common.model.sinergise.server.AccountTypeDto;
+import eu.opertusmundi.common.model.sinergise.server.ContractDto;
+import eu.opertusmundi.common.model.sinergise.server.CreateContractCommandDto;
+import eu.opertusmundi.common.model.sinergise.server.CreateContractResponse;
+import eu.opertusmundi.common.model.sinergise.server.GroupDto;
 import eu.opertusmundi.common.model.sinergise.server.SentinelHubException;
 import eu.opertusmundi.common.model.sinergise.server.SentinelHubExceptionMessageCode;
 import eu.opertusmundi.common.model.sinergise.server.SentinelHubSecurityException;
@@ -43,8 +50,8 @@ public class DefaultSentinelHubService implements SentinelHubService {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultSentinelHubService.class);
 
-    @Value("${opertusmundi.sentinel-hub.oauth-client-name}")
-    private String oauthClientName;
+    @Value("${opertusmundi.sentinel-hub.default-client-name}")
+    private String defaultClientName;
 
     @Value("${opertusmundi.sentinel-hub.client-id}")
     private String clientId;
@@ -59,6 +66,11 @@ public class DefaultSentinelHubService implements SentinelHubService {
 
     private String authorizationHeader;
 
+    /**
+     * Sentinel Hub group identifier for Topio client
+     */
+    private UUID groupId;
+
     @Autowired
     public void setupClients(
         Encoder encoder, Decoder decoder, Contract contract
@@ -72,6 +84,12 @@ public class DefaultSentinelHubService implements SentinelHubService {
 
             this.clients.put(d.getName(), c);
         });
+
+        final List<GroupDto> groups = this.getGroups();
+
+        Assert.isTrue(groups.size() == 1, "Expected a single Sentinel Hub group");
+
+        this.groupId = groups.get(0).getId();
     }
 
     @Override
@@ -79,7 +97,7 @@ public class DefaultSentinelHubService implements SentinelHubService {
         try {
             // Prevent concurrent token requests
             synchronized (this) {
-                final SentinelHubFeignClient client   = this.clients.get(this.oauthClientName);
+                final SentinelHubFeignClient client   = this.clients.get(this.defaultClientName);
                 final ServerTokenResponseDto response = client.requestToken("client_credentials", clientId, clientSecret);
 
                 if (response.isSuccess()) {
@@ -95,6 +113,159 @@ public class DefaultSentinelHubService implements SentinelHubService {
             throw new SentinelHubException(SentinelHubExceptionMessageCode.CLIENT, fex.getMessage(), fex);
         } catch (final SentinelHubException ex) {
             throw ex;
+        } catch (final Exception ex) {
+            logger.error("Operation has failed", ex);
+
+            throw SentinelHubException.wrap(ex);
+        }
+    }
+
+    @Override
+    public List<GroupDto> getGroups() {
+        return this.getGroups(true);
+    }
+
+    private List<GroupDto> getGroups(boolean requestTokenOnFail) throws SentinelHubException {
+        try {
+            // Initialize token on first request
+            if (StringUtils.isEmpty(authorizationHeader)) {
+                // Do not retry, if token request operation fails
+                requestTokenOnFail = false;
+
+                this.requestToken();
+            }
+
+            final SentinelHubFeignClient client   = this.clients.get(this.defaultClientName);
+            final List<GroupDto>         response = client.getGroups(this.authorizationHeader).getData();
+
+            return response;
+        } catch (final FeignException fex) {
+            // If 401 status code is returned, request a new token and retry
+            if (fex.status() == HttpStatus.UNAUTHORIZED.value() && requestTokenOnFail) {
+                this.requestToken();
+                return this.getGroups(false);
+            }
+
+            logger.error("Operation has failed", fex);
+
+            throw new SentinelHubException(SentinelHubExceptionMessageCode.CLIENT, fex.getMessage(), fex);
+        } catch (final Exception ex) {
+            logger.error("Operation has failed", ex);
+
+            throw SentinelHubException.wrap(ex);
+        }
+    }
+
+    @Override
+    public List<AccountTypeDto> getAccountTypes() {
+        return this.getAccountTypes(true);
+    }
+
+    private List<AccountTypeDto> getAccountTypes(boolean requestTokenOnFail) throws SentinelHubException {
+        try {
+            // Initialize token on first request
+            if (StringUtils.isEmpty(authorizationHeader)) {
+                // Do not retry, if token request operation fails
+                requestTokenOnFail = false;
+
+                this.requestToken();
+            }
+
+            final SentinelHubFeignClient client   = this.clients.get(this.defaultClientName);
+            final List<AccountTypeDto>   response = client.getAccountTypes(this.authorizationHeader, this.groupId).getData();
+
+            return response;
+        } catch (final FeignException fex) {
+            // If 401 status code is returned, request a new token and retry
+            if (fex.status() == HttpStatus.UNAUTHORIZED.value() && requestTokenOnFail) {
+                this.requestToken();
+                return this.getAccountTypes(false);
+            }
+
+            logger.error("Operation has failed", fex);
+
+            throw new SentinelHubException(SentinelHubExceptionMessageCode.CLIENT, fex.getMessage(), fex);
+        } catch (final Exception ex) {
+            logger.error("Operation has failed", ex);
+
+            throw SentinelHubException.wrap(ex);
+        }
+    }
+
+    @Override
+    public List<ContractDto> getContracts() {
+        return this.getContracts(true);
+    }
+
+    @Override
+    public boolean contractExists(String userName) {
+        final List<ContractDto> contracts = this.getContracts();
+
+        final String text = "<" + userName + ">";
+
+        return contracts.stream().anyMatch(c -> c.getName().contains(text));
+    }
+
+    private List<ContractDto> getContracts(boolean requestTokenOnFail) throws SentinelHubException {
+        try {
+            // Initialize token on first request
+            if (StringUtils.isEmpty(authorizationHeader)) {
+                // Do not retry, if token request operation fails
+                requestTokenOnFail = false;
+
+                this.requestToken();
+            }
+
+            final SentinelHubFeignClient client   = this.clients.get(this.defaultClientName);
+            final List<ContractDto>      response = client.getContracts(this.authorizationHeader, this.groupId).getData();
+
+            return response;
+        } catch (final FeignException fex) {
+            // If 401 status code is returned, request a new token and retry
+            if (fex.status() == HttpStatus.UNAUTHORIZED.value() && requestTokenOnFail) {
+                this.requestToken();
+                return this.getContracts(false);
+            }
+
+            logger.error("Operation has failed", fex);
+
+            throw new SentinelHubException(SentinelHubExceptionMessageCode.CLIENT, fex.getMessage(), fex);
+        } catch (final Exception ex) {
+            logger.error("Operation has failed", ex);
+
+            throw SentinelHubException.wrap(ex);
+        }
+    }
+
+    @Override
+    public CreateContractResponse createContract(CreateContractCommandDto command) {
+        return this.createContract(command, true);
+    }
+
+    private CreateContractResponse createContract(CreateContractCommandDto command, boolean requestTokenOnFail) throws SentinelHubException {
+        try {
+            // Initialize token on first request
+            if (StringUtils.isEmpty(authorizationHeader)) {
+                // Do not retry, if token request operation fails
+                requestTokenOnFail = false;
+
+                this.requestToken();
+            }
+
+            final SentinelHubFeignClient client   = this.clients.get(this.defaultClientName);
+            final CreateContractResponse response = client.createContract(this.authorizationHeader, this.groupId, command);
+
+            return response;
+        } catch (final FeignException fex) {
+            // If 401 status code is returned, request a new token and retry
+            if (fex.status() == HttpStatus.UNAUTHORIZED.value() && requestTokenOnFail) {
+                this.requestToken();
+                return this.createContract(command, false);
+            }
+
+            logger.error("Operation has failed", fex);
+
+            throw new SentinelHubException(SentinelHubExceptionMessageCode.CLIENT, fex.getMessage(), fex);
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 
@@ -159,23 +330,28 @@ public class DefaultSentinelHubService implements SentinelHubService {
         key = "'sentinel-hub-subscription-plans'"
     )
     public List<SubscriptionPlanDto> getSubscriptionPlans() {
-        final SubscriptionPlanDto plan = SubscriptionPlanDto.builder()
-            .id(UUID.randomUUID().toString())
-            .title("Exploration")
-            .billing(Billing.builder()
-                .annually(BigDecimal.valueOf(300))
-                .monthly(BigDecimal.valueOf(25))
-                .build()
-            )
-            .description("Non-Commercial / Research")
-            .features(Arrays.<String[]>asList(
-                new String[] {"All free features"},
-                new String[] {"OGC standard WMS / WCS / WMTS / WFS", "API for advanced features","Configuration Utility tool"}
-            ))
-            .license("Creative Commons Attribution-NonCommercial 4.0 International License")
-            .build();
+        final List<AccountTypeDto> accountTypes = this.getAccountTypes();
 
-        final List<SubscriptionPlanDto> result = Arrays.asList(plan);
+        final List<SubscriptionPlanDto> result = accountTypes.stream()
+            .filter(a -> !a.getName().equalsIgnoreCase("Trial"))
+            .map(a -> {
+                return SubscriptionPlanDto.builder()
+                    .id(Long.toString(a.getId()))
+                    .title(a.getName())
+                    .billing(Billing.builder()
+                        .annually(BigDecimal.valueOf(300))
+                        .monthly(BigDecimal.valueOf(25))
+                        .build()
+                    )
+                    .description("Non-Commercial / Research")
+                    .features(Arrays.<String[]>asList(
+                        new String[] {"All free features"},
+                        new String[] {"OGC standard WMS / WCS / WMTS / WFS", "API for advanced features","Configuration Utility tool"}
+                    ))
+                    .license("Creative Commons Attribution-NonCommercial 4.0 International License")
+                    .build();
+            })
+            .collect(Collectors.toList());
 
         return result;
     }
