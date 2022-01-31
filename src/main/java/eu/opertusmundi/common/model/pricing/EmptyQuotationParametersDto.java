@@ -6,7 +6,7 @@ public class EmptyQuotationParametersDto extends QuotationParametersDto implemen
 
     private static final long serialVersionUID = 1L;
 
-    protected EmptyQuotationParametersDto() {
+    public EmptyQuotationParametersDto() {
         super(EnumPricingModel.UNDEFINED);
     }
 

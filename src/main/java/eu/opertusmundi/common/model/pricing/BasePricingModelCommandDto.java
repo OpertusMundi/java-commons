@@ -1,7 +1,6 @@
 package eu.opertusmundi.common.model.pricing;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 import javax.annotation.Nullable;
 
@@ -55,7 +54,7 @@ public abstract class BasePricingModelCommandDto implements Serializable {
     )
     @Getter
     @Setter
-    private UUID key;
+    private String key;
 
     @Schema(
         description = "Discriminator field used for deserializing the model to the appropriate data type",

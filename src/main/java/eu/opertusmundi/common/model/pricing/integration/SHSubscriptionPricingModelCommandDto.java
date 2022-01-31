@@ -1,7 +1,6 @@
 package eu.opertusmundi.common.model.pricing.integration;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Digits;
@@ -33,7 +32,7 @@ public class SHSubscriptionPricingModelCommandDto extends BasePricingModelComman
 
     @Builder
     public SHSubscriptionPricingModelCommandDto(
-        UUID key,
+        String key,
         String[] domainRestrictions,
         EnumContinent[] coverageRestrictionContinents,
         EnumContinent[] consumerRestrictionContinents,

@@ -22,6 +22,7 @@ public enum QuotationMessageCode implements MessageCode {
     PREPAID_DISCOUNT_ORDER,
     SUBSCRIPTION_FREQUENCY_NOT_SET,
     SUBSCRIPTION_FREQUENCY_NOT_SUPPORTED,
+    SUBSCRIPTION_EXISTS,
     ;
 
     @Override

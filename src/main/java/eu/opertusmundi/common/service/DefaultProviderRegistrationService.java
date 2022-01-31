@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import eu.opertusmundi.common.domain.AccountEntity;
+import eu.opertusmundi.common.domain.CustomerDraftProfessionalEntity;
 import eu.opertusmundi.common.model.account.AccountDto;
 import eu.opertusmundi.common.model.account.ActivationTokenDto;
 import eu.opertusmundi.common.model.account.CustomerProfessionalDto;
@@ -24,6 +25,7 @@ import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.ActivationTokenRepository;
 import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
 import eu.opertusmundi.common.util.ImageUtils;
+import eu.opertusmundi.common.util.TextUtils;
 
 @Service
 public class DefaultProviderRegistrationService extends AbstractCustomerRegistrationService implements ProviderRegistrationService {
@@ -104,7 +106,9 @@ public class DefaultProviderRegistrationService extends AbstractCustomerRegistra
 
         // The PID service user id will be set only during the first provider
         // registration
-        final Integer pidServiceUserId = this.pidService.registerUser(entity.getProfile().getProviderRegistration().getName());
+        final CustomerDraftProfessionalEntity draft            = entity.getProfile().getProviderRegistration();
+        final String                          namespace        = TextUtils.slugify(draft.getName());
+        final Integer                         pidServiceUserId = this.pidService.registerUser(draft.getName(), namespace);
 
         final AccountDto account = this.accountRepository.completeProviderRegistration(userKey, pidServiceUserId);
 

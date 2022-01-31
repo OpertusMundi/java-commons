@@ -58,6 +58,7 @@ import eu.opertusmundi.common.repository.AccountAssetRepository;
 import eu.opertusmundi.common.repository.AccountSubscriptionRepository;
 import eu.opertusmundi.common.repository.OrderRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
+import eu.opertusmundi.common.service.integration.DataProviderManager;
 import eu.opertusmundi.common.util.BpmEngineUtils;
 import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
 import feign.FeignException;
@@ -95,6 +96,9 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
     @Autowired
     private CatalogueService catalogueService;
+
+    @Autowired
+    private DataProviderManager dataProviderManager;
 
     @Override
     @Transactional
@@ -365,7 +369,10 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                 case ORDER :
                     final PayInOrderItemEntity orderItem = (PayInOrderItemEntity) item;
 
+                    // Register asset to the platform account
                     this.registerOrderItem(payIn, (PayInOrderItemEntity) item);
+                    // Optional register asset to an external data provider
+                    this.dataProviderManager.registerAsset(payInKey);
 
                     // Complete order
                     this.orderRepository.setStatus(orderItem.getOrder().getKey(), EnumOrderStatus.SUCCEEDED);
@@ -383,7 +390,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     private void registerOrderItem(PayInEntity payIn, PayInOrderItemEntity payInItem) {
         final OrderEntity             order     = payInItem.getOrder();
         final OrderItemEntity         orderItem = order.getItems().get(0);
-        final CatalogueItemDetailsDto asset      = this.catalogueService.findOne(null, orderItem.getAssetId(), null, false);
+        final CatalogueItemDetailsDto asset     = this.catalogueService.findOne(null, orderItem.getAssetId(), null, false);
 
         if (!asset.getType().isRegisteredOnPurchase()) {
             // No registration required
@@ -465,6 +472,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         if(renewal) {
             activeSubscription.setUpdatedOn(now);
         }
+
         // Create/Update subscription for consumer account
         final AccountSubscriptionEntity sub = new AccountSubscriptionEntity();
 
@@ -524,7 +532,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         }
 
         this.accountSubscriptionRepository.save(sub);
-        
+
         // Link subscription to recurring payment if one exists
         if (payIn instanceof CardDirectPayInEntity) {
             final CardDirectPayInEntity cardPayIn = (CardDirectPayInEntity) payIn;

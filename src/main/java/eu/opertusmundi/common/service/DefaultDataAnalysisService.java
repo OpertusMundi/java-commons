@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,7 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -407,6 +409,24 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
         }
 
         return result;
+    }
+
+    @Override
+    public List<ImmutablePair<String, Integer>> executePopularAssetViewsAndSearches(AssetViewQuery query) {
+        if (elasticSearchService == null || query == null) {
+            return Collections.emptyList();
+        }
+
+        return this.elasticSearchService.findPopularAssetViewsAndSearches(query);
+    }
+
+    @Override
+    public List<ImmutablePair<String, Integer>> executePopularTerms() {
+        if (elasticSearchService == null) {
+            return Collections.emptyList();
+        }
+
+        return this.elasticSearchService.findPopularTerms();
     }
 
 }

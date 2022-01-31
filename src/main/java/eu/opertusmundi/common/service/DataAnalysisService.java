@@ -1,5 +1,9 @@
 package eu.opertusmundi.common.service;
 
+import java.util.List;
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
+
 import eu.opertusmundi.common.model.analytics.AssetTotalValueQuery;
 import eu.opertusmundi.common.model.analytics.AssetViewQuery;
 import eu.opertusmundi.common.model.analytics.CoverageQuery;
@@ -39,5 +43,21 @@ public interface DataAnalysisService {
      * @return
      */
     DataSeries<?> executeTotalAssetValue(AssetTotalValueQuery query);
+
+    /**
+     * Find popular asset views/searches
+     *
+     * @param
+     * @return
+     */
+    List<ImmutablePair<String, Integer>> executePopularAssetViewsAndSearches(AssetViewQuery query);
+
+    /**
+     * Find popular terms
+     *
+     * @param
+     * @return
+     */
+    List<ImmutablePair<String, Integer>> executePopularTerms();
 
 }

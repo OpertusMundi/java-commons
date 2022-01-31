@@ -2,6 +2,7 @@ package eu.opertusmundi.common.service.integration;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
@@ -59,5 +60,10 @@ public class DataProviderManager implements DataProviderIntegrationService {
         Assert.isTrue(quotations.size() < 2, "More than one data providers returned a quotation result. Check configuration options");
 
         return quotations.stream().findFirst().orElse(null);
+    }
+
+    @Override
+    public void registerAsset(UUID payInKey) {
+        this.dataProviders.values().stream().forEach(p -> p.registerAsset(payInKey));
     }
 }

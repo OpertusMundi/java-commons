@@ -2,7 +2,6 @@ package eu.opertusmundi.common.service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
@@ -52,7 +51,7 @@ public class DefaultQuotationService implements QuotationService {
 
     @Override
     public EffectivePricingModelDto createQuotation(
-        CatalogueItemDto asset, UUID pricingModelKey, QuotationParametersDto userParams, boolean ignoreMissing
+        CatalogueItemDto asset, String pricingModelKey, QuotationParametersDto userParams, boolean ignoreMissing
     ) throws QuotationException {
         try {
             final BasePricingModelCommandDto model = asset.getPricingModels().stream()
