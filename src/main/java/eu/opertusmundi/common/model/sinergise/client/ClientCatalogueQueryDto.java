@@ -82,11 +82,8 @@ public class ClientCatalogueQueryDto {
 
     @JsonIgnore
     public String getDateTime() {
-        String result = null;
+        String result;
 
-        if ((fromDateTime == null) && (toDateTime == null)) {
-            return result;
-        }
         result = fromDateTime == null ? "../" : fromDateTime.toOffsetDateTime().toString() + "/";
         result = toDateTime == null ? result + ".." : result + toDateTime.toOffsetDateTime().toString();
 
