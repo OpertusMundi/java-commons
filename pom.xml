@@ -100,11 +100,6 @@
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 
-		<dependency>
-			<groupId>org.springframework.security.oauth.boot</groupId>
-			<artifactId>spring-security-oauth2-autoconfigure</artifactId>
-		</dependency>
-
 		<!-- Spring -->
 		<dependency>
 			<groupId>org.springframework.retry</groupId>
