@@ -10,5 +10,16 @@ public abstract class FileNamingStrategyContext {
     }
 
     private final boolean createIfNotExists;
-
+    
+    /**
+     * Validate a name component of a path.
+     * 
+     * @param name a path component
+     * @return
+     */
+    public boolean validateName(String name)
+    {
+        // This is a stub; override in subclasses to provide specific filtering
+        return true;
+    }
 }

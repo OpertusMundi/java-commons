@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,10 +17,6 @@ import eu.opertusmundi.common.model.file.UserFileNamingStrategyContext;
 
 @Service
 public class DefaultUserFileNamingStrategy extends AbstractFileNamingStrategy<UserFileNamingStrategyContext> {
-
-    private final Pattern strictPattern = Pattern.compile("^(\\/{0,1}[a-zA-Z_\\-0-9]+)+(\\.[a-zA-Z0-9]+|\\/?)?$");
-
-    private final Pattern lenientPattern = Pattern.compile("^(\\/{0,1}\\.?[a-zA-Z_\\-0-9]+)+(\\.[a-zA-Z0-9]+|\\/?)?$");
 
     @Value("${opertus-mundi.file-system.max-depth:8}")
     private int maxDepth;
@@ -65,16 +59,15 @@ public class DefaultUserFileNamingStrategy extends AbstractFileNamingStrategy<Us
             if (p.length() > this.maxLength) {
                 throw new FileSystemException(
                     FileSystemMessageCode.PATH_MAX_LENGTH,
-                    String.format("Path segment [%s] length exceeds the limit [%d]", p, this.maxLength)
+                    String.format("Path component [%s] length exceeds the limit [%d]", p, this.maxLength)
                 );
             }
-        }
-        final Matcher matcher = (ctx.isStrict() ? this.strictPattern : this.lenientPattern).matcher(path);
-        if (!matcher.matches()) {
-            throw new FileSystemException(
-                FileSystemMessageCode.INVALID_PATH,
-                String.format("Path [%s] is not valid", path)
-            );
+            if (!ctx.validateName(p)) {
+                throw new FileSystemException(
+                    FileSystemMessageCode.INVALID_PATH,
+                    String.format("Path component [%s] is not valid", p)
+                );
+            }
         }
     }
 

@@ -57,13 +57,14 @@ public class DefaultUserFileManager implements UserFileManager {
         try {
             final UserFileNamingStrategyContext ctx = UserFileNamingStrategyContext.of(command.getUserName());
 
+            // Fixme: normally, this should never be needed here (home directory is setup during registration)
             this.initializeFileSystem(ctx);
 
             final Path target = command.getPath().equals("/")
                 ? this.fileNamingStrategy.getDir(ctx)
                 : this.fileNamingStrategy.resolvePath(ctx, command.getPath());
 
-            return this.directoryTraverse.getDirectoryInfo(target);
+            return this.directoryTraverse.getDirectoryInfo(target, ctx::validateName);
         } catch (final Exception ex) {
             logger.error(String.format("Failed to load files. [userName=%s, path=%s]", command.getUserName(), command.getPath()), ex);
 
@@ -111,7 +112,7 @@ public class DefaultUserFileManager implements UserFileManager {
         try  {
             final UserFileNamingStrategyContext ctx         = UserFileNamingStrategyContext.of(command.getUserName());
             final Path                          userDir     = this.fileNamingStrategy.getDir(ctx);
-            final DirectoryDto                  userDirInfo = this.directoryTraverse.getDirectoryInfo(userDir);
+            final DirectoryDto                  userDirInfo = this.directoryTraverse.getDirectoryInfo(userDir, ctx::validateName);
 
             final long size = userDirInfo.getSize();
             if (size + command.getSize() > this.maxUserSpace) {
