@@ -32,7 +32,6 @@
 		<org.camunda.bpm.version>7.13.0</org.camunda.bpm.version>
 		<org.locationtech.jts.version>1.17.1</org.locationtech.jts.version>
 		<org.locationtech.jts.spatial4j.version>0.7</org.locationtech.jts.spatial4j.version>
-		<postgresql.version>42.2.19</postgresql.version>
 		<springdoc.version>1.5.4</springdoc.version>
 		<thumbnailator.version>0.4.14</thumbnailator.version>
 
