@@ -12,7 +12,7 @@ public class CommercialDataSentinelHubProperties extends SentinelHubProperties i
     private static final long serialVersionUID = 1L;
 
     public CommercialDataSentinelHubProperties() {
-        super(SentinelHubProperties.EnumType.COMMERCIAL);
+        super(EnumSentinelHubAssetType.COMMERCIAL);
     }
 
 }

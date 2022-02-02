@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,22 +22,24 @@ import lombok.Setter;
 })
 @Getter
 @Setter
+@Schema(
+    description = "Sentinel Hub custom properties",
+    required = true,
+    discriminatorMapping = {
+        @DiscriminatorMapping(value = "OPEN_DATA", schema = OpenDataSentinelHubProperties.class),
+        @DiscriminatorMapping(value = "COMMERCIAL", schema = CommercialDataSentinelHubProperties.class)
+    }
+)
 public class SentinelHubProperties implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    public enum EnumType {
-        OPEN_DATA,
-        COMMERCIAL,
-        ;
-    }
-
-    protected SentinelHubProperties(EnumType type) {
+    protected SentinelHubProperties(EnumSentinelHubAssetType type) {
         this.type = type;
     }
 
     @Schema(description = "Dataset type", required = true)
     @NotNull
-    private EnumType type;
+    private EnumSentinelHubAssetType type;
 
 }

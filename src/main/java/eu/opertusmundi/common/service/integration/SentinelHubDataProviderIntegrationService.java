@@ -27,6 +27,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQuery;
+import eu.opertusmundi.common.model.catalogue.integration.EnumSentinelHubAssetType;
 import eu.opertusmundi.common.model.catalogue.integration.OpenDataSentinelHubProperties;
 import eu.opertusmundi.common.model.catalogue.integration.SentinelHubProperties;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
@@ -279,7 +280,7 @@ public class SentinelHubDataProviderIntegrationService extends BaseDataProviderI
     private boolean compareCollection(CatalogueItemDto item, String collection) {
         final SentinelHubProperties props = item.getExtensions().getSentinelHub();
 
-        if (props == null || props.getType() != SentinelHubProperties.EnumType.OPEN_DATA) {
+        if (props == null || props.getType() != EnumSentinelHubAssetType.OPEN_DATA) {
             return false;
         }
 

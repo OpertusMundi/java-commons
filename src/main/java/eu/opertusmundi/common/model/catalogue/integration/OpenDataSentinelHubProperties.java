@@ -15,7 +15,7 @@ public class OpenDataSentinelHubProperties extends SentinelHubProperties impleme
     private static final long serialVersionUID = 1L;
 
     public OpenDataSentinelHubProperties() {
-        super(SentinelHubProperties.EnumType.OPEN_DATA);
+        super(EnumSentinelHubAssetType.OPEN_DATA);
     }
 
     @Schema(description = "`true` if this is a open data collection")
