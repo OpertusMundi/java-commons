@@ -6,12 +6,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import net.coobird.thumbnailator.Thumbnails;

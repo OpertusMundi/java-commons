@@ -7,8 +7,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.annotation.Nullable;
-
 import org.apache.commons.lang3.StringUtils;
 import org.locationtech.jts.geom.Geometry;
 import org.springframework.data.domain.Page;
@@ -16,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -199,9 +198,9 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
 
         /*
          * Update metadata only when status is:
-         * 
+         *
          * PENDING_PROVIDER_REVIEW  : Provider update during review
-         * POST_PROCESSING          : Sample generation before publishing 
+         * POST_PROCESSING          : Sample generation before publishing
          */
         if (draft.getStatus() != EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW &&
             draft.getStatus() != EnumProviderAssetDraftStatus.POST_PROCESSING

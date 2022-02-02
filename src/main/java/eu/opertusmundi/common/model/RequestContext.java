@@ -2,7 +2,7 @@ package eu.opertusmundi.common.model;
 
 import java.util.UUID;
 
-import javax.annotation.Nullable;
+import org.springframework.lang.Nullable;
 
 import eu.opertusmundi.common.model.account.AccountDto;
 import eu.opertusmundi.common.model.location.Location;

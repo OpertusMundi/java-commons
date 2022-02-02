@@ -2,7 +2,7 @@ package eu.opertusmundi.common.model.pricing;
 
 import java.io.Serializable;
 
-import javax.annotation.Nullable;
+import org.springframework.lang.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;

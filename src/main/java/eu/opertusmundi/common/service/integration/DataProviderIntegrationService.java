@@ -2,8 +2,7 @@ package eu.opertusmundi.common.service.integration;
 
 import java.util.UUID;
 
-import javax.annotation.Nullable;
-
+import org.springframework.lang.Nullable;
 import org.springframework.validation.Errors;
 
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;

@@ -3,7 +3,7 @@ package eu.opertusmundi.common.service.mangopay;
 import java.util.List;
 import java.util.UUID;
 
-import javax.annotation.Nullable;
+import org.springframework.lang.Nullable;
 
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
@@ -448,7 +448,7 @@ public interface  PaymentService {
      * @throws PaymentException
      */
     void updateUserBlockStatus(String providerUserId) throws PaymentException;
-    
+
     /**
      * Updates user block status
      *
