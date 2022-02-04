@@ -1,7 +1,6 @@
 package eu.opertusmundi.common.service;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -56,9 +55,6 @@ public class DefaultUserFileManager implements UserFileManager {
 
         try {
             final UserFileNamingStrategyContext ctx = UserFileNamingStrategyContext.of(command.getUserName());
-
-            // Fixme: normally, this should never be needed here (home directory is setup during registration)
-            this.initializeFileSystem(ctx);
 
             final Path target = command.getPath().equals("/")
                 ? this.fileNamingStrategy.getDir(ctx)
@@ -213,14 +209,6 @@ public class DefaultUserFileManager implements UserFileManager {
             logger.warn("Failed to resolve path. [userName={}, path={}]", command.getUserName(), command.getPath());
 
             throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "An unknown error has occurred", ex);
-        }
-    }
-
-    private void initializeFileSystem(UserFileNamingStrategyContext ctx) throws IOException {
-        final Path path = this.fileNamingStrategy.getDir(ctx);
-        if (!Files.exists(path)) {
-            Files.createDirectories(path);
-            Files.setPosixFilePermissions(path, DEFAULT_DIRECTORY_PERMISSIONS);
         }
     }
 
