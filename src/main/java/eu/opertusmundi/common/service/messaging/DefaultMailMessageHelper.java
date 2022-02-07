@@ -50,7 +50,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 
     @Autowired
     private ProviderAssetService providerAssetService;
-    
+
     @Autowired
     private CatalogueService catalogueService;
 
@@ -159,7 +159,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             case SUPPLIER_PUBLISHING_REJECTED :
             	this.populateSupplierAssetRejectedByHelpdeskModel(builder);
             	break;
-            	
+
             case SUPPLIER_ASSET_PUBLISHED :
             	this.populateSupplierAssetPublishedModel(builder);
             	break;
@@ -251,7 +251,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .setRecipientName(account.getFullName())
             .setRecipientAddress(account.getEmail())
             .add("name", account.getFullName())
-            .add("orderId", orderEntity.getId())
+            .add("orderId", orderEntity.getReferenceNumber())
             .add("orderDate", orderEntity.getCreatedOn())
             .add("orderTotal", orderEntity.getTotalPrice())
             .add("shippingRoad", consumerAddress.getLine1() + " " + consumerAddress.getLine2())
@@ -289,7 +289,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .setRecipientName(account.getFullName())
             .setRecipientAddress(account.getEmail())
             .add("name", account.getFullName())
-            .add("orderID", orderEntity.getId())
+            .add("orderID", orderEntity.getReferenceNumber())
             .add("consumerUsername", customerEntity.getUserName())
             .add("productURL", this.baseUrl + "/" + "catalogue" + "/" + orderItemEntity.getAssetId())
             .add("productName", orderItemEntity.getDescription())
@@ -310,7 +310,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .setRecipientName(account.getFullName())
             .setRecipientAddress(account.getEmail())
             .add("name", account.getFullName())
-            .add("orderId", orderEntity.getId())
+            .add("orderId", orderEntity.getReferenceNumber())
             .add("consumerUsername", customerEntity.getUserName())
             .add("productURL", this.baseUrl + "/" + "catalogue" + "/" + orderItemEntity.getAssetId())
             .add("productName", orderItemEntity.getDescription())
@@ -362,13 +362,13 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .add("name", account.getFullName())
             .add("assetName", assetName);
 	}
-	
+
 	private void populateSupplierAssetPublishedModel(MailModelBuilder builder) {
 		final UUID userKey  = UUID.fromString((String) builder.get("startUserKey"));
         final UUID draftKey = UUID.fromString((String) builder.get("draftKey"));
 
         final AccountEntity 	account 		= this.accountRepository.findOneByKey(userKey).get();
-        
+
 		final String 	assetPublishedId	= this.providerAssetService.findOneDraft(draftKey).getAssetPublished();
 		final String 	assetName			= this.catalogueService.findOneFeature(assetPublishedId).getProperties().getTitle();
 
@@ -393,7 +393,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .setRecipientName(account.getFullName())
             .setRecipientAddress(account.getEmail())
             .add("name", account.getFullName())
-            .add("orderId", orderEntity.getId())
+            .add("orderId", orderEntity.getReferenceNumber())
             .add("supplierName", orderItemEntity.getProvider());
 
 	}
@@ -409,7 +409,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .setRecipientName(account.getFullName())
             .setRecipientAddress(account.getEmail())
             .add("name", account.getFullName())
-            .add("orderId", orderEntity.getId());
+            .add("orderId", orderEntity.getReferenceNumber());
 
 	}
 
@@ -426,7 +426,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .setRecipientName(account.getFullName())
             .setRecipientAddress(account.getEmail())
             .add("name", account.getFullName())
-            .add("orderId", orderEntity.getId())
+            .add("orderId", orderEntity.getReferenceNumber())
             .add("supplierName", orderItemEntity.getProvider());
 
 	}
@@ -443,7 +443,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .setRecipientName(account.getFullName())
             .setRecipientAddress(account.getEmail())
             .add("name", account.getFullName())
-            .add("orderId", orderEntity.getId());
+            .add("orderId", orderEntity.getReferenceNumber());
 
 	}
 
@@ -471,7 +471,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .setRecipientName(account.getFullName())
             .setRecipientAddress(account.getEmail())
             .add("name", account.getFullName())
-            .add("orderId", orderEntity.getId())
+            .add("orderId", orderEntity.getReferenceNumber())
             .add("supplierName", orderItemEntity.getProvider())
             .add("productURL", this.baseUrl + "/" + "catalogue" + "/" + orderItemEntity.getAssetId())
             .add("productName", orderItemEntity.getDescription())

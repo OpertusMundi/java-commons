@@ -17,6 +17,7 @@ import eu.opertusmundi.common.domain.NotificationTemplateEntity;
 import eu.opertusmundi.common.model.ServiceException;
 import eu.opertusmundi.common.model.message.EnumNotificationType;
 import eu.opertusmundi.common.model.message.client.NotificationMessageCode;
+import eu.opertusmundi.common.model.order.HelpdeskOrderDto;
 import eu.opertusmundi.common.model.order.HelpdeskOrderItemDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskOrderPayInItemDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
@@ -99,7 +100,7 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
             	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
             	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
             	return data;
-            	
+
             case DIGITAL_DELIVERY :
             	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
             	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
@@ -147,9 +148,9 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
         final UUID                      payInKey       = UUID.fromString((String) variables.get("payInKey"));
         final HelpdeskPayInDto          helpDeskPayIn  = this.payInRepository.findOneObjectByKey(payInKey).get();
         final HelpdeskOrderPayInItemDto payInOrderItem = (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
-        final HelpdeskOrderItemDto      orderItem      = payInOrderItem.getOrder().getItems().get(0);
+        final HelpdeskOrderDto          order          = payInOrderItem.getOrder();
 
-    	data.put("orderId", orderItem.getOrderId());
+    	data.put("orderId", order.getReferenceNumber());
         return data;
 	}
 
@@ -246,12 +247,12 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
     private Map<String, Object> jsonToMap(JsonNode data) {
         final Map<String, Object> result = new HashMap<>();
 
-        final ObjectNode                      node = (ObjectNode) data;
+        final ObjectNode                            node = (ObjectNode) data;
         final Iterator<Map.Entry<String, JsonNode>> iter = node.fields();
 
         while (iter.hasNext()) {
             final Map.Entry<String, JsonNode> entry = iter.next();
-            if (entry.getValue().isTextual()) {
+            if (!entry.getValue().isNull()) {
                 result.put(entry.getKey(), entry.getValue().asText());
             }
         }
