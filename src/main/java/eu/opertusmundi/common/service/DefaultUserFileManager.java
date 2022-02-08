@@ -20,11 +20,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import com.google.common.base.Charsets;
+
 import eu.opertusmundi.common.model.file.DirectoryDto;
 import eu.opertusmundi.common.model.file.FilePathCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.file.FileSystemMessageCode;
 import eu.opertusmundi.common.model.file.FileUploadCommand;
+import eu.opertusmundi.common.model.file.QuotaDto;
 import eu.opertusmundi.common.model.file.UserFileNamingStrategyContext;
 
 @Service
@@ -46,6 +49,33 @@ public class DefaultUserFileManager implements UserFileManager {
 
     @Autowired
     private DirectoryTraverse directoryTraverse;
+
+    @Override
+    public QuotaDto getQuota(String userName) throws FileSystemException {
+        Assert.hasText(userName, "Expected a non-empty user name");
+
+        try {
+            final UserFileNamingStrategyContext ctx = UserFileNamingStrategyContext.of(userName, false);
+
+            final Path quotaDir          = this.fileNamingStrategy.resolvePath(ctx, "/.quota");
+            final Path spaceFilePath     = quotaDir.resolve("report/space");
+            final Path spaceUsedFilePath = quotaDir.resolve("report/space-used");
+
+            if (!Files.exists(spaceFilePath) || !(Files.exists(spaceUsedFilePath))) {
+                return null;
+            }
+
+            final long total = Long.parseLong(FileUtils.readFileToString(spaceFilePath.toFile(), Charsets.UTF_8));
+            final long used  = Long.parseLong(FileUtils.readFileToString(spaceUsedFilePath.toFile(), Charsets.UTF_8));
+
+            return QuotaDto.of(total, used);
+        } catch (final Exception ex) {
+            logger.error(String.format("Failed to get user quota [userName=%s]", userName), ex);
+
+            throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "An unknown error has occurred", ex);
+
+        }
+    }
 
     @Override
     public DirectoryDto browse(FilePathCommand command) throws FileSystemException {

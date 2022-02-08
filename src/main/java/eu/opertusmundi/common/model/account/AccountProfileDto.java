@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import eu.opertusmundi.common.model.file.QuotaDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -38,6 +39,9 @@ public class AccountProfileDto extends AccountProfileBaseDto implements Serializ
 
     @Schema(description = "Provider related data")
     private ProviderData provider = new ProviderData();
+
+    @Schema(description = "User file system quota")
+    private QuotaDto quota;
 
     @JsonIgnore
     public String getFullName() {
