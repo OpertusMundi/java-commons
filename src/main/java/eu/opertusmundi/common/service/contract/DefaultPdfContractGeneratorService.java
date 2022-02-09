@@ -1706,7 +1706,6 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             InputStream boldFontIs = resourceLoader.getResource(boldFont).getInputStream();
             InputStream italicFontIs = resourceLoader.getResource(italicFont).getInputStream();
             InputStream boldItalicFontIs = resourceLoader.getResource(boldItalicFont).getInputStream();
-            InputStream watermarkIs = resourceLoader.getResource(watermark).getInputStream();
         ) {
             logo = IOUtils.toByteArray(logoIs);
 
@@ -1875,16 +1874,18 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             ctx.close();
 
             // Optionally add an overlay page
-            try (final Overlay overlay = draft ? new Overlay() : null) {
+            try (
+                final Overlay     overlay     = draft ? new Overlay() : null;
+                final InputStream watermarkIs = resourceLoader.getResource(watermark).getInputStream();
+            ) {
                 // Add watermark if draft
                 if (draft) {
-                    final HashMap<Integer, String> overlayGuide = new HashMap<Integer, String>();
-                    for (int i = 0; i < document.getNumberOfPages(); i++) {
-                        overlayGuide.put(i + 1, resourceLoader.getResource(watermark).getFile().getAbsolutePath());
-                    }
+                    final PDDocument defaultOverlayPDF = PDDocument.load(watermarkIs);
+
                     overlay.setInputPDF(document);
                     overlay.setOverlayPosition(Overlay.Position.BACKGROUND);
-                    overlay.overlay(overlayGuide);
+                    overlay.setDefaultOverlayPDF(defaultOverlayPDF);
+                    overlay.overlay(new HashMap<Integer, String>());
                 }
 
                 try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
@@ -1898,6 +1899,10 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                     }
 
                     return byteArrayOutputStream.toByteArray();
+                } finally {
+                    if (document != null) {
+                        document.close();
+                    }
                 }
             }
         }
