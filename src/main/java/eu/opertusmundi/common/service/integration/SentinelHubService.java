@@ -5,6 +5,7 @@ import java.util.List;
 import eu.opertusmundi.common.model.sinergise.CatalogueResponseDto;
 import eu.opertusmundi.common.model.sinergise.SubscriptionPlanDto;
 import eu.opertusmundi.common.model.sinergise.client.ClientCatalogueQueryDto;
+import eu.opertusmundi.common.model.sinergise.client.SentinelHubOpenDataCollection;
 import eu.opertusmundi.common.model.sinergise.server.AccountTypeDto;
 import eu.opertusmundi.common.model.sinergise.server.ContractDto;
 import eu.opertusmundi.common.model.sinergise.server.CreateContractCommandDto;
@@ -74,5 +75,12 @@ public interface SentinelHubService {
      * @return
      */
     List<SubscriptionPlanDto> getSubscriptionPlans();
+
+    /**
+     * Get all supported open data collections
+     *
+     * @return
+     */
+    List<SentinelHubOpenDataCollection> getOpenDataCollections();
 
 }

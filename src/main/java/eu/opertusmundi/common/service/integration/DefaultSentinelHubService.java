@@ -27,6 +27,8 @@ import eu.opertusmundi.common.model.sinergise.CatalogueResponseDto;
 import eu.opertusmundi.common.model.sinergise.SubscriptionPlanDto;
 import eu.opertusmundi.common.model.sinergise.SubscriptionPlanDto.Billing;
 import eu.opertusmundi.common.model.sinergise.client.ClientCatalogueQueryDto;
+import eu.opertusmundi.common.model.sinergise.client.SentinelHubDeployment;
+import eu.opertusmundi.common.model.sinergise.client.SentinelHubOpenDataCollection;
 import eu.opertusmundi.common.model.sinergise.server.AccountTypeDto;
 import eu.opertusmundi.common.model.sinergise.server.ContractDto;
 import eu.opertusmundi.common.model.sinergise.server.CreateContractCommandDto;
@@ -301,9 +303,9 @@ public class DefaultSentinelHubService implements SentinelHubService {
                 .query(query.getQuery())
                 .build();
 
-            final SentinelHubConfiguration.Deployment deployment = this.config.getDeploymentByCollection(query.getCollection());
-            final SentinelHubFeignClient              client     = this.clients.get(deployment.getName());
-            final CatalogueResponseDto                response   = client.search(authorizationHeader, serverQuery);
+            final SentinelHubDeployment  deployment = this.config.getDeploymentByCollection(query.getCollection());
+            final SentinelHubFeignClient client     = this.clients.get(deployment.getName());
+            final CatalogueResponseDto   response   = client.search(authorizationHeader, serverQuery);
 
             return response;
         } catch (final FeignException fex) {
@@ -354,6 +356,14 @@ public class DefaultSentinelHubService implements SentinelHubService {
             .collect(Collectors.toList());
 
         return result;
+    }
+
+
+    @Override
+    public List<SentinelHubOpenDataCollection> getOpenDataCollections() {
+        return this.config.getDeployments().stream()
+            .flatMap(d -> d.getCollections().stream())
+            .collect(Collectors.toList());
     }
 
 }

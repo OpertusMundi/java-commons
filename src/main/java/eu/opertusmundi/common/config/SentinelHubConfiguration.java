@@ -4,13 +4,13 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.validation.annotation.Validated;
 
+import eu.opertusmundi.common.model.sinergise.client.SentinelHubDeployment;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,25 +23,11 @@ import lombok.Setter;
 public class SentinelHubConfiguration {
 
     @Valid
-    private List<Deployment> deployments = Collections.emptyList();
+    private List<SentinelHubDeployment> deployments = Collections.emptyList();
 
-    @Getter
-    @Setter
-    public static class Deployment {
-
-        @NotEmpty
-        private String name;
-
-        @NotEmpty
-        private String url;
-
-        private List<String> collections = Collections.emptyList();
-
-    }
-
-    public Deployment getDeploymentByCollection(String name) {
+    public SentinelHubDeployment getDeploymentByCollection(String id) {
         return this.getDeployments().stream()
-            .filter(d -> d.collections.contains(name))
+            .filter(d -> d.getCollections().stream().anyMatch(c -> c.getId().equals(id)))
             .findFirst()
             .orElse(null);
     }
