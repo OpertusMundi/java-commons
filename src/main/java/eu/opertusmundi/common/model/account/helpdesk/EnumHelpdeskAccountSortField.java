@@ -7,8 +7,6 @@ public enum EnumHelpdeskAccountSortField {
     EMAIL("email"),
     FIRST_NAME("firstName"),
     LAST_NAME("lastName"),
-    CONSUMER_FUNDS("profile.consumer.walletFunds"),
-    PROVIDER_FUNDS("profile.provider.walletFunds"),
     ;
 
     @Getter

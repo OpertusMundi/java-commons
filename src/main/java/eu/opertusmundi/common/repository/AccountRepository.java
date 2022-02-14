@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.repository;
 
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -42,6 +43,8 @@ import eu.opertusmundi.common.model.account.PlatformAccountCommandDto;
 import eu.opertusmundi.common.model.account.ProviderProfessionalCommandDto;
 import eu.opertusmundi.common.model.account.ProviderProfileCommandDto;
 import eu.opertusmundi.common.model.account.VendorAccountCommandDto;
+import eu.opertusmundi.common.model.account.helpdesk.ExternalProviderCommandDto;
+import eu.opertusmundi.common.model.integration.EnumDataProvider;
 import eu.opertusmundi.common.util.TextUtils;
 
 @Repository
@@ -617,5 +620,31 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
 
         return account.toDto();
     }
+    
+    @Transactional(readOnly = false)
+    default AccountDto assignExternalProvider(ExternalProviderCommandDto command) {
+        Assert.notNull(command, "Expected a non-null command");
+
+        final AccountEntity account = this.findOneByKey(command.getCustomerKey()).orElse(null);
+
+        // Remove any existing roles
+        Arrays.asList(EnumDataProvider.values()).stream().forEach(p -> {
+            final EnumRole role = p.getRequiredRole();
+            if (account.hasRole(p.getRequiredRole())) {
+                account.revoke(role);
+            }
+        });
+
+        if (command.getProvider() != EnumDataProvider.UNDEFINED) {
+            account.grant(command.getProvider().getRequiredRole(), null);
+        }
+
+        this.saveAndFlush(account);
+
+        return account.toDto(true);
+    }
+
+    @Query("SELECT r.account FROM AccountRole r WHERE r.role = :role")
+    List<AccountEntity> findAllWithRole(EnumRole role);
 
 }
