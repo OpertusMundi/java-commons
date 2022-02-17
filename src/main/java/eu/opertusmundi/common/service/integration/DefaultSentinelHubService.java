@@ -6,9 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,8 +44,10 @@ import eu.opertusmundi.common.model.sinergise.server.ServerTokenResponseDto;
 import feign.Contract;
 import feign.Feign;
 import feign.FeignException;
+import feign.Request;
 import feign.codec.Decoder;
 import feign.codec.Encoder;
+import feign.httpclient.ApacheHttpClient;
 
 @Service
 @ConditionalOnProperty(name = "opertusmundi.sentinel-hub.enabled")
@@ -61,11 +65,26 @@ public class DefaultSentinelHubService implements SentinelHubService {
     @Value("${opertusmundi.sentinel-hub.client-secret}")
     private String clientSecret;
 
+    @Value("${feign.client.config.default.connectTimeout:10000}")
+    private int connectTimeout;
+
+    @Value("${feign.client.config.default.readTimeout:60000}")
+    private int readTimeout;
+
     @Autowired
     private SentinelHubConfiguration config;
 
+    @Autowired
+    private CloseableHttpClient httpClient;
+
+    /**
+     * Map of Feign clients for Sentinel Hub endpoints
+     */
     private final Map<String, SentinelHubFeignClient> clients = new HashMap<>();
 
+    /**
+     * Current authorization header
+     */
     private String authorizationHeader;
 
     /**
@@ -82,6 +101,8 @@ public class DefaultSentinelHubService implements SentinelHubService {
                 .encoder(encoder)
                 .decoder(decoder)
                 .contract(contract)
+                .client(new ApacheHttpClient(httpClient))
+                .options(new Request.Options(connectTimeout, TimeUnit.MILLISECONDS, readTimeout, TimeUnit.MILLISECONDS, true))
                 .target(SentinelHubFeignClient.class, d.getUrl());
 
             this.clients.put(d.getName(), c);
