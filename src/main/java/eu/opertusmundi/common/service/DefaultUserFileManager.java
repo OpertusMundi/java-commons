@@ -65,8 +65,12 @@ public class DefaultUserFileManager implements UserFileManager {
                 return null;
             }
 
-            final long total = Long.parseLong(FileUtils.readFileToString(spaceFilePath.toFile(), Charsets.UTF_8));
-            final long used  = Long.parseLong(FileUtils.readFileToString(spaceUsedFilePath.toFile(), Charsets.UTF_8));
+            final long total = Long.parseLong(
+                StringUtils.trim(FileUtils.readFileToString(spaceFilePath.toFile(), Charsets.UTF_8))
+            );
+            final long used  = Long.parseLong(
+                StringUtils.trim(FileUtils.readFileToString(spaceUsedFilePath.toFile(), Charsets.UTF_8))
+            );
 
             return QuotaDto.of(total, used);
         } catch (final Exception ex) {
