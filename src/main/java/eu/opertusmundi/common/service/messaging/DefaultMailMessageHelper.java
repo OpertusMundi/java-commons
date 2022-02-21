@@ -74,6 +74,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             case CONSUMER_PURCHASE_NOTIFICATION :
             case CONSUMER_PURCHASE_REJECTION :
             case CONSUMER_RECEIPT_ISSUED :
+            case CONSUMER_INVOICE :
             case FILES_UPLOAD_COMPLETED :
             case MASTER_TEMPLATE_CONTRACT_UPDATE :
             case ORDER_CONFIRMATION :
@@ -178,6 +179,10 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 
             case CONSUMER_RECEIPT_ISSUED :
             	this.populateConsumerReceiptIssuedModel(builder);
+            	break;
+            	
+            case CONSUMER_INVOICE :
+            	this.populateConsumerInvoiceModel(builder);
             	break;
 
             case CONSUMER_PURCHASE_NOTIFICATION :
@@ -438,7 +443,21 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
         final AccountEntity account 	= this.accountRepository.findOneByKey(userKey).get();
         final OrderEntity 	orderEntity	= orderRepository.findOrderEntityByKey(orderKey).get();
 
-        // TODO: PDF Receipt
+        builder
+            .setRecipientName(account.getFullName())
+            .setRecipientAddress(account.getEmail())
+            .add("name", account.getFullName())
+            .add("orderId", orderEntity.getReferenceNumber());
+
+	}
+	
+	private void populateConsumerInvoiceModel(MailModelBuilder builder) {
+        final UUID userKey  = UUID.fromString((String) builder.get("userKey"));
+        final UUID orderKey = UUID.fromString((String) builder.get("orderKey"));
+
+        final AccountEntity account 	= this.accountRepository.findOneByKey(userKey).get();
+        final OrderEntity 	orderEntity	= orderRepository.findOrderEntityByKey(orderKey).get();
+
         builder
             .setRecipientName(account.getFullName())
             .setRecipientAddress(account.getEmail())

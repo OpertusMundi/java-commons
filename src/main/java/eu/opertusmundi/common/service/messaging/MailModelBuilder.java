@@ -1,10 +1,17 @@
 package eu.opertusmundi.common.service.messaging;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.MediaType;
 
+import eu.opertusmundi.common.model.email.AttachmentDto;
 import eu.opertusmundi.common.model.email.EmailAddressDto;
 
 public class MailModelBuilder {
@@ -14,6 +21,8 @@ public class MailModelBuilder {
     private String recipientAddress;
 
     private String recipientName;
+    
+    private List<AttachmentDto> attachments;
 
     private MailModelBuilder() {
 
@@ -54,9 +63,24 @@ public class MailModelBuilder {
         this.recipientName = value;
         return this;
     }
+    
+    public void addAttachment(String fileAbsolutePath) throws IOException {
+    	AttachmentDto attachment = new AttachmentDto(FilenameUtils.getName(fileAbsolutePath), Files.readAllBytes(Paths.get(fileAbsolutePath)), MediaType.APPLICATION_PDF_VALUE);
+        this.attachments.add(attachment);
+    }
+    
+    public MailModelBuilder addAllAttachments(Map<String, Object> values) throws IOException {
+        for (String key : values.keySet()) {
+        	// If a variable name contains the word attachment, it is an attachment
+        	if (key.contains("attachment")) {
+        		this.addAttachment(key);
+        	}
+        }
+        return this;
+    }
 
     public Map<String, Object> build() {
         return this.model;
-    }
+    } 
 
 }
