@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.service.contract;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -16,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
-import eu.opertusmundi.common.model.contract.consumer.PrintConsumerContractCommand;
+import eu.opertusmundi.common.model.contract.ContractParametersDto;
 import eu.opertusmundi.common.model.contract.helpdesk.DeactivateContractResult;
 import eu.opertusmundi.common.model.contract.helpdesk.EnumMasterContractSortField;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractCommandDto;
@@ -39,6 +40,12 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
 
     @Autowired
     private MasterContractRepository contractRepository;
+    
+    @Autowired
+    private PdfContractGeneratorService pdfService;
+
+    @Autowired
+    private ContractParametersFactory contractParametersFactory;
 
     @Override
     public PageResultDto<MasterContractHistoryDto> findAllHistory(MasterContractQueryDto query) {
@@ -162,9 +169,11 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
     }
 
     @Override
-    public byte[] print(PrintConsumerContractCommand command) {
-        // TODO Auto-generated method stub
-        return null;
+    public byte[] print(int masterContractId) throws IOException {
+
+        final ContractParametersDto parameters = contractParametersFactory.createWithPlaceholderData();
+        
+        return pdfService.renderMasterPDF(parameters, masterContractId);
     }
 
 }

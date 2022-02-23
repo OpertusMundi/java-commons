@@ -89,5 +89,44 @@ public class MasterContractHistoryEntity extends MasterContractHistoryBaseEntity
 
         return e;
     }
+    
+    public List<MasterSectionHistoryEntity> getSectionsSorted() {
+        return this.sections.stream().sorted((s1,s2) -> {
+            /* Get index of each section*/
+            String s1Index  =   s1.getIndex();
+            String s2Index  =   s2.getIndex();
+            /* NumValue stores each numeric part of version*/
+            int numValue1 = 0;
+            int numValue2 = 0;
+            /* Loop until both string are processed*/
+            for (int i = 0, j = 0 ; (i < s1Index.length() || j < s2Index.length()) ;) {
+                /* Store numeric part of section index 1 in numValue1*/
+                while (i < s1Index.length() && s1Index.charAt(i) != '.') {
+                    numValue1 = numValue1 * 10 + (s1Index.charAt(i) - '0');
+                    i++;
+                }
+                /* Store numeric part of section index 2 in numValue2*/
+                while (j < s2Index.length() && s2Index.charAt(j) != '.') {
+                    numValue2 = numValue2 * 10 + (s2Index.charAt(j) - '0');
+                    j++;
+                }
+                /* Compare values*/
+                if (numValue1 > numValue2) {
+                    return 1;
+                }
+                else if (numValue1 < numValue2) {
+                    return -1;
+                }
+                /* if values are equal, reset variables and go for next numeric part*/
+                else {
+                    numValue1 = numValue2 = 0;
+                    i++;
+                    j++;
+                }
+            }
+            /* Return 0 if sections are equal. It will never happen*/
+            return 0;
+        }).collect(Collectors.toList());
+    }
 
 }

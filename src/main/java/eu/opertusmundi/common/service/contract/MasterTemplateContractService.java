@@ -1,12 +1,12 @@
 package eu.opertusmundi.common.service.contract;
 
+import java.io.IOException;
 import java.util.Optional;
 import java.util.UUID;
 
 import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
-import eu.opertusmundi.common.model.contract.consumer.PrintConsumerContractCommand;
 import eu.opertusmundi.common.model.contract.helpdesk.EnumMasterContractSortField;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractCommandDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractDto;
@@ -128,6 +128,6 @@ public interface MasterTemplateContractService {
      * @param command
      * @return
      */
-    byte[] print(PrintConsumerContractCommand command);
+    byte[] print(int masterContractId) throws IOException;
 
 }
