@@ -27,5 +27,14 @@ public interface PdfContractGeneratorService {
      * @throws IOException
      */
     byte[] renderProviderPDF(ContractParametersDto contractParametersDto, ProviderContractCommand command) throws IOException;
+    
+    /**
+     * Render master contract PDF
+     *
+     * @param masterContractKey
+     * @return
+     * @throws IOException
+     */
+    byte[] renderMasterPDF(ContractParametersDto contractParametersDto, int masterContractId) throws IOException;
 
 }

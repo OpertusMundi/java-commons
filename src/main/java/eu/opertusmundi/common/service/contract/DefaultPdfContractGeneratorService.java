@@ -41,6 +41,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.ibm.icu.text.DecimalFormat;
 
 import eu.opertusmundi.common.domain.AccountEntity;
+import eu.opertusmundi.common.domain.MasterContractHistoryEntity;
 import eu.opertusmundi.common.domain.MasterSectionHistoryEntity;
 import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.OrderItemEntity;
@@ -56,6 +57,7 @@ import eu.opertusmundi.common.model.pricing.DiscountRateDto;
 import eu.opertusmundi.common.model.pricing.EnumContinent;
 import eu.opertusmundi.common.model.pricing.EnumPricingModel;
 import eu.opertusmundi.common.repository.OrderRepository;
+import eu.opertusmundi.common.repository.contract.MasterContractHistoryRepository;
 import eu.opertusmundi.common.repository.contract.ProviderTemplateContractHistoryRepository;
 import lombok.Getter;
 import lombok.NonNull;
@@ -110,6 +112,9 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
     @Autowired
     private ProviderTemplateContractHistoryRepository contractRepository;
+    
+    @Autowired
+    private MasterContractHistoryRepository masterContractRepository;
 
     private Map<String, String> keywords;
 
@@ -1673,7 +1678,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
         final ProviderTemplateContractHistoryEntity contract = contractRepository
     		.findByIdAndVersion(provider.getKey(), contractId, contractVersion).get();
 
-        final byte[] result = renderPDF(contractParametersDto, command.isDraft(), contract, EnumDeliveryMethod.DIGITAL_PLATFORM);
+        final byte[] result = renderPDF(contractParametersDto, command.isDraft(), contract, null);
 
     	return result;
     }
@@ -1684,15 +1689,24 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             .findByKey(command.getProviderKey(), command.getContractKey())
             .get();
 
-        final EnumDeliveryMethod deliveryMethod = EnumDeliveryMethod.DIGITAL_PLATFORM;
-        final byte[]             result         = renderPDF(contractParametersDto, false, contract, deliveryMethod);
+        final byte[]             result         = renderPDF(contractParametersDto, false, contract, null);
+
+        return result;
+    }
+    
+    @Override
+    public byte[] renderMasterPDF(ContractParametersDto contractParametersDto, int masterContractId)
+            throws IOException {
+        final MasterContractHistoryEntity masterContract = masterContractRepository.findHistoryByPublishedContractId(masterContractId).orElse(null);
+        System.out.println("Master contract id " + masterContractId);
+        final byte[] result = renderPDF(contractParametersDto, false, null, masterContract);
 
         return result;
     }
 
     private byte[] renderPDF(
         ContractParametersDto contractParametersDto, boolean draft,
-        ProviderTemplateContractHistoryEntity contract, EnumDeliveryMethod deliveryMethod
+        ProviderTemplateContractHistoryEntity contract, MasterContractHistoryEntity masterContract
     ) throws IOException {
         // Initialize all variables that are related to the PDF formatting
         final PDDocument          document = new PDDocument();
@@ -1719,79 +1733,27 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
         // Create rendering context
         try (final RenderContext ctx = RenderContext.of(document, logo, fonts)) {
-            /* Get title and subtitles */
-            final String title    = contract.getTitle();
-            final String subtitle = contract.getSubtitle();
 
-            /* Get all sections sorted by index */
-            List<Section>                                    allSections    = new ArrayList<Section>();
-            final List<ProviderTemplateSectionHistoryEntity> sortedSections = contract.getSectionsSorted();
+            List<Section>  allSections  = new ArrayList<Section>();
+            final String title, subtitle;
+            if (masterContract == null) {
+                /* Get title and subtitles */
+                title    = contract.getTitle();
+                subtitle = contract.getSubtitle();
+    
+                /* Get all sections sorted by index */
+                final List<ProviderTemplateSectionHistoryEntity> sortedSections = contract.getSectionsSorted();
+                allSections = addProviderSections(contractParametersDto, sortedSections);
+            }
+            else {
 
-            String prevIndex = "0";
-            String sectionIndex;
-            for (final ProviderTemplateSectionHistoryEntity section : sortedSections) {
-
-                /* If section is not selected continue */
-                if (section.isOptional()) {
-                    continue;
-                }
-
-                final MasterSectionHistoryEntity masterSection = section.getMasterSection();
-
-                List<Block> allBlocks = new ArrayList<Block>();
-
-                /* Get Title and Index */
-                /* Find proper index in case of previous omitted sections */
-                final String[] prevIndexArray = prevIndex.split("\\.");
-                final String[] currIndexArray = masterSection.getIndex().split("\\.");
-
-                if (prevIndex != "0" && currIndexArray.length > 1 && currIndexArray.length == prevIndexArray.length && Integer.parseInt(
-                        currIndexArray[currIndexArray.length - 1]) > Integer.parseInt(prevIndexArray[prevIndexArray.length - 1]) + 1) {
-                    currIndexArray[currIndexArray.length - 1] = "" + (Integer.parseInt(prevIndexArray[prevIndexArray.length - 1]) + 1);
-                    sectionIndex                              = String.join(".", currIndexArray);
-                } else {
-                    sectionIndex = masterSection.getIndex();
-                }
-                final String sectionTitle = masterSection.getTitle();
-
-                Section providerSection = null;
-                if (sectionTitle != null && !sectionTitle.isEmpty()) {
-                    providerSection = new Section("Section " + sectionIndex + " - " + sectionTitle);
-                } else {
-                    providerSection = new Section("Section " + sectionIndex);
-                }
-
-                if (sectionTitle != null && !sectionTitle.isEmpty() && sectionTitle.toUpperCase().contains("PRICING MODEL")) {
-                	providerSection = generatePricingModelSection(contractParametersDto.getPricingModel(), deliveryMethod, "Section " + sectionIndex + " - " + sectionTitle);
-                    allSections.add(providerSection);
-                    prevIndex = sectionIndex;
-                	continue;
-                }
-
-                String optionJson, subOptionJson;
-                optionJson = masterSection.getOptions().get(section.getOption()).getBody();
-                final List<ContractSectionSubOptionDto> suboptions = masterSection.getOptions().get(section.getOption()).getSubOptions();
-                JsonNode obj = objectMapper.readTree(optionJson);
-
-                /* Get blocks */
-                ArrayNode blocks = (ArrayNode) obj.get("blocks");
-                allBlocks = getOptionSuboptionBody(blocks);
-
-                /* Add sub option block separately if any exists */
-                if (!CollectionUtils.isEmpty(section.getSubOption())) {
-                    for (int i = 0; i < section.getSubOption().size(); i++ ) {
-                        subOptionJson = suboptions.get(section.getSubOption().get(i)).getBody();
-                        obj           = objectMapper.readTree(subOptionJson);
-                        blocks        = (ArrayNode) obj.get("blocks");
-                        final List<Block> suboptionBlocks = getOptionSuboptionBody(blocks);
-                        allBlocks.addAll(suboptionBlocks);
-                    }
-                }
-
-                providerSection.setBlocks(allBlocks);
-                allSections.add(providerSection);
-
-                prevIndex = sectionIndex;
+                /* Get title and subtitles */
+                title    = masterContract.getTitle();
+                subtitle = masterContract.getSubtitle();
+    
+                /* Get all sections sorted by index */
+                final List<MasterSectionHistoryEntity> sortedSections = masterContract.getSectionsSorted();
+                allSections = addMasterSections(contractParametersDto, sortedSections);
             }
 
             for (final Section section  : allSections) {
@@ -1908,4 +1870,144 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
         }
     }
 
+
+    ArrayList<Section> addProviderSections(ContractParametersDto contractParametersDto,
+            List<ProviderTemplateSectionHistoryEntity> sortedSections)
+            throws JsonMappingException, JsonProcessingException {
+        ArrayList<Section> allSections = new ArrayList<Section>();
+        final EnumDeliveryMethod deliveryMethod = EnumDeliveryMethod.DIGITAL_PLATFORM;
+        String prevIndex = "0";
+        String sectionIndex;
+        for (final ProviderTemplateSectionHistoryEntity section : sortedSections) {
+
+            /* If section is not selected continue */
+            if (section.isOptional()) {
+                continue;
+            }
+
+            final MasterSectionHistoryEntity masterSection = section.getMasterSection();
+
+            List<Block> allBlocks = new ArrayList<Block>();
+
+            /* Get Title and Index */
+            /* Find proper index in case of previous omitted sections */
+            final String[] prevIndexArray = prevIndex.split("\\.");
+            final String[] currIndexArray = masterSection.getIndex().split("\\.");
+
+            if (prevIndex != "0" && currIndexArray.length > 1 && currIndexArray.length == prevIndexArray.length
+                    && Integer.parseInt(currIndexArray[currIndexArray.length - 1]) > Integer
+                            .parseInt(prevIndexArray[prevIndexArray.length - 1]) + 1) {
+                currIndexArray[currIndexArray.length - 1] = ""
+                        + (Integer.parseInt(prevIndexArray[prevIndexArray.length - 1]) + 1);
+                sectionIndex = String.join(".", currIndexArray);
+            } else {
+                sectionIndex = masterSection.getIndex();
+            }
+            final String sectionTitle = masterSection.getTitle();
+
+            Section providerSection = null;
+            if (sectionTitle != null && !sectionTitle.isEmpty()) {
+                providerSection = new Section("Section " + sectionIndex + " - " + sectionTitle);
+            } else {
+                providerSection = new Section("Section " + sectionIndex);
+            }
+
+            if (sectionTitle != null && !sectionTitle.isEmpty()
+                    && sectionTitle.toUpperCase().contains("PRICING MODEL")) {
+                providerSection = generatePricingModelSection(contractParametersDto.getPricingModel(), deliveryMethod,
+                        "Section " + sectionIndex + " - " + sectionTitle);
+                allSections.add(providerSection);
+                prevIndex = sectionIndex;
+                continue;
+            }
+
+            String optionJson, subOptionJson;
+            optionJson = masterSection.getOptions().get(section.getOption()).getBody();
+            final List<ContractSectionSubOptionDto> suboptions = masterSection.getOptions().get(section.getOption())
+                    .getSubOptions();
+            JsonNode obj = objectMapper.readTree(optionJson);
+
+            /* Get blocks */
+            ArrayNode blocks = (ArrayNode) obj.get("blocks");
+            allBlocks = getOptionSuboptionBody(blocks);
+
+            /* Add sub option block separately if any exists */
+            if (!CollectionUtils.isEmpty(section.getSubOption())) {
+                for (int i = 0; i < section.getSubOption().size(); i++) {
+                    subOptionJson = suboptions.get(section.getSubOption().get(i)).getBody();
+                    obj = objectMapper.readTree(subOptionJson);
+                    blocks = (ArrayNode) obj.get("blocks");
+                    final List<Block> suboptionBlocks = getOptionSuboptionBody(blocks);
+                    allBlocks.addAll(suboptionBlocks);
+                }
+            }
+
+            providerSection.setBlocks(allBlocks);
+            allSections.add(providerSection);
+
+            prevIndex = sectionIndex;
+        }
+        return allSections;
+    }
+
+    ArrayList<Section> addMasterSections(ContractParametersDto contractParametersDto,
+            List<MasterSectionHistoryEntity> sortedSections)
+            throws JsonMappingException, JsonProcessingException {
+        ArrayList<Section> allSections = new ArrayList<Section>();
+        String sectionIndex;
+        for (final MasterSectionHistoryEntity section : sortedSections) {
+
+            List<Block> allBlocks = new ArrayList<Block>();
+
+            /* Get Title and Index */
+            
+            final String sectionTitle = section.getTitle();
+            sectionIndex = section.getIndex();
+
+            Section masterSection = null;
+            if (sectionTitle != null && !sectionTitle.isEmpty()) {
+                masterSection = new Section("Section " + sectionIndex + " - " + sectionTitle);
+            } else {
+                masterSection = new Section("Section " + sectionIndex);
+            }
+
+            String optionJson, subOptionJson;
+            int optionsSize = section.getOptions().size();
+            for(int i = 0; i < optionsSize; i++) {
+                if(optionsSize > 1) {
+                    Block b = new Block("Option " + (i+1));
+                    b.addBlockStyle(new BlockStyle(0, 8, BOLD));
+                    allBlocks.add(b);
+                }
+                optionJson = section.getOptions().get(i).getBody(); 
+                JsonNode obj = objectMapper.readTree(optionJson);
+                final List<ContractSectionSubOptionDto> subOptions = section.getOptions().get(i).getSubOptions();
+    
+                /* Get blocks */
+                ArrayNode blocks = (ArrayNode) obj.get("blocks");
+                allBlocks.addAll(getOptionSuboptionBody(blocks));
+                /* Add sub options separately if any exists */
+                if (!CollectionUtils.isEmpty(subOptions)) {
+                    for (int j = 0; j < subOptions.size(); j++) {
+                        if(subOptions.size() > 1) {
+                            Block c = new Block("Suboption " + (j+1));
+                            c.addBlockStyle(new BlockStyle(0, 11, BOLD));
+                            allBlocks.add(c);
+                        }
+                        
+                        subOptionJson = subOptions.get(j).getBody();
+                        obj = objectMapper.readTree(subOptionJson);
+                        blocks = (ArrayNode) obj.get("blocks");
+                        final List<Block> suboptionBlocks = getOptionSuboptionBody(blocks);
+                        allBlocks.addAll(suboptionBlocks);
+                    }
+                } 
+    
+            }
+            masterSection.setBlocks(allBlocks);
+            allSections.add(masterSection);
+
+        }
+        return allSections;
+    }
 }
