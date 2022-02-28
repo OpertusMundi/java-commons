@@ -32,7 +32,7 @@ public interface RatingServiceFeignClient {
      * @return An instance of {@link ResponseEntity}
      */
     @GetMapping(value = "/v1/rating/asset/{id}", produces = "application/json")
-    ResponseEntity<RestResponse<List<ServerRatingDto>>> getAssetRatings(@PathVariable(name = "id", required = true) UUID id);
+    ResponseEntity<RestResponse<List<ServerRatingDto>>> getAssetRatings(@PathVariable(name = "id", required = true) String id);
 
     /**
      * Get ratings for a single provider
@@ -54,7 +54,7 @@ public interface RatingServiceFeignClient {
      */
     @PostMapping(value = "/v1/rating/asset/{id}", produces = "application/json")
     ResponseEntity<BaseResponse> addAssetRating(
-        @PathVariable(name = "id", required = true) UUID id,
+        @PathVariable(name = "id", required = true) String id,
         @RequestBody(required = true) ServerAssetRatingCommandDto command
     );
 
