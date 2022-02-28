@@ -3,6 +3,7 @@ package eu.opertusmundi.common.model.message.server;
 import java.util.UUID;
 
 import eu.opertusmundi.common.model.message.EnumMessageType;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,9 +15,13 @@ public class ServerMessageCommandDto extends ServerBaseMessageCommandDto {
         this.type = EnumMessageType.MESSAGE;
     }
 
-    private UUID recipient;
+    @Builder
+    public ServerMessageCommandDto(UUID recipient, String text, UUID sender, UUID thread) {
+        super(EnumMessageType.MESSAGE, recipient, text);
 
-    private String text;
+        this.sender = sender;
+        this.thread = thread;
+    }
 
     private UUID sender;
 
