@@ -2,12 +2,14 @@ package eu.opertusmundi.common.model.account;
 
 import java.io.Serializable;
 import java.time.ZonedDateTime;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import eu.opertusmundi.common.model.file.QuotaDto;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -39,6 +41,15 @@ public class AccountProfileDto extends AccountProfileBaseDto implements Serializ
 
     @Schema(description = "Provider related data")
     private ProviderData provider = new ProviderData();
+
+    @ArraySchema(
+        arraySchema = @Schema(
+            description = "User recent search keywords"
+        ),
+        minItems = 0,
+        uniqueItems = true
+    )
+    private List<String> recentSearches;
 
     @Schema(description = "User file system quota")
     private QuotaDto quota;

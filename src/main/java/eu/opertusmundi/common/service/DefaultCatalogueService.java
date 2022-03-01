@@ -72,6 +72,7 @@ import eu.opertusmundi.common.model.contract.ContractTermDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
+import eu.opertusmundi.common.repository.AccountRecentSearchRepository;
 import eu.opertusmundi.common.repository.AssetAdditionalResourceRepository;
 import eu.opertusmundi.common.repository.AssetResourceRepository;
 import eu.opertusmundi.common.repository.FavoriteRepository;
@@ -108,6 +109,9 @@ public class DefaultCatalogueService implements CatalogueService {
 
     @Autowired
     private ProviderRepository providerRepository;
+
+    @Autowired
+    private AccountRecentSearchRepository recentSearchRepository;
 
     @Autowired
     private StatisticsService statisticsService;
@@ -254,6 +258,11 @@ public class DefaultCatalogueService implements CatalogueService {
 
             // Log asset views
             this.logViews(ctx, response.getResult().getItems(), request.getText(), EnumAssetViewSource.SEARCH);
+
+            // Log user search term
+            if (ctx != null && ctx.getAccount() != null && !StringUtils.isBlank(request.getText())) {
+                this.recentSearchRepository.add(ctx.getAccount().getId(), request.getText());
+            }
 
             return response;
         } catch (final Exception ex) {
