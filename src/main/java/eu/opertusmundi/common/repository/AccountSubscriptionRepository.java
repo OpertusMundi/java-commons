@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.repository;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -41,8 +42,7 @@ public interface AccountSubscriptionRepository extends JpaRepository<AccountSubs
     }
 
     @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey and s.asset = :assetId")
-    List<AccountSubscriptionEntity> findAllByConsumerAndServiceId(UUID userKey, String assetId);
-
+    List<AccountSubscriptionEntity> findAllByConsumerAndAssetId(UUID userKey, String assetId);
 
     @Query("SELECT s FROM AccountSubscription s WHERE s.provider.key = :userKey")
     Page<AccountSubscriptionEntity> findAllEntitiesByProvider(UUID userKey, Pageable pageable);
@@ -50,6 +50,29 @@ public interface AccountSubscriptionRepository extends JpaRepository<AccountSubs
     @Query("SELECT s FROM AccountSubscription s WHERE s.provider.key = :userKey")
     default Page<ProviderAccountSubscriptionDto> findAllObjectsByProvider(UUID userKey, Pageable pageable) {
         return this.findAllEntitiesByProvider(userKey, pageable).map(e -> e.toProviderDto());
+    }
+
+    @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :consumerKey and s.provider.key = :providerKey")
+    List<AccountSubscriptionEntity> findAllByConsumerAndProvider(UUID consumerKey, UUID providerKey);
+
+    default boolean subscriptionExists(UUID userKey, String assetId, boolean active) {
+        final List<AccountSubscriptionEntity> subs      = this.findAllByConsumerAndAssetId(userKey, assetId);
+        final AccountSubscriptionEntity       activeSub = subs.stream()
+            .filter(s -> s.getExpiresOn() == null || s.getExpiresOn().isAfter(ZonedDateTime.now()))
+            .findFirst()
+            .orElse(null);
+
+        return active ? activeSub != null : !subs.isEmpty();
+    }
+
+    default boolean providerSubscriptionExists(UUID userKey, UUID providerKey, boolean active) {
+        final List<AccountSubscriptionEntity> subs      = this.findAllByConsumerAndProvider(userKey, providerKey);
+        final AccountSubscriptionEntity       activeSub = subs.stream()
+            .filter(s -> s.getExpiresOn() == null || s.getExpiresOn().isAfter(ZonedDateTime.now()))
+            .findFirst()
+            .orElse(null);
+
+        return active ? activeSub != null : !subs.isEmpty();
     }
 
 }

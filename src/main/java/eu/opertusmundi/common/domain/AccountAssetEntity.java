@@ -43,6 +43,16 @@ public class AccountAssetEntity {
     private AccountEntity consumer;
 
     /**
+     * The asset provider
+     */
+    @NotNull
+    @ManyToOne(targetEntity = AccountEntity.class, fetch = FetchType.LAZY)
+    @JoinColumn(name = "provider", nullable = false)
+    @Getter
+    @Setter
+    private AccountEntity provider;
+
+    /**
      * The order linked to the purchase of the asset. If this record has been
      * created due to an asset update, the order reference is set to the one of
      * the initial purchase
