@@ -22,6 +22,9 @@ public interface CustomerRepository extends JpaRepository<CustomerEntity, Intege
     @Query("SELECT p.provider FROM AccountProfile p WHERE p.provider.pidNamespace = :namespace and p.account.id <> :id")
     Optional<CustomerEntity> findProviderByNamespaceAndAccountIdNot(String namespace, Integer id);
 
+    @Query("SELECT p.provider FROM AccountProfile p WHERE p.provider.companyNumber = :companyNumber and p.account.id <> :id")
+    Optional<CustomerEntity> findProviderByCompanyNumberAndAccountIdNot(String companyNumber, Integer id);
+
     @Query("SELECT c FROM Customer c WHERE c.paymentProviderUser = :paymentProviderUser")
     Optional<CustomerEntity> findCustomerByProviderUserId(String paymentProviderUser);
 
