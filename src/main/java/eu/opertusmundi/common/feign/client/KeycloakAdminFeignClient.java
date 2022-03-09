@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import eu.opertusmundi.common.feign.client.config.KeycloakAdminFeignClientConfiguration;
 import eu.opertusmundi.common.model.keycloak.server.*;
 
+
 /**
  * A Feign client for the Keycloak Admin REST API.
  * <p>
@@ -120,6 +121,14 @@ public interface KeycloakAdminFeignClient
         @PathVariable("realm") String realm,
         @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
         @SpringQueryMap GroupQueryDto query);
+    
+    @GetMapping(
+        path = "admin/realms/{realm}/groups/{groupId}",
+        produces = MediaType.APPLICATION_JSON_VALUE)
+    GroupDto getGroup(
+        @PathVariable("realm") String realm,
+        @PathVariable("groupId") UUID groupId,
+        @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader);
     
     @GetMapping(
         path = "admin/realms/{realm}/groups/{groupId}/members",

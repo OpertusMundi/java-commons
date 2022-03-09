@@ -33,6 +33,8 @@ public interface KeycloakAdminService {
 
     List<GroupDto> findGroups(@Nullable GroupQueryDto query);
 
+    Optional<GroupDto> getGroup(UUID groupId);
+    
     void createGroup(String groupName);
 
     void updateGroup(GroupDto group);

@@ -295,11 +295,25 @@ public class DefaultKeycloakAdminService implements KeycloakAdminService
         cred.setTemporary(temporary);
         this.resetPasswordForUser(userId, cred);
     }
-    
+        
     @Override
     public List<GroupDto> findGroups(@Nullable GroupQueryDto query)
     {
         return kcadm.findGroups(realm, authorizationHeader(), query != null? query : DEFAULT_GROUP_QUERY);
+    }
+    
+    @Override
+    public Optional<GroupDto> getGroup(UUID groupId)
+    {
+        Assert.notNull(groupId, "groupId must not be null");
+        
+        GroupDto group = null;
+        try {
+            group = kcadm.getGroup(realm, groupId, authorizationHeader());
+        } catch (FeignException.NotFound ex) { 
+            group = null;
+        }
+        return Optional.ofNullable(group);
     }
     
     @Override
