@@ -1,5 +1,8 @@
 package eu.opertusmundi.common.service;
 
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
 import java.util.List;
@@ -15,6 +18,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.PathContainer;
 import org.springframework.lang.Nullable;
 import org.springframework.retry.RetryCallback;
 import org.springframework.retry.RetryContext;
@@ -25,6 +32,10 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.util.pattern.PathPattern;
+import org.springframework.web.util.pattern.PathPattern.PathMatchInfo;
+import org.springframework.web.util.pattern.PathPatternParser;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -114,7 +125,7 @@ public class DefaultKeycloakAdminService implements KeycloakAdminService
      * The interval on which we must refresh the access token (expressed as a fraction of the
      * access token lifespan).
      */
-    private final float refreshTokenIntervalAsFraction = 0.75f;
+    private final float refreshTokenIntervalAsFraction = 0.7f;
     
     private AtomicReference<Token> accessTokenRef = new AtomicReference<>();
     
@@ -126,6 +137,43 @@ public class DefaultKeycloakAdminService implements KeycloakAdminService
     
     @Autowired
     private KeycloakAdminFeignClient kcadm;
+    
+    private PathPattern userPathPattern; 
+    
+    @Autowired
+    private void setUserPathPattern(PathPatternParser pathPatternParser) 
+        throws NoSuchMethodException, SecurityException
+    {
+        final Method method = KeycloakAdminFeignClient.class
+            .getMethod("getUser", String.class, UUID.class, String.class);
+        this.userPathPattern = pathPatternParser.parse(method.getAnnotation(GetMapping.class).path()[0]);
+    }
+    
+    private PathPattern groupPathPattern;
+    
+    @Autowired
+    private void setGroupPathPattern(PathPatternParser pathPatternParser) 
+        throws NoSuchMethodException, SecurityException
+    {
+        final Method method = KeycloakAdminFeignClient.class
+            .getMethod("getGroup", String.class, UUID.class, String.class);
+        this.groupPathPattern = pathPatternParser.parse(method.getAnnotation(GetMapping.class).path()[0]);
+    }
+    
+    private PathMatchInfo matchAndExtractFromLocation(PathPattern pathPattern, String location)
+    {
+        String locationPath = null;
+        try {
+            locationPath  = (new URL(location)).getPath();
+        } catch (MalformedURLException e) {
+            throw new IllegalStateException(e);
+        }
+        
+        Assert.state(locationPath.startsWith(url.getPath()), "The location path is outside base path");
+        
+        final String path = locationPath.substring(url.getPath().length()).replaceFirst("^/", "");
+        return pathPattern.matchAndExtract(PathContainer.parsePath(path));
+    }
     
     private int refreshAccessToken()
     {
@@ -197,13 +245,17 @@ public class DefaultKeycloakAdminService implements KeycloakAdminService
     @Override
     public List<UserDto> findUsers(@Nullable UserQueryDto query)
     {
-        return kcadm.findUsers(realm, authorizationHeader(), query != null? query : DEFAULT_USER_QUERY);
+        final ResponseEntity<List<UserDto>> response = 
+            kcadm.findUsers(realm, authorizationHeader(), query != null? query : DEFAULT_USER_QUERY);
+        return response.getBody(); 
     }
         
     @Override
     public int countUsers(@Nullable UserQueryDto query)
     {
-        return kcadm.countUsers(realm, authorizationHeader(), query != null? query : DEFAULT_USER_QUERY);
+        final ResponseEntity<Integer> response = 
+            kcadm.countUsers(realm, authorizationHeader(), query != null? query : DEFAULT_USER_QUERY);
+        return response.getBody();
     }
     
     @Override
@@ -211,30 +263,39 @@ public class DefaultKeycloakAdminService implements KeycloakAdminService
     {
         Assert.notNull(userId, "userId must not be null");
         
-        UserDto user = null;
+        ResponseEntity<UserDto> response = null;
         try {
-            user = kcadm.getUser(realm, userId, authorizationHeader());
+            response = kcadm.getUser(realm, userId, authorizationHeader());
         } catch (FeignException.NotFound ex) { 
-            user = null;
+            response = null;
         }
-        return Optional.ofNullable(user);
+        return Optional.ofNullable(response).map(ResponseEntity::getBody);
     }
     
     @Override
-    public void createUser(UserDto user)
+    public UUID createUser(UserDto user)
     {
         Assert.notNull(user, "user object must be non null");
         Assert.isNull(user.getId(), "id must be null");
         Assert.hasText(user.getUsername(), "username must not be empty");
         Assert.hasText(user.getEmail(), "email must not be empty");
         
+        ResponseEntity<Void> response = null;
         try {
-            kcadm.createUser(realm, authorizationHeader(), user);
+            response = kcadm.createUser(realm, authorizationHeader(), user);
         } catch (FeignException.BadRequest ex) {
             throw translateException("user representation is invalid", ex);
         } catch (FeignException.Conflict ex) {
             throw translateException("user conflicts with another user", ex);
         }
+        
+        Assert.state(response.getStatusCode() == HttpStatus.CREATED, "Expected an HTTP status of CREATED");
+        final String location = response.getHeaders().get(HttpHeaders.LOCATION).get(0);
+        final PathMatchInfo pathMatchInfo = matchAndExtractFromLocation(userPathPattern, location);
+        Assert.state(pathMatchInfo != null, "The location path does not match with path of a user resource");
+        final String userId = pathMatchInfo.getUriVariables().get("userId");
+        
+        return UUID.fromString(userId);
     }
     
     @Override
@@ -295,11 +356,13 @@ public class DefaultKeycloakAdminService implements KeycloakAdminService
         cred.setTemporary(temporary);
         this.resetPasswordForUser(userId, cred);
     }
-        
+  
     @Override
     public List<GroupDto> findGroups(@Nullable GroupQueryDto query)
     {
-        return kcadm.findGroups(realm, authorizationHeader(), query != null? query : DEFAULT_GROUP_QUERY);
+        final ResponseEntity<List<GroupDto>> response = 
+            kcadm.findGroups(realm, authorizationHeader(), query != null? query : DEFAULT_GROUP_QUERY);
+        return response.getBody();
     }
     
     @Override
@@ -307,30 +370,39 @@ public class DefaultKeycloakAdminService implements KeycloakAdminService
     {
         Assert.notNull(groupId, "groupId must not be null");
         
-        GroupDto group = null;
+        ResponseEntity<GroupDto> response = null;
         try {
-            group = kcadm.getGroup(realm, groupId, authorizationHeader());
+            response = kcadm.getGroup(realm, groupId, authorizationHeader());
         } catch (FeignException.NotFound ex) { 
-            group = null;
+            response = null;
         }
-        return Optional.ofNullable(group);
+        return Optional.ofNullable(response).map(ResponseEntity::getBody);
     }
     
     @Override
-    public void createGroup(String groupName)
+    public UUID createGroup(String groupName)
     {
         Assert.hasText(groupName, "groupName must not be emptyl");
         
         final GroupDto group = new GroupDto();
         group.setName(groupName);
         
+        ResponseEntity<Void> response = null;
         try {
-            kcadm.createGroup(realm, authorizationHeader(), group);
+            response = kcadm.createGroup(realm, authorizationHeader(), group);
         } catch (FeignException.BadRequest ex) {
             throw translateException("group representation is invalid", ex);
         } catch (FeignException.Conflict ex) {
             throw translateException("group conflicts with another group", ex);
         }
+        
+        Assert.state(response.getStatusCode() == HttpStatus.CREATED, "Expected an HTTP status of CREATED");
+        final String location = response.getHeaders().get(HttpHeaders.LOCATION).get(0);
+        final PathMatchInfo pathMatchInfo = matchAndExtractFromLocation(groupPathPattern, location);
+        Assert.state(pathMatchInfo != null, "The location path does not match with path of a group resource");
+        final String groupId = pathMatchInfo.getUriVariables().get("groupId");
+        
+        return UUID.fromString(groupId);
     }
     
     @Override
@@ -357,12 +429,15 @@ public class DefaultKeycloakAdminService implements KeycloakAdminService
     {
         Assert.notNull(groupId, "groupId must not be null");
         
+        ResponseEntity<List<UserDto>> response = null;
         try {
-            return kcadm.getGroupMembers(realm, groupId, authorizationHeader(), 
+            response = kcadm.getGroupMembers(realm, groupId, authorizationHeader(), 
                 pageRequest != null? pageRequest : DEFAULT_PAGE_REQUEST);
         } catch (FeignException.NotFound ex) {
             throw translateException("group not found", ex);
         }
+        
+        return response.getBody();
     }
     
     @Override
@@ -370,10 +445,25 @@ public class DefaultKeycloakAdminService implements KeycloakAdminService
     {
         Assert.notNull(userId, "userId must not be null");
         
+        ResponseEntity<List<GroupDto>> response = null;
         try {
-            return kcadm.getUserGroups(realm, userId, authorizationHeader());
+            response = kcadm.getUserGroups(realm, userId, authorizationHeader());
         } catch (FeignException.NotFound ex) {
             throw translateException("user not found", ex);
+        }
+        
+        return response.getBody();
+    }
+    
+    @Override
+    public void deleteGroup(UUID groupId)
+    {
+        Assert.notNull(groupId, "groupId must not be null");
+        
+        try {
+            kcadm.deleteGroup(realm, groupId, authorizationHeader());
+        } catch (FeignException.NotFound ex) {
+            throw translateException("group not found", ex);
         }
     }
 }

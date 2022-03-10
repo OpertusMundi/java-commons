@@ -21,7 +21,7 @@ public interface KeycloakAdminService {
 
     Optional<UserDto> getUser(UUID userId);
 
-    void createUser(UserDto user);
+    UUID createUser(UserDto user);
 
     void updateUser(UserDto user);
 
@@ -34,13 +34,15 @@ public interface KeycloakAdminService {
     List<GroupDto> findGroups(@Nullable GroupQueryDto query);
 
     Optional<GroupDto> getGroup(UUID groupId);
-    
-    void createGroup(String groupName);
+
+    UUID createGroup(String groupName);
 
     void updateGroup(GroupDto group);
 
     List<UserDto> getGroupMembers(UUID groupId, @Nullable PageRequest pageRequest);
 
     List<GroupDto> getUserGroups(UUID userId);
+
+    void deleteGroup(UUID groupId);
 
 }
