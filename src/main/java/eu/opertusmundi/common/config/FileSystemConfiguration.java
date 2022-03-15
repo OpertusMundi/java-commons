@@ -30,7 +30,7 @@ public class FileSystemConfiguration {
     private Path assetDir;
 
     private Path contractDir;
-    
+
     private Path invoiceDir;
 
     private static final Set<PosixFilePermission> DEFAULT_DIRECTORY_PERMISSIONS = PosixFilePermissions.fromString("rwxrwxr-x");
@@ -69,7 +69,7 @@ public class FileSystemConfiguration {
         Assert.isTrue(path.isAbsolute(), "Expected an absolute directory path");
         this.contractDir = path;
     }
-    
+
     @Autowired
     private void setInvoiceDir(@Value("${opertusmundi.file-system.invoice-dir}") String d) {
         final Path path = Paths.get(d);
@@ -80,7 +80,7 @@ public class FileSystemConfiguration {
     @PostConstruct
     private void initialize() throws IOException {
         for (final Path dataDir : Arrays.asList(
-            this.tempDir, this.userDir, this.draftDir, this.assetDir, this.contractDir
+            this.tempDir, this.userDir, this.draftDir, this.assetDir, this.contractDir, this.invoiceDir
         )) {
             try {
                 if(!dataDir.toFile().exists()) {
@@ -117,7 +117,7 @@ public class FileSystemConfiguration {
     Path contractDirectory() {
         return this.contractDir;
     }
-    
+
     @Bean
     Path invoiceDirectory() {
         return this.invoiceDir;
