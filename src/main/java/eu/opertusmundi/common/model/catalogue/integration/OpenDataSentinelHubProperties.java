@@ -18,9 +18,6 @@ public class OpenDataSentinelHubProperties extends SentinelHubProperties impleme
         super(EnumSentinelHubAssetType.OPEN_DATA);
     }
 
-    @Schema(description = "`true` if this is a open data collection")
-    private boolean open;
-
     @Schema(description = "Open data collection name", example = "sentinel-1-grd")
     @NotEmpty
     private String collection;
