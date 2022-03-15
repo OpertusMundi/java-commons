@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.model.email;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -47,6 +48,15 @@ public class MessageDto<M> {
     @Setter
     private M model;
 
+    @ArraySchema(
+        arraySchema = @Schema(
+            description = "Message attachments"
+        ),
+        minItems = 0
+    )
+    @Getter
+    private final List<AttachmentDto> attachments = new ArrayList<>();
+
     public void setSender(String address) {
         this.sender = new EmailAddressDto(address);
     }
@@ -73,6 +83,10 @@ public class MessageDto<M> {
 
     public void setRecipients(EmailAddressDto[] address) {
         this.recipients = Arrays.asList(address);
+    }
+
+    public void addAttachment(AttachmentDto attachment) {
+        this.attachments.add(attachment);
     }
 
 }
