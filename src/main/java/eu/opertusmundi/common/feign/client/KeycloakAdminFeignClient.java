@@ -55,11 +55,10 @@ public interface KeycloakAdminFeignClient
      * @see https://github.com/keycloak/keycloak-documentation/blob/main/server_admin/topics/sessions/offline.adoc
      */
     @PostMapping(
-        path = "realms/{realm}/protocol/openid-connect/token",
+        path = "realms/master/protocol/openid-connect/token",
         produces = MediaType.APPLICATION_JSON_VALUE,
         consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     RefreshTokenResponse refreshToken(
-        @PathVariable("realm") String realm,
         RefreshTokenForm refreshTokenForm);
 
     //

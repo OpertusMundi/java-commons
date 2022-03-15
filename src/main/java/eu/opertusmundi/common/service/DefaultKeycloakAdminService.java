@@ -142,32 +142,26 @@ public class DefaultKeycloakAdminService implements KeycloakAdminService
     @Autowired
     private KeycloakAdminFeignClient kcadm;
 
+    private final PathPatternParser pathPatternParser = new PathPatternParser();
+    
     private PathPattern userPathPattern;
 
-    @PostConstruct
-    private void init() throws NoSuchMethodException, SecurityException {
-        this.setUserPathPattern();
-        this.setGroupPathPattern();
-    }
-
-    private void setUserPathPattern()
+    private void initUserPathPattern()
         throws NoSuchMethodException, SecurityException
     {
-        final PathPatternParser pathPatternParser = new PathPatternParser();
-        final Method            method            = KeycloakAdminFeignClient.class
+        final Method method = KeycloakAdminFeignClient.class
             .getMethod("getUser", String.class, UUID.class, String.class);
-        this.userPathPattern = pathPatternParser.parse(method.getAnnotation(GetMapping.class).path()[0]);
+        this.userPathPattern = this.pathPatternParser.parse(method.getAnnotation(GetMapping.class).path()[0]);
     }
 
     private PathPattern groupPathPattern;
 
-    private void setGroupPathPattern()
+    private void initGroupPathPattern()
         throws NoSuchMethodException, SecurityException
     {
-        final PathPatternParser pathPatternParser = new PathPatternParser();
-        final Method            method            = KeycloakAdminFeignClient.class
+        final Method method = KeycloakAdminFeignClient.class
             .getMethod("getGroup", String.class, UUID.class, String.class);
-        this.groupPathPattern = pathPatternParser.parse(method.getAnnotation(GetMapping.class).path()[0]);
+        this.groupPathPattern = this.pathPatternParser.parse(method.getAnnotation(GetMapping.class).path()[0]);
     }
 
     private PathMatchInfo matchAndExtractFromLocation(PathPattern pathPattern, String location)
@@ -188,7 +182,7 @@ public class DefaultKeycloakAdminService implements KeycloakAdminService
     private int refreshAccessToken()
     {
         final RefreshTokenForm refreshTokenForm = RefreshTokenForm.of(CLIENT_ID, refreshToken.value);
-        final RefreshTokenResponse refreshTokenResponse = kcadm.refreshToken(realm, refreshTokenForm);
+        final RefreshTokenResponse refreshTokenResponse = kcadm.refreshToken(refreshTokenForm);
 
         final String accessToken = refreshTokenResponse.getAccessToken();
         final int expiresInSeconds = refreshTokenResponse.getExpiresIn();
@@ -214,14 +208,17 @@ public class DefaultKeycloakAdminService implements KeycloakAdminService
         taskScheduler.schedule(this::refreshAccessTokenAndScheduleNextRefresh,
             Instant.now().plusSeconds((long) (expiresInSeconds * refreshTokenIntervalAsFraction)));
     }
-
+    
     @PostConstruct
-    private void setup()
+    private void setup() throws NoSuchMethodException, SecurityException
     {
         Assert.state(url != null, "url must be non null");
         Assert.state(StringUtils.hasText(realm), "realm must be non empty");
         Assert.state(StringUtils.hasText(refreshToken.value), "refreshToken must be non empty");
 
+        this.initUserPathPattern();
+        this.initGroupPathPattern();
+        
         this.refreshAccessTokenAndScheduleNextRefresh();
     }
 
