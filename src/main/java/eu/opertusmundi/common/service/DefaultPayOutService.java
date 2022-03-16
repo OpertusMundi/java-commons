@@ -1,18 +1,13 @@
 package eu.opertusmundi.common.service;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
-import org.camunda.bpm.engine.rest.dto.message.CorrelationMessageDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
-import org.camunda.bpm.engine.rest.dto.runtime.StartProcessInstanceDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.retry.annotation.Backoff;
@@ -21,17 +16,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import eu.opertusmundi.common.domain.PayOutEntity;
-import eu.opertusmundi.common.feign.client.BpmServerFeignClient;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
+import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.PayOutRepository;
+import eu.opertusmundi.common.util.BpmEngineUtils;
+import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
 import feign.FeignException;
 
 @Service
 @Transactional
 public class DefaultPayOutService implements PayOutService {
-
-    private static final String WORKFLOW_PROCESS_PAYOUT = "workflow-process-payout";
 
     private static final String MESSAGE_UPDATE_PAYOUT_STATUS = "payout-updated-message";
 
@@ -41,7 +36,7 @@ public class DefaultPayOutService implements PayOutService {
     private PayOutRepository payOutRepository;
 
     @Autowired
-    private ObjectProvider<BpmServerFeignClient> bpmClient;
+    private BpmEngineUtils bpmEngine;
 
     /**
      * Initializes a workflow instance to process the referenced PayOut
@@ -54,6 +49,8 @@ public class DefaultPayOutService implements PayOutService {
     @Override
     @Retryable(include = {Exception.class}, maxAttempts = 3, backoff = @Backoff(delay = 2000, maxDelay = 3000))
     public String start(UUID userKey, UUID payOutKey) {
+        final EnumWorkflow workflow = EnumWorkflow.PROVIDER_PAYOUT;
+
         try {
             final PayOutEntity payOut = payOutRepository.findOneEntityByKey(payOutKey).orElse(null);
 
@@ -62,25 +59,19 @@ public class DefaultPayOutService implements PayOutService {
                 return payOut.getProcessInstance();
             }
 
-            ProcessInstanceDto instance = this.findRunningInstance(payOut.toString());
+            ProcessInstanceDto instance = this.bpmEngine.findInstance(payOut.toString());
+
             if (instance == null) {
-                // Start new instance
-                final StartProcessInstanceDto options = new StartProcessInstanceDto();
+                final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
+                    .variableAsUuid(EnumProcessInstanceVariable.START_USER_KEY.getValue(), userKey)
+                    .variableAsUuid("providerKey", payOut.getProvider().getKey())
+                    .variableAsUuid("payOutKey", payOutKey)
+                    .variableAsString("payOutId", null)
+                    .variableAsString("payOutStatus", payOut.getStatus().toString())
+                    .build();
 
-                final Map<String, VariableValueDto> variables = new HashMap<String, VariableValueDto>();
 
-                // Set variables
-                this.setStringVariable(variables, EnumProcessInstanceVariable.START_USER_KEY.getValue(), userKey.toString());
-                this.setStringVariable(variables, "providerKey", payOut.getProvider().getKey());
-                this.setStringVariable(variables, "payOutKey", payOutKey);
-                this.setStringVariable(variables, "payOutId", null);
-                this.setStringVariable(variables, "payOutStatus", payOut.getStatus().toString());
-
-                options.setBusinessKey(payOutKey.toString());
-                options.setVariables(variables);
-                options.setWithVariablesInReturn(true);
-
-                instance = this.bpmClient.getObject().startProcessDefinitionByKey(WORKFLOW_PROCESS_PAYOUT, options);
+                instance = this.bpmEngine.startProcessDefinitionByKey(workflow, payOutKey.toString(), variables, true);
             }
 
             payOutRepository.setPayOutWorkflowInstance(payOut.getId(), instance.getDefinitionId(), instance.getId());
@@ -89,7 +80,7 @@ public class DefaultPayOutService implements PayOutService {
         } catch(final Exception ex) {
             logger.error(
                 "Failed to start workflow instance [workflow={}, businessKey={}, ex={}]",
-                WORKFLOW_PROCESS_PAYOUT, payOutKey, ex.getMessage()
+                workflow, payOutKey, ex.getMessage()
             );
         }
 
@@ -99,21 +90,17 @@ public class DefaultPayOutService implements PayOutService {
     @Override
     @Retryable(include = {Exception.class}, maxAttempts = 3, backoff = @Backoff(delay = 2000, maxDelay = 3000))
     public void sendPayOutStatusUpdateMessage(UUID payOutKey, EnumTransactionStatus status) {
+        final String messageName = MESSAGE_UPDATE_PAYOUT_STATUS;
+
         try {
-            final String       businessKey = payOutKey.toString();
+            final String businessKey = payOutKey.toString();
 
-            final CorrelationMessageDto         message   = new CorrelationMessageDto();
-            final Map<String, VariableValueDto> variables = new HashMap<String, VariableValueDto>();
+            final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
+                .variableAsString("payOutStatus", status.toString())
+                .build();
 
-            this.setStringVariable(variables, "payOutStatus", status.toString());
+            this.bpmEngine.correlateMessage(businessKey, messageName, variables);
 
-            message.setMessageName(MESSAGE_UPDATE_PAYOUT_STATUS);
-            message.setBusinessKey(businessKey);
-            message.setProcessVariables(variables);
-            message.setVariablesInResultEnabled(true);
-            message.setResultEnabled(true);
-
-            this.bpmClient.getObject().correlateMessage(message);
         } catch (final FeignException fex) {
             if (fex.status() != HttpStatus.BAD_REQUEST.value()) {
                 // No process definition or execution matches the parameters.
@@ -125,45 +112,17 @@ public class DefaultPayOutService implements PayOutService {
             } else {
                 logger.error(
                     "Failed to send message [workflow={}, businessKey={}, message={}, ex={}]",
-                    WORKFLOW_PROCESS_PAYOUT, payOutKey, MESSAGE_UPDATE_PAYOUT_STATUS, fex.getMessage()
+                    EnumWorkflow.PROVIDER_PAYOUT, payOutKey, messageName, fex.getMessage()
                 );
                 throw fex;
             }
         } catch(final Exception ex) {
             logger.error(
                 "Failed to send message [workflow={}, businessKey={}, message={}, ex={}]",
-                WORKFLOW_PROCESS_PAYOUT, payOutKey, MESSAGE_UPDATE_PAYOUT_STATUS, ex.getMessage()
+                EnumWorkflow.PROVIDER_PAYOUT, payOutKey, messageName, ex.getMessage()
             );
             throw ex;
         }
-    }
-
-    /**
-     * Find running workflow instance by business key
-     *
-     * @param businessKey
-     * @return
-     */
-    private ProcessInstanceDto findRunningInstance(String businessKey) {
-        final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstances(null, businessKey);
-
-        return instances.stream()
-            .filter(i -> !i.isEnded())
-            .findFirst()
-            .orElse(null);
-    }
-
-    private void setStringVariable(Map<String, VariableValueDto> variables, String name, Object value) {
-        this.setVariable(variables, "String", name, value);
-    }
-
-    private void setVariable(Map<String, VariableValueDto> variables, String type, String name, Object value) {
-        final VariableValueDto v = new VariableValueDto();
-
-        v.setValue(value);
-        v.setType(type);
-
-        variables.put(name, v);
     }
 
 }

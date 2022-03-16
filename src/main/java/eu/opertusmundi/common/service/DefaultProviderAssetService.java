@@ -99,6 +99,7 @@ import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestResultResponseDto;
 import eu.opertusmundi.common.model.payment.provider.ProviderAccountSubscriptionDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
+import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.AccountSubscriptionRepository;
 import eu.opertusmundi.common.repository.AssetAdditionalResourceRepository;
@@ -118,10 +119,6 @@ import feign.FeignException;
 public class DefaultProviderAssetService implements ProviderAssetService {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultProviderAssetService.class);
-
-    private static final String WORKFLOW_SELL_ASSET = "workflow-provider-publish-asset";
-
-    private static final String WORKFLOW_UNPUBLISH_ASSET = "workflow-provider-remove-asset";
 
     private static final String TASK_REVIEW = "task-review";
 
@@ -702,7 +699,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                     .build();
 
                 instance = this.bpmEngine.startProcessDefinitionByKey(
-                    WORKFLOW_SELL_ASSET, command.getDraftKey().toString(), variables, true
+                    EnumWorkflow.PROVIDER_PUBLISH_ASSET, command.getDraftKey().toString(), variables, true
                 );
             }
 
@@ -1499,7 +1496,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 .build();
 
             this.bpmEngine.startProcessDefinitionByKey(
-                WORKFLOW_UNPUBLISH_ASSET, businessKey, variables, true
+                EnumWorkflow.PROVIDER_REMOVE_ASSET, businessKey, variables, true
             );
         }
     }

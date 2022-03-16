@@ -54,6 +54,7 @@ import eu.opertusmundi.common.model.pricing.QuotationParametersDto;
 import eu.opertusmundi.common.model.pricing.RowPrePaidPricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.RowPrePaidQuotationParametersDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
+import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.AccountAssetRepository;
 import eu.opertusmundi.common.repository.AccountSubscriptionRepository;
 import eu.opertusmundi.common.repository.OrderRepository;
@@ -66,10 +67,6 @@ import feign.FeignException;
 @Service
 @Transactional
 public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
-
-    private static final String WORKFLOW_PROCESS_ORDER_WITH_PAYMENT = "workflow-process-order-with-payin";
-
-    private static final String WORKFLOW_PROCESS_ORDER_FREE = "workflow-process-order-without-payin";
 
     private static final String MESSAGE_UPDATE_PAYIN_STATUS = "payin-updated-message";
 
@@ -146,6 +143,8 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     @Override
     @Retryable(include = {Exception.class}, maxAttempts = 3, backoff = @Backoff(delay = 2000, maxDelay = 3000))
     public String startOrderWithoutPayInWorkflow(UUID payInKey) {
+        final EnumWorkflow workflow = EnumWorkflow.CONSUMER_PURCHASE_ASSET_WITHOUT_PAYIN;
+
         try {
             final HelpdeskPayInDto payIn = payInRepository.findOneObjectByKey(payInKey).orElse(null);
             Assert.isTrue(payIn.getItems().size() == 1, "Expected a single pay in item");
@@ -177,7 +176,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                     .variableAsString("deliveryMethod", payInItem.getOrder().getDeliveryMethod().toString())
                     .build();
 
-                instance = this.bpmEngine.startProcessDefinitionByKey(WORKFLOW_PROCESS_ORDER_FREE, businessKey, variables);
+                instance = this.bpmEngine.startProcessDefinitionByKey(workflow, businessKey, variables);
             }
 
             payInRepository.setPayInWorkflowInstance(payIn.getId(), instance.getDefinitionId(), instance.getId());
@@ -185,8 +184,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             return instance.getId();
         } catch(final Exception ex) {
             logger.error(
-                "Failed to start workflow instance [workflow={}, businessKey={}, ex={}]",
-                WORKFLOW_PROCESS_ORDER_FREE, payInKey, ex.getMessage()
+                    "Failed to start workflow instance [workflow={}, businessKey={}, ex={}]", workflow, payInKey, ex.getMessage()
             );
         }
 
@@ -204,6 +202,8 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     @Override
     @Retryable(include = {Exception.class}, maxAttempts = 3, backoff = @Backoff(delay = 2000, maxDelay = 3000))
     public String startOrderWithPayInWorkflow(UUID payInKey, String payInId, EnumTransactionStatus payInStatus) {
+        final EnumWorkflow workflow = EnumWorkflow.CONSUMER_PURCHASE_ASSET_WITH_PAYIN;
+
         try {
             final HelpdeskPayInDto payIn = payInRepository.findOneObjectByKey(payInKey).orElse(null);
             Assert.isTrue(payIn.getItems().size() == 1, "Expected a single pay in item");
@@ -233,7 +233,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                     .variableAsString("deliveryMethod", payInItem.getOrder().getDeliveryMethod().toString())
                     .build();
 
-                instance = this.bpmEngine.startProcessDefinitionByKey(WORKFLOW_PROCESS_ORDER_WITH_PAYMENT, businessKey, variables);
+                instance = this.bpmEngine.startProcessDefinitionByKey(workflow, businessKey, variables);
             }
 
             payInRepository.setPayInWorkflowInstance(payIn.getId(), instance.getDefinitionId(), instance.getId());
@@ -241,7 +241,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             return instance.getId();
         } catch(final Exception ex) {
             logger.error(
-                String.format("Failed to start workflow instance [workflow=%s, businessKey=%s]", WORKFLOW_PROCESS_ORDER_WITH_PAYMENT, payInKey), ex
+                String.format("Failed to start workflow instance [workflow=%s, businessKey=%s]", workflow, payInKey), ex
             );
         }
 
@@ -270,14 +270,14 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             } else {
                 logger.error(
                     "Failed to send message [workflow={}, businessKey={}, message={}, ex={}]",
-                    WORKFLOW_PROCESS_ORDER_WITH_PAYMENT, payInKey, MESSAGE_UPDATE_PAYIN_STATUS, fex.getMessage()
+                    EnumWorkflow.CONSUMER_PURCHASE_ASSET_WITH_PAYIN, payInKey, MESSAGE_UPDATE_PAYIN_STATUS, fex.getMessage()
                 );
                 throw fex;
             }
         } catch(final Exception ex) {
             logger.error(
                 "Failed to send message [workflow={}, businessKey={}, message={}, ex={}]",
-                WORKFLOW_PROCESS_ORDER_WITH_PAYMENT, payInKey, MESSAGE_UPDATE_PAYIN_STATUS, ex.getMessage()
+                EnumWorkflow.CONSUMER_PURCHASE_ASSET_WITH_PAYIN, payInKey, MESSAGE_UPDATE_PAYIN_STATUS, ex.getMessage()
             );
             throw ex;
         }

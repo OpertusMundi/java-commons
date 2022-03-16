@@ -20,6 +20,7 @@ import eu.opertusmundi.common.model.account.EnumActivationTokenType;
 import eu.opertusmundi.common.model.account.EnumMangopayUserType;
 import eu.opertusmundi.common.model.analytics.ProfileRecord;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
+import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.ActivationTokenRepository;
 import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
@@ -27,8 +28,6 @@ import eu.opertusmundi.common.util.ImageUtils;
 
 @Service
 public class DefaultConsumerRegistrationService extends AbstractCustomerRegistrationService implements ConsumerRegistrationService {
-
-    private static final String WORKFLOW_CONSUMER_REGISTRATION = "consumer-registration";
 
     @Autowired
     private AccountRepository accountRepository;
@@ -85,7 +84,7 @@ public class DefaultConsumerRegistrationService extends AbstractCustomerRegistra
                 .build();
 
             this.bpmEngine.startProcessDefinitionByKey(
-                WORKFLOW_CONSUMER_REGISTRATION, registrationKey.toString(), variables, true
+                EnumWorkflow.CONSUMER_REGISTRATION, registrationKey.toString(), variables, true
             );
         }
 

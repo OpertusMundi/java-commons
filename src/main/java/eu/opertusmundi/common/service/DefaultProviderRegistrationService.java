@@ -21,6 +21,7 @@ import eu.opertusmundi.common.model.account.ProviderProfessionalCommandDto;
 import eu.opertusmundi.common.model.account.ProviderProfileCommandDto;
 import eu.opertusmundi.common.model.analytics.ProfileRecord;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
+import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.ActivationTokenRepository;
 import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
@@ -29,8 +30,6 @@ import eu.opertusmundi.common.util.TextUtils;
 
 @Service
 public class DefaultProviderRegistrationService extends AbstractCustomerRegistrationService implements ProviderRegistrationService {
-
-    private static final String WORKFLOW_PROVIDER_REGISTRATION = "provider-registration";
 
     @Autowired
     private AccountRepository accountRepository;
@@ -84,7 +83,7 @@ public class DefaultProviderRegistrationService extends AbstractCustomerRegistra
                 .build();
 
             this.bpmEngine.startProcessDefinitionByKey(
-                WORKFLOW_PROVIDER_REGISTRATION, registrationKey.toString(), variables, true
+                EnumWorkflow.PROVIDER_REGISTRATION, registrationKey.toString(), variables, true
             );
         }
 

@@ -2,6 +2,7 @@ package eu.opertusmundi.common.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
@@ -24,6 +25,11 @@ public class BpmInstanceVariablesBuilder {
     }
 
     public BpmInstanceVariablesBuilder variableAsString(String name, String value) {
+        this.variable("String", name, value);
+        return this;
+    }
+
+    public BpmInstanceVariablesBuilder variableAsUuid(String name, UUID value) {
         this.variable("String", name, value);
         return this;
     }

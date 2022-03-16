@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -17,7 +16,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
-import org.camunda.bpm.engine.rest.dto.runtime.StartProcessInstanceDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -41,7 +39,6 @@ import eu.opertusmundi.common.domain.AssetResourceEntity;
 import eu.opertusmundi.common.domain.FavoriteEntity;
 import eu.opertusmundi.common.domain.MasterSectionHistoryEntity;
 import eu.opertusmundi.common.domain.ProviderTemplateContractHistoryEntity;
-import eu.opertusmundi.common.feign.client.BpmServerFeignClient;
 import eu.opertusmundi.common.feign.client.CatalogueFeignClient;
 import eu.opertusmundi.common.model.PageRequestDto;
 import eu.opertusmundi.common.model.PageResultDto;
@@ -72,6 +69,7 @@ import eu.opertusmundi.common.model.contract.ContractTermDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
+import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.AccountRecentSearchRepository;
 import eu.opertusmundi.common.repository.AssetAdditionalResourceRepository;
 import eu.opertusmundi.common.repository.AssetResourceRepository;
@@ -79,6 +77,8 @@ import eu.opertusmundi.common.repository.FavoriteRepository;
 import eu.opertusmundi.common.repository.ProviderRepository;
 import eu.opertusmundi.common.repository.contract.ProviderTemplateContractHistoryRepository;
 import eu.opertusmundi.common.service.integration.DataProviderManager;
+import eu.opertusmundi.common.util.BpmEngineUtils;
+import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
 import feign.FeignException;
 
 @Service
@@ -87,8 +87,6 @@ public class DefaultCatalogueService implements CatalogueService {
     private static final Logger logger = LoggerFactory.getLogger(DefaultCatalogueService.class);
 
     private static final Logger assetViewLogger = LoggerFactory.getLogger("ASSET_VIEWS");
-
-    private static final String WORKFLOW_CATALOGUE_HARVEST = "workflow-catalogue-harvest";
 
     private static final String DRAFT_PUBLISHED_STATUS = "published";
 
@@ -126,7 +124,7 @@ public class DefaultCatalogueService implements CatalogueService {
     private ProviderTemplateContractHistoryRepository providerContractRepository;
 
     @Autowired
-    private ObjectProvider<BpmServerFeignClient> bpmClient;
+    private BpmEngineUtils bpmEngine;
 
     @Autowired
     private ObjectProvider<CatalogueFeignClient> catalogueClient;
@@ -601,28 +599,22 @@ public class DefaultCatalogueService implements CatalogueService {
             // Check if workflow exists
             final String businessKey = String.format("%s-%s", command.getUserKey(), command.getUrl());
 
-            final ProcessInstanceDto instance = this.findRunningInstance(businessKey);
+            final ProcessInstanceDto instance = this.bpmEngine.findInstance(businessKey);
 
             if (instance == null) {
-                final StartProcessInstanceDto options = new StartProcessInstanceDto();
-
-                final Map<String, VariableValueDto> variables = new HashMap<String, VariableValueDto>();
-
                 // Set defaults
                 if (command.getType() == null) {
                     command.setType(EnumCatalogueType.CSW);
                 }
                 // Set variables
-                this.setStringVariable(variables, EnumProcessInstanceVariable.START_USER_KEY.getValue(), command.getUserKey());
-                this.setStringVariable(variables, "userKey", command.getUserKey());
-                this.setStringVariable(variables, "catalogueUrl", command.getUrl());
-                this.setStringVariable(variables, "catalogueType", command.getType().toString());
+                final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
+                    .variableAsString(EnumProcessInstanceVariable.START_USER_KEY.getValue(), command.getUserKey().toString())
+                    .variableAsString("userKey", command.getUserKey().toString())
+                    .variableAsString("catalogueUrl", command.getUrl())
+                    .variableAsString("catalogueType", command.getType().toString())
+                    .build();
 
-                options.setBusinessKey(businessKey);
-                options.setVariables(variables);
-                options.setWithVariablesInReturn(true);
-
-                this.bpmClient.getObject().startProcessDefinitionByKey(WORKFLOW_CATALOGUE_HARVEST, options);
+                this.bpmEngine.startProcessDefinitionByKey(EnumWorkflow.CATALOGUE_HARVEST, businessKey, variables, true);
             }
         } catch (final FeignException fex) {
             logger.error("Operation has failed", fex);
@@ -710,49 +702,6 @@ public class DefaultCatalogueService implements CatalogueService {
 
             throw CatalogueServiceException.wrap(ex);
         }
-    }
-
-    /**
-     * Set workflow instance variable of type String
-     *
-     * @param variables
-     * @param name
-     * @param value
-     */
-    private void setStringVariable(Map<String, VariableValueDto> variables, String name, Object value) {
-        this.setVariable(variables, "String", name, value);
-    }
-
-    /**
-     * Set workflow instance variable
-     *
-     * @param variables
-     * @param type
-     * @param name
-     * @param value
-     */
-    private void setVariable(Map<String, VariableValueDto> variables, String type, String name, Object value) {
-        final VariableValueDto v = new VariableValueDto();
-
-        v.setValue(value);
-        v.setType(type);
-
-        variables.put(name, v);
-    }
-
-    /**
-     * Find running workflow instance by business key
-     *
-     * @param businessKey
-     * @return
-     */
-    private ProcessInstanceDto findRunningInstance(String businessKey) {
-        final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstances(null, businessKey);
-
-        return instances.stream()
-            .filter(i -> !i.isEnded())
-            .findFirst()
-            .orElse(null);
     }
 
     /**

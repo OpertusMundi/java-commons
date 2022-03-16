@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import eu.opertusmundi.common.feign.client.BpmServerFeignClient;
 import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.BasicMessageCode;
+import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import feign.FeignException;
 
 @Service
@@ -41,7 +42,10 @@ public class BpmEngineUtils {
         try {
             final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstances(null, businessKey);
 
-            return instances.stream().findFirst().orElse(null);
+            return instances.stream()
+                .filter(i -> !i.isEnded())
+                .findFirst()
+                .orElse(null);
         } catch (final FeignException fex) {
             logger.error("[Feign Client] Operation has failed", fex);
 
@@ -55,13 +59,13 @@ public class BpmEngineUtils {
     }
 
     public ProcessInstanceDto startProcessDefinitionByKey(
-        String processDefinitionKey, String businessKey, Map<String, VariableValueDto> variables
+        EnumWorkflow workflow, String businessKey, Map<String, VariableValueDto> variables
     ) {
-        return this.startProcessDefinitionByKey(processDefinitionKey, businessKey, variables, true);
+        return this.startProcessDefinitionByKey(workflow, businessKey, variables, true);
     }
 
     public ProcessInstanceDto startProcessDefinitionByKey(
-        String processDefinitionKey, String businessKey, Map<String, VariableValueDto> variables, boolean withVariablesInReturn
+        EnumWorkflow workflow, String businessKey, Map<String, VariableValueDto> variables, boolean withVariablesInReturn
     ) {
         final StartProcessInstanceDto options = new StartProcessInstanceDto();
 
@@ -69,7 +73,7 @@ public class BpmEngineUtils {
         options.setVariables(variables);
         options.setWithVariablesInReturn(withVariablesInReturn);
 
-        return this.bpmClient.getObject().startProcessDefinitionByKey(processDefinitionKey, options);
+        return this.bpmClient.getObject().startProcessDefinitionByKey(workflow.getKey(), options);
     }
 
     public Optional<TaskDto> findTaskById(String businessKey, String taskId) {
