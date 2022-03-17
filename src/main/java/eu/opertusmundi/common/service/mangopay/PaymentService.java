@@ -291,7 +291,6 @@ public interface  PaymentService {
      * Sends a message to an order fulfillment process instance to update the
      * PayIn status
      *
-     * @param payInKey
      * @param payInId
      * @throws PaymentException
      */
@@ -303,6 +302,7 @@ public interface  PaymentService {
      * Sends a message to an order fulfillment process instance to update the
      * PayIn status
      *
+     * @param payInKey
      * @param payInId
      * @throws PaymentException
      */
