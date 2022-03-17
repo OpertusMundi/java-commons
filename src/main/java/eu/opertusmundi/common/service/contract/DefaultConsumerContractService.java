@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.ZonedDateTime;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,19 +17,23 @@ import eu.opertusmundi.common.model.contract.ContractMessageCode;
 import eu.opertusmundi.common.model.contract.ContractParametersDto;
 import eu.opertusmundi.common.model.contract.ContractServiceException;
 import eu.opertusmundi.common.model.contract.consumer.ConsumerContractCommand;
+import eu.opertusmundi.common.repository.OrderRepository;
 
 @Service
 @Transactional
 public class DefaultConsumerContractService implements ConsumerContractService {
 
-	@Autowired
+    @Autowired
+    private ContractFileManager contractFileManager;
+
+    @Autowired
+    private ContractParametersFactory contractParametersFactory;
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
 	private PdfContractGeneratorService pdfService;
-
-	@Autowired
-	private ContractFileManager contractFileManager;
-
-	@Autowired
-	private ContractParametersFactory contractParametersFactory;
 
 	@Autowired(required = false)
     private SignPdfService signPdfService;
@@ -84,6 +89,8 @@ public class DefaultConsumerContractService implements ConsumerContractService {
                 // Save signed contract to file
                 this.save(command.getPath(), output.toByteArray());
             }
+
+            this.orderRepository.setContractSignedDate(command.getOrderKey(), ZonedDateTime.now());
 
         } catch (final ContractServiceException ex) {
             throw ex;
