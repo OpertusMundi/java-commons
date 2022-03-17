@@ -14,6 +14,7 @@ import org.locationtech.jts.geom.Geometry;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
 import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceDto;
@@ -61,6 +62,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
 
         final CatalogueFeatureProperties props = feature.getProperties();
 
+        this.abstractText        = props.getAbstractText();
         this.additionalResources = new ArrayList<>();
         this.extensions          = props.getExtensions();
         this.pricingModels       = new ArrayList<>();
@@ -154,6 +156,11 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
     @Schema(description = "A name given to the resource", required = true)
     @NotEmpty
     private String title;
+
+    @Schema(description = "An abstract of the resource")
+    @NotEmpty
+    @JsonProperty("abstract")
+    private String abstractText;
 
     @Schema(description = "The nature or genre of the resource", required = true)
     @NotNull

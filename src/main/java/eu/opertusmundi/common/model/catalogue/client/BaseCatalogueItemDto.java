@@ -8,7 +8,6 @@ import org.locationtech.jts.geom.Geometry;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
@@ -38,7 +37,6 @@ public abstract class BaseCatalogueItemDto {
     protected BaseCatalogueItemDto(CatalogueFeature feature) {
         final CatalogueFeatureProperties props = feature.getProperties();
 
-        this.abstractText                 = props.getAbstractText();
         this.automatedMetadata            = props.getAutomatedMetadata();
         this.conformity                   = EnumConformity.fromString(props.getConformity());
         this.creationDate                 = props.getCreationDate();
@@ -94,10 +92,6 @@ public abstract class BaseCatalogueItemDto {
             .map(EnumTopicCategory::fromString)
             .collect(Collectors.toList());
     }
-
-    @Schema(description = "An abstract of the resource")
-    @JsonProperty("abstract")
-    private String abstractText;
 
 	@Schema(title = "Automated metadata", implementation = CatalogueEndpointTypes.JsonNodeMetadata.class)
 	@JsonInclude(Include.NON_NULL)

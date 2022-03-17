@@ -37,6 +37,7 @@ public class CatalogueItemDto extends BaseCatalogueItemDto implements Serializab
 
         this.id = feature.getId();
 
+        this.abstractText  = props.getAbstractText();
         this.extensions    = props.getExtensions();
         this.pricingModels = Optional.ofNullable(props.getPricingModels()).orElse(Collections.emptyList());
         this.publisherId   = props.getPublisherId();
@@ -104,6 +105,11 @@ public class CatalogueItemDto extends BaseCatalogueItemDto implements Serializab
     @Getter
     @Setter
     private String title;
+
+    @Schema(description = "An abstract of the resource")
+    @Getter
+    @Setter
+    private String abstractText;
 
     @Schema(description = "The nature or genre of the resource")
     @Getter
