@@ -99,6 +99,17 @@
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web-services</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-tomcat</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
 		<!-- Spring -->
 		<dependency>
 			<groupId>org.springframework.retry</groupId>
@@ -380,6 +391,29 @@
 					<fork>true</fork>
 					<failOnError>false</failOnError>
 					<excludeFilterFile>./spotbugs-exclude.xml</excludeFilterFile>
+				</configuration>
+			</plugin>
+
+			<!-- WSDL client generation -->
+			<plugin>
+				<groupId>org.jvnet.jaxb2.maven2</groupId>
+				<artifactId>maven-jaxb2-plugin</artifactId>
+				<version>0.14.0</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<schemaLanguage>WSDL</schemaLanguage>
+					<generatePackage>eu.europa.ec.taxation.wsdl</generatePackage>
+					<schemas>
+						<schema>
+							<url>https://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl</url>
+						</schema>
+					</schemas>
 				</configuration>
 			</plugin>
 		</plugins>
