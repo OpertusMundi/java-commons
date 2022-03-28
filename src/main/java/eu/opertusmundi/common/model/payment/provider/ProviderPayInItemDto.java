@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import eu.opertusmundi.common.model.payment.PayInItemDto;
 import eu.opertusmundi.common.model.payment.TransferDto;
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -24,6 +25,14 @@ import lombok.Setter;
     @Type(name = "ORDER", value = ProviderOrderPayInItemDto.class),
     @Type(name = "SUBSCRIPTION_BILLING", value = ProviderSubscriptionBillingPayInItemDto.class),
 })
+@Schema(
+    description = "Provider PayIn item",
+    required = true,
+    discriminatorMapping = {
+        @DiscriminatorMapping(value = "ORDER", schema = ProviderOrderPayInItemDto.class),
+        @DiscriminatorMapping(value = "SUBSCRIPTION_BILLING", schema = ProviderSubscriptionBillingPayInItemDto.class)
+    }
+)
 public class ProviderPayInItemDto extends PayInItemDto {
 
     @Schema(description = "Transfer of funds from the buyer's to the seller's wallet")

@@ -8,15 +8,8 @@ import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import eu.opertusmundi.common.model.pricing.CallPrePaidQuotationParametersDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
-import eu.opertusmundi.common.model.pricing.EmptyQuotationParametersDto;
-import eu.opertusmundi.common.model.pricing.FixedPopulationQuotationParametersDto;
-import eu.opertusmundi.common.model.pricing.FixedRowQuotationParametersDto;
 import eu.opertusmundi.common.model.pricing.QuotationParametersDto;
-import eu.opertusmundi.common.model.pricing.RowPrePaidQuotationParametersDto;
-import eu.opertusmundi.common.model.pricing.integration.SHImageQuotationParametersDto;
-import eu.opertusmundi.common.model.pricing.integration.SHSubscriptionQuotationParametersDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -41,18 +34,7 @@ public class CartAddCommandDto {
     @NotNull
     private String pricingModelKey;
 
-    @Schema(
-        description = "Quotation parameters",
-        oneOf = {
-            EmptyQuotationParametersDto.class,
-            CallPrePaidQuotationParametersDto.class,
-            FixedRowQuotationParametersDto.class,
-            FixedPopulationQuotationParametersDto.class,
-            RowPrePaidQuotationParametersDto.class,
-            SHImageQuotationParametersDto.class,
-            SHSubscriptionQuotationParametersDto.class,
-        }
-    )
+    @Schema(description = "Quotation parameters")
     @NotNull
     @Valid
     private QuotationParametersDto parameters;

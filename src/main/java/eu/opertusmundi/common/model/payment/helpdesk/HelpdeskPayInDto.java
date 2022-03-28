@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import eu.opertusmundi.common.model.account.CustomerDto;
 import eu.opertusmundi.common.model.payment.PayInDto;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -29,6 +30,15 @@ import lombok.Setter;
     @Type(name = "BANKWIRE", value = HelpdeskBankwirePayInDto.class),
     @Type(name = "FREE", value = HelpdeskFreePayInDto.class),
 })
+@Schema(
+    description = "Helpdesk PayIn",
+    required = true,
+    discriminatorMapping = {
+        @DiscriminatorMapping(value = "CARD_DIRECT", schema = HelpdeskCardDirectPayInDto.class),
+        @DiscriminatorMapping(value = "BANKWIRE", schema = HelpdeskBankwirePayInDto.class),
+        @DiscriminatorMapping(value = "FREE", schema = HelpdeskFreePayInDto.class)
+    }
+)
 public class HelpdeskPayInDto extends PayInDto {
 
     @Schema(description = "Identifier of the workflow definition used for processing this PayIn record")
@@ -42,8 +52,7 @@ public class HelpdeskPayInDto extends PayInDto {
     @ArraySchema(arraySchema = @Schema(
         description = "PayIn payments. A PayIn may include a single order or multiple subscription billing records"),
         minItems = 1,
-        uniqueItems = true,
-        schema = @Schema(oneOf = {HelpdeskOrderPayInItemDto.class, HelpdeskSubscriptionBillingPayInItemDto.class})
+        uniqueItems = true
     )
     @JsonInclude(Include.NON_EMPTY)
     protected List<HelpdeskPayInItemDto> items = new ArrayList<>();

@@ -9,10 +9,13 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
+@Getter
+@Setter
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type"
 )
@@ -20,8 +23,13 @@ import lombok.Setter;
     @Type(name = "ASSET", value = FavoriteAssetCommandDto.class),
     @Type(name = "PROVIDER", value = FavoriteProviderCommandDto.class),
 })
-@Getter
-@Setter
+@Schema(
+    description = "Favorite command",
+    discriminatorMapping = {
+        @DiscriminatorMapping(value = "ASSET", schema = FavoriteAssetCommandDto.class),
+        @DiscriminatorMapping(value = "PROVIDER", schema = FavoriteProviderCommandDto.class)
+    }
+)
 public abstract class FavoriteCommandDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

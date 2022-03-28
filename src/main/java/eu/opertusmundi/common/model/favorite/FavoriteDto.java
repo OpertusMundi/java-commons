@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -23,7 +24,14 @@ import lombok.Setter;
     @Type(name = "ASSET", value = FavoriteAssetDto.class),
     @Type(name = "PROVIDER", value = FavoriteProviderDto.class),
 })
-@Schema(oneOf = {FavoriteAssetDto.class, FavoriteProviderDto.class})
+@Schema(
+    description = "Favorite",
+    required = true,
+    discriminatorMapping = {
+        @DiscriminatorMapping(value = "ASSET", schema = FavoriteAssetDto.class),
+        @DiscriminatorMapping(value = "PROVIDER", schema = FavoriteProviderDto.class)
+    }
+)
 public class FavoriteDto {
 
     @JsonIgnore

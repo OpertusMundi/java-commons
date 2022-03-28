@@ -18,7 +18,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
 import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceDto;
-import eu.opertusmundi.common.model.asset.BundleAssetResourceDto;
 import eu.opertusmundi.common.model.asset.EnumAssetAdditionalResource;
 import eu.opertusmundi.common.model.asset.EnumResourceType;
 import eu.opertusmundi.common.model.asset.FileResourceDto;
@@ -27,16 +26,7 @@ import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.integration.Extensions;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
-import eu.opertusmundi.common.model.openapi.schema.AssetEndpointTypes;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
-import eu.opertusmundi.common.model.pricing.CallBlockRatePricingModelCommandDto;
-import eu.opertusmundi.common.model.pricing.CallPrePaidPricingModelCommandDto;
-import eu.opertusmundi.common.model.pricing.FixedPopulationPricingModelCommandDto;
-import eu.opertusmundi.common.model.pricing.FixedPricingModelCommandDto;
-import eu.opertusmundi.common.model.pricing.FixedRowPricingModelCommandDto;
-import eu.opertusmundi.common.model.pricing.FreePricingModelCommandDto;
-import eu.opertusmundi.common.model.pricing.RowBlockRatePricingModelCommandDto;
-import eu.opertusmundi.common.model.pricing.RowPrePaidPricingModelCommandDto;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -108,8 +98,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
             description = "Auxiliary files or additional resources to the dataset"
         ),
         minItems = 0,
-        uniqueItems = true,
-        schema = @Schema(implementation = AssetEndpointTypes.AssetAdditionalResource.class)
+        uniqueItems = true
     )
     private List<AssetAdditionalResourceDto> additionalResources;
 
@@ -138,17 +127,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
             description = "Supported pricing models"
         ),
         minItems = 1,
-        uniqueItems = true,
-        schema = @Schema(oneOf = {
-            FreePricingModelCommandDto.class,
-            FixedPricingModelCommandDto.class,
-            FixedRowPricingModelCommandDto.class,
-            FixedPopulationPricingModelCommandDto.class,
-            CallPrePaidPricingModelCommandDto.class,
-            CallBlockRatePricingModelCommandDto.class,
-            RowPrePaidPricingModelCommandDto.class,
-            RowBlockRatePricingModelCommandDto.class,
-        })
+        uniqueItems = true
     )
     @Valid
     private List<BasePricingModelCommandDto> pricingModels;
@@ -184,10 +163,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
             description = "Provides a list of resources of the dataset"
         ),
         minItems = 0,
-        uniqueItems = true,
-        schema = @Schema(oneOf = {
-            BundleAssetResourceDto.class, FileResourceDto.class, ServiceResourceDto.class
-        })
+        uniqueItems = true
     )
     private List<ResourceDto> resources;
 

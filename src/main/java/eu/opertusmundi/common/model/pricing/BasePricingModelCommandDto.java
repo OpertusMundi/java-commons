@@ -9,15 +9,15 @@ import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-import eu.opertusmundi.common.model.pricing.integration.SHImagePricingModelCommandDto;
-import eu.opertusmundi.common.model.pricing.integration.SHSubscriptionPricingModelCommandDto;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+@AllArgsConstructor
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type"
 )
@@ -29,12 +29,22 @@ import lombok.Setter;
     @Type(name = "PER_CALL_WITH_PREPAID", value = CallPrePaidPricingModelCommandDto.class),
     @Type(name = "PER_CALL_WITH_BLOCK_RATE", value = CallBlockRatePricingModelCommandDto.class),
     @Type(name = "PER_ROW_WITH_PREPAID", value = RowPrePaidPricingModelCommandDto.class),
-    @Type(name = "PER_ROW_WITH_BLOCK_RATE", value = RowBlockRatePricingModelCommandDto.class),
-    // External Data Provider pricing models
-    @Type(name = "SENTINEL_HUB_SUBSCRIPTION", value = SHSubscriptionPricingModelCommandDto.class),
-    @Type(name = "SENTINEL_HUB_IMAGES", value = SHImagePricingModelCommandDto.class),
+    @Type(name = "PER_ROW_WITH_BLOCK_RATE", value = RowBlockRatePricingModelCommandDto.class)
 })
-@AllArgsConstructor
+@Schema(
+    description = "Pricing model command",
+    required = true,
+    discriminatorMapping = {
+        @DiscriminatorMapping(value = "FREE", schema = FreePricingModelCommandDto.class),
+        @DiscriminatorMapping(value = "FIXED", schema = FixedPricingModelCommandDto.class),
+        @DiscriminatorMapping(value = "FIXED_PER_ROWS", schema = FixedRowPricingModelCommandDto.class),
+        @DiscriminatorMapping(value = "FIXED_FOR_POPULATION", schema = FixedPopulationPricingModelCommandDto.class),
+        @DiscriminatorMapping(value = "PER_CALL_WITH_PREPAID", schema = CallPrePaidPricingModelCommandDto.class),
+        @DiscriminatorMapping(value = "PER_CALL_WITH_BLOCK_RATE", schema = CallBlockRatePricingModelCommandDto.class),
+        @DiscriminatorMapping(value = "PER_ROW_WITH_PREPAID", schema = RowPrePaidPricingModelCommandDto.class),
+        @DiscriminatorMapping(value = "PER_ROW_WITH_BLOCK_RATE", schema = RowBlockRatePricingModelCommandDto.class)
+    }
+)
 public abstract class BasePricingModelCommandDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

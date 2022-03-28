@@ -28,6 +28,8 @@ import eu.opertusmundi.common.feign.client.SentinelHubFeignClient;
 import eu.opertusmundi.common.model.sinergise.CatalogueResponseDto;
 import eu.opertusmundi.common.model.sinergise.SubscriptionPlanDto;
 import eu.opertusmundi.common.model.sinergise.SubscriptionPlanDto.Billing;
+import eu.opertusmundi.common.model.sinergise.SubscriptionPlanDto.ProcessingUnits;
+import eu.opertusmundi.common.model.sinergise.SubscriptionPlanDto.Requests;
 import eu.opertusmundi.common.model.sinergise.client.ClientCatalogueQueryDto;
 import eu.opertusmundi.common.model.sinergise.client.SentinelHubDeployment;
 import eu.opertusmundi.common.model.sinergise.client.SentinelHubOpenDataCollection;
@@ -371,6 +373,8 @@ public class DefaultSentinelHubService implements SentinelHubService {
                         new String[] {"All free features"},
                         new String[] {"OGC standard WMS / WCS / WMTS / WFS", "API for advanced features","Configuration Utility tool"}
                     ))
+                    .processingUnits(ProcessingUnits.builder().minute(300L).month(30000L).build())
+                    .requests(Requests.builder().minute(300L).month(100000L).build())
                     .license("Creative Commons Attribution-NonCommercial 4.0 International License")
                     .build();
             })

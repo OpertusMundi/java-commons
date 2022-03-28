@@ -11,6 +11,7 @@ import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.BasicMessageCode;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueAdditionalResource;
 import eu.opertusmundi.common.model.pricing.EnumPricingModel;
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,6 +23,13 @@ import lombok.Setter;
     @Type(name = "FILE", value = AssetFileAdditionalResourceDto.class),
     @Type(name = "URI", value = AssetUriAdditionalResourceDto.class),
 })
+@Schema(
+    description = "Additional resource",
+    discriminatorMapping = {
+        @DiscriminatorMapping(value = "FILE", schema = AssetFileAdditionalResourceDto.class),
+        @DiscriminatorMapping(value = "URI", schema = AssetUriAdditionalResourceDto.class)
+    }
+)
 public abstract class AssetAdditionalResourceDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -11,11 +11,15 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.BasicMessageCode;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueResource;
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@NoArgsConstructor
+@Getter
+@Setter
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type"
 )
@@ -24,9 +28,15 @@ import lombok.Setter;
     @Type(name = "FILE", value = FileResourceDto.class),
     @Type(name = "SERVICE", value = ServiceResourceDto.class),
 })
-@NoArgsConstructor
-@Getter
-@Setter
+@Schema(
+    description = "Resource",
+    required = true,
+    discriminatorMapping = {
+        @DiscriminatorMapping(value = "ASSET", schema = BundleAssetResourceDto.class),
+        @DiscriminatorMapping(value = "FILE", schema = FileResourceDto.class),
+        @DiscriminatorMapping(value = "SERVICE", schema = ServiceResourceDto.class)
+    }
+)
 public abstract class ResourceDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

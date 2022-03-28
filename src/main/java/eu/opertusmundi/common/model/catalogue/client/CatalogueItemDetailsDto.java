@@ -16,14 +16,10 @@ import com.fasterxml.jackson.annotation.JsonProperty.Access;
 
 import eu.opertusmundi.common.model.account.ProviderDto;
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
-import eu.opertusmundi.common.model.asset.BundleAssetResourceDto;
-import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.model.asset.ResourceDto;
-import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
 import eu.opertusmundi.common.model.contract.ContractDto;
-import eu.opertusmundi.common.model.openapi.schema.AssetEndpointTypes;
 import eu.opertusmundi.common.util.StreamUtils;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -62,8 +58,7 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
             description = "Auxiliary files or additional resources to the dataset"
         ),
         minItems = 0,
-        uniqueItems = true,
-        schema = @Schema(implementation = AssetEndpointTypes.AssetAdditionalResource.class)
+        uniqueItems = true
     )
     @Getter
     private List<AssetAdditionalResourceDto> additionalResources;
@@ -111,10 +106,7 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
             description = "Provides a list of resources of the dataset"
         ),
         minItems = 0,
-        uniqueItems = true,
-        schema = @Schema(oneOf = {
-            BundleAssetResourceDto.class, FileResourceDto.class, ServiceResourceDto.class
-        })
+        uniqueItems = true
     )
     @Getter
     private List<ResourceDto> resources;

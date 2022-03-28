@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import eu.opertusmundi.common.model.payment.PayInDto;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -28,13 +29,21 @@ import lombok.Setter;
     @Type(name = "BANKWIRE", value = ConsumerBankwirePayInDto.class),
     @Type(name = "FREE", value = ConsumerFreePayInDto.class),
 })
+@Schema(
+    description = "Consumer PayIn",
+    required = true,
+    discriminatorMapping = {
+        @DiscriminatorMapping(value = "CARD_DIRECT", schema = ConsumerCardDirectPayInDto.class),
+        @DiscriminatorMapping(value = "BANKWIRE", schema = ConsumerBankwirePayInDto.class),
+        @DiscriminatorMapping(value = "FREE", schema = ConsumerFreePayInDto.class)
+    }
+)
 public class ConsumerPayInDto extends PayInDto {
 
     @ArraySchema(arraySchema = @Schema(
         description = "PayIn payments. A PayIn may include a single order or multiple subscription billing records"),
         minItems = 1,
-        uniqueItems = true,
-        schema = @Schema(oneOf = {ConsumerOrderPayInItemDto.class, ConsumerSubscriptionBillingPayInItemDto.class})
+        uniqueItems = true
     )
     @JsonInclude(Include.NON_EMPTY)
     protected List<ConsumerPayInItemDto> items = new ArrayList<>();

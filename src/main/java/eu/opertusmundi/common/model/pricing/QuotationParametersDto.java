@@ -10,12 +10,13 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import eu.opertusmundi.common.model.pricing.integration.SHImageQuotationParametersDto;
 import eu.opertusmundi.common.model.pricing.integration.SHSubscriptionQuotationParametersDto;
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-@Schema(description = "User-defined quotation parameters")
+@ToString
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type", defaultImpl = EmptyQuotationParametersDto.class
 )
@@ -29,7 +30,19 @@ import lombok.ToString;
     @Type(name = "SENTINEL_HUB_SUBSCRIPTION", value = SHSubscriptionQuotationParametersDto.class),
     @Type(name = "SENTINEL_HUB_IMAGES", value = SHImageQuotationParametersDto.class),
 })
-@ToString
+@Schema(
+    description = "User-defined quotation parameters",
+    discriminatorMapping = {
+        @DiscriminatorMapping(value = "UNDEFINED", schema = EmptyQuotationParametersDto.class),
+        @DiscriminatorMapping(value = "FIXED_PER_ROWS", schema = FixedRowQuotationParametersDto.class),
+        @DiscriminatorMapping(value = "FIXED_FOR_POPULATION", schema = FixedPopulationQuotationParametersDto.class),
+        @DiscriminatorMapping(value = "PER_CALL_WITH_PREPAID", schema = CallPrePaidQuotationParametersDto.class),
+        @DiscriminatorMapping(value = "PER_ROW_WITH_PREPAID", schema = RowPrePaidQuotationParametersDto.class),
+        // External Data Provider pricing models
+        @DiscriminatorMapping(value = "SENTINEL_HUB_SUBSCRIPTION", schema = SHSubscriptionQuotationParametersDto.class),
+        @DiscriminatorMapping(value = "SENTINEL_HUB_IMAGES", schema = SHImageQuotationParametersDto.class)
+    }
+)
 public class QuotationParametersDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
