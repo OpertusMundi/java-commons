@@ -538,7 +538,11 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         if (payIn instanceof CardDirectPayInEntity) {
             final CardDirectPayInEntity cardPayIn = (CardDirectPayInEntity) payIn;
 
-            cardPayIn.getRecurringPayment().setSubscription(sub);
+            // Optionally update subscription for recurring payment
+            // registration, if one exists
+            if (cardPayIn.getRecurringPayment() != null) {
+                cardPayIn.getRecurringPayment().setSubscription(sub);
+            }
 
             this.payInRepository.saveAndFlush(cardPayIn);
         }
