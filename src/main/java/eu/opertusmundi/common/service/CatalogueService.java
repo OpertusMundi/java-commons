@@ -89,7 +89,7 @@ public interface CatalogueService {
      * @throws CatalogueServiceException
      */
     CatalogueItemDetailsDto findOne(
-        RequestContext ctx, String id, @Nullable UUID publisherKey, boolean includeAutomatedMetadata
+        @Nullable RequestContext ctx, String id, @Nullable UUID publisherKey, boolean includeAutomatedMetadata
     ) throws CatalogueServiceException;
 
     /**

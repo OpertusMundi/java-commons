@@ -4,15 +4,14 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 import lombok.Getter;
 
 public class UserFileNamingStrategyContext extends FileNamingStrategyContext {
 
-    private static final Predicate<String> strictNameMatchPredicate = 
+    private static final Predicate<String> strictNameMatchPredicate =
         Pattern.compile("^[-_a-z0-9]+([.][-_a-z0-9]+)*$", Pattern.CASE_INSENSITIVE).asPredicate();
-    
+
     protected UserFileNamingStrategyContext(String userName, boolean strict, boolean createIfNotExists) {
         super(createIfNotExists);
 
@@ -37,10 +36,10 @@ public class UserFileNamingStrategyContext extends FileNamingStrategyContext {
     public static UserFileNamingStrategyContext of(String userName, boolean strict, boolean createIfNotExists) {
         return new UserFileNamingStrategyContext(userName, strict, createIfNotExists);
     }
-    
+
     @Override
     public boolean validateName(String name) {
-        Assert.state(!StringUtils.isEmpty(name), "A path component must be non empty");
-        return !strict || strictNameMatchPredicate.test(name); 
+        Assert.hasText(name, "A path component must be non empty");
+        return !strict || strictNameMatchPredicate.test(name);
     }
 }

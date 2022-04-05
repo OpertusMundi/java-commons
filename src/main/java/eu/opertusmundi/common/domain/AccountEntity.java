@@ -186,7 +186,7 @@ public class AccountEntity {
     @OneToMany(
         targetEntity = AccountRoleEntity.class,
         mappedBy = "account",
-        fetch = FetchType.EAGER,
+        fetch = FetchType.LAZY,
         cascade = CascadeType.ALL,
         orphanRemoval = true
     )

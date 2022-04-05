@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.sleuth.Span;
+import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,8 +34,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import brave.Span;
-import brave.Tracer;
 import eu.opertusmundi.common.domain.AssetAdditionalResourceEntity;
 import eu.opertusmundi.common.domain.AssetResourceEntity;
 import eu.opertusmundi.common.domain.FavoriteEntity;
@@ -765,7 +765,7 @@ public class DefaultCatalogueService implements CatalogueService {
                     );
                 }
             } finally {
-                span.finish();
+                span.end();
             }
         }
 
@@ -844,20 +844,24 @@ public class DefaultCatalogueService implements CatalogueService {
 
             // Query new published item from the catalogue. Catalogue may inject
             // additional information such as versions
-            final CatalogueFeature published = this.catalogueClient.getObject()
+            final CatalogueFeature publishedFeature = this.catalogueClient.getObject()
                 .findOneById(feature.getId())
                 .getBody()
                 .getResult();
 
+            final CatalogueItemDetailsDto publishedItem = this.featureToItem(
+                null, publishedFeature, feature.getProperties().getPublisherId(), false
+            );
+
             // Update statistics
-            this.statisticsService.updateStatisticsPublishAsset(feature.getId());
+            this.statisticsService.updateStatisticsPublishAsset(publishedItem);
 
             if (this.elasticSearchService != null) {
                 // For tabular assets, reset geometry
-                if (EnumAssetType.fromString(published.getProperties().getType()) == EnumAssetType.TABULAR) {
-                    published.setGeometry(null);
+                if (EnumAssetType.fromString(publishedFeature.getProperties().getType()) == EnumAssetType.TABULAR) {
+                    publishedFeature.setGeometry(null);
                 }
-                this.elasticSearchService.addAsset(published);
+                this.elasticSearchService.addAsset(publishedFeature);
             }
         } catch (final ElasticServiceException ex) {
             logger.error("Failed to publish asset to elastic", ex);

@@ -65,8 +65,8 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.geo.ShapeRelation;
 import org.elasticsearch.common.geo.builders.EnvelopeBuilder;
 import org.elasticsearch.common.unit.Fuzziness;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.geometry.Rectangle;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
@@ -433,7 +433,10 @@ public class DefaultElasticSearchService implements ElasticSearchService {
         final AggregationConfig aggConfig   = new AggregationConfig(aggBuilder);
         final PivotConfig       pivotConfig = PivotConfig.builder().setGroups(groupConfig).setAggregationConfig(aggConfig).build();
 
-        final SyncConfig syncConfig = new TimeSyncConfig("insertTimestamp", TimeValue.timeValueSeconds(60));
+        final SyncConfig syncConfig = TimeSyncConfig.builder()
+            .setField("insertTimestamp")
+            .setDelay(TimeValue.timeValueSeconds(60))
+            .build();
 
         final TransformConfig transformConfig = TransformConfig
             .builder()

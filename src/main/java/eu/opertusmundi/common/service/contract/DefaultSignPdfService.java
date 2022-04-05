@@ -74,7 +74,7 @@ public class DefaultSignPdfService implements SignPdfService {
     private void setBackgroundColor(
         @Value("${opertusmundi.contract.signpdf.visible-signature.background-color:}") String colorAsHex)
     {
-        if (!StringUtils.isEmpty(colorAsHex)) {
+        if (StringUtils.hasText(colorAsHex)) {
             Assert.isTrue(colorAsHex.startsWith("#"), "An RGB color in hex notation should start with `#`");
             this.backgroundColor = new Color(Integer.parseInt(colorAsHex.substring(1), 16));
         }

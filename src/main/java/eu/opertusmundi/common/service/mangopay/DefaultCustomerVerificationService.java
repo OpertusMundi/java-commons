@@ -117,7 +117,7 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
         try {
             final String      mangoPayUserId = this.resolveMangopayUserId(command.getUserKey(), command.getCustomerType());
             final KycDocument kycDocument    = this.api.getUserApi().createKycDocument(
-                mangoPayUserId, KycDocumentType.valueOf(command.getType().toString())
+                mangoPayUserId, KycDocumentType.valueOf(command.getType().toString()), command.getTag()
             );
 
             return KycDocumentDto.from(kycDocument);

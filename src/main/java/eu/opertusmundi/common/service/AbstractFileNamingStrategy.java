@@ -8,7 +8,6 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Set;
 
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 import eu.opertusmundi.common.model.file.FileNamingStrategyContext;
 import eu.opertusmundi.common.model.file.FileSystemException;
@@ -20,7 +19,7 @@ public abstract class AbstractFileNamingStrategy<C extends FileNamingStrategyCon
     @Override
     public Path resolvePath(C ctx, String relativePath) throws IOException, FileSystemException {
         Assert.notNull(ctx, "Expected a non-null context");
-        Assert.isTrue(!StringUtils.isEmpty(relativePath), "Expected a non-empty path");
+        Assert.hasText(relativePath, "Expected a non-empty path");
 
         return this.resolvePath(ctx, Paths.get(relativePath));
     }

@@ -19,20 +19,19 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 @Configuration
 @ConditionalOnProperty(prefix = "opertusmundi.contract.signpdf", name = "key-store")
 public class KeystoreConfiguration
 {
     private static final Logger logger = LoggerFactory.getLogger(KeystoreConfiguration.class);
-    
+
     private Resource keystoreResource;
-   
+
     private String keystorePassword;
-    
+
     private KeyStore keystore;
-    
+
     @Autowired
     void setKeystoreResource(
         @Value("${opertusmundi.contract.signpdf.key-store}") Resource keystoreResource)
@@ -40,15 +39,15 @@ public class KeystoreConfiguration
         Assert.notNull(keystoreResource, "keystoreResource");
         this.keystoreResource = keystoreResource;
     }
-    
+
     @Autowired
     void setKeystorePassword(
-        @Value("${opertusmundi.contract.signpdf.key-store-password}") String keystorePassword) 
+        @Value("${opertusmundi.contract.signpdf.key-store-password}") String keystorePassword)
     {
-        Assert.isTrue(!StringUtils.isEmpty(keystorePassword), "keystorePassword cannot be empty");
+        Assert.hasText(keystorePassword, "keystorePassword cannot be empty");
         this.keystorePassword = keystorePassword;
     }
-    
+
     private KeyStore keystoreFromFile()
         throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException
     {
@@ -57,18 +56,18 @@ public class KeystoreConfiguration
         try (FileInputStream in = new FileInputStream(keystoreFile)) {
             keystore.load(in, keystorePassword.toCharArray());
         }
-        
+
         logger.info("Loaded keystore from {} ({} entries)", keystoreFile, keystore.size());
         return keystore;
     }
-    
+
     @PostConstruct
-    void initialize() 
+    void initialize()
         throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException
     {
         this.keystore = keystoreFromFile();
     }
-    
+
     @Bean("signatoryKeyStore")
     public KeyStore signatoryKeyStore()
     {

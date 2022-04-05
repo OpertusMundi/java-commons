@@ -27,20 +27,15 @@ import eu.opertusmundi.common.util.StreamUtils;
 public class DefaultStatisticsService implements StatisticsService{
 
     @Autowired
-    private CatalogueService catalogueService;
-    
-    @Autowired
     private AssetStatisticsRepository assetStatisticsRepository;
-    
+
     @Autowired
     private CountryRepository countryRepository;
 
     @Override
-    public AssetStatisticsDto updateStatisticsPublishAsset(String pid) {
-    	AssetStatisticsCommandDto assetStatisticsCommandDto = new AssetStatisticsCommandDto();
-    	
-    	CatalogueItemDto item = this.catalogueService.findOne(null, pid, null, false); 
-    	
+    public AssetStatisticsDto updateStatisticsPublishAsset(CatalogueItemDto item) {
+    	final AssetStatisticsCommandDto assetStatisticsCommandDto = new AssetStatisticsCommandDto();
+
         final Geometry                       geom            = item.getGeometry();
         final EnumTopicCategory              segment         = StreamUtils.from(item.getTopicCategory()).findFirst().orElse(null);
         final ZonedDateTime                  publicationDate = LocalDateTime.parse(item.getPublicationDate()).atZone(ZoneId.of("UTC"));
@@ -63,14 +58,14 @@ public class DefaultStatisticsService implements StatisticsService{
         final List<CountryEuropeDto> countries = this.countryRepository.getCountriesWithinGeometry(geom).stream()
             .map(CountryEuropeEntity::toDto)
             .collect(Collectors.toList());
-        
-        assetStatisticsCommandDto.setPid(pid);
+
+        assetStatisticsCommandDto.setPid(item.getId());
         assetStatisticsCommandDto.setSegment(segment);
         assetStatisticsCommandDto.setPublicationDate(publicationDate);
         assetStatisticsCommandDto.setMaxPrice(maxPrice);
         assetStatisticsCommandDto.setCountries(countries);
-	
-    	return this.assetStatisticsRepository.create(assetStatisticsCommandDto);    	
+
+    	return this.assetStatisticsRepository.create(assetStatisticsCommandDto);
     }
 
     @Override

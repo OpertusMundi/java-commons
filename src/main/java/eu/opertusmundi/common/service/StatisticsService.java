@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.service;
 
 import eu.opertusmundi.common.model.analytics.AssetStatisticsDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 
 public interface StatisticsService {
 
@@ -11,9 +12,9 @@ public interface StatisticsService {
      *
      * @param  pid
      * @return AssetStatisticsDto
-     * @throws 
+     * @throws
      */
-    AssetStatisticsDto updateStatisticsPublishAsset(String pid);
+    AssetStatisticsDto updateStatisticsPublishAsset(CatalogueItemDto item);
 
     /**
      * Remove records from asset_statistics
