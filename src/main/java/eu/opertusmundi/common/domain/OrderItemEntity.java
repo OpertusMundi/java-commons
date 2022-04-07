@@ -23,6 +23,7 @@ import org.hibernate.validator.constraints.Length;
 
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 
+import eu.opertusmundi.common.model.catalogue.client.EnumContractType;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import eu.opertusmundi.common.model.order.ConsumerOrderItemDto;
 import eu.opertusmundi.common.model.order.EnumOrderItemType;
@@ -93,6 +94,13 @@ public class OrderItemEntity {
     @Setter
     private String assetVersion;
 
+    @NotNull
+    @Column(name = "`contract_type`")
+    @Enumerated(EnumType.STRING)
+    @Getter
+    @Setter
+    private EnumContractType contractType;
+    
     @Column(name = "`contract_template_id`")
     @Getter
     @Setter
@@ -163,6 +171,7 @@ public class OrderItemEntity {
         i.setTotalPriceExcludingTax(totalPriceExcludingTax);
         i.setTotalTax(totalTax);
         i.setType(type);
+        i.setContractType(contractType);
     }
 
     public ConsumerOrderItemDto toConsumerDto(boolean includeProviderDetails) {

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import eu.opertusmundi.common.model.catalogue.client.EnumContractType;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -34,6 +35,9 @@ public abstract class OrderItemDto {
     @Schema(description = "Catalogue item version", example = "1.1.0")
     private String assetVersion;
 
+    @Schema(description = "Contract type")
+    private EnumContractType contractType;
+    
     @Schema(description = "Asset contract signature date")
     @JsonInclude(Include.NON_NULL)
     private ZonedDateTime contractSignedOn;

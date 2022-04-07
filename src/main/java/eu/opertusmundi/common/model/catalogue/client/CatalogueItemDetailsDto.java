@@ -42,6 +42,7 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
 
         this.contractTemplateId      = props.getContractTemplateId();
         this.contractTemplateVersion = props.getContractTemplateVersion();
+        this.contractTemplateType 	 = props.getContractTemplateType();
         this.versions                = props.getVersions();
         this.visibility              = props.getVisibility();
         this.resources               = StreamUtils.from(props.getResources())
@@ -72,6 +73,11 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
     @Getter
     @Setter
     private String contractTemplateVersion;
+    
+    @JsonIgnore
+    @Getter
+    @Setter
+    private EnumContractType contractTemplateType = EnumContractType.MASTER_CONTRACT;
 
     @Schema(description = "Contract details")
     @JsonProperty(access = Access.READ_ONLY)

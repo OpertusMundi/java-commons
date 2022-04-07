@@ -16,5 +16,9 @@ public interface AssetFileManager {
     Path resolveAdditionalResourcePath(String pid, String fileName) throws FileSystemException, AssetRepositoryException;
 
     Path resolveMetadataPropertyPath(String pid, String fileName) throws FileSystemException, AssetRepositoryException;
+    
+    Path resolveUploadedContractPath(String pid) throws FileSystemException, AssetRepositoryException;
+
+    Path resolveContractAnnexPath(String pid, String fileName) throws FileSystemException, AssetRepositoryException;
 
 }

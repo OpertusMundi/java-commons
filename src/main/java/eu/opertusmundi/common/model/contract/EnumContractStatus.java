@@ -6,5 +6,8 @@ public enum EnumContractStatus {
     ACTIVE,
     INACTIVE,
     PUBLISHED,
+    REJECTED_HELPDESK,
+    REJECTED_PROVIDER,
+    REJECTED_CONSUMER,
     ;
 }

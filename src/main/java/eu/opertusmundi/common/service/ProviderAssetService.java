@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
+import eu.opertusmundi.common.model.asset.AssetContractAnnexCommandDto;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.asset.AssetDraftReviewCommandDto;
 import eu.opertusmundi.common.model.asset.AssetDraftSetStatusCommandDto;
@@ -33,6 +34,7 @@ import eu.opertusmundi.common.model.catalogue.client.DraftFromAssetCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.UnpublishAssetCommand;
+import eu.opertusmundi.common.model.contract.provider.ProviderUploadedContractCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
@@ -314,7 +316,93 @@ public interface ProviderAssetService {
     AssetDraftDto addAdditionalResource(
         AssetFileAdditionalResourceCommandDto command, InputStream input
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
+    
+    /**
+     * Uploads a contract file for the selected asset
+     *
+     * @param command Uploaded contract. If a file with the same name already already exists for the asset, it is overwritten
+     * @param input An input stream of the uploaded file. The caller should close the stream.
+     *
+     * @return 
+     *
+     * @throws FileSystemException
+     * @throws AssetRepositoryException
+     * @throws AssetDraftException
+     */
+    void addUploadedContract(
+    		ProviderUploadedContractCommand command, InputStream input
+    ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
+    
+    /**
+     * Uploads an additional contract annex file for the selected asset
+     *
+     * @param command Contract annex metadata. If a file with the same name already already exists for the asset, it is overwritten
+     * @param input An input stream of the uploaded file. The caller should close the stream.
+     *
+     * @return The updated draft
+     *
+     * @throws FileSystemException
+     * @throws AssetRepositoryException
+     * @throws AssetDraftException
+     */
+    AssetDraftDto addContractAnnex(
+        AssetContractAnnexCommandDto command, InputStream input
+    ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
 
+    /**
+     * Resolve the path of an uploaded contract of a draft asset
+     *
+     * @param pid
+     *
+     * @throws FileSystemException If an I/O error occurs
+     * @throws AssetRepositoryException If resolve operation fails
+     */
+    public Path resolveDraftUploadedContractPath(
+    		UUID ownerKey, UUID publisherKey, UUID draftKey
+        ) throws FileSystemException, AssetRepositoryException;
+    
+    /**
+     * Resolve the path of an uploaded contract of an asset
+     *
+     * @param ownerKey
+     * @param publisherKey
+     * @return path
+     *
+     * @throws FileSystemException If an I/O error occurs
+     * @throws AssetRepositoryException If resolve operation fails
+     */
+    public Path resolveAssetUploadedContractPath(
+             String pid
+        ) throws FileSystemException, AssetRepositoryException;
+    
+    /**
+     * Resolve the path of an annex for the uploaded contract of an asset
+     *
+     * @param pid
+     * @param resourceKey
+     * @return
+     *
+     * @throws FileSystemException If an I/O error occurs
+     * @throws AssetRepositoryException If resolve operation fails
+     */
+    Path resolveAssetContractAnnex(String pid, String resourceKey) throws FileSystemException, AssetRepositoryException;
+    
+    /**
+     * Resolve the path of an annex for the uploaded contract of a draft asset
+     *
+     * @param ownerKey
+     * @param publisherKey
+     * @param draftKey
+     * @param resourceKey
+     * @return
+     *
+     * @throws FileSystemException If an I/O error occurs
+     * @throws AssetRepositoryException If resolve operation fails
+     */
+    Path resolveDraftContractAnnex(
+        UUID ownerKey, UUID publisherKey, UUID draftKey, String resourceKey
+    ) throws FileSystemException, AssetRepositoryException;
+    
     /**
      * Resolve the path of an additional file resource of an asset
      *

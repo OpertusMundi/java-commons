@@ -45,6 +45,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.AssetAdditionalResourceEntity;
+import eu.opertusmundi.common.domain.AssetContractAnnexEntity;
 import eu.opertusmundi.common.domain.AssetFileTypeEntity;
 import eu.opertusmundi.common.domain.AssetMetadataPropertyEntity;
 import eu.opertusmundi.common.domain.AssetResourceEntity;
@@ -56,6 +57,8 @@ import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.RecordLockDto;
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
+import eu.opertusmundi.common.model.asset.AssetContractAnnexCommandDto;
+import eu.opertusmundi.common.model.asset.AssetContractAnnexDto;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.asset.AssetDraftReviewCommandDto;
 import eu.opertusmundi.common.model.asset.AssetDraftSetStatusCommandDto;
@@ -86,11 +89,13 @@ import eu.opertusmundi.common.model.catalogue.client.DraftApiFromAssetCommandDto
 import eu.opertusmundi.common.model.catalogue.client.DraftApiFromFileCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftFromAssetCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
+import eu.opertusmundi.common.model.catalogue.client.EnumContractType;
 import eu.opertusmundi.common.model.catalogue.client.EnumDeliveryMethod;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.UnpublishAssetCommand;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractHistoryDto;
+import eu.opertusmundi.common.model.contract.provider.ProviderUploadedContractCommand;
 import eu.opertusmundi.common.model.file.FilePathCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.file.FileSystemMessageCode;
@@ -103,6 +108,7 @@ import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.AccountSubscriptionRepository;
 import eu.opertusmundi.common.repository.AssetAdditionalResourceRepository;
+import eu.opertusmundi.common.repository.AssetContractAnnexRepository;
 import eu.opertusmundi.common.repository.AssetFileTypeRepository;
 import eu.opertusmundi.common.repository.AssetMetadataPropertyRepository;
 import eu.opertusmundi.common.repository.AssetResourceRepository;
@@ -149,6 +155,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Autowired
     private AssetAdditionalResourceRepository assetAdditionalResourceRepository;
+
+    @Autowired
+    private AssetContractAnnexRepository assetContractAnnexRepository;
 
     @Autowired
     private AccountSubscriptionRepository subscriptionRepository;
@@ -495,7 +504,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         // Consolidate file resources
         this.consolidateResources(draft);
-
+        this.consolidateContractAnnexes(draft);
         return draft;
     }
 
@@ -898,6 +907,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             // Link resource files to the new PID value
             this.assetResourceRepository.linkDraftResourcesToAsset(draftKey, pid);
             this.assetAdditionalResourceRepository.linkDraftResourcesToAsset(draftKey, pid);
+            this.assetContractAnnexRepository.linkDraftAnnexesToAsset(draftKey, pid);
 
             // Update draft status
             this.draftRepository.publish(publisherKey, draftKey, pid);
@@ -1248,7 +1258,151 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         return result;
     }
+    
+    @Override
+    @Transactional
+    public void addUploadedContract(
+    		ProviderUploadedContractCommand command, InputStream input
+    ) throws FileSystemException, AssetRepositoryException, AssetDraftException {
+        // The provider must have access to the selected draft and also the
+        // draft must be editable
+        final AssetDraftDto draft = this.ensureDraftAndStatus(
+            command.getOwnerKey(), command.getPublisherKey(), command.getDraftKey(), EnumProviderAssetDraftStatus.DRAFT
+        );
 
+        // Lock record before update
+        final Pair<EnumLockResult, RecordLockDto> lock = this.getLock(command.getOwnerKey(), command.getDraftKey(), true);
+
+        // Update asset file repository
+        this.draftFileManager.uploadContract(command, input);
+
+        // Release lock if it was created only for the specific operation
+        if (lock != null && lock.getLeft() == EnumLockResult.CREATED) {
+            this.releaseLock(command.getOwnerKey(), command.getDraftKey());
+        } else if (lock != null) {
+            draft.setLock(lock.getRight());
+        }
+
+        return ;
+    }
+
+    @Override
+    @Transactional
+    public Path resolveDraftUploadedContractPath(
+        UUID ownerKey, UUID publisherKey, UUID draftKey
+    ) throws FileSystemException, AssetRepositoryException {
+        // The provider must have access to the selected draft
+        this.ensureDraftAndStatus(ownerKey, publisherKey, draftKey, null);
+
+//        final AssetAdditionalResourceEntity resource = this.assetAdditionalResourceRepository
+//            .findOneByDraftKeyAndResourceKey(draftKey, resourceKey)
+//            .orElse(null);
+
+        final Path path = this.draftFileManager.resolveUploadedContractPath(publisherKey, draftKey);
+
+        if (!path.toFile().exists()) {
+            throw new FileSystemException(FileSystemMessageCode.FILE_IS_MISSING, "File not found");
+        }
+
+        return path;
+    }
+    
+	@Override
+    @Transactional
+    public Path resolveAssetUploadedContractPath(String pid) throws FileSystemException, AssetRepositoryException {
+        // The provider must have access to the selected draft
+        //this.ensureDraftAndStatus(ownerKey, publisherKey, draftKey, null);
+
+//        final AssetAdditionalResourceEntity resource = this.assetAdditionalResourceRepository
+//            .findOneByDraftKeyAndResourceKey(draftKey, resourceKey)
+//            .orElse(null);
+
+        final Path path = this.assetFileManager.resolveUploadedContractPath(pid);
+
+        if (!path.toFile().exists()) {
+            throw new FileSystemException(FileSystemMessageCode.FILE_IS_MISSING, "File not found");
+        }
+
+        return path;
+    }
+    
+    @Override
+    @Transactional
+    public AssetDraftDto addContractAnnex(
+    		AssetContractAnnexCommandDto command, InputStream input
+    ) throws FileSystemException, AssetRepositoryException, AssetDraftException {
+        // The provider must have access to the selected draft and also the
+        // draft must be editable
+        final AssetDraftDto draft = this.ensureDraftAndStatus(
+            command.getOwnerKey(), command.getPublisherKey(), command.getDraftKey(), EnumProviderAssetDraftStatus.DRAFT
+        );
+
+        // Lock record before update
+        final Pair<EnumLockResult, RecordLockDto> lock = this.getLock(command.getOwnerKey(), command.getDraftKey(), true);
+
+        // Update database link
+        final AssetContractAnnexDto resource = assetContractAnnexRepository.update(command);
+
+        // Update asset file repository
+        this.draftFileManager.uploadContractAnnex(command, input);
+
+//        // Update draft with new file resource
+//        draft.getCommand().setDraftKey(command.getDraftKey());
+//        draft.getCommand().setOwnerKey(command.getOwnerKey());
+//        draft.getCommand().setPublisherKey(command.getPublisherKey());
+//        draft.getCommand().addAdditionalResource(resource);
+
+        //final AssetDraftDto result = this.draftRepository.update(draft.getCommand());
+        final AssetDraftDto result = draft;
+        
+        // Release lock if it was created only for the specific operation
+        if (lock != null && lock.getLeft() == EnumLockResult.CREATED) {
+            this.releaseLock(command.getOwnerKey(), command.getDraftKey());
+        } else if (lock != null) {
+            result.setLock(lock.getRight());
+        }
+
+        return result;
+    }
+    
+    @Override
+    public Path resolveAssetContractAnnex(
+        String pid, String resourceKey
+    ) throws FileSystemException, AssetRepositoryException {
+        final AssetContractAnnexEntity resource = this.assetContractAnnexRepository
+            .findOneByAssetPidAndResourceKey(pid, resourceKey)
+            .orElse(null);
+
+        final Path path = this.assetFileManager.resolveContractAnnexPath(pid, resource.getFileName());
+
+        if (!path.toFile().exists()) {
+            throw new FileSystemException(FileSystemMessageCode.FILE_IS_MISSING, "File not found");
+        }
+
+        return path;
+    }
+    
+    @Override
+    @Transactional
+    public Path resolveDraftContractAnnex(
+        UUID ownerKey, UUID publisherKey, UUID draftKey, String resourceKey
+    ) throws FileSystemException, AssetRepositoryException {
+        // The provider must have access to the selected draft
+        this.ensureDraftAndStatus(ownerKey, publisherKey, draftKey, null);
+
+        final AssetContractAnnexEntity annex = this.assetContractAnnexRepository
+            .findOneByDraftKeyAndResourceKey(draftKey, resourceKey)
+            .orElse(null);
+
+        final Path path = this.draftFileManager.resolveContractAnnexPath(publisherKey, draftKey, annex.getFileName());
+
+        if (!path.toFile().exists()) {
+            throw new FileSystemException(FileSystemMessageCode.FILE_IS_MISSING, "File not found");
+        }
+
+        return path;
+    }
+    
     @Override
     public Path resolveAssetAdditionalResource(
         String pid, String resourceKey
@@ -1399,6 +1553,34 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             // Update asset file repository
             this.draftFileManager.deleteAdditionalResource(publisherKey, draftKey, resource.getFileName());
         });
+    }
+    
+    private void consolidateContractAnnexes(AssetDraftDto draft) {
+        final CatalogueItemCommandDto          command             = draft.getCommand();
+        final UUID                             ownerKey        	   = command.getOwnerKey();
+        final UUID                             publisherKey        = command.getPublisherKey();
+        final UUID                             draftKey            = command.getDraftKey();
+
+        // Delete all uploaded contract files if master contract
+        if (command.getContractTemplateType() == EnumContractType.MASTER_CONTRACT) {
+        	try{
+    			final Path contractPath = resolveDraftUploadedContractPath(ownerKey, publisherKey, draftKey);
+    			this.draftFileManager.deleteContract(publisherKey, draftKey, contractPath.getFileName().toString());
+    		}
+        	catch (FileSystemException e) {
+        		//no action required if no contract exists
+        	}
+            final List<AssetContractAnnexEntity> contractAnnexes   = assetContractAnnexRepository.findAllAnnexesByDraftKey(draftKey);
+	       
+	        for (AssetContractAnnexEntity a: contractAnnexes) {
+		        // Delete annex record in transaction before deleting file
+	            final AssetContractAnnexDto annex = this.assetContractAnnexRepository.delete(
+	                draftKey, a.getKey());
+	
+	            // Update annex file repository
+	            this.draftFileManager.deleteContractAnnex(publisherKey, draftKey, annex.getFileName());
+	        }
+        }
     }
 
     private FileResourceDto deleteResourceRecord(UUID ownerKey, UUID publisherKey, UUID draftKey, String resourceKey) {

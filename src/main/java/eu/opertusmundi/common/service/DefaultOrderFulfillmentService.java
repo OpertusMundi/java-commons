@@ -1,24 +1,39 @@
 package eu.opertusmundi.common.service;
 
+import java.io.File;
+import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.time.ZonedDateTime;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import eu.opertusmundi.common.domain.AccountAssetEntity;
+import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.AccountSubscriptionEntity;
 import eu.opertusmundi.common.domain.AccountSubscriptionSkuEntity;
 import eu.opertusmundi.common.domain.CardDirectPayInEntity;
@@ -27,14 +42,31 @@ import eu.opertusmundi.common.domain.OrderItemEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
+import eu.opertusmundi.common.feign.client.EmailServiceFeignClient;
+import eu.opertusmundi.common.feign.client.MessageServiceFeignClient;
+import eu.opertusmundi.common.model.BaseResponse;
+import eu.opertusmundi.common.model.ServiceException;
 import eu.opertusmundi.common.model.account.EnumAssetSource;
 import eu.opertusmundi.common.model.account.EnumSubscriptionStatus;
+import eu.opertusmundi.common.model.asset.AssetMessageCode;
+import eu.opertusmundi.common.model.asset.AssetRepositoryException;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
+import eu.opertusmundi.common.model.catalogue.client.EnumContractType;
+import eu.opertusmundi.common.model.email.EmailAddressDto;
+import eu.opertusmundi.common.model.email.EnumMailType;
+import eu.opertusmundi.common.model.email.MailMessageCode;
+import eu.opertusmundi.common.model.email.MessageDto;
+import eu.opertusmundi.common.model.file.FileSystemException;
+import eu.opertusmundi.common.model.message.EnumNotificationType;
+import eu.opertusmundi.common.model.message.server.ServerNotificationCommandDto;
 import eu.opertusmundi.common.model.order.ConsumerOrderDto;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
+import eu.opertusmundi.common.model.order.OrderAcceptContractCommand;
 import eu.opertusmundi.common.model.order.OrderConfirmCommandDto;
+import eu.opertusmundi.common.model.order.OrderContractFileNamingStrategyContext;
 import eu.opertusmundi.common.model.order.OrderDeliveryCommand;
 import eu.opertusmundi.common.model.order.OrderException;
+import eu.opertusmundi.common.model.order.OrderFillOutAndUploadContractCommand;
 import eu.opertusmundi.common.model.order.OrderMessageCode;
 import eu.opertusmundi.common.model.order.OrderShippingCommandDto;
 import eu.opertusmundi.common.model.order.ProviderOrderDto;
@@ -56,10 +88,14 @@ import eu.opertusmundi.common.model.pricing.RowPrePaidQuotationParametersDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.AccountAssetRepository;
+import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.AccountSubscriptionRepository;
 import eu.opertusmundi.common.repository.OrderRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
 import eu.opertusmundi.common.service.integration.DataProviderManager;
+import eu.opertusmundi.common.service.messaging.MailMessageHelper;
+import eu.opertusmundi.common.service.messaging.MailModelBuilder;
+import eu.opertusmundi.common.service.messaging.NotificationMessageHelper;
 import eu.opertusmundi.common.util.BpmEngineUtils;
 import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
 import feign.FeignException;
@@ -74,6 +110,13 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
     private static final String MESSAGE_CONSUMER_RECEIVED_ORDER = "consumer-order-received-message";
 
+    private static final String ORDER_PATH = "/order";
+
+    @Autowired
+    private DefaultOrderContractFileNamingStrategy orderContractNamingStrategy;
+    
+    private static final Set<PosixFilePermission> DEFAULT_DIRECTORY_PERMISSIONS = PosixFilePermissions.fromString("rwxrwxr-x");
+
     private static final Logger logger = LoggerFactory.getLogger(DefaultOrderFulfillmentService.class);
 
     @Autowired
@@ -86,8 +129,23 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     private AccountAssetRepository accountAssetRepository;
 
     @Autowired
-    private AccountSubscriptionRepository accountSubscriptionRepository;
+    private AccountRepository accountRepository;
 
+    @Autowired
+    private AccountSubscriptionRepository accountSubscriptionRepository;
+    
+    @Autowired
+    private MailMessageHelper messageHelper;
+    
+    @Autowired
+    private ObjectProvider<EmailServiceFeignClient> mailClient;
+
+    @Autowired
+    private ObjectProvider<MessageServiceFeignClient> messageClient;
+
+    @Autowired
+    private NotificationMessageHelper notificationMessageBuilder;
+    
     @Autowired
     private BpmEngineUtils bpmEngine;
 
@@ -96,6 +154,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
     @Autowired
     private DataProviderManager dataProviderManager;
+    
 
     @Override
     @Transactional
@@ -112,12 +171,104 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     private ProviderOrderDto confirmOrder(UUID publisherKey, UUID orderKey, boolean accepted, String rejectReason) throws OrderException {
         try {
             ProviderOrderDto order;
+            UUID consumerKey = this.orderRepository.findOrderEntityByKey(orderKey).get().getConsumer().getKey();
             if (accepted) {
                 order = this.orderRepository.acceptOrder(publisherKey, orderKey);
+                this.sendOrderStatusByMail(EnumMailType.CONSUMER_PURCHASE_APPROVED, consumerKey, orderKey);
+                if (this.orderRepository.findOrderEntityByKey(orderKey).get().getItems().get(0).getContractType() == EnumContractType.UPLOADED_CONTRACT) {
+                	this.sendOrderStatusByMail(EnumMailType.SUPPLIER_CONTRACT_TO_BE_FILLED_OUT, publisherKey, orderKey);
+                }
             } else {
                 order = this.orderRepository.rejectOrder(publisherKey, orderKey, rejectReason);
+                this.sendOrderStatusByMail(EnumMailType.CONSUMER_PURCHASE_REJECTION, consumerKey, orderKey);
             }
 
+            return order;
+        } catch (final OrderException ex) {
+            throw ex;
+        } catch (final FeignException fex) {
+            logger.error("Operation has failed", fex);
+
+            throw new OrderException(OrderMessageCode.BPM_SERVICE, "Operation on BPM server failed", fex);
+        } catch (final Exception ex) {
+            logger.error("Operation has failed", ex);
+
+            throw new OrderException(OrderMessageCode.ERROR, "An unknown error has occurred", ex);
+        }
+    }
+    
+    @Override
+    @Transactional
+    public ProviderOrderDto fillOutAndUploadContract(OrderFillOutAndUploadContractCommand command, InputStream input) throws OrderException {
+        try {
+            Assert.notNull(command, "Expected a non-null command");
+            Assert.isTrue(command.getSize() > 0, "Expected file size to be greater than 0");
+
+            this.saveContract(command.getOrderKey(), ORDER_PATH, command.getFileName(), input);
+            ProviderOrderDto order = this.orderRepository.fillOutAndUploadContractByProvider( command.getOrderKey());
+            
+            UUID consumerKey = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).get().getConsumer().getKey();
+            this.sendOrderStatusByMail(EnumMailType.CONSUMER_FILLED_OUT_CONTRACT, consumerKey, command.getOrderKey());
+            
+            return order;
+        } catch (final OrderException ex) {
+            throw ex;
+        } catch (final FeignException fex) {
+            logger.error("Operation has failed", fex);
+
+            throw new OrderException(OrderMessageCode.BPM_SERVICE, "Operation on BPM server failed", fex);
+        } catch (final Exception ex) {
+            logger.error("Operation has failed", ex);
+
+            throw new OrderException(OrderMessageCode.ERROR, "An unknown error has occurred", ex);
+        }
+    }
+    
+    
+
+    private void saveContract(
+            UUID orderKey, String path, String fileName, InputStream input
+        ) throws AssetRepositoryException, FileSystemException {
+            Assert.notNull(orderKey, "Expected a non-null order key");
+            Assert.isTrue(!StringUtils.isBlank(fileName), "Expected a non-empty file name");
+
+            Integer consumerId = this.orderRepository.findOrderEntityByKey(orderKey).get().getConsumer().getId();
+            		
+            try {
+                final OrderContractFileNamingStrategyContext ctx	= OrderContractFileNamingStrategyContext.of(consumerId, orderKey);
+                final Path relativePath								= Paths.get(path, fileName);
+                //final Path absolutePath								= this.orderContractNamingStrategy.resolvePath(ctx, relativePath);
+
+                final Path absolutePath								= this.orderContractNamingStrategy.getDir(ctx);
+                final File localFile								= absolutePath.toFile();
+
+                // Create parent directory
+                if (!absolutePath.getParent().toFile().exists()) {
+                    Files.createDirectories(absolutePath.getParent());
+                    Files.setPosixFilePermissions(absolutePath.getParent(), DEFAULT_DIRECTORY_PERMISSIONS);
+                }
+
+                if (localFile.exists()) {
+                    FileUtils.deleteQuietly(localFile);
+                }
+
+                Files.copy(input, absolutePath, StandardCopyOption.REPLACE_EXISTING);
+            } catch (final FileSystemException ex) {
+                throw ex;
+            } catch (final Exception ex) {
+                throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
+            }
+        }
+    
+    public ConsumerOrderDto acceptContract(OrderAcceptContractCommand command) throws OrderException {
+        try {
+            ConsumerOrderDto order;
+            order = this.orderRepository.acceptContractByConsumer(command.getConsumerKey(), command.getOrderKey());
+            
+            this.sendOrderStatusByMail(EnumMailType.CONSUMER_SUPPLIER_CONTRACT_SIGNED, command.getConsumerKey(), command.getOrderKey());
+            
+            UUID providerKey = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).get().getItems().get(0).getProvider().getKey();
+            this.sendOrderStatusByMail(EnumMailType.CONSUMER_SUPPLIER_CONTRACT_SIGNED, providerKey, command.getOrderKey());
             return order;
         } catch (final OrderException ex) {
             throw ex;
@@ -545,6 +696,80 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             }
 
             this.payInRepository.saveAndFlush(cardPayIn);
+        }
+    }
+    
+    @Override
+    @Transactional
+    public void sendOrderStatusByMail(EnumMailType mailType, UUID recipientKey, UUID orderKey) {
+        // Resolve recipient
+        final AccountEntity account = accountRepository.findOneByKey(recipientKey).orElse(null);
+        if (account == null) {
+            throw new ServiceException(
+                MailMessageCode.RECIPIENT_NOT_FOUND,
+                String.format("Recipient was not found [userKey=%s]", recipientKey)
+            );
+        }
+        // Compose message
+        final MailModelBuilder builder = MailModelBuilder.builder()
+            .add("userKey", recipientKey.toString())
+            .add("orderKey", orderKey.toString());
+
+        final Map<String, Object>             model    = this.messageHelper.createModel(mailType, builder);
+        final EmailAddressDto                 sender   = this.messageHelper.getSender(mailType, model);
+        final String                          subject  = this.messageHelper.composeSubject(mailType, model);
+        final String                          template = this.messageHelper.resolveTemplate(mailType, model);
+        final MessageDto<Map<String, Object>> message  = new MessageDto<>();
+
+        message.setSender(sender);
+        message.setSubject(subject);
+        message.setTemplate(template);
+        message.setModel(model);
+
+        message.setRecipients(builder.getAddress());
+
+        try {
+            final ResponseEntity<BaseResponse> response = this.mailClient.getObject().sendMail(message);
+
+            if (!response.getBody().getSuccess()) {
+                throw new ServiceException(
+                    MailMessageCode.SEND_MAIL_FAILED,
+                    String.format("Failed to send mail [userKey=%s]", recipientKey)
+                );
+            }
+        } catch (final FeignException fex) {
+            throw new ServiceException(
+                MailMessageCode.SEND_MAIL_FAILED,
+                String.format("Failed to send mail [userKey=%s]", recipientKey),
+                fex
+            );
+        }
+    }
+    
+    @Override
+    @Transactional
+    public void sendOrderStatusByNotification(String notificationType, UUID recipientKey, Map<String, Object>  variables) {
+        try {
+            
+        	final EnumNotificationType type = EnumNotificationType.valueOf(notificationType);
+        	
+            // Build notification message
+            final JsonNode data = this.notificationMessageBuilder.collectNotificationData(type, variables);
+
+            final ServerNotificationCommandDto notification = ServerNotificationCommandDto.builder()
+                .data(data)
+                .eventType(notificationType)
+                .recipient(recipientKey)
+                .text(this.notificationMessageBuilder.composeNotificationText(type, data))
+                .build();
+
+            messageClient.getObject().sendNotification(notification);        
+        } catch (final FeignException fex) {
+            throw new ServiceException(
+                MailMessageCode.SEND_MAIL_FAILED,
+                String.format("Failed to send mail [userKey=%s]", recipientKey),
+                fex
+            );
         }
     }
 

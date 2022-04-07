@@ -98,7 +98,6 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
 
             case DELIVERY_REQUEST :
             	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
-            	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
             	return data;
 
             case DIGITAL_DELIVERY :

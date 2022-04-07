@@ -8,7 +8,9 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -95,6 +97,7 @@ import eu.opertusmundi.common.model.account.EnumCustomerType;
 import eu.opertusmundi.common.model.account.EnumLegalPersonType;
 import eu.opertusmundi.common.model.account.EnumMangopayUserType;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
+import eu.opertusmundi.common.model.email.EnumMailType;
 import eu.opertusmundi.common.model.location.Location;
 import eu.opertusmundi.common.model.order.CartDto;
 import eu.opertusmundi.common.model.order.CartItemDto;
@@ -795,9 +798,21 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 .quotation(quotation)
                 .userId(cart.getAccountId())
                 .vettingRequired(vettingRequired)
+                .contractType(asset.getContractTemplateType())
                 .build();
 
             final OrderDto order = this.orderRepository.create(orderCommand);
+            
+            if (vettingRequired) {
+                final AccountEntity consumer = this.orderRepository.findAccountById(cart.getAccountId()).orElse(null);
+            	this.orderFulfillmentService.sendOrderStatusByMail(EnumMailType.CONSUMER_PURCHASE_NOTIFICATION, consumer.getKey(), order.getKey());
+            	
+            	Map<String, Object> variables = new HashMap<String, Object>();
+            	Object title = asset.getTitle();
+            	variables.put("assetName", title);
+            	
+            	this.orderFulfillmentService.sendOrderStatusByNotification("PURCHASE_REMINDER", asset.getPublisher().getKey() , variables);
+            }
 
             return order;
         } catch (final Exception ex) {

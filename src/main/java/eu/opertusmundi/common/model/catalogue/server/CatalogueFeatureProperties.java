@@ -18,11 +18,13 @@ import eu.opertusmundi.common.model.catalogue.client.BaseCatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemStatistics;
 import eu.opertusmundi.common.model.catalogue.client.EnumConformity;
+import eu.opertusmundi.common.model.catalogue.client.EnumContractType;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import eu.opertusmundi.common.model.catalogue.integration.Extensions;
 import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.util.StreamUtils;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -134,6 +136,10 @@ public class CatalogueFeatureProperties {
     @JsonProperty("contract_template_version")
     @JsonInclude(Include.NON_EMPTY)
     private String contractTemplateVersion;
+    
+    @JsonProperty("contract_template_type")
+    @JsonInclude(Include.NON_EMPTY)
+    private EnumContractType contractTemplateType = EnumContractType.MASTER_CONTRACT;
 
     @JsonProperty("creation_date")
     @JsonInclude(Include.NON_EMPTY)

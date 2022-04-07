@@ -15,11 +15,13 @@ import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.ActivationTokenEntity;
 import eu.opertusmundi.common.domain.AddressEmbeddable;
 import eu.opertusmundi.common.domain.CustomerIndividualEntity;
+import eu.opertusmundi.common.domain.CustomerProfessionalEntity;
 import eu.opertusmundi.common.domain.MailTemplateEntity;
 import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.OrderItemEntity;
 import eu.opertusmundi.common.model.ServiceException;
 import eu.opertusmundi.common.model.account.EnumActivationTokenType;
+import eu.opertusmundi.common.model.account.EnumMangopayUserType;
 import eu.opertusmundi.common.model.email.EmailAddressDto;
 import eu.opertusmundi.common.model.email.EnumMailType;
 import eu.opertusmundi.common.model.email.MailMessageCode;
@@ -66,6 +68,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
         switch (type) {
             case ACCOUNT_ACTIVATION_SUCCESS :
             case ACCOUNT_ACTIVATION_TOKEN :
+            case ACCOUNT_ACTIVATION_WELCOME :
             case CATALOGUE_HARVEST_COMPLETED :
             case CONSUMER_DIGITAL_DELIVERY_BY_PLATFORM :
             case CONSUMER_DIGITAL_DELIVERY_BY_SUPPLIER :
@@ -75,6 +78,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             case CONSUMER_PURCHASE_REJECTION :
             case CONSUMER_RECEIPT_ISSUED :
             case CONSUMER_INVOICE :
+            case CONSUMER_FILLED_OUT_CONTRACT :
             case FILES_UPLOAD_COMPLETED :
             case MASTER_TEMPLATE_CONTRACT_UPDATE :
             case ORDER_CONFIRMATION :
@@ -85,6 +89,11 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             case SUPPLIER_PUBLISHING_REJECTED :
             case SUPPLIER_ASSET_PUBLISHED :
             case SUPPLIER_PURCHASE_REMINDER :
+            case SUPPLIER_UPLOADED_CONTRACT_EVALUATION :
+            case SUPPLIER_UPLOADED_CONTRACT_ACCEPTED :
+            case SUPPLIER_UPLOADED_CONTRACT_REJECTED:
+            case SUPPLIER_CONTRACT_TO_BE_FILLED_OUT :
+            case CONSUMER_SUPPLIER_CONTRACT_SIGNED :
             case VENDOR_ACCOUNT_INVITATION:
             case VENDOR_ACCOUNT_ACTIVATION_SUCCESS :
                 return MessageFormat.format(template.getSubjectTemplate(), variables);
@@ -132,6 +141,10 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             case VENDOR_ACCOUNT_ACTIVATION_SUCCESS :
                 this.populateAccountActivationSuccessModel(builder);
                 break;
+                
+            case ACCOUNT_ACTIVATION_WELCOME :
+            	this.populateAccountActivationWelcomeModel(builder);
+            	break;
 
             case ORDER_CONFIRMATION :
             	this.populateOrderConfirmationModel(builder);
@@ -163,6 +176,22 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 
             case SUPPLIER_ASSET_PUBLISHED :
             	this.populateSupplierAssetPublishedModel(builder);
+            	break;
+            	
+    		case SUPPLIER_UPLOADED_CONTRACT_EVALUATION :
+    			this.populateSupplierUploadedContractEvaluationdModel(builder);
+    			break;
+    			
+    		case SUPPLIER_UPLOADED_CONTRACT_ACCEPTED :
+    			this.populateSupplierUploadedContractAcceptedModel(builder);
+    			break;
+    			
+    		case SUPPLIER_UPLOADED_CONTRACT_REJECTED :
+    			this.populateSupplierUploadedContractRejectedModel(builder);
+    			break;
+            	
+            case SUPPLIER_CONTRACT_TO_BE_FILLED_OUT :
+            	this.populateOwnContractToBeFilledOutModel(builder);
             	break;
 
             case CONSUMER_DIGITAL_DELIVERY_BY_SUPPLIER :
@@ -197,6 +226,14 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             	this.populateConsumerPurchaseRejectionModel(builder);
             	break;
 
+            case CONSUMER_FILLED_OUT_CONTRACT :
+            	this.populateOwnContractFilledOutModel(builder);
+            	break;
+            	
+            case CONSUMER_SUPPLIER_CONTRACT_SIGNED :
+            	this.populateOwnContractSignedModel(builder);
+            	break;
+
             case MASTER_TEMPLATE_CONTRACT_UPDATE :
             	this.populateMasterTemplateContractUpdateModel(builder);
             	break;
@@ -229,6 +266,18 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
     }
 
     private void populateAccountActivationSuccessModel(MailModelBuilder builder) {
+        final UUID userKey = UUID.fromString((String) builder.get("userKey"));
+
+        final AccountEntity account = this.accountRepository.findOneByKey(userKey).get();
+
+        builder
+            .setRecipientName(account.getFullName())
+            .setRecipientAddress(account.getEmail())
+            .add("name", account.getFullName())
+            .add("url", this.baseUrl);
+    }
+    
+    private void populateAccountActivationWelcomeModel(MailModelBuilder builder) {
         final UUID userKey = UUID.fromString((String) builder.get("userKey"));
 
         final AccountEntity account = this.accountRepository.findOneByKey(userKey).get();
@@ -294,9 +343,8 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .setRecipientName(account.getFullName())
             .setRecipientAddress(account.getEmail())
             .add("name", account.getFullName())
-            .add("orderID", orderEntity.getReferenceNumber())
+            .add("orderId", orderEntity.getReferenceNumber())
             .add("consumerUsername", customerEntity.getUserName())
-            .add("productURL", this.baseUrl + "/" + "catalogue" + "/" + orderItemEntity.getAssetId())
             .add("productName", orderItemEntity.getDescription())
             ;
 
@@ -317,7 +365,6 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .add("name", account.getFullName())
             .add("orderId", orderEntity.getReferenceNumber())
             .add("consumerUsername", customerEntity.getUserName())
-            .add("productURL", this.baseUrl + "/" + "catalogue" + "/" + orderItemEntity.getAssetId())
             .add("productName", orderItemEntity.getDescription())
             ;
 	}
@@ -336,7 +383,6 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .setRecipientAddress(account.getEmail())
             .add("name", account.getFullName())
             .add("consumerUsername", customerEntity.getUserName())
-            .add("productURL", this.baseUrl + "/" + "catalogue" + "/" + orderItemEntity.getAssetId())
             .add("productName", orderItemEntity.getDescription());
 	}
 
@@ -372,7 +418,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 		final UUID userKey  = UUID.fromString((String) builder.get("startUserKey"));
         final UUID draftKey = UUID.fromString((String) builder.get("draftKey"));
 
-        final AccountEntity 	account 		= this.accountRepository.findOneByKey(userKey).get();
+        final AccountEntity account 		= this.accountRepository.findOneByKey(userKey).get();
 
 		final String 	assetPublishedId	= this.providerAssetService.findOneDraft(draftKey).getAssetPublished();
 		final String 	assetName			= this.catalogueService.findOneFeature(assetPublishedId).getProperties().getTitle();
@@ -384,6 +430,130 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .add("assetName", assetName)
             .add("assetURL", this.baseUrl + "/" + "catalogue" + "/" + assetPublishedId);
 	}
+	
+	private void populateSupplierUploadedContractEvaluationdModel(MailModelBuilder builder) {
+        final UUID userKey = UUID.fromString((String) builder.get("userKey"));
+
+        final AccountEntity account = this.accountRepository.findOneByKey(userKey).get();
+
+        builder
+            .setRecipientName(account.getFullName())
+            .setRecipientAddress(account.getEmail())
+            .add("name", account.getFullName());
+
+	}
+	
+	private void populateSupplierUploadedContractAcceptedModel(MailModelBuilder builder) {
+        final UUID userKey 			= UUID.fromString((String) builder.get("userKey"));
+        // TODO To be included in input variables
+//        final String contractName	= (String) builder.get("contractName");
+        final String contractName = "Provider-contract.pdf";
+
+        final AccountEntity account = this.accountRepository.findOneByKey(userKey).get();
+
+        builder
+            .setRecipientName(account.getFullName())
+            .setRecipientAddress(account.getEmail())
+            .add("name", account.getFullName())
+            .add("contractName", contractName);
+
+	}
+	
+	private void populateSupplierUploadedContractRejectedModel(MailModelBuilder builder) {
+        final UUID userKey = UUID.fromString((String) builder.get("userKey"));
+        // TODO To be included in input variables
+//        final String contractName	= (String) builder.get("contractName");
+        final String contractName = "Provider-contract.pdf";
+
+        final AccountEntity account = this.accountRepository.findOneByKey(userKey).get();
+
+        builder
+            .setRecipientName(account.getFullName())
+            .setRecipientAddress(account.getEmail())
+            .add("name", account.getFullName())
+            .add("contractName", contractName);
+
+	}
+	
+    private void populateOwnContractToBeFilledOutModel(MailModelBuilder builder) {
+        final UUID userKey  = UUID.fromString((String) builder.get("userKey"));
+        final UUID orderKey = UUID.fromString((String) builder.get("orderKey"));
+
+        final AccountEntity account = this.accountRepository.findOneByKey(userKey).get();
+
+        final OrderEntity     orderEntity     	= orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderItemEntity orderItemEntity 	= orderEntity.getItems().get(0);
+        
+        final AccountEntity			customer		= orderEntity.getConsumer();
+        final EnumMangopayUserType	customerType	= customer.getConsumer().getType();
+        
+        switch (customerType) {
+        	case INDIVIDUAL :
+                builder
+                .setRecipientName(account.getFullName())
+                .setRecipientAddress(account.getEmail())
+                .add("name", account.getFullName())
+                .add("consumerUsername", ((CustomerIndividualEntity) customer.getConsumer()).getAccount().getUserName())
+                .add("itemName", orderItemEntity.getDescription())
+                .add("consumerFullName", ((CustomerIndividualEntity) customer.getConsumer()).getFullName())
+                .add("consumerAddress", ((CustomerIndividualEntity) customer.getConsumer()).getAddress().getLine1() + " " + ((CustomerIndividualEntity) customer.getConsumer()).getAddress().getLine2() + ", " + ((CustomerIndividualEntity) customer.getConsumer()).getAddress().getCity() + " " + ((CustomerIndividualEntity) customer.getConsumer()).getAddress().getCountry())
+                .add("contactEmail", ((CustomerIndividualEntity) customer.getConsumer()).getEmail())
+                .add("contactPerson", ((CustomerIndividualEntity) customer.getConsumer()).getFullName())
+                .add("contactRegNumber","N/A")
+                .add("vatNumber", "N/A");
+        		break;
+        	case PROFESSIONAL :
+        		CustomerProfessionalEntity p =  (CustomerProfessionalEntity)customer.getConsumer();
+        		builder
+                .setRecipientName(account.getFullName())
+                .setRecipientAddress(account.getEmail())
+                .add("name", account.getFullName())
+                .add("consumerUsername", ((CustomerIndividualEntity) customer.getConsumer()).getAccount().getUserName())
+                .add("itemName", orderItemEntity.getDescription())
+                .add("consumerFullName", ((CustomerIndividualEntity) customer.getConsumer()).getFullName())
+                .add("consumerAddress", ((CustomerIndividualEntity) customer.getConsumer()).getAddress().getLine1() + " " + ((CustomerIndividualEntity) customer.getConsumer()).getAddress().getLine2() + ", " + ((CustomerIndividualEntity) customer.getConsumer()).getAddress().getCity() + " " + ((CustomerIndividualEntity) customer.getConsumer()).getAddress().getCountry())
+                .add("contactEmail", ((CustomerIndividualEntity) customer.getConsumer()).getEmail())
+                .add("contactPerson", (String.format("%s %s", p.getRepresentative().getFirstName(), p.getRepresentative().getLastName()) .trim()))
+                .add("contactRegNumber",p.getCompanyNumber())
+                .add("vatNumber", "N/A");
+        		break;
+		default:
+			break;
+        }
+    }
+    
+    private void populateOwnContractFilledOutModel(MailModelBuilder builder) {
+        final UUID userKey  = UUID.fromString((String) builder.get("userKey"));
+        final UUID orderKey = UUID.fromString((String) builder.get("orderKey"));
+
+        final AccountEntity account = this.accountRepository.findOneByKey(userKey).get();
+
+        final OrderEntity     orderEntity     	= orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderItemEntity orderItemEntity 	= orderEntity.getItems().get(0);
+        
+        builder
+        .setRecipientName(account.getFullName())
+        .setRecipientAddress(account.getEmail())
+        .add("name", account.getFullName())
+        .add("orderId", orderEntity.getReferenceNumber())
+        .add("supplierName", orderItemEntity.getProvider().getProvider().getName())
+        .add("assetName", orderItemEntity.getDescription());
+    }
+    
+    private void populateOwnContractSignedModel(MailModelBuilder builder) {
+        final UUID userKey  = UUID.fromString((String) builder.get("userKey"));
+        final UUID orderKey = UUID.fromString((String) builder.get("orderKey"));
+
+        final AccountEntity account = this.accountRepository.findOneByKey(userKey).get();
+
+        final OrderEntity     orderEntity     	= orderRepository.findOrderEntityByKey(orderKey).get();
+        
+        builder
+        .setRecipientName(account.getFullName())
+        .setRecipientAddress(account.getEmail())
+        .add("name", account.getFullName())
+        .add("orderId", orderEntity.getReferenceNumber());
+    }
 
 	private void populateConsumerDigitalDeliveryBySupplierModel(MailModelBuilder builder) {
         final UUID userKey  = UUID.fromString((String) builder.get("userKey"));
@@ -399,7 +569,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .setRecipientAddress(account.getEmail())
             .add("name", account.getFullName())
             .add("orderId", orderEntity.getReferenceNumber())
-            .add("supplierName", orderItemEntity.getProvider());
+            .add("supplierName",orderItemEntity.getProvider().getProvider().getName());
 
 	}
 
@@ -432,7 +602,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .setRecipientAddress(account.getEmail())
             .add("name", account.getFullName())
             .add("orderId", orderEntity.getReferenceNumber())
-            .add("supplierName", orderItemEntity.getProvider());
+            .add("supplierName", orderItemEntity.getProvider().getProvider().getName());
 
 	}
 
@@ -468,13 +638,18 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 
 	private void populateConsumerPurchaseNotificationModel(MailModelBuilder builder) {
         final UUID userKey  = UUID.fromString((String) builder.get("userKey"));
+        final UUID orderKey = UUID.fromString((String) builder.get("orderKey"));
 
         final AccountEntity account 	= this.accountRepository.findOneByKey(userKey).get();
 
+        final OrderEntity     orderEntity     	= orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderItemEntity orderItemEntity 	= orderEntity.getItems().get(0);
+        
         builder
-            .setRecipientName(account.getFullName())
-            .setRecipientAddress(account.getEmail())
-            .add("name", account.getFullName());
+        .setRecipientName(account.getFullName())
+        .setRecipientAddress(account.getEmail())
+        .add("name", account.getFullName())
+        .add("productName", orderItemEntity.getDescription());
 
 	}
 
@@ -491,8 +666,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .setRecipientAddress(account.getEmail())
             .add("name", account.getFullName())
             .add("orderId", orderEntity.getReferenceNumber())
-            .add("supplierName", orderItemEntity.getProvider())
-            .add("productURL", this.baseUrl + "/" + "catalogue" + "/" + orderItemEntity.getAssetId())
+            .add("supplierName", orderItemEntity.getProvider().getProvider().getName())
             .add("productName", orderItemEntity.getDescription())
             ;
 	}
@@ -509,8 +683,8 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .setRecipientName(account.getFullName())
             .setRecipientAddress(account.getEmail())
             .add("name", account.getFullName())
-            .add("supplierName", orderItemEntity.getProvider())
-            .add("productURL", this.baseUrl + "/" + "catalogue" + "/" + orderItemEntity.getAssetId())
+            .add("orderId", orderEntity.getReferenceNumber())
+            .add("supplierName", orderItemEntity.getProvider().getProvider().getName())
             .add("productName", orderItemEntity.getDescription())
             ;
 	}
