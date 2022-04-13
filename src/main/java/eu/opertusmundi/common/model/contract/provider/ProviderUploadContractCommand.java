@@ -2,8 +2,6 @@ package eu.opertusmundi.common.model.contract.provider;
 
 import java.util.UUID;
 
-import javax.validation.constraints.NotEmpty;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreType;
 
@@ -18,14 +16,14 @@ import lombok.Setter;
 @Setter
 @Builder
 @JsonIgnoreType
-public class ProviderUploadedContractCommand {
+public class ProviderUploadContractCommand {
 
     /**
      * Asset unique key. This value is injected by the controller.
      */
     @JsonIgnore
     private UUID draftKey;
-    
+
     /**
      * Publisher unique key
      */
@@ -43,7 +41,7 @@ public class ProviderUploadedContractCommand {
      */
     @JsonIgnore
     private boolean locked;
-    
+
     @Schema(description = "File name. If not set, the name of uploaded file is used.")
     private String fileName;
 
@@ -52,5 +50,5 @@ public class ProviderUploadedContractCommand {
      */
     @JsonIgnore
     private Long size;
-    
+
 }

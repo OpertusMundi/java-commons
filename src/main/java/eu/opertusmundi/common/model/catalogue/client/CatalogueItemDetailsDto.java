@@ -20,6 +20,8 @@ import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
 import eu.opertusmundi.common.model.contract.ContractDto;
+import eu.opertusmundi.common.model.contract.CustomContractDto;
+import eu.opertusmundi.common.model.contract.TemplateContractDto;
 import eu.opertusmundi.common.util.StreamUtils;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -73,21 +75,25 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
     @Getter
     @Setter
     private String contractTemplateVersion;
-    
+
     @JsonIgnore
     @Getter
     @Setter
-    private EnumContractType contractTemplateType = EnumContractType.MASTER_CONTRACT;
+    private EnumContractType contractTemplateType;
 
     @Schema(description = "Contract details")
     @JsonProperty(access = Access.READ_ONLY)
     @Getter
     private ContractDto contract;
 
-    public void setContract(ContractDto contract) {
+    public void setContract(TemplateContractDto contract) {
         Assert.isTrue(contract.getId().equals(this.contractTemplateId), "Contract identifier mismatch");
         Assert.isTrue(contract.getVersion().equals(this.contractTemplateVersion), "Contract identifier mismatch");
 
+        this.contract = contract;
+    }
+
+    public void setContract(CustomContractDto contract) {
         this.contract = contract;
     }
 

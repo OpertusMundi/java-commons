@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -114,7 +113,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
     @Autowired
     private DefaultOrderContractFileNamingStrategy orderContractNamingStrategy;
-    
+
     private static final Set<PosixFilePermission> DEFAULT_DIRECTORY_PERMISSIONS = PosixFilePermissions.fromString("rwxrwxr-x");
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultOrderFulfillmentService.class);
@@ -133,10 +132,10 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
     @Autowired
     private AccountSubscriptionRepository accountSubscriptionRepository;
-    
+
     @Autowired
     private MailMessageHelper messageHelper;
-    
+
     @Autowired
     private ObjectProvider<EmailServiceFeignClient> mailClient;
 
@@ -145,7 +144,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
     @Autowired
     private NotificationMessageHelper notificationMessageBuilder;
-    
+
     @Autowired
     private BpmEngineUtils bpmEngine;
 
@@ -154,7 +153,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
     @Autowired
     private DataProviderManager dataProviderManager;
-    
+
 
     @Override
     @Transactional
@@ -171,7 +170,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     private ProviderOrderDto confirmOrder(UUID publisherKey, UUID orderKey, boolean accepted, String rejectReason) throws OrderException {
         try {
             ProviderOrderDto order;
-            UUID consumerKey = this.orderRepository.findOrderEntityByKey(orderKey).get().getConsumer().getKey();
+            final UUID consumerKey = this.orderRepository.findOrderEntityByKey(orderKey).get().getConsumer().getKey();
             if (accepted) {
                 order = this.orderRepository.acceptOrder(publisherKey, orderKey);
                 this.sendOrderStatusByMail(EnumMailType.CONSUMER_PURCHASE_APPROVED, consumerKey, orderKey);
@@ -196,7 +195,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             throw new OrderException(OrderMessageCode.ERROR, "An unknown error has occurred", ex);
         }
     }
-    
+
     @Override
     @Transactional
     public ProviderOrderDto fillOutAndUploadContract(OrderFillOutAndUploadContractCommand command, InputStream input) throws OrderException {
@@ -205,11 +204,11 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             Assert.isTrue(command.getSize() > 0, "Expected file size to be greater than 0");
 
             this.saveContract(command.getOrderKey(), ORDER_PATH, command.getFileName(), input);
-            ProviderOrderDto order = this.orderRepository.fillOutAndUploadContractByProvider( command.getOrderKey());
-            
-            UUID consumerKey = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).get().getConsumer().getKey();
+            final ProviderOrderDto order = this.orderRepository.fillOutAndUploadContractByProvider( command.getOrderKey());
+
+            final UUID consumerKey = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).get().getConsumer().getKey();
             this.sendOrderStatusByMail(EnumMailType.CONSUMER_FILLED_OUT_CONTRACT, consumerKey, command.getOrderKey());
-            
+
             return order;
         } catch (final OrderException ex) {
             throw ex;
@@ -223,8 +222,8 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             throw new OrderException(OrderMessageCode.ERROR, "An unknown error has occurred", ex);
         }
     }
-    
-    
+
+
 
     private void saveContract(
             UUID orderKey, String path, String fileName, InputStream input
@@ -232,13 +231,10 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             Assert.notNull(orderKey, "Expected a non-null order key");
             Assert.isTrue(!StringUtils.isBlank(fileName), "Expected a non-empty file name");
 
-            Integer consumerId = this.orderRepository.findOrderEntityByKey(orderKey).get().getConsumer().getId();
-            		
+            final Integer consumerId = this.orderRepository.findOrderEntityByKey(orderKey).get().getConsumer().getId();
+
             try {
                 final OrderContractFileNamingStrategyContext ctx	= OrderContractFileNamingStrategyContext.of(consumerId, orderKey);
-                final Path relativePath								= Paths.get(path, fileName);
-                //final Path absolutePath								= this.orderContractNamingStrategy.resolvePath(ctx, relativePath);
-
                 final Path absolutePath								= this.orderContractNamingStrategy.getDir(ctx);
                 final File localFile								= absolutePath.toFile();
 
@@ -259,15 +255,16 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                 throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
             }
         }
-    
+
+    @Override
     public ConsumerOrderDto acceptContract(OrderAcceptContractCommand command) throws OrderException {
         try {
             ConsumerOrderDto order;
             order = this.orderRepository.acceptContractByConsumer(command.getConsumerKey(), command.getOrderKey());
-            
+
             this.sendOrderStatusByMail(EnumMailType.CONSUMER_SUPPLIER_CONTRACT_SIGNED, command.getConsumerKey(), command.getOrderKey());
-            
-            UUID providerKey = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).get().getItems().get(0).getProvider().getKey();
+
+            final UUID providerKey = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).get().getItems().get(0).getProvider().getKey();
             this.sendOrderStatusByMail(EnumMailType.CONSUMER_SUPPLIER_CONTRACT_SIGNED, providerKey, command.getOrderKey());
             return order;
         } catch (final OrderException ex) {
@@ -698,7 +695,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             this.payInRepository.saveAndFlush(cardPayIn);
         }
     }
-    
+
     @Override
     @Transactional
     public void sendOrderStatusByMail(EnumMailType mailType, UUID recipientKey, UUID orderKey) {
@@ -745,14 +742,14 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             );
         }
     }
-    
+
     @Override
     @Transactional
     public void sendOrderStatusByNotification(String notificationType, UUID recipientKey, Map<String, Object>  variables) {
         try {
-            
+
         	final EnumNotificationType type = EnumNotificationType.valueOf(notificationType);
-        	
+
             // Build notification message
             final JsonNode data = this.notificationMessageBuilder.collectNotificationData(type, variables);
 
@@ -763,7 +760,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
                 .text(this.notificationMessageBuilder.composeNotificationText(type, data))
                 .build();
 
-            messageClient.getObject().sendNotification(notification);        
+            messageClient.getObject().sendNotification(notification);
         } catch (final FeignException fex) {
             throw new ServiceException(
                 MailMessageCode.SEND_MAIL_FAILED,

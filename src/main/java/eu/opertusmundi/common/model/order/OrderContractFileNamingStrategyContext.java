@@ -3,7 +3,6 @@ package eu.opertusmundi.common.model.order;
 import java.util.UUID;
 
 import eu.opertusmundi.common.model.file.FileNamingStrategyContext;
-import eu.opertusmundi.common.service.contract.ContractFileNamingStrategyContext;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,9 +21,9 @@ public class OrderContractFileNamingStrategyContext extends FileNamingStrategyCo
     private Integer userId;
 
     private UUID orderKey;
-    
+
     private Integer itemIndex;
-    
+
     public static OrderContractFileNamingStrategyContext of(Integer userId, UUID orderKey) {
         return OrderContractFileNamingStrategyContext.of(userId, orderKey, 1, true);
     }

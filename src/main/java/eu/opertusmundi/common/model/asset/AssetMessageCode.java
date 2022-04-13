@@ -17,6 +17,7 @@ public enum AssetMessageCode implements MessageCode {
     CATALOGUE_SERVICE,
     RESOURCE_NOT_FOUND,
     ADDITIONAL_RESOURCE_NOT_FOUND,
+    CONTRACT_ANNEX_NOT_FOUND,
     API_COMMAND_NOT_SUPPORTED,
     API_COMMAND_ASSET_NOT_FOUND,
     API_COMMAND_ASSET_TYPE_NOT_SUPPORTED,
@@ -26,6 +27,7 @@ public enum AssetMessageCode implements MessageCode {
     ASSET_NOT_FOUND,
     DRAFT_FOR_PARENT_EXISTS,
     LOCK_EXISTS,
+    OPERATION_NOT_SUPPORTED,
     ;
 
     @Override

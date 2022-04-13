@@ -12,8 +12,8 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import eu.opertusmundi.common.model.contract.ContractDto;
 import eu.opertusmundi.common.model.contract.EnumContractStatus;
+import eu.opertusmundi.common.model.contract.TemplateContractDto;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractHistoryDto;
 import lombok.Getter;
 import lombok.Setter;
@@ -42,8 +42,8 @@ public class ProviderTemplateContractHistoryEntity extends ProviderTemplateContr
     public List<ProviderTemplateSectionHistoryEntity> getSectionsSorted() {
     	return this.sections.stream().sorted((s1,s2) -> {
     		/* Get index of each section*/
-    		String s1Index	=	s1.getMasterSection().getIndex();
-    		String s2Index	=	s2.getMasterSection().getIndex();
+    		final String s1Index	=	s1.getMasterSection().getIndex();
+    		final String s2Index	=	s2.getMasterSection().getIndex();
     	    /* NumValue stores each numeric part of version*/
     	    int numValue1 = 0;
     	    int numValue2 = 0;
@@ -77,9 +77,9 @@ public class ProviderTemplateContractHistoryEntity extends ProviderTemplateContr
     	    return 0;
     	}).collect(Collectors.toList());
     }
-    
-    public ContractDto toSimpleDto() {
-        final ContractDto c = new ContractDto();
+
+    public TemplateContractDto toSimpleDto() {
+        final TemplateContractDto c = new TemplateContractDto();
 
         c.setId(id);
         c.setKey(key);

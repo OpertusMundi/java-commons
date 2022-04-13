@@ -15,6 +15,8 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -31,8 +33,7 @@ import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
 import eu.opertusmundi.common.model.asset.DraftFileNamingStrategyContext;
 import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
-import eu.opertusmundi.common.model.contract.provider.ProviderUploadedContractCommand;
-import eu.opertusmundi.common.model.file.DirectoryDto;
+import eu.opertusmundi.common.model.contract.provider.ProviderUploadContractCommand;
 import eu.opertusmundi.common.model.file.FileDto;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.file.FileSystemMessageCode;
@@ -49,9 +50,9 @@ public class DefaultDraftFileManager implements DraftFileManager {
     private static final String ADDITIONAL_RESOURCE_PATH = "/additional-resources";
 
     private static final String METADATA_PATH = "/metadata";
-    
+
     private static final String CONTRACT_PATH = "/contract";
-    
+
     private static final String CONTRACT_ANNEX_PATH = "/contract/annexes";
 
     private static final Set<PosixFilePermission> DEFAULT_DIRECTORY_PERMISSIONS = PosixFilePermissions.fromString("rwxrwxr-x");
@@ -61,9 +62,6 @@ public class DefaultDraftFileManager implements DraftFileManager {
 
     @Autowired
     private DefaultAssetFileNamingStrategy assetNamingStrategy;
-
-    @Autowired
-    private DirectoryTraverse directoryTraverse;
 
     @Override
     public List<FileDto> getResources(UUID publisherKey, UUID draftKey) throws FileSystemException, AssetRepositoryException {
@@ -163,17 +161,43 @@ public class DefaultDraftFileManager implements DraftFileManager {
             throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
     }
-    
+
     @Override
     public void uploadContract(
-    		ProviderUploadedContractCommand command, InputStream input
+		ProviderUploadContractCommand command, InputStream input
     ) throws AssetRepositoryException, FileSystemException {
         Assert.notNull(command, "Expected a non-null command");
         Assert.isTrue(command.getSize() > 0, "Expected file size to be greater than 0");
 
+        final UUID publisherKey = command.getPublisherKey();
+        final UUID draftKey     = command.getDraftKey();
+
+        // Delete contract (if one exists)
+        try {
+            final DraftFileNamingStrategyContext ctx          = DraftFileNamingStrategyContext.of(publisherKey, draftKey);
+            final Path                           contractPath = this.draftNamingStrategy.resolvePath(ctx, CONTRACT_PATH);
+            final File[]                         allPaths     = contractPath.toFile().listFiles();
+            if (allPaths != null) {
+                final List<File> files = Stream.of(allPaths)
+                    .filter(f -> f.isFile())
+                    .collect(Collectors.toList());
+
+                Assert.isTrue(files.size() < 2, "Expected one or no files in the contract path");
+
+                if (files.size() == 1) {
+                    // Do not ignore the delete operation exception. If a contract
+                    // file is replaced and deletion fails, getting the most recent
+                    // contract may not be possible
+                    FileUtils.delete(files.get(0));
+            }
+            }
+        } catch (final IOException ex) {
+            throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "Failed to delete existing contract", ex);
+        }
+
         this.saveResourceFile(command.getPublisherKey(), command.getDraftKey(), CONTRACT_PATH, command.getFileName(), input);
     }
-    
+
     @Override
     public void uploadContractAnnex(
         AssetContractAnnexCommandDto command, InputStream input
@@ -182,7 +206,6 @@ public class DefaultDraftFileManager implements DraftFileManager {
         Assert.isTrue(command.getSize() > 0, "Expected file size to be greater than 0");
 
         this.saveResourceFile(command.getPublisherKey(), command.getDraftKey(), CONTRACT_ANNEX_PATH, command.getFileName(), input);
-
     }
 
     @Override
@@ -194,12 +217,12 @@ public class DefaultDraftFileManager implements DraftFileManager {
     public void deleteAdditionalResource(UUID publisherKey, UUID draftKey, String fileName) throws FileSystemException, AssetRepositoryException {
         this.deleteResource(publisherKey, draftKey, ADDITIONAL_RESOURCE_PATH, fileName);
     }
-    
+
     @Override
     public void deleteContract(UUID publisherKey, UUID draftKey, String fileName) throws FileSystemException, AssetRepositoryException {
         this.deleteResource(publisherKey, draftKey, CONTRACT_PATH, fileName);
     }
-    
+
     @Override
     public void deleteContractAnnex(UUID publisherKey, UUID draftKey, String fileName) throws FileSystemException, AssetRepositoryException {
         this.deleteResource(publisherKey, draftKey, CONTRACT_ANNEX_PATH, fileName);
@@ -264,26 +287,35 @@ public class DefaultDraftFileManager implements DraftFileManager {
     public Path resolveAdditionalResourcePath(UUID publisherKey, UUID draftKey, String fileName) throws FileSystemException, AssetRepositoryException {
         return this.resolveResourcePath(publisherKey, draftKey, ADDITIONAL_RESOURCE_PATH, fileName);
     }
-    
+
     @Override
-    public Path resolveUploadedContractPath(UUID publisherKey, UUID draftKey) throws FileSystemException, AssetRepositoryException {
+    public Path resolveContractPath(UUID publisherKey, UUID draftKey) throws FileSystemException, AssetRepositoryException {
     	Assert.notNull(publisherKey, "Expected a non-null publisher key");
         Assert.notNull(draftKey, "Expected a non-null draft key");
-        
-    	final DraftFileNamingStrategyContext ctx	=	DraftFileNamingStrategyContext.of(publisherKey, draftKey);
-        Path contractPath							=	null;
-        try {
-            Path absolutePath 						=	this.draftNamingStrategy.resolvePath(ctx, Paths.get(CONTRACT_PATH));
-			DirectoryDto dir 						=	this.directoryTraverse.getDirectoryInfo(absolutePath);
 
-	        contractPath 							=	absolutePath.resolve(dir.getFiles().get(0).getName());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-        return contractPath;
+        try {
+            final DraftFileNamingStrategyContext ctx          = DraftFileNamingStrategyContext.of(publisherKey, draftKey);
+            final Path                           contractPath = this.draftNamingStrategy.resolvePath(ctx, CONTRACT_PATH);
+            final File[]                         allPaths     = contractPath.toFile().listFiles();
+            if (allPaths != null) {
+                final Path absolutePath = Stream.of(allPaths)
+                    .filter(f -> f.isFile())
+                    .map(File::toPath)
+                    .findFirst()
+                    .orElse(null);
+
+                return absolutePath;
+            }
+            return null;
+        } catch (final FileSystemException ex) {
+            throw ex;
+        } catch (final Exception ex) {
+            logger.warn("Failed to contract path. [publisherKey={}, draftKey={}]", publisherKey, draftKey);
+
+            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
+        }
     }
-    
+
     @Override
     public Path resolveContractAnnexPath(UUID publisherKey, UUID draftKey, String fileName) throws FileSystemException, AssetRepositoryException {
         return this.resolveResourcePath(publisherKey, draftKey, CONTRACT_ANNEX_PATH, fileName);
@@ -292,7 +324,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
     private Path resolveResourcePath(UUID publisherKey, UUID draftKey, String path, String fileName) throws FileSystemException, AssetRepositoryException {
         Assert.notNull(publisherKey, "Expected a non-null publisher key");
         Assert.notNull(draftKey, "Expected a non-null draft key");
-        Assert.isTrue(!StringUtils.isBlank(fileName), "Expected a non-empty file name");
+        Assert.hasText(fileName, "Expected a non-empty file name");
 
         try {
             final DraftFileNamingStrategyContext ctx          = DraftFileNamingStrategyContext.of(publisherKey, draftKey);
@@ -313,8 +345,6 @@ public class DefaultDraftFileManager implements DraftFileManager {
             throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
     }
-    
-    
 
     private Path prepareMetadataFile(
         UUID publisherKey, UUID draftKey, String fileName, String content

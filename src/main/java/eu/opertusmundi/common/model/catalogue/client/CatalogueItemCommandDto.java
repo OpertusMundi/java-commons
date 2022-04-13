@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
+import eu.opertusmundi.common.model.asset.AssetContractAnnexDto;
 import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceDto;
 import eu.opertusmundi.common.model.asset.EnumAssetAdditionalResource;
 import eu.opertusmundi.common.model.asset.EnumResourceType;
@@ -41,6 +42,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
 
     public CatalogueItemCommandDto() {
         this.additionalResources = new ArrayList<>();
+        this.contractAnnexes     = new ArrayList<>();
         this.pricingModels       = new ArrayList<>();
         this.resources           = new ArrayList<>();
         this.sampleAreas         = new ArrayList<>();
@@ -54,6 +56,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
 
         this.abstractText        = props.getAbstractText();
         this.additionalResources = new ArrayList<>();
+        this.contractAnnexes     = new ArrayList<>();
         this.extensions          = props.getExtensions();
         this.pricingModels       = new ArrayList<>();
         this.resources           = new ArrayList<>();
@@ -101,6 +104,15 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
         uniqueItems = true
     )
     private List<AssetAdditionalResourceDto> additionalResources;
+
+    @ArraySchema(
+        arraySchema = @Schema(
+            description = "Custom contract annex files"
+        ),
+        minItems = 0,
+        uniqueItems = true
+    )
+    private List<AssetContractAnnexDto> contractAnnexes;
 
     @Schema(description = "Contract template key")
     private UUID contractTemplateKey;
@@ -236,6 +248,19 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
             this.sampleAreas.add(ServiceResourceSampleAreaDto.of(id, areas));
         } else {
             existing.setAreas(areas);
+        }
+    }
+
+    public void addContractAnnexResource(AssetContractAnnexDto annex) {
+        final AssetContractAnnexDto existing = this.contractAnnexes.stream()
+            .filter(r -> r.getId().equals(annex.getId()))
+            .findFirst()
+            .orElse(null);
+
+        if (existing == null) {
+            this.contractAnnexes.add(annex);
+        } else {
+            existing.patch(annex);
         }
     }
 

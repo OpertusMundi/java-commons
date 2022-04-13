@@ -85,7 +85,7 @@ public class AssetContractAnnexEntity {
     private String description;
 
     public AssetContractAnnexDto toDto() {
-        return new AssetContractAnnexDto(this.key, this.fileName, this.size, this.description, this.createdOn);
+        return AssetContractAnnexDto.of(key, description, fileName, size, createdOn);
     }
 
 }

@@ -24,7 +24,6 @@ import eu.opertusmundi.common.model.catalogue.integration.Extensions;
 import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.util.StreamUtils;
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -40,6 +39,7 @@ public class CatalogueFeatureProperties {
         this.conformity                   = command.getConformity() != null
             ? command.getConformity().getValue()
             : EnumConformity.NOT_EVALUATED.getValue();
+        this.contractTemplateType         = command.getContractTemplateType();
         this.creationDate                 = command.getCreationDate();
         this.dateEnd                      = command.getDateEnd();
         this.dateStart                    = command.getDateStart();
@@ -136,9 +136,9 @@ public class CatalogueFeatureProperties {
     @JsonProperty("contract_template_version")
     @JsonInclude(Include.NON_EMPTY)
     private String contractTemplateVersion;
-    
+
     @JsonProperty("contract_template_type")
-    @JsonInclude(Include.NON_EMPTY)
+    @JsonInclude(Include.NON_NULL)
     private EnumContractType contractTemplateType = EnumContractType.MASTER_CONTRACT;
 
     @JsonProperty("creation_date")

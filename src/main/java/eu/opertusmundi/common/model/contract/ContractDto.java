@@ -1,44 +1,37 @@
 package eu.opertusmundi.common.model.contract;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
-import javax.validation.constraints.NotEmpty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import io.swagger.v3.oas.annotations.media.ArraySchema;
+import eu.opertusmundi.common.model.catalogue.client.EnumContractType;
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import lombok.Setter;
 
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type"
+)
+@JsonSubTypes({
+    @Type(name = "MASTER_CONTRACT", value = TemplateContractDto.class),
+    @Type(name = "UPLOADED_CONTRACT", value = CustomContractDto.class),
+})
 @Getter
-@Setter
+@Schema(
+    description = "Sentinel Hub custom properties",
+    required = true,
+    discriminatorMapping = {
+        @DiscriminatorMapping(value = "MASTER_CONTRACT", schema = TemplateContractDto.class),
+        @DiscriminatorMapping(value = "UPLOADED_CONTRACT", schema = CustomContractDto.class)
+    }
+)
 public class ContractDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @JsonIgnore
-    private Integer id;
-
-    @Schema(description = "Unique key")
-    private UUID key;
-
-    @Schema(description = "Title")
-    @NotEmpty
-    private String title;
-
-    @Schema(description = "Version")
-    private String version;
-
-    @ArraySchema(
-        arraySchema = @Schema(
-            description = "License terms"
-        ),
-        minItems = 0
-    )
-    private List<ContractTermDto> terms = new ArrayList<>();
+    @Schema(description = "Contract template type")
+    protected EnumContractType type;
 
 }

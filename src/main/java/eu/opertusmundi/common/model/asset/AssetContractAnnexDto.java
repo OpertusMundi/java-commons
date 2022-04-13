@@ -1,26 +1,26 @@
 package eu.opertusmundi.common.model.asset;
 
+import java.io.Serializable;
 import java.time.ZonedDateTime;
 
-import eu.opertusmundi.common.model.catalogue.server.CatalogueAdditionalResource;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-public class AssetContractAnnexDto {
+@AllArgsConstructor(staticName = "of")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@Getter
+@Setter(AccessLevel.PROTECTED)
+public class AssetContractAnnexDto implements Serializable {
 
-    //private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-    public AssetContractAnnexDto(String id, String fileName, Long size, String description, ZonedDateTime modifiedOn) {
-
-        this.id          = id;
-        this.fileName    = fileName;
-        this.size        = size;
-        this.description = description;
-        this.modifiedOn  = modifiedOn;
-    }
-
-    @Schema(description = "Additional resource file unique identifier")
+    @Schema(description = "Annex resource file unique identifier")
     @Getter
     private String id;
 
@@ -41,18 +41,6 @@ public class AssetContractAnnexDto {
     @Getter
     @Setter
     private ZonedDateTime modifiedOn;
-
-//    @Override
-//    public CatalogueAdditionalResource toCatalogueResource() {
-//        return CatalogueAdditionalResource.builder()
-//            .id(id.toString())
-//            .name(description)
-//            .value(fileName)
-//            .type(type)
-//            .modifiedOn(modifiedOn)
-//            .size(size)
-//            .build();
-//    }
 
     public void patch(AssetContractAnnexDto r) {
         // Id and file name are immutable

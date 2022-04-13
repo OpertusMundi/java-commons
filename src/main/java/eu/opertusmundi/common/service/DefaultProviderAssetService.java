@@ -95,7 +95,7 @@ import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.UnpublishAssetCommand;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractHistoryDto;
-import eu.opertusmundi.common.model.contract.provider.ProviderUploadedContractCommand;
+import eu.opertusmundi.common.model.contract.provider.ProviderUploadContractCommand;
 import eu.opertusmundi.common.model.file.FilePathCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.file.FileSystemMessageCode;
@@ -487,24 +487,24 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         }
 
         final AssetDraftDto draft = this.draftRepository.update(command);
+        command.setDraftKey(draft.getKey());
 
         // For create operations, if a lock is required, get a lock after the
-        // insertion of the new draft
-        if ((lock == null || lock.getLeft() == EnumLockResult.NONE) && command.isLocked()) {
-            lock = this.getLock(command.getOwnerKey(), draft.getKey(), true);
-        }
-
-        // For update operations, optionally release the lock
-        if (command.getDraftKey() != null && !command.isLocked()) {
+        // insertion of the new draft. For update operations, optionally release
+        // the lock
+        if (command.isLocked()) {
+            if (lock == null || lock.getLeft() == EnumLockResult.NONE) {
+                lock = this.getLock(command.getOwnerKey(), draft.getKey(), true);
+                draft.setLock(lock.getRight());
+            }
+        } else {
             this.releaseLock(command.getOwnerKey(), draft.getKey());
-        } else if (lock != null) {
-            // Set lock information to result
-            draft.setLock(lock.getRight());
         }
 
         // Consolidate file resources
-        this.consolidateResources(draft);
-        this.consolidateContractAnnexes(draft);
+        this.consolidateResources(command);
+        this.consolidateContractAnnexes(command);
+
         return draft;
     }
 
@@ -943,14 +943,16 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         }
 
         // Set contract
-        final ProviderTemplateContractHistoryDto contract = this.contractRepository.findOneObjectByKey(
-            publisherKey, draft.getCommand().getContractTemplateKey()
-        );
+        if (draft.getCommand().getContractTemplateKey() != null) {
+            final ProviderTemplateContractHistoryDto contract = this.contractRepository.findOneObjectByKey(
+                publisherKey, draft.getCommand().getContractTemplateKey()
+            );
 
-        Assert.notNull(contract, "Expected a non-null provider template contract");
+            Assert.notNull(contract, "Expected a non-null provider template contract");
 
-        feature.getProperties().setContractTemplateId(contract.getId());
-        feature.getProperties().setContractTemplateVersion(contract.getVersion());
+            feature.getProperties().setContractTemplateId(contract.getId());
+            feature.getProperties().setContractTemplateVersion(contract.getVersion());
+        }
 
         // Redirect draft metadata property links to asset ones before
         // publishing the asset to the catalogue
@@ -1258,17 +1260,25 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         return result;
     }
-    
+
     @Override
     @Transactional
-    public void addUploadedContract(
-    		ProviderUploadedContractCommand command, InputStream input
-    ) throws FileSystemException, AssetRepositoryException, AssetDraftException {
+    public void addContract(
+		ProviderUploadContractCommand command, InputStream input
+    ) throws AssetDraftException, FileSystemException, AssetRepositoryException {
         // The provider must have access to the selected draft and also the
         // draft must be editable
         final AssetDraftDto draft = this.ensureDraftAndStatus(
             command.getOwnerKey(), command.getPublisherKey(), command.getDraftKey(), EnumProviderAssetDraftStatus.DRAFT
         );
+
+        // Contract type must be UPLOADED_CONTRACT
+        if (draft.getCommand().getContractTemplateType() != EnumContractType.UPLOADED_CONTRACT) {
+            throw new AssetDraftException(
+                AssetMessageCode.OPERATION_NOT_SUPPORTED,
+                "Operation is not supported for the selected contract type"
+            );
+        }
 
         // Lock record before update
         final Pair<EnumLockResult, RecordLockDto> lock = this.getLock(command.getOwnerKey(), command.getDraftKey(), true);
@@ -1283,40 +1293,29 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             draft.setLock(lock.getRight());
         }
 
-        return ;
+        return;
     }
 
     @Override
     @Transactional
-    public Path resolveDraftUploadedContractPath(
+    public Path resolveDraftCustomContractPath(
         UUID ownerKey, UUID publisherKey, UUID draftKey
     ) throws FileSystemException, AssetRepositoryException {
         // The provider must have access to the selected draft
         this.ensureDraftAndStatus(ownerKey, publisherKey, draftKey, null);
 
-//        final AssetAdditionalResourceEntity resource = this.assetAdditionalResourceRepository
-//            .findOneByDraftKeyAndResourceKey(draftKey, resourceKey)
-//            .orElse(null);
+        final Path path = this.draftFileManager.resolveContractPath(publisherKey, draftKey);
 
-        final Path path = this.draftFileManager.resolveUploadedContractPath(publisherKey, draftKey);
-
-        if (!path.toFile().exists()) {
+        if (path == null || !path.toFile().exists()) {
             throw new FileSystemException(FileSystemMessageCode.FILE_IS_MISSING, "File not found");
         }
 
         return path;
     }
-    
+
 	@Override
     @Transactional
-    public Path resolveAssetUploadedContractPath(String pid) throws FileSystemException, AssetRepositoryException {
-        // The provider must have access to the selected draft
-        //this.ensureDraftAndStatus(ownerKey, publisherKey, draftKey, null);
-
-//        final AssetAdditionalResourceEntity resource = this.assetAdditionalResourceRepository
-//            .findOneByDraftKeyAndResourceKey(draftKey, resourceKey)
-//            .orElse(null);
-
+    public Path resolveAssetCustomContractPath(String pid) throws FileSystemException, AssetRepositoryException {
         final Path path = this.assetFileManager.resolveUploadedContractPath(pid);
 
         if (!path.toFile().exists()) {
@@ -1325,7 +1324,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         return path;
     }
-    
+
     @Override
     @Transactional
     public AssetDraftDto addContractAnnex(
@@ -1337,24 +1336,31 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             command.getOwnerKey(), command.getPublisherKey(), command.getDraftKey(), EnumProviderAssetDraftStatus.DRAFT
         );
 
+        // Contract type must be UPLOADED_CONTRACT
+        if (draft.getCommand().getContractTemplateType() != EnumContractType.UPLOADED_CONTRACT) {
+            throw new AssetDraftException(
+                AssetMessageCode.OPERATION_NOT_SUPPORTED,
+                "Operation is not supported for the selected contract type"
+            );
+        }
+
         // Lock record before update
         final Pair<EnumLockResult, RecordLockDto> lock = this.getLock(command.getOwnerKey(), command.getDraftKey(), true);
 
         // Update database link
-        final AssetContractAnnexDto resource = assetContractAnnexRepository.update(command);
+        final AssetContractAnnexDto annex = assetContractAnnexRepository.update(command);
 
         // Update asset file repository
         this.draftFileManager.uploadContractAnnex(command, input);
 
-//        // Update draft with new file resource
-//        draft.getCommand().setDraftKey(command.getDraftKey());
-//        draft.getCommand().setOwnerKey(command.getOwnerKey());
-//        draft.getCommand().setPublisherKey(command.getPublisherKey());
-//        draft.getCommand().addAdditionalResource(resource);
+        // Update draft with new file resource
+        draft.getCommand().setDraftKey(command.getDraftKey());
+        draft.getCommand().setOwnerKey(command.getOwnerKey());
+        draft.getCommand().setPublisherKey(command.getPublisherKey());
+        draft.getCommand().addContractAnnexResource(annex);
 
-        //final AssetDraftDto result = this.draftRepository.update(draft.getCommand());
-        final AssetDraftDto result = draft;
-        
+        final AssetDraftDto result = this.draftRepository.update(draft.getCommand());
+
         // Release lock if it was created only for the specific operation
         if (lock != null && lock.getLeft() == EnumLockResult.CREATED) {
             this.releaseLock(command.getOwnerKey(), command.getDraftKey());
@@ -1364,16 +1370,20 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         return result;
     }
-    
+
     @Override
     public Path resolveAssetContractAnnex(
         String pid, String resourceKey
     ) throws FileSystemException, AssetRepositoryException {
-        final AssetContractAnnexEntity resource = this.assetContractAnnexRepository
+        final AssetContractAnnexEntity annex = this.assetContractAnnexRepository
             .findOneByAssetPidAndResourceKey(pid, resourceKey)
             .orElse(null);
 
-        final Path path = this.assetFileManager.resolveContractAnnexPath(pid, resource.getFileName());
+        if (annex == null) {
+            throw new FileSystemException(FileSystemMessageCode.FILE_IS_MISSING, "File not found");
+        }
+
+        final Path path = this.assetFileManager.resolveContractAnnexPath(pid, annex.getFileName());
 
         if (!path.toFile().exists()) {
             throw new FileSystemException(FileSystemMessageCode.FILE_IS_MISSING, "File not found");
@@ -1381,7 +1391,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         return path;
     }
-    
+
     @Override
     @Transactional
     public Path resolveDraftContractAnnex(
@@ -1394,6 +1404,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             .findOneByDraftKeyAndResourceKey(draftKey, resourceKey)
             .orElse(null);
 
+        if (annex == null) {
+            throw new FileSystemException(FileSystemMessageCode.FILE_IS_MISSING, "File not found");
+        }
+
         final Path path = this.draftFileManager.resolveContractAnnexPath(publisherKey, draftKey, annex.getFileName());
 
         if (!path.toFile().exists()) {
@@ -1402,7 +1416,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         return path;
     }
-    
+
     @Override
     public Path resolveAssetAdditionalResource(
         String pid, String resourceKey
@@ -1508,11 +1522,15 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         return draft;
     }
 
-    private void consolidateResources(AssetDraftDto draft) {
-        final CatalogueItemCommandDto          command             = draft.getCommand();
+    private void consolidateResources(CatalogueItemCommandDto command) {
         final UUID                             ownerKey            = command.getOwnerKey();
         final UUID                             publisherKey        = command.getPublisherKey();
         final UUID                             draftKey            = command.getDraftKey();
+
+        Assert.notNull(ownerKey,     "Expected a non-null owner key");
+        Assert.notNull(publisherKey, "Expected a non-null publisher key");
+        Assert.notNull(draftKey,     "Expected a non-null draft key");
+
         final List<ResourceDto>                resources           = command.getResources();
         final List<AssetAdditionalResourceDto> additionalResources = command.getAdditionalResources();
 
@@ -1522,7 +1540,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             .map(r -> r.getId())
             .collect(Collectors.toList());
 
-        final List<FileResourceDto> registeredResources = this.assetResourceRepository.findAllResourcesByDraftKey(draft.getKey()).stream()
+        final List<FileResourceDto> registeredResources = this.assetResourceRepository.findAllResourcesByDraftKey(draftKey).stream()
             .map(AssetResourceEntity::toDto)
             .collect(Collectors.toList());
 
@@ -1541,7 +1559,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             .collect(Collectors.toList());
 
         final List<AssetFileAdditionalResourceDto> registeredAdditionalResources = this.assetAdditionalResourceRepository
-            .findAllResourcesByDraftKey(draft.getKey()).stream().map(AssetAdditionalResourceEntity::toDto)
+            .findAllResourcesByDraftKey(draftKey).stream().map(AssetAdditionalResourceEntity::toDto)
             .collect(Collectors.toList());
 
         registeredAdditionalResources.stream().filter(r -> !arids.contains(r.getId())).forEach(r -> {
@@ -1554,33 +1572,42 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             this.draftFileManager.deleteAdditionalResource(publisherKey, draftKey, resource.getFileName());
         });
     }
-    
-    private void consolidateContractAnnexes(AssetDraftDto draft) {
-        final CatalogueItemCommandDto          command             = draft.getCommand();
+
+    private void consolidateContractAnnexes(CatalogueItemCommandDto command) {
         final UUID                             ownerKey        	   = command.getOwnerKey();
         final UUID                             publisherKey        = command.getPublisherKey();
         final UUID                             draftKey            = command.getDraftKey();
 
-        // Delete all uploaded contract files if master contract
+        Assert.notNull(ownerKey,     "Expected a non-null owner key");
+        Assert.notNull(publisherKey, "Expected a non-null publisher key");
+        Assert.notNull(draftKey,     "Expected a non-null draft key");
+
+        // Delete uploaded contract file if contract type is MASTER_CONTRACT
         if (command.getContractTemplateType() == EnumContractType.MASTER_CONTRACT) {
-        	try{
-    			final Path contractPath = resolveDraftUploadedContractPath(ownerKey, publisherKey, draftKey);
-    			this.draftFileManager.deleteContract(publisherKey, draftKey, contractPath.getFileName().toString());
-    		}
-        	catch (FileSystemException e) {
-        		//no action required if no contract exists
-        	}
-            final List<AssetContractAnnexEntity> contractAnnexes   = assetContractAnnexRepository.findAllAnnexesByDraftKey(draftKey);
-	       
-	        for (AssetContractAnnexEntity a: contractAnnexes) {
-		        // Delete annex record in transaction before deleting file
-	            final AssetContractAnnexDto annex = this.assetContractAnnexRepository.delete(
-	                draftKey, a.getKey());
-	
-	            // Update annex file repository
-	            this.draftFileManager.deleteContractAnnex(publisherKey, draftKey, annex.getFileName());
-	        }
+            try {
+                final Path contractPath = resolveDraftCustomContractPath(ownerKey, publisherKey, draftKey);
+                this.draftFileManager.deleteContract(publisherKey, draftKey, contractPath.getFileName().toString());
+            } catch (final FileSystemException e) {
+                // no action required if no contract exists
+            }
         }
+
+        // Delete all additional fire resources that are not present in the
+        // draft record
+        final List<AssetContractAnnexDto> annexes = command.getContractAnnexes();
+        final List<String>                ids     = annexes.stream().map(AssetContractAnnexDto::getId).collect(Collectors.toList());
+
+        final List<AssetContractAnnexDto> registeredAnnexes = this.assetContractAnnexRepository
+            .findAllAnnexesByDraftKey(draftKey).stream().map(AssetContractAnnexEntity::toDto)
+            .collect(Collectors.toList());
+
+        registeredAnnexes.stream().filter(r -> !ids.contains(r.getId())).forEach(r -> {
+            // Delete annex record in transaction before deleting file
+            final AssetContractAnnexDto annex = this.assetContractAnnexRepository.delete(draftKey, r.getId());
+
+            // Update annex file repository
+            this.draftFileManager.deleteContractAnnex(publisherKey, draftKey, annex.getFileName());
+        });
     }
 
     private FileResourceDto deleteResourceRecord(UUID ownerKey, UUID publisherKey, UUID draftKey, String resourceKey) {

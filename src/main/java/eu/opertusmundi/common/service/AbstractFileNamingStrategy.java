@@ -17,7 +17,7 @@ public abstract class AbstractFileNamingStrategy<C extends FileNamingStrategyCon
     protected static final Set<PosixFilePermission> DEFAULT_DIRECTORY_PERMISSIONS = PosixFilePermissions.fromString("rwxrwxr-x");
 
     @Override
-    public Path resolvePath(C ctx, String relativePath) throws IOException, FileSystemException {
+    public final Path resolvePath(C ctx, String relativePath) throws IOException, FileSystemException {
         Assert.notNull(ctx, "Expected a non-null context");
         Assert.hasText(relativePath, "Expected a non-empty path");
 
@@ -25,7 +25,7 @@ public abstract class AbstractFileNamingStrategy<C extends FileNamingStrategyCon
     }
 
     @Override
-    public Path resolvePath(C ctx, Path relativePath) throws IOException, FileSystemException {
+    public final Path resolvePath(C ctx, Path relativePath) throws IOException, FileSystemException {
         Assert.notNull(ctx, "Expected a non-null context");
         Assert.notNull(relativePath, "Expected a non-null path");
 

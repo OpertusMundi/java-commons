@@ -1,8 +1,13 @@
 package eu.opertusmundi.common.model.catalogue.client;
 
 public enum EnumContractType {
-
-	MASTER_CONTRACT,
-	UPLOADED_CONTRACT,
-	;
+    /**
+     * Provider contract derived from a MASTER template
+     */
+    MASTER_CONTRACT,
+    /**
+     * Custom contract template uploaded by the provider
+     */
+    UPLOADED_CONTRACT,
+    ;
 }

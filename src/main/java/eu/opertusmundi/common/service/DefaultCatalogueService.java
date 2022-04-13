@@ -35,6 +35,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import eu.opertusmundi.common.domain.AssetAdditionalResourceEntity;
+import eu.opertusmundi.common.domain.AssetContractAnnexEntity;
 import eu.opertusmundi.common.domain.AssetResourceEntity;
 import eu.opertusmundi.common.domain.FavoriteEntity;
 import eu.opertusmundi.common.domain.MasterSectionHistoryEntity;
@@ -46,6 +47,7 @@ import eu.opertusmundi.common.model.RequestContext;
 import eu.opertusmundi.common.model.account.ProviderDto;
 import eu.opertusmundi.common.model.analytics.AssetViewRecord;
 import eu.opertusmundi.common.model.analytics.EnumAssetViewSource;
+import eu.opertusmundi.common.model.asset.AssetContractAnnexDto;
 import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.catalogue.CatalogueResult;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
@@ -58,20 +60,23 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDraftDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumCatalogueType;
+import eu.opertusmundi.common.model.catalogue.client.EnumContractType;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQuery;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQueryResult;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticServiceException;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueCollection;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueResponse;
-import eu.opertusmundi.common.model.contract.ContractDto;
 import eu.opertusmundi.common.model.contract.ContractTermDto;
+import eu.opertusmundi.common.model.contract.CustomContractDto;
+import eu.opertusmundi.common.model.contract.TemplateContractDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.AccountRecentSearchRepository;
 import eu.opertusmundi.common.repository.AssetAdditionalResourceRepository;
+import eu.opertusmundi.common.repository.AssetContractAnnexRepository;
 import eu.opertusmundi.common.repository.AssetResourceRepository;
 import eu.opertusmundi.common.repository.FavoriteRepository;
 import eu.opertusmundi.common.repository.ProviderRepository;
@@ -119,6 +124,9 @@ public class DefaultCatalogueService implements CatalogueService {
 
     @Autowired
     private AssetAdditionalResourceRepository assetAdditionalResourceRepository;
+
+    @Autowired
+    private AssetContractAnnexRepository assetContractAnnexRepository;
 
     @Autowired
     private ProviderTemplateContractHistoryRepository providerContractRepository;
@@ -906,13 +914,30 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     private void setContract(CatalogueItemDetailsDto item, CatalogueFeature feature) {
+        switch (item.getContractTemplateType()) {
+            case MASTER_CONTRACT :
+                this.setProviderContract(item, feature);
+                break;
+
+            case UPLOADED_CONTRACT :
+                this.setCustomContract(item, feature);
+                break;
+        }
+    }
+
+    private void setProviderContract(CatalogueItemDetailsDto item, CatalogueFeature feature) {
+        // Load contract only for provider templates
+        if (item.getContractTemplateType() != EnumContractType.MASTER_CONTRACT) {
+            return;
+        }
+
         final ProviderTemplateContractHistoryEntity providerTemplate = this.providerContractRepository.findByIdAndVersion(
             feature.getProperties().getPublisherId(),
             feature.getProperties().getContractTemplateId(),
             feature.getProperties().getContractTemplateVersion()
         ).orElse(null);
 
-        final ContractDto contract = providerTemplate.toSimpleDto();
+        final TemplateContractDto contract = providerTemplate.toSimpleDto();
 
         // Inject contract terms and conditions
         providerTemplate.getSections().stream()
@@ -935,4 +960,13 @@ public class DefaultCatalogueService implements CatalogueService {
         item.setContract(contract);
     }
 
+    private void setCustomContract(CatalogueItemDetailsDto item, CatalogueFeature feature) {
+        final List<AssetContractAnnexDto> annexes = this.assetContractAnnexRepository.findAllAnnexesByAssetPid(item.getId()).stream()
+            .map(AssetContractAnnexEntity::toDto)
+            .collect(Collectors.toList());
+
+        final CustomContractDto contract = new CustomContractDto(annexes);
+
+        item.setContract(contract);
+    }
 }
