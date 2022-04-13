@@ -117,7 +117,7 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
     @Schema(description = "Contract template key")
     private UUID contractTemplateKey;
 
-    @Schema(description = "Contract type (mtc or provider uploaded)")
+    @Schema(description = "Contract type")
     private EnumContractType contractTemplateType = EnumContractType.MASTER_CONTRACT;
 
     @Schema(description = "Collection of custom properties required for external data provider integration")
