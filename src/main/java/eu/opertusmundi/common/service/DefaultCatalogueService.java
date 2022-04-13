@@ -926,10 +926,9 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     private void setProviderContract(CatalogueItemDetailsDto item, CatalogueFeature feature) {
-        // Load contract only for provider templates
-        if (item.getContractTemplateType() != EnumContractType.MASTER_CONTRACT) {
-            return;
-        }
+        Assert.notNull(item, "Expected a non-null item");
+        Assert.notNull(feature, "Expected a non-null feature");
+        Assert.isTrue(item.getContractTemplateType() == EnumContractType.MASTER_CONTRACT, "Expected contract type to be MASTER_CONTRACT");
 
         final ProviderTemplateContractHistoryEntity providerTemplate = this.providerContractRepository.findByIdAndVersion(
             feature.getProperties().getPublisherId(),
@@ -961,6 +960,10 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     private void setCustomContract(CatalogueItemDetailsDto item, CatalogueFeature feature) {
+        Assert.notNull(item, "Expected a non-null item");
+        Assert.notNull(feature, "Expected a non-null feature");
+        Assert.isTrue(item.getContractTemplateType() == EnumContractType.UPLOADED_CONTRACT, "Expected contract type to be UPLOADED_CONTRACT");
+
         final List<AssetContractAnnexDto> annexes = this.assetContractAnnexRepository.findAllAnnexesByAssetPid(item.getId()).stream()
             .map(AssetContractAnnexEntity::toDto)
             .collect(Collectors.toList());
