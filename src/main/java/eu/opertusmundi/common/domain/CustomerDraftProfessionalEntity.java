@@ -41,7 +41,7 @@ public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
         this.email               = c.getEmail();
         this.headquartersAddress = AddressEmbeddable.from(c.getHeadquartersAddress());
         this.legalPersonType     = c.getLegalPersonType();
-        this.representative      = CustomerRrepresentativeEmbeddable.from(c.getRepresentative());
+        this.representative      = CustomerRepresentativeEmbeddable.from(c.getRepresentative());
         this.logoImage           = c.getLogoImage();
         this.logoImageMimeType   = c.getLogoImageMimeType();
         this.name                = c.getName();
@@ -69,7 +69,7 @@ public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
         this.email               = c.getEmail();
         this.headquartersAddress = AddressEmbeddable.from(c.getHeadquartersAddress());
         this.legalPersonType     = c.getLegalPersonType();
-        this.representative      = CustomerRrepresentativeEmbeddable.from(c.getRepresentative());
+        this.representative      = CustomerRepresentativeEmbeddable.from(c.getRepresentative());
         this.logoImage           = c.getLogoImage();
         this.logoImageMimeType   = c.getLogoImageMimeType();
         this.name                = c.getName();
@@ -130,7 +130,7 @@ public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
     })
     @Getter
     @Setter
-    private CustomerRrepresentativeEmbeddable representative;
+    private CustomerRepresentativeEmbeddable representative;
 
     @Column(name = "`company_number`")
     @Getter
@@ -204,7 +204,7 @@ public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
         }
 
         if (p.getRepresentative() != null) {
-            this.representative = CustomerRrepresentativeEmbeddable.from(p.getRepresentative());
+            this.representative = CustomerRepresentativeEmbeddable.from(p.getRepresentative());
         }
     }
 
@@ -230,7 +230,7 @@ public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
         }
 
         if (p.getRepresentative() != null) {
-            this.representative = CustomerRrepresentativeEmbeddable.from(p.getRepresentative());
+            this.representative = CustomerRepresentativeEmbeddable.from(p.getRepresentative());
         }
     }
 

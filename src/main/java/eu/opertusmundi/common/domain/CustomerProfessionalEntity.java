@@ -53,7 +53,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         this.headquartersAddress   = AddressEmbeddable.from(c.getHeadquartersAddress());
         this.kycLevel              = EnumKycLevel.LIGHT;
         this.legalPersonType       = c.getLegalPersonType();
-        this.representative        = CustomerRrepresentativeEmbeddable.from(c.getRepresentative());
+        this.representative        = CustomerRepresentativeEmbeddable.from(c.getRepresentative());
         this.logoImage             = c.getLogoImage();
         this.logoImageMimeType     = c.getLogoImageMimeType();
         this.name                  = c.getName();
@@ -157,7 +157,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
     })
     @Getter
     @Setter
-    private CustomerRrepresentativeEmbeddable representative;
+    private CustomerRepresentativeEmbeddable representative;
 
     @NotNull
     @Column(name = "`company_number`")
@@ -290,7 +290,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         this.modifiedAt        = ZonedDateTime.now();
         this.name              = c.getName();
         this.phone             = c.getPhone();
-        this.representative    = CustomerRrepresentativeEmbeddable.from(c.getRepresentative());
+        this.representative    = CustomerRepresentativeEmbeddable.from(c.getRepresentative());
         this.siteUrl           = c.getSiteUrl();
 
         if (c.getBankAccount() != null) {

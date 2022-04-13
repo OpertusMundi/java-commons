@@ -80,7 +80,7 @@ import eu.opertusmundi.common.domain.CustomerDraftIndividualEntity;
 import eu.opertusmundi.common.domain.CustomerDraftProfessionalEntity;
 import eu.opertusmundi.common.domain.CustomerEntity;
 import eu.opertusmundi.common.domain.CustomerProfessionalEntity;
-import eu.opertusmundi.common.domain.CustomerRrepresentativeEmbeddable;
+import eu.opertusmundi.common.domain.CustomerRepresentativeEmbeddable;
 import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInItemEntity;
@@ -1921,7 +1921,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     private UserLegal createUserLegal(AccountEntity a, CustomerDraftProfessionalEntity r, String id) {
         final UserLegal u = new UserLegal();
 
-        final CustomerRrepresentativeEmbeddable lr = r.getRepresentative();
+        final CustomerRepresentativeEmbeddable lr = r.getRepresentative();
 
         u.setCompanyNumber(r.getCompanyNumber());
         u.setEmail(r.getEmail());

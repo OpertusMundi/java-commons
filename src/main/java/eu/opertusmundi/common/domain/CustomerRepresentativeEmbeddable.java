@@ -15,7 +15,7 @@ import lombok.Setter;
 @Embeddable
 @Getter
 @Setter
-public class CustomerRrepresentativeEmbeddable implements Cloneable {
+public class CustomerRepresentativeEmbeddable implements Cloneable {
 
     @Embedded
     private AddressEmbeddable address;
@@ -45,8 +45,8 @@ public class CustomerRrepresentativeEmbeddable implements Cloneable {
     private String lastName;
 
     @Override
-    public CustomerRrepresentativeEmbeddable clone() {
-        final CustomerRrepresentativeEmbeddable r = new CustomerRrepresentativeEmbeddable();
+    public CustomerRepresentativeEmbeddable clone() {
+        final CustomerRepresentativeEmbeddable r = new CustomerRepresentativeEmbeddable();
 
         r.address            = this.address.clone();
         r.birthdate          = this.birthdate;
@@ -73,8 +73,8 @@ public class CustomerRrepresentativeEmbeddable implements Cloneable {
         return r;
     }
 
-    public static CustomerRrepresentativeEmbeddable from(CustomerRepresentativeCommandDto c) {
-        final CustomerRrepresentativeEmbeddable r = new CustomerRrepresentativeEmbeddable();
+    public static CustomerRepresentativeEmbeddable from(CustomerRepresentativeCommandDto c) {
+        final CustomerRepresentativeEmbeddable r = new CustomerRepresentativeEmbeddable();
 
         r.birthdate          = c.getBirthdate();
         r.countryOfResidence = c.getCountryOfResidence();
