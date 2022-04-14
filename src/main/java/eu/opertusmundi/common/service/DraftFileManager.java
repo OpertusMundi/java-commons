@@ -27,9 +27,9 @@ public interface DraftFileManager {
         AssetFileAdditionalResourceCommandDto command, InputStream input
     ) throws FileSystemException, AssetRepositoryException;
 
-    void uploadContract(ProviderUploadContractCommand command, InputStream input) throws AssetRepositoryException, FileSystemException;
+    void uploadContract(ProviderUploadContractCommand command, byte[] data) throws AssetRepositoryException, FileSystemException;
 
-    void uploadContractAnnex(AssetContractAnnexCommandDto command, InputStream input) throws FileSystemException, AssetRepositoryException;
+    void uploadContractAnnex(AssetContractAnnexCommandDto command, byte[] data) throws FileSystemException, AssetRepositoryException;
 
     void deleteResource(UUID publisherKey, UUID draftKey, String fileName) throws FileSystemException, AssetRepositoryException;
 

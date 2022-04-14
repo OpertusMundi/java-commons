@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
@@ -136,7 +137,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
     ) throws AssetRepositoryException, FileSystemException {
         Assert.notNull(publisherKey, "Expected a non-null publisher key");
         Assert.notNull(draftKey, "Expected a non-null draft key");
-        Assert.isTrue(!StringUtils.isBlank(fileName), "Expected a non-empty file name");
+        Assert.hasText(fileName, "Expected a non-empty file name");
 
         try {
             final DraftFileNamingStrategyContext ctx          = DraftFileNamingStrategyContext.of(publisherKey, draftKey);
@@ -162,9 +163,40 @@ public class DefaultDraftFileManager implements DraftFileManager {
         }
     }
 
+    private void saveResourceFile(
+        UUID publisherKey, UUID draftKey, String path, String fileName, byte[] data
+    ) throws AssetRepositoryException, FileSystemException {
+        Assert.notNull(publisherKey, "Expected a non-null publisher key");
+        Assert.notNull(draftKey, "Expected a non-null draft key");
+        Assert.hasText(fileName, "Expected a non-empty file name");
+
+        try {
+            final DraftFileNamingStrategyContext ctx          = DraftFileNamingStrategyContext.of(publisherKey, draftKey);
+            final Path                           relativePath = Paths.get(path, fileName);
+            final Path                           absolutePath = this.draftNamingStrategy.resolvePath(ctx, relativePath);
+            final File                           localFile    = absolutePath.toFile();
+
+            // Create parent directory
+            if (!absolutePath.getParent().toFile().exists()) {
+                Files.createDirectories(absolutePath.getParent());
+                Files.setPosixFilePermissions(absolutePath.getParent(), DEFAULT_DIRECTORY_PERMISSIONS);
+            }
+
+            if (localFile.exists()) {
+                FileUtils.deleteQuietly(localFile);
+            }
+
+            Files.write(absolutePath, data, StandardOpenOption.CREATE_NEW);
+        } catch (final FileSystemException ex) {
+            throw ex;
+        } catch (final Exception ex) {
+            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
+        }
+    }
+
     @Override
     public void uploadContract(
-		ProviderUploadContractCommand command, InputStream input
+		ProviderUploadContractCommand command, byte[] data
     ) throws AssetRepositoryException, FileSystemException {
         Assert.notNull(command, "Expected a non-null command");
         Assert.isTrue(command.getSize() > 0, "Expected file size to be greater than 0");
@@ -195,17 +227,17 @@ public class DefaultDraftFileManager implements DraftFileManager {
             throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "Failed to delete existing contract", ex);
         }
 
-        this.saveResourceFile(command.getPublisherKey(), command.getDraftKey(), CONTRACT_PATH, command.getFileName(), input);
+        this.saveResourceFile(command.getPublisherKey(), command.getDraftKey(), CONTRACT_PATH, command.getFileName(), data);
     }
 
     @Override
     public void uploadContractAnnex(
-        AssetContractAnnexCommandDto command, InputStream input
+        AssetContractAnnexCommandDto command, byte[] data
     ) throws AssetRepositoryException, FileSystemException {
         Assert.notNull(command, "Expected a non-null command");
         Assert.isTrue(command.getSize() > 0, "Expected file size to be greater than 0");
 
-        this.saveResourceFile(command.getPublisherKey(), command.getDraftKey(), CONTRACT_ANNEX_PATH, command.getFileName(), input);
+        this.saveResourceFile(command.getPublisherKey(), command.getDraftKey(), CONTRACT_ANNEX_PATH, command.getFileName(), data);
     }
 
     @Override

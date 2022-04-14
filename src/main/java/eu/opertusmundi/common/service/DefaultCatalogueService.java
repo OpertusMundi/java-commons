@@ -1,9 +1,5 @@
 package eu.opertusmundi.common.service;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -11,19 +7,15 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.sleuth.Span;
 import org.springframework.cloud.sleuth.Tracer;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -35,11 +27,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import eu.opertusmundi.common.domain.AssetAdditionalResourceEntity;
-import eu.opertusmundi.common.domain.AssetContractAnnexEntity;
 import eu.opertusmundi.common.domain.AssetResourceEntity;
 import eu.opertusmundi.common.domain.FavoriteEntity;
-import eu.opertusmundi.common.domain.MasterSectionHistoryEntity;
-import eu.opertusmundi.common.domain.ProviderTemplateContractHistoryEntity;
 import eu.opertusmundi.common.feign.client.CatalogueFeignClient;
 import eu.opertusmundi.common.model.PageRequestDto;
 import eu.opertusmundi.common.model.PageResultDto;
@@ -47,7 +36,6 @@ import eu.opertusmundi.common.model.RequestContext;
 import eu.opertusmundi.common.model.account.ProviderDto;
 import eu.opertusmundi.common.model.analytics.AssetViewRecord;
 import eu.opertusmundi.common.model.analytics.EnumAssetViewSource;
-import eu.opertusmundi.common.model.asset.AssetContractAnnexDto;
 import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.catalogue.CatalogueResult;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
@@ -60,30 +48,22 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDraftDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumCatalogueType;
-import eu.opertusmundi.common.model.catalogue.client.EnumContractType;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQuery;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQueryResult;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticServiceException;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueCollection;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueResponse;
-import eu.opertusmundi.common.model.contract.ContractTermDto;
-import eu.opertusmundi.common.model.contract.CustomContractDto;
-import eu.opertusmundi.common.model.contract.TemplateContractDto;
-import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
-import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.AccountRecentSearchRepository;
 import eu.opertusmundi.common.repository.AssetAdditionalResourceRepository;
-import eu.opertusmundi.common.repository.AssetContractAnnexRepository;
 import eu.opertusmundi.common.repository.AssetResourceRepository;
 import eu.opertusmundi.common.repository.FavoriteRepository;
 import eu.opertusmundi.common.repository.ProviderRepository;
-import eu.opertusmundi.common.repository.contract.ProviderTemplateContractHistoryRepository;
-import eu.opertusmundi.common.service.integration.DataProviderManager;
 import eu.opertusmundi.common.util.BpmEngineUtils;
 import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
+import eu.opertusmundi.common.util.CatalogueItemUtils;
 import feign.FeignException;
 
 @Service
@@ -95,14 +75,8 @@ public class DefaultCatalogueService implements CatalogueService {
 
     private static final String DRAFT_PUBLISHED_STATUS = "published";
 
-    @Value("${opertusmundi.contract.icons}")
-    private String iconFolder;
-
     @Autowired
     private Tracer tracer;
-
-    @Autowired
-    private ResourceLoader resourceLoader;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -126,12 +100,6 @@ public class DefaultCatalogueService implements CatalogueService {
     private AssetAdditionalResourceRepository assetAdditionalResourceRepository;
 
     @Autowired
-    private AssetContractAnnexRepository assetContractAnnexRepository;
-
-    @Autowired
-    private ProviderTemplateContractHistoryRepository providerContractRepository;
-
-    @Autowired
     private BpmEngineUtils bpmEngine;
 
     @Autowired
@@ -141,10 +109,7 @@ public class DefaultCatalogueService implements CatalogueService {
     private ElasticSearchService elasticSearchService;
 
     @Autowired
-    private QuotationService quotationService;
-
-    @Autowired
-    private DataProviderManager dataProviderManager;
+    private CatalogueItemUtils catalogueItemUtils;
 
     @Override
     public CatalogueResult<CatalogueItemDto> findAll(RequestContext ctx, CatalogueAssetQuery request) throws CatalogueServiceException {
@@ -453,7 +418,7 @@ public class DefaultCatalogueService implements CatalogueService {
         item.setPublisher(publisher);
 
         // Inject contract details
-        this.setContract(item, feature);
+        catalogueItemUtils.setContract(item, feature);
 
         // Consolidate data from asset repository
         final List<AssetResourceEntity> resources = this.assetResourceRepository
@@ -487,7 +452,7 @@ public class DefaultCatalogueService implements CatalogueService {
             });
 
         // Compute effective pricing models
-        this.refreshPricingModels(item);
+        catalogueItemUtils.refreshPricingModels(item);
 
         // Set favorite flag for asset and provider
         final Integer userId = ctx == null || ctx.getAccount() == null ? null : ctx.getAccount().getId();
@@ -734,7 +699,7 @@ public class DefaultCatalogueService implements CatalogueService {
                 final T dto = converter.apply(item);
 
                 // Compute effective pricing models
-                this.refreshPricingModels(dto);
+                catalogueItemUtils.refreshPricingModels(dto);
 
                 // Filter properties
                 dto.setAutomatedMetadata(null);
@@ -743,7 +708,6 @@ public class DefaultCatalogueService implements CatalogueService {
                 return dto;
             })
             .collect(Collectors.toList());
-
 
         final PageResultDto<T> result = PageResultDto.of(
             pageIndex,
@@ -778,26 +742,6 @@ public class DefaultCatalogueService implements CatalogueService {
         }
 
         return new CatalogueResult<T>(result, publishers);
-    }
-
-    /**
-     * Compute pricing models effective values for a catalogue item
-     *
-     * @param item
-     */
-    private void refreshPricingModels(CatalogueItemDto item) {
-        // Inject pricing models from external data providers
-        dataProviderManager.updatePricingModels(item);
-
-        final List<BasePricingModelCommandDto> models = item.getPricingModels();
-
-        if (models.isEmpty()) {
-            return;
-        }
-
-        final List<EffectivePricingModelDto> quotations = quotationService.createQuotation(item);
-
-        item.setEffectivePricingModels(quotations);
     }
 
     @Override
@@ -913,63 +857,4 @@ public class DefaultCatalogueService implements CatalogueService {
         });
     }
 
-    private void setContract(CatalogueItemDetailsDto item, CatalogueFeature feature) {
-        switch (item.getContractTemplateType()) {
-            case MASTER_CONTRACT :
-                this.setProviderContract(item, feature);
-                break;
-
-            case UPLOADED_CONTRACT :
-                this.setCustomContract(item, feature);
-                break;
-        }
-    }
-
-    private void setProviderContract(CatalogueItemDetailsDto item, CatalogueFeature feature) {
-        Assert.notNull(item, "Expected a non-null item");
-        Assert.notNull(feature, "Expected a non-null feature");
-        Assert.isTrue(item.getContractTemplateType() == EnumContractType.MASTER_CONTRACT, "Expected contract type to be MASTER_CONTRACT");
-
-        final ProviderTemplateContractHistoryEntity providerTemplate = this.providerContractRepository.findByIdAndVersion(
-            feature.getProperties().getPublisherId(),
-            feature.getProperties().getContractTemplateId(),
-            feature.getProperties().getContractTemplateVersion()
-        ).orElse(null);
-
-        final TemplateContractDto contract = providerTemplate.toSimpleDto();
-
-        // Inject contract terms and conditions
-        providerTemplate.getSections().stream()
-            .filter(s -> s.getOption() != null)
-            .map(s -> Pair.<Integer, MasterSectionHistoryEntity>of(s.getOption(), s.getMasterSection()))
-            .map(p -> p.getRight().getOptions().get(p.getLeft()))
-            .filter(s -> s.getIcon() != null)
-            .map(s -> {
-                final Path path = Paths.get(iconFolder, s.getIcon().getFile());
-                try (final InputStream fileStream = resourceLoader.getResource(path.toString()).getInputStream()) {
-                    final byte[] data = IOUtils.toByteArray(fileStream);
-                    return ContractTermDto.of(s.getIcon(), s.getIcon().getCategory(), data, s.getShortDescription());
-                } catch (final IOException ex) {
-                    logger.warn(String.format("Failed to load resource [icon=%s, path=%s]", s.getIcon(), path), ex);
-                }
-                return ContractTermDto.of(s.getIcon(), s.getIcon().getCategory(), null, s.getShortDescription());
-            })
-            .forEach(contract.getTerms()::add);
-
-        item.setContract(contract);
-    }
-
-    private void setCustomContract(CatalogueItemDetailsDto item, CatalogueFeature feature) {
-        Assert.notNull(item, "Expected a non-null item");
-        Assert.notNull(feature, "Expected a non-null feature");
-        Assert.isTrue(item.getContractTemplateType() == EnumContractType.UPLOADED_CONTRACT, "Expected contract type to be UPLOADED_CONTRACT");
-
-        final List<AssetContractAnnexDto> annexes = this.assetContractAnnexRepository.findAllAnnexesByAssetPid(item.getId()).stream()
-            .map(AssetContractAnnexEntity::toDto)
-            .collect(Collectors.toList());
-
-        final CustomContractDto contract = new CustomContractDto(annexes);
-
-        item.setContract(contract);
-    }
 }

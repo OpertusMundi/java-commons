@@ -1264,7 +1264,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Override
     @Transactional
     public void addContract(
-		ProviderUploadContractCommand command, InputStream input
+		ProviderUploadContractCommand command, byte[] data
     ) throws AssetDraftException, FileSystemException, AssetRepositoryException {
         // The provider must have access to the selected draft and also the
         // draft must be editable
@@ -1284,7 +1284,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         final Pair<EnumLockResult, RecordLockDto> lock = this.getLock(command.getOwnerKey(), command.getDraftKey(), true);
 
         // Update asset file repository
-        this.draftFileManager.uploadContract(command, input);
+        this.draftFileManager.uploadContract(command, data);
 
         // Release lock if it was created only for the specific operation
         if (lock != null && lock.getLeft() == EnumLockResult.CREATED) {
@@ -1328,7 +1328,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Override
     @Transactional
     public AssetDraftDto addContractAnnex(
-    		AssetContractAnnexCommandDto command, InputStream input
+    		AssetContractAnnexCommandDto command, byte[] data
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException {
         // The provider must have access to the selected draft and also the
         // draft must be editable
@@ -1351,7 +1351,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         final AssetContractAnnexDto annex = assetContractAnnexRepository.update(command);
 
         // Update asset file repository
-        this.draftFileManager.uploadContractAnnex(command, input);
+        this.draftFileManager.uploadContractAnnex(command, data);
 
         // Update draft with new file resource
         draft.getCommand().setDraftKey(command.getDraftKey());

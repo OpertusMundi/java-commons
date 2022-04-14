@@ -321,7 +321,7 @@ public interface ProviderAssetService {
      * Uploads a contract file for the selected asset
      *
      * @param command Uploaded contract. If a file with the same name already already exists for the asset, it is overwritten
-     * @param input An input stream of the uploaded file. The caller should close the stream.
+     * @param data A byte array with the uploaded file
      *
      * @return
      *
@@ -330,14 +330,14 @@ public interface ProviderAssetService {
      * @throws AssetDraftException
      */
     void addContract(
-		ProviderUploadContractCommand command, InputStream input
+		ProviderUploadContractCommand command, byte[] data
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
 
     /**
      * Uploads an additional contract annex file for the selected asset
      *
      * @param command Contract annex metadata. If a file with the same name already already exists for the asset, it is overwritten
-     * @param input An input stream of the uploaded file. The caller should close the stream.
+     * @param data A byte array with the uploaded file
      *
      * @return The updated draft
      *
@@ -346,7 +346,7 @@ public interface ProviderAssetService {
      * @throws AssetDraftException
      */
     AssetDraftDto addContractAnnex(
-        AssetContractAnnexCommandDto command, InputStream input
+        AssetContractAnnexCommandDto command, byte[] data
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
 
     /**
