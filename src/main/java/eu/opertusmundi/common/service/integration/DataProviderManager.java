@@ -5,8 +5,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.annotation.PostConstruct;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.Conventions;
@@ -30,8 +28,7 @@ public class DataProviderManager implements DataProviderIntegrationService {
     @Autowired
     private ApplicationContext ctx;
 
-    @PostConstruct
-    public void init() {
+    public void refreshProviders() {
         this.dataProviders = ctx.getBeansOfType(DataProviderIntegrationService.class);
 
         // Remove self
