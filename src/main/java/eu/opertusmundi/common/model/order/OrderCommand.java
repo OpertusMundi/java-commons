@@ -34,8 +34,10 @@ public class OrderCommand {
 
     private Location location;
 
+    private boolean contractUploadingRequired;
+
     private boolean vettingRequired;
-    
+
     private EnumContractType contractType;
 
 }

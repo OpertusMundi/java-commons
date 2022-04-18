@@ -21,7 +21,7 @@ public enum EnumOrderStatus {
      * If the order is related to a custom contract
      * the provider should fill in the contract with the consumer's info
      */
-    PENDING_PROVIDER_CONTRACT_FILLING_OUT,
+    PENDING_PROVIDER_CONTRACT_UPLOAD,
     /**
      * If the order is related to a custom contract
      * the consumer should accept the terms of the contract

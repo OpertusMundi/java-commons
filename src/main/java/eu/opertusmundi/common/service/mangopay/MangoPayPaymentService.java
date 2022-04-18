@@ -97,6 +97,7 @@ import eu.opertusmundi.common.model.account.EnumCustomerType;
 import eu.opertusmundi.common.model.account.EnumLegalPersonType;
 import eu.opertusmundi.common.model.account.EnumMangopayUserType;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
+import eu.opertusmundi.common.model.catalogue.client.EnumContractType;
 import eu.opertusmundi.common.model.email.EnumMailType;
 import eu.opertusmundi.common.model.location.Location;
 import eu.opertusmundi.common.model.order.CartDto;
@@ -770,7 +771,8 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             if (asset == null) {
                 throw new PaymentException(PaymentMessageCode.ASSET_NOT_FOUND, "Asset not found");
             }
-            final boolean vettingRequired = BooleanUtils.isTrue(asset.getVettingRequired());
+            final boolean vettingRequired           = BooleanUtils.isTrue(asset.getVettingRequired());
+            final boolean contractUploadingRequired = asset.getContractTemplateType() == EnumContractType.UPLOADED_CONTRACT;
 
             // Pricing model must exist. We need to check only the pricing model
             // key. Updating the parameters of a pricing model, creates a new key.
@@ -797,21 +799,22 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 .location(location)
                 .quotation(quotation)
                 .userId(cart.getAccountId())
+                .contractUploadingRequired(contractUploadingRequired)
                 .vettingRequired(vettingRequired)
                 .contractType(asset.getContractTemplateType())
                 .build();
 
             final OrderDto order = this.orderRepository.create(orderCommand);
-            
+
             if (vettingRequired) {
                 final AccountEntity consumer = this.orderRepository.findAccountById(cart.getAccountId()).orElse(null);
-            	this.orderFulfillmentService.sendOrderStatusByMail(EnumMailType.CONSUMER_PURCHASE_NOTIFICATION, consumer.getKey(), order.getKey());
-            	
-            	Map<String, Object> variables = new HashMap<String, Object>();
-            	Object title = asset.getTitle();
-            	variables.put("assetName", title);
-            	
-            	this.orderFulfillmentService.sendOrderStatusByNotification("PURCHASE_REMINDER", asset.getPublisher().getKey() , variables);
+                this.orderFulfillmentService.sendOrderStatusByMail(EnumMailType.CONSUMER_PURCHASE_NOTIFICATION, consumer.getKey(), order.getKey());
+
+                final Map<String, Object> variables = new HashMap<>();
+                final String              title     = asset.getTitle();
+                variables.put("assetName", title);
+
+                this.orderFulfillmentService.sendOrderStatusByNotification("PURCHASE_REMINDER", asset.getPublisher().getKey(), variables);
             }
 
             return order;

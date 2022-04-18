@@ -246,13 +246,21 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
         order.setCreatedOn(ZonedDateTime.now());
         order.setCurrency(command.getQuotation().getQuotation().getCurrency().toString());
         order.setDeliveryMethod(command.getDeliveryMethod());
-        order.setStatus(command.isVettingRequired() ? EnumOrderStatus.PENDING_PROVIDER_APPROVAL : EnumOrderStatus.CREATED);
         order.setStatusUpdatedOn(order.getCreatedOn());
         order.setTaxPercent(command.getQuotation().getQuotation().getTaxPercent());
         order.setTotalPrice(command.getQuotation().getQuotation().getTotalPrice());
         order.setTotalPriceExcludingTax(command.getQuotation().getQuotation().getTotalPriceExcludingTax());
         order.setTotalTax(command.getQuotation().getQuotation().getTax());
         order.setVettingRequired(command.isVettingRequired());
+
+        // Set order status
+        EnumOrderStatus statusValue = EnumOrderStatus.CREATED;
+        if (command.isVettingRequired()) {
+            statusValue = EnumOrderStatus.PENDING_PROVIDER_APPROVAL;
+        } else if (command.isContractUploadingRequired()) {
+            statusValue = EnumOrderStatus.PENDING_PROVIDER_CONTRACT_UPLOAD;
+        }
+        order.setStatus(statusValue);
 
         final OrderStatusEntity status = new OrderStatusEntity();
         status.setOrder(order);
@@ -265,8 +273,8 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
         final OrderItemEntity item = new OrderItemEntity();
         item.setAssetId(command.getAsset().getId());
         item.setAssetVersion(command.getAsset().getVersion());
-        item.setContractType(command.getContractType());	
-        item.setContractTemplateId(command.getContractType() == EnumContractType.MASTER_CONTRACT ? command.getAsset().getContractTemplateId() : null);	
+        item.setContractType(command.getContractType());
+        item.setContractTemplateId(command.getContractType() == EnumContractType.MASTER_CONTRACT ? command.getAsset().getContractTemplateId() : null);
         item.setContractTemplateVersion(command.getContractType() == EnumContractType.MASTER_CONTRACT ? command.getAsset().getContractTemplateVersion() : null);
         item.setDescription(command.getAsset().getTitle());
         item.setIndex(1);
@@ -367,35 +375,42 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
         this.saveAndFlush(order);
     }
 
+    /**
+     * Set provider's order acceptance
+     *
+     * @param providerKey
+     * @param orderKey
+     * @return
+     * @throws Exception
+     */
     @Transactional(readOnly = false)
-    default ProviderOrderDto acceptOrder(UUID providerKey, UUID orderKey) throws Exception {
+    default ProviderOrderDto acceptOrderByProvider(UUID providerKey, UUID orderKey) throws Exception {
         final OrderEntity order = this.findOrderEntityByKeyAndProviderKey(providerKey, orderKey).orElse(null);
 
         if (order == null) {
             throw new OrderException(OrderMessageCode.ORDER_NOT_FOUND, "Order not found");
         }
-        
+
         final OrderItemEntity orderItem = order.getItems().get(0);
-        
+
         if (orderItem == null) {
             throw new OrderException(OrderMessageCode.ORDER_NOT_FOUND, "Order not found");
         }
 
         // Update only on status change
-        if (order.getStatus() != EnumOrderStatus.PROVIDER_ACCEPTED && order.getStatus() != EnumOrderStatus.PENDING_PROVIDER_CONTRACT_FILLING_OUT) {
-         
+        if (order.getStatus() != EnumOrderStatus.PROVIDER_ACCEPTED) {
         	if (order.getStatus() != EnumOrderStatus.PENDING_PROVIDER_APPROVAL) {
                 throw new OrderException(OrderMessageCode.ORDER_INVALID_STATUS, String.format(
                     "Invalid order status [expected=%s, found=%s]",
                     EnumOrderStatus.PENDING_PROVIDER_APPROVAL, order.getStatus()
                 ));
             }
-            
+
             // Update status and create history record
             if (orderItem.getContractType() == EnumContractType.MASTER_CONTRACT) {
             	this.setStatus(orderKey, EnumOrderStatus.PROVIDER_ACCEPTED);
             } else {
-            	this.setStatus(orderKey, EnumOrderStatus.PENDING_PROVIDER_CONTRACT_FILLING_OUT);
+            	this.setStatus(orderKey, EnumOrderStatus.PENDING_PROVIDER_CONTRACT_UPLOAD);
             }
 
             this.saveAndFlush(order);
@@ -405,7 +420,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     }
 
     @Transactional(readOnly = false)
-    default ProviderOrderDto rejectOrder(UUID providerKey, UUID orderKey, String reason) throws Exception {
+    default ProviderOrderDto rejectOrderByProvider(UUID providerKey, UUID orderKey, String reason) throws Exception {
         final OrderEntity order = this.findOrderEntityByKeyAndProviderKey(providerKey, orderKey).orElse(null);
 
         if (order == null) {
@@ -430,18 +445,17 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
         return order.toProviderDto(true);
     }
-    
-    
+
     @Transactional(readOnly = false)
-    default ProviderOrderDto fillOutAndUploadContractByProvider(UUID orderKey) throws Exception {
-    	UUID consumerKey = this.findOrderEntityByKey(orderKey).get().getConsumer().getKey();
+    default ProviderOrderDto uploadContractByProvider(UUID orderKey) throws Exception {
+    	final UUID consumerKey = this.findOrderEntityByKey(orderKey).get().getConsumer().getKey();
         final OrderEntity order = this.findEntityByKeyAndConsumerKey(consumerKey, orderKey).orElse(null);
 
         if (order == null) {
             throw new OrderException(OrderMessageCode.ORDER_NOT_FOUND, "Order not found");
         }
-        
-        final EnumOrderStatus oldStatus = EnumOrderStatus.PENDING_PROVIDER_CONTRACT_FILLING_OUT;
+
+        final EnumOrderStatus oldStatus = EnumOrderStatus.PENDING_PROVIDER_CONTRACT_UPLOAD;
         final EnumOrderStatus newStatus = EnumOrderStatus.PENDING_CONSUMER_CONTRACT_ACCEPTANCE;
 
         // Update only on status change
@@ -483,7 +497,6 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
             }
             // Update status and create history record
             this.setStatus(orderKey, newStatus);
-            // TODO: Update other order properties e.g. delivery date
 
             this.saveAndFlush(order);
         }

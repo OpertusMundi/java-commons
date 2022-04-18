@@ -6,14 +6,14 @@ import java.util.UUID;
 
 import eu.opertusmundi.common.model.ServiceException;
 import eu.opertusmundi.common.model.email.EnumMailType;
+import eu.opertusmundi.common.model.order.AcceptOrderContractCommand;
 import eu.opertusmundi.common.model.order.ConsumerOrderDto;
-import eu.opertusmundi.common.model.order.OrderAcceptContractCommand;
 import eu.opertusmundi.common.model.order.OrderConfirmCommandDto;
 import eu.opertusmundi.common.model.order.OrderDeliveryCommand;
 import eu.opertusmundi.common.model.order.OrderException;
-import eu.opertusmundi.common.model.order.OrderFillOutAndUploadContractCommand;
 import eu.opertusmundi.common.model.order.OrderShippingCommandDto;
 import eu.opertusmundi.common.model.order.ProviderOrderDto;
+import eu.opertusmundi.common.model.order.UploadOrderContractCommand;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 
 public interface OrderFulfillmentService {
@@ -25,7 +25,7 @@ public interface OrderFulfillmentService {
      * @return
      * @throws OrderException if order not found or order status is invalid
      */
-    ProviderOrderDto acceptOrder(OrderConfirmCommandDto command) throws OrderException;
+    ProviderOrderDto acceptOrderByProvider(OrderConfirmCommandDto command) throws OrderException;
 
     /**
      * Reject an order
@@ -34,7 +34,7 @@ public interface OrderFulfillmentService {
      * @return
      * @throws OrderException if order not found or order status is invalid
      */
-    ProviderOrderDto rejectOrder(OrderConfirmCommandDto command) throws OrderException;
+    ProviderOrderDto rejectOrderByProvider(OrderConfirmCommandDto command) throws OrderException;
 
     /**
      * Fill out the contract with the consumer's info
@@ -43,8 +43,8 @@ public interface OrderFulfillmentService {
      * @return
      * @throws OrderException if order not found or order status is invalid
      */
-    ProviderOrderDto fillOutAndUploadContract(OrderFillOutAndUploadContractCommand command, InputStream input) throws OrderException;
-    
+    ProviderOrderDto uploadContractByProvider(UploadOrderContractCommand command, InputStream input) throws OrderException;
+
     /**
      * Accept the filled out by provider contact
      *
@@ -52,8 +52,8 @@ public interface OrderFulfillmentService {
      * @return
      * @throws OrderException if order not found or order status is invalid
      */
-    ConsumerOrderDto acceptContract(OrderAcceptContractCommand command) throws OrderException;
-    
+    ConsumerOrderDto acceptContractByConsumer(AcceptOrderContractCommand command) throws OrderException;
+
     /**
      * Initialize a workflow instance to process the referenced PayIn.
      *
@@ -109,7 +109,7 @@ public interface OrderFulfillmentService {
      * @throws Exception if order status update fails
      */
     void registerConsumerAssets(UUID payInKey) throws Exception;
-    
+
     /**
      * Send order status by mail
      *
@@ -119,7 +119,7 @@ public interface OrderFulfillmentService {
      * @throws ServiceException if send mail fails
      */
     void sendOrderStatusByMail(EnumMailType mailType, UUID recipientKey, UUID orderKey);
-    
+
     /**
      * Send order status by notification
      *

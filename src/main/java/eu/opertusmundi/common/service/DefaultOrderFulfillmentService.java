@@ -58,17 +58,17 @@ import eu.opertusmundi.common.model.email.MessageDto;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.message.EnumNotificationType;
 import eu.opertusmundi.common.model.message.server.ServerNotificationCommandDto;
+import eu.opertusmundi.common.model.order.AcceptOrderContractCommand;
 import eu.opertusmundi.common.model.order.ConsumerOrderDto;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
-import eu.opertusmundi.common.model.order.OrderAcceptContractCommand;
 import eu.opertusmundi.common.model.order.OrderConfirmCommandDto;
 import eu.opertusmundi.common.model.order.OrderContractFileNamingStrategyContext;
 import eu.opertusmundi.common.model.order.OrderDeliveryCommand;
 import eu.opertusmundi.common.model.order.OrderException;
-import eu.opertusmundi.common.model.order.OrderFillOutAndUploadContractCommand;
 import eu.opertusmundi.common.model.order.OrderMessageCode;
 import eu.opertusmundi.common.model.order.OrderShippingCommandDto;
 import eu.opertusmundi.common.model.order.ProviderOrderDto;
+import eu.opertusmundi.common.model.order.UploadOrderContractCommand;
 import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PaymentException;
@@ -157,13 +157,13 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
     @Override
     @Transactional
-    public ProviderOrderDto acceptOrder(OrderConfirmCommandDto command) throws OrderException {
+    public ProviderOrderDto acceptOrderByProvider(OrderConfirmCommandDto command) throws OrderException {
         return this.confirmOrder(command.getPublisherKey(), command.getOrderKey(), true, null);
     }
 
     @Override
     @Transactional
-    public ProviderOrderDto rejectOrder(OrderConfirmCommandDto command) throws OrderException {
+    public ProviderOrderDto rejectOrderByProvider(OrderConfirmCommandDto command) throws OrderException {
         return this.confirmOrder(command.getPublisherKey(), command.getOrderKey(), false, command.getReason());
     }
 
@@ -172,13 +172,13 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             ProviderOrderDto order;
             final UUID consumerKey = this.orderRepository.findOrderEntityByKey(orderKey).get().getConsumer().getKey();
             if (accepted) {
-                order = this.orderRepository.acceptOrder(publisherKey, orderKey);
+                order = this.orderRepository.acceptOrderByProvider(publisherKey, orderKey);
                 this.sendOrderStatusByMail(EnumMailType.CONSUMER_PURCHASE_APPROVED, consumerKey, orderKey);
                 if (this.orderRepository.findOrderEntityByKey(orderKey).get().getItems().get(0).getContractType() == EnumContractType.UPLOADED_CONTRACT) {
                 	this.sendOrderStatusByMail(EnumMailType.SUPPLIER_CONTRACT_TO_BE_FILLED_OUT, publisherKey, orderKey);
                 }
             } else {
-                order = this.orderRepository.rejectOrder(publisherKey, orderKey, rejectReason);
+                order = this.orderRepository.rejectOrderByProvider(publisherKey, orderKey, rejectReason);
                 this.sendOrderStatusByMail(EnumMailType.CONSUMER_PURCHASE_REJECTION, consumerKey, orderKey);
             }
 
@@ -198,13 +198,13 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
     @Override
     @Transactional
-    public ProviderOrderDto fillOutAndUploadContract(OrderFillOutAndUploadContractCommand command, InputStream input) throws OrderException {
+    public ProviderOrderDto uploadContractByProvider(UploadOrderContractCommand command, InputStream input) throws OrderException {
         try {
             Assert.notNull(command, "Expected a non-null command");
             Assert.isTrue(command.getSize() > 0, "Expected file size to be greater than 0");
 
             this.saveContract(command.getOrderKey(), ORDER_PATH, command.getFileName(), input);
-            final ProviderOrderDto order = this.orderRepository.fillOutAndUploadContractByProvider( command.getOrderKey());
+            final ProviderOrderDto order = this.orderRepository.uploadContractByProvider(command.getOrderKey());
 
             final UUID consumerKey = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).get().getConsumer().getKey();
             this.sendOrderStatusByMail(EnumMailType.CONSUMER_FILLED_OUT_CONTRACT, consumerKey, command.getOrderKey());
@@ -212,18 +212,12 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             return order;
         } catch (final OrderException ex) {
             throw ex;
-        } catch (final FeignException fex) {
-            logger.error("Operation has failed", fex);
-
-            throw new OrderException(OrderMessageCode.BPM_SERVICE, "Operation on BPM server failed", fex);
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 
             throw new OrderException(OrderMessageCode.ERROR, "An unknown error has occurred", ex);
         }
     }
-
-
 
     private void saveContract(
             UUID orderKey, String path, String fileName, InputStream input
@@ -257,11 +251,9 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         }
 
     @Override
-    public ConsumerOrderDto acceptContract(OrderAcceptContractCommand command) throws OrderException {
+    public ConsumerOrderDto acceptContractByConsumer(AcceptOrderContractCommand command) throws OrderException {
         try {
-            ConsumerOrderDto order;
-            order = this.orderRepository.acceptContractByConsumer(command.getConsumerKey(), command.getOrderKey());
-
+            final ConsumerOrderDto order = this.orderRepository.acceptContractByConsumer(command.getConsumerKey(), command.getOrderKey());
             this.sendOrderStatusByMail(EnumMailType.CONSUMER_SUPPLIER_CONTRACT_SIGNED, command.getConsumerKey(), command.getOrderKey());
 
             final UUID providerKey = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).get().getItems().get(0).getProvider().getKey();
@@ -269,10 +261,6 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             return order;
         } catch (final OrderException ex) {
             throw ex;
-        } catch (final FeignException fex) {
-            logger.error("Operation has failed", fex);
-
-            throw new OrderException(OrderMessageCode.BPM_SERVICE, "Operation on BPM server failed", fex);
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 
