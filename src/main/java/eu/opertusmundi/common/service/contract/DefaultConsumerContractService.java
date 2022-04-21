@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
 
@@ -13,10 +14,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import eu.opertusmundi.common.model.catalogue.client.EnumContractType;
 import eu.opertusmundi.common.model.contract.ContractMessageCode;
 import eu.opertusmundi.common.model.contract.ContractParametersDto;
 import eu.opertusmundi.common.model.contract.ContractServiceException;
 import eu.opertusmundi.common.model.contract.consumer.ConsumerContractCommand;
+import eu.opertusmundi.common.model.order.HelpdeskOrderDto;
 import eu.opertusmundi.common.repository.OrderRepository;
 
 @Service
@@ -43,9 +46,14 @@ public class DefaultConsumerContractService implements ConsumerContractService {
         try {
             Assert.isNull(command.getPath(), "Expected a null contract path");
 
-            final ContractParametersDto parameters = contractParametersFactory.create(command.getOrderKey());
-
-            this.setPath(command, false);
+            final ContractParametersDto parameters   = contractParametersFactory.create(command.getOrderKey());
+            final Path                  contractPath = contractFileManager.resolveMasterContractPath(
+                command.getUserId(),
+                command.getOrderKey(),
+                command.getItemIndex(),
+                false
+            );
+            command.setPath(contractPath);
             command.setDraft(true);
 
             if (!command.getPath().toFile().exists()) {
@@ -65,29 +73,23 @@ public class DefaultConsumerContractService implements ConsumerContractService {
     public void sign(ConsumerContractCommand command) {
         try {
             Assert.isNull(command.getPath(), "Expected a null source path");
+            Assert.state(signPdfService != null, "signPdfService is not present (is signatory keystore configured?)");
 
-            Assert.state(signPdfService != null,
-                "signPdfService is not present (is signatory keystore configured?)");
+            final HelpdeskOrderDto order = orderRepository.findOrderObjectByKey(command.getOrderKey()).orElse(null);
 
-            final ContractParametersDto parameters = contractParametersFactory.create(command.getOrderKey());
+            Assert.notNull(order, "Expected a non-null order");
+            Assert.isTrue(order.getItems().size() == 1, "Expected a single order item");
 
-            this.setPath(command, true);
+            final EnumContractType type = order.getItems().get(0).getContractType();
 
-            if (command.getPath().toFile().exists()) {
-                return;
-            }
+            switch (type) {
+                case MASTER_CONTRACT :
+                    this.signPlatformContract(command);
+                    break;
 
-            final byte[] pdfByteArray = pdfService.renderConsumerPDF(parameters, command);
-            final int inputSize = pdfByteArray.length;
-            final int estimatedOutputSize = (inputSize * 3) / 2;
-
-            try (final ByteArrayOutputStream output = new ByteArrayOutputStream(estimatedOutputSize)) {
-                final PDDocument pdf = PDDocument.load(pdfByteArray);
-
-                signPdfService.signWithVisibleSignature(pdf, output);
-
-                // Save signed contract to file
-                this.save(command.getPath(), output.toByteArray());
+                case UPLOADED_CONTRACT :
+                    this.signUploadedContract(command);
+                    break;
             }
 
             this.orderRepository.setContractSignedDate(command.getOrderKey(), ZonedDateTime.now());
@@ -99,15 +101,69 @@ public class DefaultConsumerContractService implements ConsumerContractService {
         }
     }
 
-    private void setPath(ConsumerContractCommand command, boolean signed) {
-        final Path path = contractFileManager.resolvePath(
+    private void signPlatformContract(ConsumerContractCommand command) throws Exception {
+        final ContractParametersDto parameters   = contractParametersFactory.create(command.getOrderKey());
+        final Path                  contractPath = contractFileManager.resolveMasterContractPath(
             command.getUserId(),
             command.getOrderKey(),
             command.getItemIndex(),
-            signed
+            true
+        );
+        command.setPath(contractPath);
+
+        if (command.getPath().toFile().exists()) {
+            return;
+        }
+
+        final byte[] pdfByteArray        = pdfService.renderConsumerPDF(parameters, command);
+        final int    inputSize           = pdfByteArray.length;
+        final int    estimatedOutputSize = (inputSize * 3) / 2;
+
+        try (final ByteArrayOutputStream output = new ByteArrayOutputStream(estimatedOutputSize)) {
+            final PDDocument pdf = PDDocument.load(pdfByteArray);
+
+            signPdfService.signWithVisibleSignature(pdf, output);
+
+            // Save signed contract to file
+            this.save(command.getPath(), output.toByteArray());
+        }
+    }
+
+    private void signUploadedContract(ConsumerContractCommand command) throws Exception {
+        final Path initialContractPath = contractFileManager.resolveUploadedContractPath(
+            command.getUserId(),
+            command.getOrderKey(),
+            command.getItemIndex(),
+            false
         );
 
-        command.setPath(path);
+        Assert.notNull(initialContractPath, "Expected a non-null uploaded contract path");
+        Assert.isTrue(initialContractPath.toFile().exists(), "Expected uploaded contract file to exist");
+
+        final Path signedContractPath = contractFileManager.resolveUploadedContractPath(
+            command.getUserId(),
+            command.getOrderKey(),
+            command.getItemIndex(),
+            true
+        );
+        command.setPath(signedContractPath);
+
+        if (command.getPath().toFile().exists()) {
+            return;
+        }
+
+        final byte[] pdfByteArray        = Files.readAllBytes(initialContractPath);
+        final int    inputSize           = pdfByteArray.length;
+        final int    estimatedOutputSize = (inputSize * 3) / 2;
+
+        try (final ByteArrayOutputStream output = new ByteArrayOutputStream(estimatedOutputSize)) {
+            final PDDocument pdf = PDDocument.load(pdfByteArray);
+
+            signPdfService.signWithVisibleSignature(pdf, output);
+
+            // Save signed contract to file
+            this.save(command.getPath(), output.toByteArray());
+        }
     }
 
     private void save(Path path, byte[] data) throws FileNotFoundException, IOException {

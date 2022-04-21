@@ -1263,7 +1263,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     @Transactional
-    public void addContract(
+    public void uploadContract(
 		ProviderUploadContractCommand command, byte[] data
     ) throws AssetDraftException, FileSystemException, AssetRepositoryException {
         // The provider must have access to the selected draft and also the
@@ -1298,7 +1298,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     @Transactional
-    public Path resolveDraftCustomContractPath(
+    public Path resolveDraftContractPath(
         UUID ownerKey, UUID publisherKey, UUID draftKey
     ) throws FileSystemException, AssetRepositoryException {
         // The provider must have access to the selected draft
@@ -1315,10 +1315,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
 	@Override
     @Transactional
-    public Path resolveAssetCustomContractPath(String pid) throws FileSystemException, AssetRepositoryException {
-        final Path path = this.assetFileManager.resolveUploadedContractPath(pid);
+    public Path resolveAssetContractPath(String pid) throws FileSystemException, AssetRepositoryException {
+        final Path path = this.assetFileManager.resolveContractPath(pid);
 
-        if (!path.toFile().exists()) {
+        if (path == null || !path.toFile().exists()) {
             throw new FileSystemException(FileSystemMessageCode.FILE_IS_MISSING, "File not found");
         }
 
@@ -1327,8 +1327,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     @Transactional
-    public AssetDraftDto addContractAnnex(
-    		AssetContractAnnexCommandDto command, byte[] data
+    public AssetDraftDto uploadContractAnnex(
+		AssetContractAnnexCommandDto command, byte[] data
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException {
         // The provider must have access to the selected draft and also the
         // draft must be editable
@@ -1372,7 +1372,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     @Override
-    public Path resolveAssetContractAnnex(
+    public Path resolveAssetContractAnnexPath(
         String pid, String resourceKey
     ) throws FileSystemException, AssetRepositoryException {
         final AssetContractAnnexEntity annex = this.assetContractAnnexRepository
@@ -1394,7 +1394,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     @Transactional
-    public Path resolveDraftContractAnnex(
+    public Path resolveDraftContractAnnexPath(
         UUID ownerKey, UUID publisherKey, UUID draftKey, String resourceKey
     ) throws FileSystemException, AssetRepositoryException {
         // The provider must have access to the selected draft
@@ -1446,13 +1446,15 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             .findOneByDraftKeyAndResourceKey(draftKey, resourceKey)
             .orElse(null);
 
-        final Path path = this.draftFileManager.resolveAdditionalResourcePath(publisherKey, draftKey, resource.getFileName());
+        if (resource != null) {
+            final Path path = this.draftFileManager.resolveAdditionalResourcePath(publisherKey, draftKey, resource.getFileName());
 
-        if (!path.toFile().exists()) {
-            throw new FileSystemException(FileSystemMessageCode.FILE_IS_MISSING, "File not found");
+            if (path.toFile().exists()) {
+                return path;
+            }
         }
 
-        return path;
+        throw new FileSystemException(FileSystemMessageCode.FILE_IS_MISSING, "File not found");
     }
 
     @Override
@@ -1489,18 +1491,21 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             .findOneByDraftKeyAndResourceKey(draftKey, resourceKey)
             .orElse(null);
 
-        final AssetMetadataPropertyEntity property = this.assetMetadataPropertyRepository
-            .findOneByAssetTypeAndName(resource.getCategory(), propertyName)
-            .orElse(null);
+        if (resource != null) {
+            final AssetMetadataPropertyEntity property = this.assetMetadataPropertyRepository
+                .findOneByAssetTypeAndName(resource.getCategory(), propertyName)
+                .orElse(null);
 
-        final String fileName = this.getMetadataPropertyFileName(resource.getKey(), propertyName, property.getType());
-        final Path   path     = this.draftFileManager.resolveMetadataPropertyPath(publisherKey, draftKey, fileName);
+            if (property != null) {
+                final String fileName = this.getMetadataPropertyFileName(resource.getKey(), propertyName, property.getType());
+                final Path   path     = this.draftFileManager.resolveMetadataPropertyPath(publisherKey, draftKey, fileName);
 
-        if (!path.toFile().exists()) {
-            throw new FileSystemException(FileSystemMessageCode.FILE_IS_MISSING, "File not found");
+                if (path.toFile().exists()) {
+                    return MetadataProperty.of(property.getType(), path);
+                }
+            }
         }
-
-        return MetadataProperty.of(property.getType(), path);
+        throw new FileSystemException(FileSystemMessageCode.FILE_IS_MISSING, "File not found");
     }
 
     private AssetDraftDto ensureDraftAndStatus(
@@ -1585,7 +1590,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         // Delete uploaded contract file if contract type is MASTER_CONTRACT
         if (command.getContractTemplateType() == EnumContractType.MASTER_CONTRACT) {
             try {
-                final Path contractPath = resolveDraftCustomContractPath(ownerKey, publisherKey, draftKey);
+                final Path contractPath = resolveDraftContractPath(ownerKey, publisherKey, draftKey);
                 this.draftFileManager.deleteContract(publisherKey, draftKey, contractPath.getFileName().toString());
             } catch (final FileSystemException e) {
                 // no action required if no contract exists

@@ -168,6 +168,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
     ) throws AssetRepositoryException, FileSystemException {
         Assert.notNull(publisherKey, "Expected a non-null publisher key");
         Assert.notNull(draftKey, "Expected a non-null draft key");
+        Assert.hasText(path, "Expected a non-empty path");
         Assert.hasText(fileName, "Expected a non-empty file name");
 
         try {

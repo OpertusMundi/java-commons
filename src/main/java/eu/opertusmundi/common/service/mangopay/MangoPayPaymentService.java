@@ -2066,6 +2066,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         final List<EnumOrderStatus> validStatus = Arrays.asList(
             EnumOrderStatus.CREATED,
             EnumOrderStatus.PROVIDER_ACCEPTED,
+            EnumOrderStatus.CONTRACT_IS_SIGNED,
             EnumOrderStatus.CHARGED
         );
 

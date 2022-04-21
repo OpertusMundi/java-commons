@@ -47,6 +47,7 @@ import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.OrderItemEntity;
 import eu.opertusmundi.common.domain.ProviderTemplateContractHistoryEntity;
 import eu.opertusmundi.common.domain.ProviderTemplateSectionHistoryEntity;
+import eu.opertusmundi.common.model.catalogue.client.EnumContractType;
 import eu.opertusmundi.common.model.catalogue.client.EnumDeliveryMethod;
 import eu.opertusmundi.common.model.contract.ContractParametersDto;
 import eu.opertusmundi.common.model.contract.ContractParametersDto.PricingModel;
@@ -112,7 +113,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
     @Autowired
     private ProviderTemplateContractHistoryRepository contractRepository;
-    
+
     @Autowired
     private MasterContractHistoryRepository masterContractRepository;
 
@@ -256,7 +257,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
         pdd.setTitle("Topio Market Contract");
         pdd.setCreator("Topio Market");
         pdd.setSubject("Contract");
-        pdd.setKeywords("topio, contract, pdf documnet");
+        pdd.setKeywords("topio, contract, pdf document");
     }
 
     private String subStringUsingLength(String myString, int start, int length) {
@@ -618,7 +619,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		 * The first [sellerEmail] should be replaced with the "Contact Email" string.
     		 * In all other cases it should be replaced with the actual e-mail value.
     		 * */
-    		int occuranceOfSellerEmail = 0;
+    		int occurrenceOfSellerEmail = 0;
     		keywords.put("[SELLEREMAIL]", contractParametersDto.getProvider().getContactEmail());
 
         	/* Replaces all automated keywords with the provider, consumer and product info while rendering*/
@@ -635,9 +636,9 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     	    					if (block.getText().contains(key)) {
 
     	    						/* Special case*/
-    	    						if (block.getText().contains("[sellerEmail]") && occuranceOfSellerEmail == 0) {
-    	    							occuranceOfSellerEmail++;
-    	    						} else if (block.getText().contains("[sellerEmail]") && occuranceOfSellerEmail != 0) {
+    	    						if (block.getText().contains("[sellerEmail]") && occurrenceOfSellerEmail == 0) {
+    	    							occurrenceOfSellerEmail++;
+    	    						} else if (block.getText().contains("[sellerEmail]") && occurrenceOfSellerEmail != 0) {
     	    							block.text 	= block.getText().replace("[sellerEmail]", "[SELLEREMAIL]");
     	    							initialText = block.text;
     	    							key = "[SELLEREMAIL]";
@@ -676,7 +677,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     				final ContractParametersDto.Consumer 		cons = contractParametersDto.getConsumer();
     				final ContractParametersDto.Product  		prod = contractParametersDto.getProduct();
 
-    				/* Append all keyword blocks with the corresponding information and update their blockstyles accordingly */
+    				/* Append all keyword blocks with the corresponding information and update their block styles accordingly */
     				if (initialText.contains("[sellerName]")) {
     					info.offset	= block.getBlockStyles().get(block.getBlockStyles().size()-1).length+block.getBlockStyles().get(block.getBlockStyles().size()-1).offset;
     					info.length	= prov.getCorporateName().length()+2;
@@ -1667,16 +1668,20 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
     @Override
     public byte[] renderConsumerPDF(ContractParametersDto contractParametersDto, ConsumerContractCommand command) throws IOException {
-        final UUID            orderKey        = command.getOrderKey();
-        final OrderEntity     orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
-        final OrderItemEntity orderItemEntity = orderEntity.getItems().get(0);
-        final AccountEntity   provider        = orderItemEntity.getProvider();
-        final Integer         contractId      = orderItemEntity.getContractTemplateId();
-        final String          contractVersion = orderItemEntity.getContractTemplateVersion();
+        final UUID             orderKey        = command.getOrderKey();
+        final OrderEntity      orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderItemEntity  orderItemEntity = orderEntity.getItems().get(0);
+        final AccountEntity    provider        = orderItemEntity.getProvider();
+        final EnumContractType contractType    = orderItemEntity.getContractType();
+        final Integer          contractId      = orderItemEntity.getContractTemplateId();
+        final String           contractVersion = orderItemEntity.getContractTemplateVersion();
+
+        Assert.isTrue(contractType == EnumContractType.MASTER_CONTRACT, "Expected contract type to be MASTER_CONTRACT");
 
         // Get contract
         final ProviderTemplateContractHistoryEntity contract = contractRepository
-    		.findByIdAndVersion(provider.getKey(), contractId, contractVersion).get();
+    		.findByIdAndVersion(provider.getKey(), contractId, contractVersion)
+    		.get();
 
         final byte[] result = renderPDF(contractParametersDto, command.isDraft(), contract, null);
 
@@ -1693,7 +1698,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
         return result;
     }
-    
+
     @Override
     public byte[] renderMasterPDF(ContractParametersDto contractParametersDto, int masterContractId)
             throws IOException {
@@ -1740,7 +1745,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                 /* Get title and subtitles */
                 title    = contract.getTitle();
                 subtitle = contract.getSubtitle();
-    
+
                 /* Get all sections sorted by index */
                 final List<ProviderTemplateSectionHistoryEntity> sortedSections = contract.getSectionsSorted();
                 allSections = addProviderSections(contractParametersDto, sortedSections);
@@ -1750,7 +1755,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                 /* Get title and subtitles */
                 title    = masterContract.getTitle();
                 subtitle = masterContract.getSubtitle();
-    
+
                 /* Get all sections sorted by index */
                 final List<MasterSectionHistoryEntity> sortedSections = masterContract.getSectionsSorted();
                 allSections = addMasterSections(contractParametersDto, sortedSections);
@@ -1874,7 +1879,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     ArrayList<Section> addProviderSections(ContractParametersDto contractParametersDto,
             List<ProviderTemplateSectionHistoryEntity> sortedSections)
             throws JsonMappingException, JsonProcessingException {
-        ArrayList<Section> allSections = new ArrayList<Section>();
+        final ArrayList<Section> allSections = new ArrayList<Section>();
         final EnumDeliveryMethod deliveryMethod = EnumDeliveryMethod.DIGITAL_PLATFORM;
         String prevIndex = "0";
         String sectionIndex;
@@ -1886,8 +1891,6 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             }
 
             final MasterSectionHistoryEntity masterSection = section.getMasterSection();
-
-            List<Block> allBlocks = new ArrayList<Block>();
 
             /* Get Title and Index */
             /* Find proper index in case of previous omitted sections */
@@ -1929,7 +1932,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
             /* Get blocks */
             ArrayNode blocks = (ArrayNode) obj.get("blocks");
-            allBlocks = getOptionSuboptionBody(blocks);
+            final List<Block> allBlocks = getOptionSuboptionBody(blocks);
 
             /* Add sub option block separately if any exists */
             if (!CollectionUtils.isEmpty(section.getSubOption())) {
@@ -1953,14 +1956,14 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     ArrayList<Section> addMasterSections(ContractParametersDto contractParametersDto,
             List<MasterSectionHistoryEntity> sortedSections)
             throws JsonMappingException, JsonProcessingException {
-        ArrayList<Section> allSections = new ArrayList<Section>();
+        final ArrayList<Section> allSections = new ArrayList<Section>();
         String sectionIndex;
         for (final MasterSectionHistoryEntity section : sortedSections) {
 
-            List<Block> allBlocks = new ArrayList<Block>();
+            final List<Block> allBlocks = new ArrayList<Block>();
 
             /* Get Title and Index */
-            
+
             final String sectionTitle = section.getTitle();
             sectionIndex = section.getIndex();
 
@@ -1972,17 +1975,17 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             }
 
             String optionJson, subOptionJson;
-            int optionsSize = section.getOptions().size();
+            final int optionsSize = section.getOptions().size();
             for(int i = 0; i < optionsSize; i++) {
                 if(optionsSize > 1) {
-                    Block b = new Block("Option " + (i+1));
+                    final Block b = new Block("Option " + (i+1));
                     b.addBlockStyle(new BlockStyle(0, 8, BOLD));
                     allBlocks.add(b);
                 }
-                optionJson = section.getOptions().get(i).getBody(); 
+                optionJson = section.getOptions().get(i).getBody();
                 JsonNode obj = objectMapper.readTree(optionJson);
                 final List<ContractSectionSubOptionDto> subOptions = section.getOptions().get(i).getSubOptions();
-    
+
                 /* Get blocks */
                 ArrayNode blocks = (ArrayNode) obj.get("blocks");
                 allBlocks.addAll(getOptionSuboptionBody(blocks));
@@ -1990,19 +1993,19 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
                 if (!CollectionUtils.isEmpty(subOptions)) {
                     for (int j = 0; j < subOptions.size(); j++) {
                         if(subOptions.size() > 1) {
-                            Block c = new Block("Suboption " + (j+1));
+                            final Block c = new Block("Suboption " + (j+1));
                             c.addBlockStyle(new BlockStyle(0, 11, BOLD));
                             allBlocks.add(c);
                         }
-                        
+
                         subOptionJson = subOptions.get(j).getBody();
                         obj = objectMapper.readTree(subOptionJson);
                         blocks = (ArrayNode) obj.get("blocks");
                         final List<Block> suboptionBlocks = getOptionSuboptionBody(blocks);
                         allBlocks.addAll(suboptionBlocks);
                     }
-                } 
-    
+                }
+
             }
             masterSection.setBlocks(allBlocks);
             allSections.add(masterSection);

@@ -2,7 +2,7 @@ package eu.opertusmundi.common.model.account;
 
 import java.util.UUID;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -14,8 +14,10 @@ import lombok.Setter;
 @Getter
 public class ConsumerDto {
 
+    @JsonIgnore
+    private Integer id;
+
     @Schema(description = "Consumer unique key")
-    @JsonProperty("id")
     private UUID key;
 
     @Schema(description = "Consumer name")

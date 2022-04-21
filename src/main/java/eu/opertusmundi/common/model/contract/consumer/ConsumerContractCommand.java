@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreType;
 
-import eu.opertusmundi.common.model.contract.EnumContract;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,8 +17,6 @@ import lombok.Setter;
 @JsonIgnoreType
 public class ConsumerContractCommand {
 
-    private EnumContract type;
-
     private Integer userId;
 
     private UUID orderKey;
@@ -27,7 +24,7 @@ public class ConsumerContractCommand {
     private Integer itemIndex;
 
     private Path path;
-    
+
     private boolean draft;
 
 }

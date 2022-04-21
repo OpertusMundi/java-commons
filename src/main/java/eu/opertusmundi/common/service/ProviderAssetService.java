@@ -329,7 +329,7 @@ public interface ProviderAssetService {
      * @throws AssetRepositoryException
      * @throws AssetDraftException
      */
-    void addContract(
+    void uploadContract(
 		ProviderUploadContractCommand command, byte[] data
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
 
@@ -345,7 +345,7 @@ public interface ProviderAssetService {
      * @throws AssetRepositoryException
      * @throws AssetDraftException
      */
-    AssetDraftDto addContractAnnex(
+    AssetDraftDto uploadContractAnnex(
         AssetContractAnnexCommandDto command, byte[] data
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
 
@@ -357,9 +357,9 @@ public interface ProviderAssetService {
      * @throws FileSystemException If an I/O error occurs
      * @throws AssetRepositoryException If resolve operation fails
      */
-    Path resolveDraftCustomContractPath(
-    		UUID ownerKey, UUID publisherKey, UUID draftKey
-        ) throws FileSystemException, AssetRepositoryException;
+    Path resolveDraftContractPath(
+		UUID ownerKey, UUID publisherKey, UUID draftKey
+    ) throws FileSystemException, AssetRepositoryException;
 
     /**
      * Resolve the path of an uploaded contract of an asset
@@ -371,9 +371,9 @@ public interface ProviderAssetService {
      * @throws FileSystemException If an I/O error occurs
      * @throws AssetRepositoryException If resolve operation fails
      */
-    Path resolveAssetCustomContractPath(
-             String pid
-        ) throws FileSystemException, AssetRepositoryException;
+    Path resolveAssetContractPath(
+         String pid
+    ) throws FileSystemException, AssetRepositoryException;
 
     /**
      * Resolve the path of an annex for the uploaded contract of an asset
@@ -385,7 +385,7 @@ public interface ProviderAssetService {
      * @throws FileSystemException If an I/O error occurs
      * @throws AssetRepositoryException If resolve operation fails
      */
-    Path resolveAssetContractAnnex(String pid, String resourceKey) throws FileSystemException, AssetRepositoryException;
+    Path resolveAssetContractAnnexPath(String pid, String resourceKey) throws FileSystemException, AssetRepositoryException;
 
     /**
      * Resolve the path of an annex for the uploaded contract of a draft asset
@@ -399,7 +399,7 @@ public interface ProviderAssetService {
      * @throws FileSystemException If an I/O error occurs
      * @throws AssetRepositoryException If resolve operation fails
      */
-    Path resolveDraftContractAnnex(
+    Path resolveDraftContractAnnexPath(
         UUID ownerKey, UUID publisherKey, UUID draftKey, String resourceKey
     ) throws FileSystemException, AssetRepositoryException;
 

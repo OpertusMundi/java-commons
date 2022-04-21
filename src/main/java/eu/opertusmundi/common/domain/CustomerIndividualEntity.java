@@ -211,6 +211,7 @@ public class CustomerIndividualEntity extends CustomerEntity {
         final ConsumerDto c = new ConsumerDto();
 
         c.setCountry(countryOfResidence);
+        c.setId(account.getId());
         c.setKey(account.getKey());
         c.setName(this.getFullName());
 

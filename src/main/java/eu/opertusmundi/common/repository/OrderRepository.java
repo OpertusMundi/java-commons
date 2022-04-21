@@ -78,9 +78,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     @Query("SELECT o FROM Order o "
          + "WHERE o.key = :orderKey and o.consumer.key = :consumerKey"
     )
-    Optional<OrderEntity> findEntityByKeyAndConsumerKey(
-        @Param("consumerKey") UUID consumerKey, @Param("orderKey") UUID orderKey
-    );
+    Optional<OrderEntity> findEntityByKeyAndConsumerKey(UUID consumerKey, UUID orderKey);
 
     /**
      * Find an order created by a specific consumer
@@ -90,8 +88,8 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
      * @param orderKey
      * @return
      */
-    default Optional<OrderDto> findObjectByKeyAndConsumerKey(UUID consumerKey, UUID orderKey) {
-        return this.findEntityByKeyAndConsumerKey(consumerKey, orderKey).map(o -> o.toConsumerDto(false, false));
+    default Optional<ConsumerOrderDto> findObjectByKeyAndConsumerKey(UUID consumerKey, UUID orderKey) {
+        return this.findEntityByKeyAndConsumerKey(consumerKey, orderKey).map(o -> o.toConsumerDto(true, false));
     }
 
     /**
@@ -109,7 +107,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     @Query("SELECT distinct i.order FROM OrderItem i "
          + "WHERE i.order.key = :orderKey and i.provider.key = :providerKey and i.order.status <> 'CREATED'"
     )
-    Optional<OrderEntity> findOrderEntityByKeyAndProviderKey(@Param("providerKey") UUID providerKey, @Param("orderKey") UUID orderKey);
+    Optional<OrderEntity> findOrderEntityByKeyAndProviderKey(UUID providerKey, UUID orderKey);
 
     @Query("SELECT  distinct o "
          + "FROM    Order o INNER JOIN o.items i "
@@ -447,9 +445,8 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     }
 
     @Transactional(readOnly = false)
-    default ProviderOrderDto uploadContractByProvider(UUID orderKey) throws Exception {
-    	final UUID consumerKey = this.findOrderEntityByKey(orderKey).get().getConsumer().getKey();
-        final OrderEntity order = this.findEntityByKeyAndConsumerKey(consumerKey, orderKey).orElse(null);
+    default ProviderOrderDto uploadContractByProvider(UUID providerKey, UUID orderKey, boolean updateStatus) throws OrderException {
+        final OrderEntity order = this.findOrderEntityByKeyAndProviderKey(providerKey, orderKey).orElse(null);
 
         if (order == null) {
             throw new OrderException(OrderMessageCode.ORDER_NOT_FOUND, "Order not found");
@@ -458,17 +455,16 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
         final EnumOrderStatus oldStatus = EnumOrderStatus.PENDING_PROVIDER_CONTRACT_UPLOAD;
         final EnumOrderStatus newStatus = EnumOrderStatus.PENDING_CONSUMER_CONTRACT_ACCEPTANCE;
 
-        // Update only on status change
-        if (order.getStatus() != newStatus) {
-            if (order.getStatus() != oldStatus) {
-                throw new OrderException(OrderMessageCode.ORDER_INVALID_STATUS, String.format(
-                    "Invalid order status [expected=%s, found=%s]",
-                   oldStatus, order.getStatus()
-                ));
-            }
-            // Update status and create history record
+        // Check if contract upload is allowed
+        if (order.getStatus() != oldStatus) {
+            throw new OrderException(
+                OrderMessageCode.ORDER_INVALID_STATUS,
+                String.format("Invalid order status [expected=%s, found=%s]", oldStatus, order.getStatus())
+            );
+        }
+        // Update status and create history record
+        if (updateStatus) {
             this.setStatus(orderKey, newStatus);
-
             this.saveAndFlush(order);
         }
 
@@ -477,7 +473,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
     @Transactional(readOnly = false)
     default ConsumerOrderDto acceptContractByConsumer(UUID consumerKey, UUID orderKey) throws Exception {
-        final OrderEntity order = this.findEntityByKeyAndConsumerAndStatusNotCreated(consumerKey, consumerKey)
+        final OrderEntity order = this.findEntityByKeyAndConsumerAndStatusNotCreated(consumerKey, orderKey)
             .orElse(null);
 
         if (order == null) {
@@ -487,19 +483,18 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
         final EnumOrderStatus oldStatus = EnumOrderStatus.PENDING_CONSUMER_CONTRACT_ACCEPTANCE;
         final EnumOrderStatus newStatus = EnumOrderStatus.CONTRACT_IS_SIGNED;
 
-        // Update only on status change
-        if (order.getStatus() != newStatus) {
-            if (order.getStatus() != oldStatus) {
-                throw new OrderException(OrderMessageCode.ORDER_INVALID_STATUS, String.format(
-                    "Invalid order status [expected=%s, found=%s]",
-                    oldStatus, order.getStatus()
-                ));
-            }
-            // Update status and create history record
-            this.setStatus(orderKey, newStatus);
-
-            this.saveAndFlush(order);
+        // Check status
+        if (order.getStatus() != oldStatus) {
+            throw new OrderException(OrderMessageCode.ORDER_INVALID_STATUS, String.format(
+                "Invalid order status [expected=%s, found=%s]",
+                oldStatus, order.getStatus()
+            ));
         }
+
+        // Update status and create history record
+        this.setStatus(orderKey, newStatus);
+
+        this.saveAndFlush(order);
 
         return order.toConsumerDto(true, true);
     }

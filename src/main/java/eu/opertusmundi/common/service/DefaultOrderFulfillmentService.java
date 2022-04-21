@@ -62,7 +62,6 @@ import eu.opertusmundi.common.model.order.AcceptOrderContractCommand;
 import eu.opertusmundi.common.model.order.ConsumerOrderDto;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
 import eu.opertusmundi.common.model.order.OrderConfirmCommandDto;
-import eu.opertusmundi.common.model.order.OrderContractFileNamingStrategyContext;
 import eu.opertusmundi.common.model.order.OrderDeliveryCommand;
 import eu.opertusmundi.common.model.order.OrderException;
 import eu.opertusmundi.common.model.order.OrderMessageCode;
@@ -91,6 +90,7 @@ import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.AccountSubscriptionRepository;
 import eu.opertusmundi.common.repository.OrderRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
+import eu.opertusmundi.common.service.contract.ContractFileManager;
 import eu.opertusmundi.common.service.integration.DataProviderManager;
 import eu.opertusmundi.common.service.messaging.MailMessageHelper;
 import eu.opertusmundi.common.service.messaging.MailModelBuilder;
@@ -108,11 +108,6 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     private static final String MESSAGE_PROVIDER_SEND_ORDER = "provider-send-order-message";
 
     private static final String MESSAGE_CONSUMER_RECEIVED_ORDER = "consumer-order-received-message";
-
-    private static final String ORDER_PATH = "/order";
-
-    @Autowired
-    private DefaultOrderContractFileNamingStrategy orderContractNamingStrategy;
 
     private static final Set<PosixFilePermission> DEFAULT_DIRECTORY_PERMISSIONS = PosixFilePermissions.fromString("rwxrwxr-x");
 
@@ -154,6 +149,8 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     @Autowired
     private DataProviderManager dataProviderManager;
 
+    @Autowired
+    private ContractFileManager contractFileManager;
 
     @Override
     @Transactional
@@ -203,10 +200,16 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             Assert.notNull(command, "Expected a non-null command");
             Assert.isTrue(command.getSize() > 0, "Expected file size to be greater than 0");
 
-            this.saveContract(command.getOrderKey(), ORDER_PATH, command.getFileName(), input);
-            final ProviderOrderDto order = this.orderRepository.uploadContractByProvider(command.getOrderKey());
+            // Update order status
+            final ProviderOrderDto order = this.orderRepository.uploadContractByProvider(
+                command.getProviderKey(), command.getOrderKey(), command.isLastUpdate()
+            );
 
-            final UUID consumerKey = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).get().getConsumer().getKey();
+            // Save contract
+            this.saveUploadedContract(order.getConsumer().getId(), command, false, input);
+
+            // Send email notification to consumer
+            final UUID consumerKey = order.getConsumer().getKey();
             this.sendOrderStatusByMail(EnumMailType.CONSUMER_FILLED_OUT_CONTRACT, consumerKey, command.getOrderKey());
 
             return order;
@@ -219,36 +222,51 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         }
     }
 
-    private void saveContract(
-            UUID orderKey, String path, String fileName, InputStream input
-        ) throws AssetRepositoryException, FileSystemException {
-            Assert.notNull(orderKey, "Expected a non-null order key");
-            Assert.isTrue(!StringUtils.isBlank(fileName), "Expected a non-empty file name");
+    private void saveUploadedContract(
+        Integer userId, UploadOrderContractCommand command, boolean signed, InputStream input
+    ) throws AssetRepositoryException, FileSystemException {
+        try {
+            final Path absolutePath = this.contractFileManager.resolveUploadedContractPath(
+                userId, command.getOrderKey(), command.getItemIndex(), signed
+            );
+            final File localFile    = absolutePath.toFile();
 
-            final Integer consumerId = this.orderRepository.findOrderEntityByKey(orderKey).get().getConsumer().getId();
-
-            try {
-                final OrderContractFileNamingStrategyContext ctx	= OrderContractFileNamingStrategyContext.of(consumerId, orderKey);
-                final Path absolutePath								= this.orderContractNamingStrategy.getDir(ctx);
-                final File localFile								= absolutePath.toFile();
-
-                // Create parent directory
-                if (!absolutePath.getParent().toFile().exists()) {
-                    Files.createDirectories(absolutePath.getParent());
-                    Files.setPosixFilePermissions(absolutePath.getParent(), DEFAULT_DIRECTORY_PERMISSIONS);
-                }
-
-                if (localFile.exists()) {
-                    FileUtils.deleteQuietly(localFile);
-                }
-
-                Files.copy(input, absolutePath, StandardCopyOption.REPLACE_EXISTING);
-            } catch (final FileSystemException ex) {
-                throw ex;
-            } catch (final Exception ex) {
-                throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
+            // Create parent directories
+            if (!absolutePath.getParent().toFile().exists()) {
+                Files.createDirectories(absolutePath.getParent());
+                Files.setPosixFilePermissions(absolutePath.getParent(), DEFAULT_DIRECTORY_PERMISSIONS);
             }
+
+            if (localFile.exists()) {
+                FileUtils.deleteQuietly(localFile);
+            }
+
+            Files.copy(input, absolutePath, StandardCopyOption.REPLACE_EXISTING);
+        } catch (final FileSystemException ex) {
+            throw ex;
+        } catch (final Exception ex) {
+            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
+    }
+
+    @Override
+    public Path resolveOrderContractPath(UUID providerKey, UUID orderKey) {
+        final ProviderOrderDto order = this.orderRepository.findOrderObjectByKeyAndProvider(providerKey, orderKey).orElse(null);
+        if (order == null) {
+            return null;
+        }
+        final Integer userId              = order.getConsumer().getId();
+        final Path    initialContractPath = this.contractFileManager.resolveUploadedContractPath(userId, orderKey, 1, false);
+        final Path    signedContractPath  = this.contractFileManager.resolveUploadedContractPath(userId, orderKey, 1, true);
+
+        if (signedContractPath.toFile().exists()) {
+            return signedContractPath;
+        }
+        if (initialContractPath.toFile().exists()) {
+            return initialContractPath;
+        }
+        return null;
+    }
 
     @Override
     public ConsumerOrderDto acceptContractByConsumer(AcceptOrderContractCommand command) throws OrderException {
@@ -256,7 +274,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             final ConsumerOrderDto order = this.orderRepository.acceptContractByConsumer(command.getConsumerKey(), command.getOrderKey());
             this.sendOrderStatusByMail(EnumMailType.CONSUMER_SUPPLIER_CONTRACT_SIGNED, command.getConsumerKey(), command.getOrderKey());
 
-            final UUID providerKey = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).get().getItems().get(0).getProvider().getKey();
+            final UUID providerKey = order.getItems().get(0).getProvider().getKey();
             this.sendOrderStatusByMail(EnumMailType.CONSUMER_SUPPLIER_CONTRACT_SIGNED, providerKey, command.getOrderKey());
             return order;
         } catch (final OrderException ex) {

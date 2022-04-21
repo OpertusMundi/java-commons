@@ -392,6 +392,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         final ConsumerDto c = new ConsumerDto();
 
         c.setCountry(headquartersAddress.getCountry());
+        c.setId(account.getId());
         c.setKey(account.getKey());
         c.setName(name);
 

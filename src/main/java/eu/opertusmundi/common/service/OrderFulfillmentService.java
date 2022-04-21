@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.service;
 
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.UUID;
 
@@ -44,6 +45,15 @@ public interface OrderFulfillmentService {
      * @throws OrderException if order not found or order status is invalid
      */
     ProviderOrderDto uploadContractByProvider(UploadOrderContractCommand command, InputStream input) throws OrderException;
+
+    /**
+     * Resolve path of an order uploaded contract
+     *
+     * @param providerKey
+     * @param orderKey
+     * @return
+     */
+    Path resolveOrderContractPath(UUID providerKey, UUID orderKey);
 
     /**
      * Accept the filled out by provider contact

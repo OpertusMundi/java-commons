@@ -17,7 +17,6 @@ import org.springframework.util.Assert;
 import eu.opertusmundi.common.model.asset.AssetFileNamingStrategyContext;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
-import eu.opertusmundi.common.model.file.DirectoryDto;
 import eu.opertusmundi.common.model.file.FileDto;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.file.FileSystemMessageCode;
@@ -34,45 +33,49 @@ public class DefaultAssetFileManager implements AssetFileManager {
     private static final String ADDITIONAL_RESOURCE_PATH = "/additional-resources";
 
     private static final String CONTRACT_PATH = "/contract";
-    
+
     private static final String CONTRACT_ANNEX_PATH = "/contract/annexes";
 
     private static final String METADATA_PATH = "/metadata";
-    
 
     @Autowired
     private DefaultAssetFileNamingStrategy fileNamingStrategy;
-
-    @Autowired
-    private DirectoryTraverse directoryTraverse;
-
 
     @Override
     public Path resolveResourcePath(String pid, String fileName) throws FileSystemException, AssetRepositoryException {
         return this.resolveResourcePath(pid, RESOURCE_PATH, fileName);
     }
-    
-    @Override
-    public Path resolveUploadedContractPath(String pid) throws FileSystemException, AssetRepositoryException {
-    	final AssetFileNamingStrategyContext ctx	=	AssetFileNamingStrategyContext.of(pid);
-        Path contractPath							=	null;
-        try {
-            Path absolutePath 						=	this.fileNamingStrategy.resolvePath(ctx, Paths.get(CONTRACT_PATH));
-			DirectoryDto dir 						=	this.directoryTraverse.getDirectoryInfo(absolutePath);
 
-	        contractPath 							=	absolutePath.resolve(dir.getFiles().get(0).getName());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-        return contractPath;
+    @Override
+    public Path resolveContractPath(String pid) throws FileSystemException, AssetRepositoryException {
+        Assert.hasText(pid, "Expected a non-empty pid");
+
+        final AssetFileNamingStrategyContext ctx = AssetFileNamingStrategyContext.of(pid);
+        try {
+            final Path absolutePath = this.fileNamingStrategy.resolvePath(ctx, Paths.get(CONTRACT_PATH));
+            final File dir          = absolutePath.toFile();
+
+            if (dir.exists()) {
+                for (final File entry : dir.listFiles()) {
+                    // Ignore any folders
+                    if (entry.isFile()) {
+                        return entry.toPath();
+                    }
+                }
+            }
+        } catch (final IOException ex) {
+            logger.error("Failed to find uploaded contract. [pid={}, relativePath={}, message={}]", pid, CONTRACT_PATH, ex.getMessage());
+
+            throw new AssetRepositoryException("An unknown error has occurred", ex);
+        }
+        return null;
     }
 
     @Override
     public List<FileDto> getAdditionalResources(String pid) throws FileSystemException, AssetRepositoryException {
         return this.getResources(pid, ADDITIONAL_RESOURCE_PATH);
     }
-    
+
     private List<FileDto> getResources(String pid, String relativePath) throws FileSystemException, AssetRepositoryException {
         Assert.isTrue(!StringUtils.isBlank(pid), "Expected a non-empty pid");
         Assert.isTrue(!StringUtils.isBlank(relativePath), "Expected a non-empty relative path");
@@ -132,7 +135,7 @@ public class DefaultAssetFileManager implements AssetFileManager {
     public Path resolveAdditionalResourcePath(String pid, String fileName) throws FileSystemException, AssetRepositoryException {
         return this.resolveResourcePath(pid, ADDITIONAL_RESOURCE_PATH, fileName);
     }
-    
+
     @Override
     public Path resolveContractAnnexPath(String pid, String fileName) throws FileSystemException, AssetRepositoryException {
         return this.resolveResourcePath(pid, CONTRACT_ANNEX_PATH, fileName);
