@@ -15,6 +15,10 @@ public enum BasicMessageCode implements MessageCode {
     Forbidden(HttpStatus.FORBIDDEN),
     NotFound(HttpStatus.NOT_FOUND),
 
+    // Configuration
+    SettingNotFound,
+    InvalidSettingType,
+    
     // Validation error codes
     Validation,
     ValidationNotUnique,

@@ -49,5 +49,9 @@ public class BaseResponse {
     public List<Message> getMessages() {
         return Collections.unmodifiableList(this.messages);
     }
+    
+    public static BaseResponse empty() {
+        return new BaseResponse();
+    }
 
 }
