@@ -18,6 +18,10 @@ public enum EnumRole {
      */
     ROLE_PROVIDER,
     /**
+     * Provider for open datasets
+     */
+    ROLE_PROVIDER_OPEN_DATASET,
+    /**
      * Consumer
      */
     ROLE_CONSUMER,
