@@ -697,6 +697,36 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
         return account.toDto(true);
     }
 
+    @Transactional(readOnly = false)
+    default AccountDto grantOpenDatasetProvider(UUID userKey) {
+        Assert.notNull(userKey, "Expected a non-null user key");
+
+        final AccountEntity account = this.findOneByKey(userKey).orElse(null);
+
+        if (!account.hasRole(EnumRole.ROLE_PROVIDER_OPEN_DATASET)) {
+            account.grant(EnumRole.ROLE_PROVIDER_OPEN_DATASET, null);
+
+            this.saveAndFlush(account);
+        }
+
+        return account.toDto(true);
+    }
+
+    @Transactional(readOnly = false)
+    default AccountDto revokeOpenDatasetProvider(UUID userKey) {
+        Assert.notNull(userKey, "Expected a non-null user key");
+
+        final AccountEntity account = this.findOneByKey(userKey).orElse(null);
+
+        if (account.hasRole(EnumRole.ROLE_PROVIDER_OPEN_DATASET)) {
+            account.revoke(EnumRole.ROLE_PROVIDER_OPEN_DATASET);
+
+            this.saveAndFlush(account);
+        }
+
+        return account.toDto(true);
+    }
+
     @Query("SELECT r.account FROM AccountRole r WHERE r.role = :role")
     List<AccountEntity> findAllWithRole(EnumRole role);
 
