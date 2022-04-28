@@ -9,5 +9,9 @@ public enum EnumContractType {
      * Custom contract template uploaded by the provider
      */
     UPLOADED_CONTRACT,
+    /**
+     * Placeholder value for Open Datasets
+     */
+    OPEN_DATASET,
     ;
 }

@@ -107,6 +107,10 @@ public class CatalogueItemUtils {
             case UPLOADED_CONTRACT :
                 this.setCustomContract(item, feature);
                 break;
+
+            case OPEN_DATASET :
+                // No action is required
+                break;
         }
     }
 
@@ -153,6 +157,10 @@ public class CatalogueItemUtils {
 
             case UPLOADED_CONTRACT :
                 this.setCustomContract(item, draft);
+                break;
+
+            case OPEN_DATASET :
+                // No action is required
                 break;
         }
     }

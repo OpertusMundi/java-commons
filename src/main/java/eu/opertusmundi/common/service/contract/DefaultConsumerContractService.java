@@ -90,9 +90,15 @@ public class DefaultConsumerContractService implements ConsumerContractService {
                 case UPLOADED_CONTRACT :
                     this.signUploadedContract(command);
                     break;
+
+                case OPEN_DATASET :
+                    // No action is required
+                    break;
             }
 
-            this.orderRepository.setContractSignedDate(command.getOrderKey(), ZonedDateTime.now());
+            if (type != EnumContractType.OPEN_DATASET) {
+                this.orderRepository.setContractSignedDate(command.getOrderKey(), ZonedDateTime.now());
+            }
 
         } catch (final ContractServiceException ex) {
             throw ex;

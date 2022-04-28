@@ -75,6 +75,10 @@ public final class DefaultContractFileNamingStrategy implements ContractFileNami
                 final String uploadedContractRelativePath = String.format(uploadPathTemplate, ctx.getOrderKey(), ctx.getItemIndex());
 
                 return orderDir.resolve(uploadedContractRelativePath);
+
+            case OPEN_DATASET :
+                // No contract exists
+                break;
         }
 
         return null;
