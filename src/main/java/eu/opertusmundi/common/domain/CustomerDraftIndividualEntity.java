@@ -118,6 +118,7 @@ public class CustomerDraftIndividualEntity extends CustomerDraftEntity {
         c.setCountryOfResidence(this.countryOfResidence);
         c.setCreatedAt(this.createdAt);
         c.setEmail(this.email);
+        c.setErrorDetails(this.errorDetails);
         c.setFirstName(this.firstName);
         c.setId(this.id);
         c.setKey(this.key);

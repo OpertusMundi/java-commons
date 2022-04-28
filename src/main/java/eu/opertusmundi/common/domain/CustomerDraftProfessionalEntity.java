@@ -264,6 +264,7 @@ public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
         p.setCompanyType(this.companyType);
         p.setCreatedAt(this.createdAt);
         p.setEmail(this.email);
+        p.setErrorDetails(this.errorDetails);
         if (this.headquartersAddress != null) {
             p.setHeadquartersAddress(this.headquartersAddress.toDto());
         }

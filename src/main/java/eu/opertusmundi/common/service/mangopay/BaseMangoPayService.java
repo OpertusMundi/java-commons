@@ -137,32 +137,36 @@ public abstract class BaseMangoPayService {
      * @return
      */
     protected PaymentException wrapException(String operation, Exception ex, Object command, Logger logger) {
-        final String commandText = command == null ? "-" : command.toString();
+        PaymentException pEx         = null;
+        final String     commandText = command == null ? "-" : command.toString();
+        
 
-        // Ignore service exceptions
         if (ex instanceof PaymentException) {
-            return (PaymentException) ex;
-        }
-
-        // MANGOPAY exceptions
-        if (ex instanceof ResponseException) {
-            final String message = String.format(
+            // No action is required for payment exceptions
+            pEx = (PaymentException) ex;
+        } else if (ex instanceof ResponseException) {
+            // Wrap MANGOPAY exceptions with a Payment exception 
+            final ResponseException rEx     = (ResponseException) ex;
+            final String            message = String.format(
                 "MANGOPAY operation has failed. [operation=%s, apiMessage=%s, command=[%s]]",
-                operation, ((ResponseException) ex).getApiMessage(), commandText
+                operation, rEx.getApiMessage(), commandText
             );
 
             logger.error(message, ex);
 
-            return new PaymentException(PaymentMessageCode.API_ERROR, message, ex);
+            pEx = PaymentException.of(PaymentMessageCode.API_ERROR, message, rEx);
+        } else {
+            // Default exception handler
+            final String message = String.format("[MANGOPAY] %s [%s]", operation, commandText);
+
+            logger.error(message, ex);
+
+            pEx = new PaymentException(PaymentMessageCode.SERVER_ERROR, message, ex);
         }
-
-        // Global exception handler
-        final String message = String.format("[MANGOPAY] %s [%s]", operation, commandText);
-
-        logger.error(message, ex);
-
-        return new PaymentException(PaymentMessageCode.SERVER_ERROR, message, ex);
+               
+        return pEx;
     }
+    
 
     /**
      * Get existing response for an idempotency key

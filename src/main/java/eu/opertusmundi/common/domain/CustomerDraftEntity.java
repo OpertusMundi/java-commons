@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.domain;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -26,7 +27,12 @@ import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
 
 import org.hibernate.annotations.NaturalId;
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TypeDef;
 
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
+
+import eu.opertusmundi.common.model.Message;
 import eu.opertusmundi.common.model.account.ConsumerIndividualCommandDto;
 import eu.opertusmundi.common.model.account.ConsumerProfessionalCommandDto;
 import eu.opertusmundi.common.model.account.CustomerCommandDto;
@@ -42,6 +48,7 @@ import lombok.Setter;
 @Table(schema = "web", name = "`customer_draft`")
 @Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name = "`type`", discriminatorType = DiscriminatorType.INTEGER)
+@TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
 public abstract class CustomerDraftEntity {
 
     protected CustomerDraftEntity() {
@@ -49,6 +56,8 @@ public abstract class CustomerDraftEntity {
 
     protected CustomerDraftEntity(EnumMangopayUserType type) {
         this.type = type;
+
+        this.resetIdempotencyKeys();
     }
 
     @Id
@@ -66,22 +75,19 @@ public abstract class CustomerDraftEntity {
     protected final UUID key = UUID.randomUUID();
 
     @NotNull
-    @NaturalId
-    @Column(name = "`idk_user`", updatable = false, columnDefinition = "uuid")
+    @Column(name = "`idk_user`", columnDefinition = "uuid")
     @Getter
-    protected final UUID userIdempotentKey = UUID.randomUUID();
+    protected UUID userIdempotentKey;
 
     @NotNull
-    @NaturalId
-    @Column(name = "`idk_wallet`", updatable = false, columnDefinition = "uuid")
+    @Column(name = "`idk_wallet`", columnDefinition = "uuid")
     @Getter
-    protected final UUID walletIdempotentKey = UUID.randomUUID();
+    protected UUID walletIdempotentKey;
 
     @NotNull
-    @NaturalId
-    @Column(name = "`idk_account`", updatable = false, columnDefinition = "uuid")
+    @Column(name = "`idk_account`", columnDefinition = "uuid")
     @Getter
-    protected final UUID bankAccountIdempotentKey = UUID.randomUUID();
+    protected UUID bankAccountIdempotentKey;
 
     @NotNull
     @OneToOne(
@@ -133,6 +139,12 @@ public abstract class CustomerDraftEntity {
     @Setter
     protected EnumCustomerRegistrationStatus status = EnumCustomerRegistrationStatus.DRAFT;
 
+    @Type(type = "jsonb")
+    @Column(name = "`error_details`", columnDefinition = "jsonb")
+    @Getter
+    @Setter
+    protected List<Message> errorDetails;
+
     @Transient
     public boolean isProcessed() {
         return this.status == EnumCustomerRegistrationStatus.CANCELLED ||
@@ -166,6 +178,12 @@ public abstract class CustomerDraftEntity {
         final CustomerProfessionalEntity e = (CustomerProfessionalEntity) current;
 
         return new CustomerDraftProfessionalEntity(e, command);
+    }
+
+    public void resetIdempotencyKeys() {
+        this.userIdempotentKey        = UUID.randomUUID();
+        this.walletIdempotentKey      = UUID.randomUUID();
+        this.bankAccountIdempotentKey = UUID.randomUUID();
     }
 
 }

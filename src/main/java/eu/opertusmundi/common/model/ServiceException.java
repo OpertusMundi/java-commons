@@ -1,5 +1,8 @@
 package eu.opertusmundi.common.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import lombok.Getter;
@@ -13,6 +16,9 @@ public class ServiceException extends RuntimeException {
 
     @Getter
     private final MessageCode code;
+    
+    @Getter
+    private final List<Message> messages = new ArrayList<>();
 
     public ServiceException(MessageCode code) {
         super("An error has occurred");
@@ -41,6 +47,11 @@ public class ServiceException extends RuntimeException {
     public Throwable getRootCause() {
         final Throwable result = ExceptionUtils.getRootCause(this);
         return result == null ? this : result;
+    }
+    
+    public ServiceException addMessage(MessageCode code, String description) {
+        this.messages.add(new Message(code, description));
+        return this;
     }
 
 }

@@ -106,7 +106,6 @@ public class RestResponse<Result> extends BaseResponse {
         final List<Message> messages = fieldErrors.stream()
             .map(e -> {
                  return new ValidationMessage(
-                    BasicMessageCode.Validation,
                     e.getField(),
                     e.getCode(),
                     e.getRejectedValue() instanceof byte[] ? null : e.getRejectedValue(),
@@ -117,9 +116,7 @@ public class RestResponse<Result> extends BaseResponse {
         if (globalErrors != null) {
             globalErrors.stream()
                 .map(e -> {
-                     return new ValidationMessage(
-                        BasicMessageCode.Validation, null, e.getCode(), e.getDefaultMessage(), e.getArguments()
-                    );
+                    return new ValidationMessage(null, e.getCode(), e.getDefaultMessage(), e.getArguments());
                 })
                 .forEach(messages::add);
         }

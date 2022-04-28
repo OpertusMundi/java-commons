@@ -1,8 +1,21 @@
 package eu.opertusmundi.common.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "code", visible = true,
+    defaultImpl = Message.class
+)
+@JsonSubTypes({
+    @Type(name = "BasicMessageCode.Validation", value = ValidationMessage.class),
+})
 @NoArgsConstructor
 public class Message {
 
@@ -43,13 +56,20 @@ public class Message {
     private String description;
 
     public Message(MessageCode code, String description) {
-        this.code        = code.key();
-        this.description = description;
-        this.level       = EnumLevel.ERROR;
+        this(code.key(), description, EnumLevel.ERROR);
     }
 
     public Message(MessageCode code, String description, EnumLevel level) {
-        this.code        = code.key();
+        this(code.key(), description, level);
+    }
+    
+    @JsonCreator
+    public Message(
+        @JsonProperty("code") String code, 
+        @JsonProperty("description") String description, 
+        @JsonProperty("level") EnumLevel level
+    ) {
+        this.code        = code;
         this.description = description;
         this.level       = level;
     }

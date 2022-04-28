@@ -1,10 +1,12 @@
 package eu.opertusmundi.common.model.account;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import eu.opertusmundi.common.model.Message;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,6 +20,8 @@ public abstract class CustomerDraftDto {
     protected ZonedDateTime createdAt;
 
     protected String email;
+
+    protected List<Message> errorDetails;
 
     @JsonIgnore
     protected Integer id;

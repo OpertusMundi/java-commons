@@ -2,6 +2,7 @@ package eu.opertusmundi.common.repository;
 
 import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,6 +35,7 @@ import eu.opertusmundi.common.model.EnumAccountType;
 import eu.opertusmundi.common.model.EnumAuthProvider;
 import eu.opertusmundi.common.model.EnumRole;
 import eu.opertusmundi.common.model.EnumVendorRole;
+import eu.opertusmundi.common.model.Message;
 import eu.opertusmundi.common.model.account.AccountDto;
 import eu.opertusmundi.common.model.account.AccountProfileCommandDto;
 import eu.opertusmundi.common.model.account.ConsumerCommandDto;
@@ -166,7 +168,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
 
         account.setActive(active);
 
-        this.save(account);
+        this.saveAndFlush(account);
 
         return account.toDto();
     }
@@ -189,7 +191,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
         // Update profile
         profile.update(command);
 
-        this.save(account);
+        this.saveAndFlush(account);
 
         return account.toDto();
     }
@@ -412,10 +414,14 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
             }
         }
 
+        // Reset error details on each submit request
+        if (status == EnumCustomerRegistrationStatus.SUBMITTED) {
+            registration.setErrorDetails(Collections.emptyList());
+        }
         // Update registration status
         registration.setStatus(status);
 
-        this.save(account);
+        this.saveAndFlush(account);
 
         return account.toDto();
     }
@@ -438,14 +444,35 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
         // Update profile
         profile.setConsumerRegistration(null);
 
-        this.save(account);
+        this.saveAndFlush(account);
+
+        return account.toDto();
+    }
+
+    @Transactional(readOnly = false)
+    default AccountDto failConsumerRegistration(UUID userKey, List<Message> errorDetails) throws IllegalArgumentException {
+        final AccountEntity        account      = this.findOneByKey(userKey).orElse(null);
+        final AccountProfileEntity profile      = account.getProfile();
+        final CustomerDraftEntity  registration = profile.getConsumerRegistration();
+
+        // A registration must exist and have status [SUBMITTED]
+        if (registration == null || registration.getStatus() != EnumCustomerRegistrationStatus.SUBMITTED) {
+            throw new IllegalArgumentException("Expected a non-null registration with status [SUBMITTED]");
+        }
+
+        // Update registration
+        registration.setStatus(EnumCustomerRegistrationStatus.DRAFT);
+        registration.setModifiedAt(ZonedDateTime.now());
+        registration.setErrorDetails(errorDetails);
+        registration.resetIdempotencyKeys();
+
+        this.saveAndFlush(account);
 
         return account.toDto();
     }
 
     @Transactional(readOnly = false)
     default AccountDto completeConsumerRegistration(UUID userKey) throws IllegalArgumentException {
-        // Get account
         final AccountEntity        account      = this.findOneByKey(userKey).orElse(null);
         final AccountProfileEntity profile      = account.getProfile();
         final CustomerDraftEntity  registration = profile.getConsumerRegistration();
@@ -483,7 +510,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
         registration.setStatus(EnumCustomerRegistrationStatus.COMPLETED);
         profile.setConsumerRegistration(null);
 
-        this.save(account);
+        this.saveAndFlush(account);
 
         return account.toDto();
     }
@@ -530,10 +557,14 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
             registration.update(command);
         }
 
+        // Reset error details on each submit request
+        if (status == EnumCustomerRegistrationStatus.SUBMITTED) {
+            registration.setErrorDetails(Collections.emptyList());
+        }
         // Update registration status
         registration.setStatus(status);
 
-        this.save(account);
+        this.saveAndFlush(account);
 
         return account.toDto();
     }
@@ -556,7 +587,29 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
         // Update profile
         profile.setProviderRegistration(null);
 
-        this.save(account);
+        this.saveAndFlush(account);
+
+        return account.toDto();
+    }
+
+    @Transactional(readOnly = false)
+    default AccountDto failProviderRegistration(UUID userKey, List<Message> errorDetails) throws IllegalArgumentException {
+        final AccountEntity        account      = this.findOneByKey(userKey).orElse(null);
+        final AccountProfileEntity profile      = account.getProfile();
+        final CustomerDraftEntity  registration = profile.getProviderRegistration();
+
+        // A registration must exist and have status [SUBMITTED]
+        if (registration == null || registration.getStatus() != EnumCustomerRegistrationStatus.SUBMITTED) {
+            throw new IllegalArgumentException("Expected a non-null registration with status [SUBMITTED]");
+        }
+
+        // Update registration
+        registration.setStatus(EnumCustomerRegistrationStatus.DRAFT);
+        registration.setModifiedAt(ZonedDateTime.now());
+        registration.setErrorDetails(errorDetails);
+        registration.resetIdempotencyKeys();
+
+        this.saveAndFlush(account);
 
         return account.toDto();
     }
@@ -604,7 +657,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
         registration.setStatus(EnumCustomerRegistrationStatus.COMPLETED);
         profile.setProviderRegistration(null);
 
-        this.save(account);
+        this.saveAndFlush(account);
 
         return account.toDto();
     }
@@ -616,11 +669,11 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
 
         provider.update(command);
 
-        this.save(account);
+        this.saveAndFlush(account);
 
         return account.toDto();
     }
-    
+
     @Transactional(readOnly = false)
     default AccountDto assignExternalProvider(ExternalProviderCommandDto command) {
         Assert.notNull(command, "Expected a non-null command");
