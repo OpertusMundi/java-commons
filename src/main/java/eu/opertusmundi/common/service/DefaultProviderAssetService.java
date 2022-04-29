@@ -513,45 +513,64 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     public AssetDraftDto createDraftFromAsset(DraftFromAssetCommandDto command) throws AssetDraftException {
         Assert.notNull(command, "Expected a non-null command");
         Assert.notNull(command.getPublisherKey(), "Expected a non-null publisher key");
-        Assert.isTrue(!StringUtils.isBlank(command.getPid()), "Expected a non-empty pid");
+        Assert.hasText(command.getPid(), "Expected a non-empty pid");
 
         try {
-            final CatalogueFeature feature = this.catalogueService.findOneFeature(command.getPid());
+            CatalogueFeature feature      = null;
+            UUID             publisherKey = null;
 
-            // TODO: If the feature is not published, check history (add method to catalogue for fetching the latest asset version)
-            /*
-            if (feature == null) {
-                this.catalogueService.findOneHistoryFeature(command.getPid());
-            }
-            */
+            // Check if a draft already exists for the specified PID
+            AssetDraftDto draft = draftRepository.findAllByParentId(command.getPid()).stream()
+                .findFirst()
+                .map(ProviderAssetDraftEntity::toDto)
+                .orElse(null);
 
-            // Feature must exist
-            if(feature == null) {
-                throw new AssetDraftException(
-                    AssetMessageCode.ASSET_NOT_FOUND,
-                    String.format("Cannot find asset with PID [%s]", command.getPid())
-                );
+            if (draft == null) {
+                // Get catalogue feature
+                feature = this.catalogueService.findOneFeature(command.getPid());
+
+                // TODO: If the feature is not published, check history (add method to catalogue for fetching the latest asset version)
+                /*
+                if (feature == null) {
+                    this.catalogueService.findOneHistoryFeature(command.getPid());
+                }
+                */
+
+                // The catalogue feature must exist
+                if(feature == null) {
+                    throw new AssetDraftException(
+                        AssetMessageCode.ASSET_NOT_FOUND,
+                        String.format("Cannot find asset with PID [%s]", command.getPid())
+                    );
+                }
+
+                publisherKey = feature.getProperties().getPublisherId();
+            } else {
+                publisherKey = draft.getPublisher().getKey();
             }
 
             // Publisher must own the asset
-            if (!command.getPublisherKey().equals(feature.getProperties().getPublisherId())) {
+            if (!command.getPublisherKey().equals(publisherKey)) {
                 throw new AssetDraftException(
                     AssetMessageCode.API_COMMAND_ASSET_ACCESS_DENIED,
                     String.format("Provider does not own asset with PID [%s]", command.getPid())
                 );
             }
 
-            // Create draft
-            final CatalogueItemCommandDto draftCommand = new CatalogueItemCommandDto(feature);
+            // Create a new draft if one does not already exists
+            if(draft == null) {
+                // Create draft
+                final CatalogueItemCommandDto draftCommand = new CatalogueItemCommandDto(feature);
 
-            draftCommand.setAutomatedMetadata(null);
-            draftCommand.setIngestionInfo(null);
-            draftCommand.setOwnerKey(command.getOwnerKey());
-            draftCommand.setParentId(command.getPid());
-            draftCommand.setPublisherKey(command.getPublisherKey());
-            draftCommand.setTitle(draftCommand.getTitle() + " [Draft]");
+                draftCommand.setAutomatedMetadata(null);
+                draftCommand.setIngestionInfo(null);
+                draftCommand.setOwnerKey(command.getOwnerKey());
+                draftCommand.setParentId(command.getPid());
+                draftCommand.setPublisherKey(command.getPublisherKey());
+                draftCommand.setTitle(draftCommand.getTitle() + " [Draft]");
 
-            final AssetDraftDto draft = this.updateDraft(draftCommand);
+                draft = this.updateDraft(draftCommand);
+            }
 
             // If a lock is required for the new record, create one
             if (command.isLocked()) {
