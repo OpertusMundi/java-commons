@@ -6,6 +6,7 @@ public enum SentinelHubExceptionMessageCode implements MessageCode {
     UNKNOWN,
     CLIENT,
     SERVER,
+    VALIDATION,
     ;
 
     @Override

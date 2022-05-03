@@ -2,6 +2,7 @@ package eu.opertusmundi.common.service.integration;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +59,9 @@ public class DefaultSentinelHubService implements SentinelHubService {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultSentinelHubService.class);
 
+    @Value("${opertusmundi.sentinel-hub.contracts.enabled:false}")
+    private boolean contractsEnabled;
+
     @Value("${opertusmundi.sentinel-hub.default-client-name}")
     private String defaultClientName;
 
@@ -112,9 +116,11 @@ public class DefaultSentinelHubService implements SentinelHubService {
 
         final List<GroupDto> groups = this.getGroups();
 
-        Assert.isTrue(groups.size() == 1, "Expected a single Sentinel Hub group");
+        if (contractsEnabled) {
+            Assert.isTrue(groups.size() == 1, "Expected a single Sentinel Hub group");
 
-        this.groupId = groups.get(0).getId();
+            this.groupId = groups.get(0).getId();
+        }
     }
 
     @Override
@@ -187,6 +193,10 @@ public class DefaultSentinelHubService implements SentinelHubService {
     }
 
     private List<AccountTypeDto> getAccountTypes(boolean requestTokenOnFail) throws SentinelHubException {
+        if (!this.contractsEnabled) {
+            return Collections.emptyList();
+        }
+
         try {
             // Initialize token on first request
             if (StringUtils.isEmpty(authorizationHeader)) {
@@ -232,6 +242,10 @@ public class DefaultSentinelHubService implements SentinelHubService {
     }
 
     private List<ContractDto> getContracts(boolean requestTokenOnFail) throws SentinelHubException {
+        if (!this.contractsEnabled) {
+            return Collections.emptyList();
+        }
+
         try {
             // Initialize token on first request
             if (StringUtils.isEmpty(authorizationHeader)) {
@@ -263,7 +277,11 @@ public class DefaultSentinelHubService implements SentinelHubService {
     }
 
     @Override
-    public CreateContractResponse createContract(CreateContractCommandDto command) {
+    public CreateContractResponse createContract(CreateContractCommandDto command) throws SentinelHubException {
+        if (!this.contractsEnabled) {
+            throw new SentinelHubException(SentinelHubExceptionMessageCode.VALIDATION, "Contracts are not supported");
+        }
+
         return this.createContract(command, true);
     }
 
@@ -355,6 +373,10 @@ public class DefaultSentinelHubService implements SentinelHubService {
         key = "'sentinel-hub-subscription-plans'"
     )
     public List<SubscriptionPlanDto> getSubscriptionPlans() {
+        if (!this.contractsEnabled) {
+            return Collections.emptyList();
+        }
+
         final List<AccountTypeDto> accountTypes = this.getAccountTypes();
 
         final List<SubscriptionPlanDto> result = accountTypes.stream()

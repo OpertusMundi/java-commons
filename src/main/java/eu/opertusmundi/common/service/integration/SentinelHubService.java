@@ -57,8 +57,9 @@ public interface SentinelHubService {
      *
      * @param command
      * @return
+     * @throws SentinelHubException
      */
-    CreateContractResponse createContract(CreateContractCommandDto command);
+    CreateContractResponse createContract(CreateContractCommandDto command) throws SentinelHubException;
 
     /**
      * Query catalogue for free assets
