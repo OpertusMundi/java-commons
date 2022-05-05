@@ -322,6 +322,7 @@ public class AccountEntity {
         final SimpleAccountDto a = new SimpleAccountDto();
 
         a.setKey(this.key);
+        a.setType(this.type);
         a.setUsername(this.email);
 
         return a;

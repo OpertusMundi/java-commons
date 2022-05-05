@@ -199,6 +199,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     @Transactional(readOnly = false)
     default AccountDto create(PlatformAccountCommandDto command) {
         Assert.notNull(command, "Expected a non-null command");
+        Assert.hasText(command.getPassword(), "Expected a non-empty password");
 
         final AccountEntity        account = new AccountEntity();
         final AccountProfileEntity profile = new AccountProfileEntity();
@@ -224,11 +225,9 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
         account.setTermsAcceptedAt(createdAt);
         account.setType(EnumAccountType.OPERTUSMUNDI);
 
-        if (!StringUtils.isBlank(command.getPassword())) {
-            final PasswordEncoder encoder = new BCryptPasswordEncoder();
-
-            account.setPassword(encoder.encode(command.getPassword()));
-        }
+        // Set password
+        final PasswordEncoder encoder = new BCryptPasswordEncoder();
+        account.setPassword(encoder.encode(command.getPassword()));
 
         // Set profile
         profile.setAccount(account);
@@ -253,6 +252,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     default AccountDto create(VendorAccountCommandDto command) {
         Assert.notNull(command, "Expected a non-null command");
         Assert.notNull(command.getParentKey(), "Expected a non-null parent key");
+        Assert.hasText(command.getPassword(), "Expected a non-empty password");
 
         final AccountEntity        parent  = this.findOneByKey(command.getParentKey()).orElse(null);
         final AccountEntity        account = new AccountEntity();
@@ -281,10 +281,9 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
         account.setTermsAcceptedAt(createdAt);
         account.setType(EnumAccountType.VENDOR);
 
-        // Create random password. User must change the password on account
-        // activation
+        // Set password
         final PasswordEncoder encoder = new BCryptPasswordEncoder();
-        account.setPassword(encoder.encode(UUID.randomUUID().toString()));
+        account.setPassword(encoder.encode(command.getPassword()));
 
         // Set profile
         profile.setAccount(account);

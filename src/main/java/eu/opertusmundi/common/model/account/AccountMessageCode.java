@@ -6,6 +6,10 @@ public enum AccountMessageCode implements MessageCode
 {
     ACCOUNT_NOT_FOUND,
     INVALID_ACCOUNT_STATUS,
+    IO_ERROR,
+    IDP_OPERATION_ERROR,
+    MAIL_OPERATION_ERROR,
+    FEIGN_CLIENT_ERROR,
     ;
 
     @Override

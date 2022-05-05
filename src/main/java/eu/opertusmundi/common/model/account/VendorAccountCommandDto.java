@@ -66,4 +66,7 @@ public class VendorAccountCommandDto implements Serializable {
     @NotNull
     private Set<EnumVendorRole> roles;
 
+    @JsonIgnore
+    private String password;
+
 }

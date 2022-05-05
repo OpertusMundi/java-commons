@@ -24,17 +24,15 @@ public class PlatformAccountCommandDto implements Serializable {
 
     @Builder
     public PlatformAccountCommandDto(
-        boolean active, boolean blocked, String email, EnumAuthProvider idpName, String password,
-        AccountProfileCommandDto profile, String verifyPassword
+        boolean active, boolean blocked, String email, EnumAuthProvider idpName, AccountProfileCommandDto profile, String password
     ) {
-        this.active         = active;
-        this.blocked        = blocked;
-        this.email          = email;
-        this.idpName        = idpName;
-        this.password       = password;
-        this.profile        = profile;
-        this.type           = EnumAccountType.OPERTUSMUNDI;
-        this.verifyPassword = verifyPassword;
+        this.active   = active;
+        this.blocked  = blocked;
+        this.email    = email;
+        this.idpName  = idpName;
+        this.password = password;
+        this.profile  = profile;
+        this.type     = EnumAccountType.OPERTUSMUNDI;
     }
 
     private static final long serialVersionUID = 1L;
@@ -56,17 +54,12 @@ public class PlatformAccountCommandDto implements Serializable {
     @JsonIgnore
     private EnumAuthProvider idpName;
 
-    @NotEmpty
-    @Schema(description = "Account password", example = "s3cr3t", required = true)
-    private String password;
-
     @Schema(description = "Account profile", required = true)
     @NotNull
     @Valid
     private AccountProfileCommandDto profile;
 
-    @NotEmpty
-    @Schema(description = "Account password verification. Must match property password.", example = "s3cr3t", required = true)
-    private String verifyPassword;
+    @JsonIgnore
+    private String password;
 
 }
