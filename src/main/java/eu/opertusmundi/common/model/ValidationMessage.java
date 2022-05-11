@@ -1,13 +1,17 @@
 package eu.opertusmundi.common.model;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 public class ValidationMessage extends Message {
 
     @Getter
+    @EqualsAndHashCode.Include
     private final String field;
 
     @Getter
+    @EqualsAndHashCode.Include
     private final Object value;
 
     @Getter

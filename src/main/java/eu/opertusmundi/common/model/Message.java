@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -17,6 +18,7 @@ import lombok.NoArgsConstructor;
     @Type(name = "BasicMessageCode.Validation", value = ValidationMessage.class),
 })
 @NoArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Message {
 
     public enum EnumLevel {
@@ -47,12 +49,15 @@ public class Message {
     }
 
     @Getter
+    @EqualsAndHashCode.Include
     private String code;
 
     @Getter
+    @EqualsAndHashCode.Include
     private EnumLevel level;
 
     @Getter
+    @EqualsAndHashCode.Include
     private String description;
 
     public Message(MessageCode code, String description) {
@@ -62,11 +67,11 @@ public class Message {
     public Message(MessageCode code, String description, EnumLevel level) {
         this(code.key(), description, level);
     }
-    
+
     @JsonCreator
     public Message(
-        @JsonProperty("code") String code, 
-        @JsonProperty("description") String description, 
+        @JsonProperty("code") String code,
+        @JsonProperty("description") String description,
         @JsonProperty("level") EnumLevel level
     ) {
         this.code        = code;
