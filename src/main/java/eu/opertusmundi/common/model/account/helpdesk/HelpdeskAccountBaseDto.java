@@ -37,7 +37,6 @@ public abstract class HelpdeskAccountBaseDto implements Serializable {
     @NotEmpty
     private String locale;
 
-    @NotEmpty
     private String mobile;
 
     private String phone;

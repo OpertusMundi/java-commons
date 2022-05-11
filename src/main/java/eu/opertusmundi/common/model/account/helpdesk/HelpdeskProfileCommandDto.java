@@ -27,7 +27,6 @@ public class HelpdeskProfileCommandDto {
     @NotEmpty
     private String locale;
 
-    @NotEmpty
     private String mobile;
 
     private String phone;
