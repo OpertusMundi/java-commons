@@ -17,6 +17,8 @@ public abstract class CustomerDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    protected UUID key;
+    
     protected UUID contract;
 
     protected ZonedDateTime createdAt;

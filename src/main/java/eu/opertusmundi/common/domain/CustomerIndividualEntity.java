@@ -190,6 +190,7 @@ public class CustomerIndividualEntity extends CustomerEntity {
         c.setEmail(this.email);
         c.setFirstName(this.firstName);
         c.setId(this.id);
+        c.setKey(this.getAccount().getKey());
         c.setKycLevel(this.kycLevel);
         c.setLastName(this.lastName);
         c.setModifiedAt(this.modifiedAt);

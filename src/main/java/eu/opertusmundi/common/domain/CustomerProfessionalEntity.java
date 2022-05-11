@@ -365,6 +365,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
             p.setHeadquartersAddress(this.headquartersAddress.toDto());
         }
         p.setId(this.id);
+        p.setKey(this.getAccount().getKey());
         p.setKycLevel(this.kycLevel);
         p.setLegalPersonType(this.legalPersonType);
         p.setLogoImage(this.logoImage);
