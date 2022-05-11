@@ -237,6 +237,7 @@ public class CardDirectPayInEntity extends PayInEntity {
 
         if (includeDetails) {
             this.items.stream().map(e -> e.toHelpdeskDto(includeDetails)).forEach(p::addItem);
+            this.statusHistory.stream().map(PayInStatusEntity::toDto).forEach(p::addStatusHistory);
         }
 
         return p;

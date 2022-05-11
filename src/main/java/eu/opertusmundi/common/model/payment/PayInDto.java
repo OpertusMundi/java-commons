@@ -2,12 +2,17 @@ package eu.opertusmundi.common.model.payment;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -61,6 +66,16 @@ public abstract class PayInDto {
     @Schema(description = "Transaction status")
     protected EnumTransactionStatus status;
 
+    @Hidden
+    @ArraySchema(arraySchema = @Schema(
+        description = "PayIn status history records"),
+        minItems = 0,
+        uniqueItems = true,
+        schema = @Schema(implementation = PayInStatusDto.class)
+    )
+    @JsonInclude(Include.NON_EMPTY)
+    private List<PayInStatusDto> statusHistory = new ArrayList<>();
+    
     @Schema(description = "Date of transaction status last update")
     protected ZonedDateTime statusUpdatedOn;
 
@@ -70,4 +85,8 @@ public abstract class PayInDto {
     @Schema(description = "Platform reference number")
     protected String referenceNumber;
 
+    public void addStatusHistory(PayInStatusDto h) {
+        this.statusHistory.add(h);
+    }
+    
 }

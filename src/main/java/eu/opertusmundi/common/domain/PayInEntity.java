@@ -117,7 +117,7 @@ public abstract class PayInEntity {
     )
     @Getter
     @Setter
-    private List<PayInStatusEntity> statusHistory = new ArrayList<>();
+    protected List<PayInStatusEntity> statusHistory = new ArrayList<>();
 
     @NotNull
     @Column(name = "`total_price`", columnDefinition = "numeric", precision = 20, scale = 6)

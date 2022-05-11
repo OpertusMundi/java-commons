@@ -127,6 +127,7 @@ public class BankWirePayInEntity extends PayInEntity {
             p.setBankAccount(bankAccount.toDto());
 
             this.items.stream().map(e -> e.toHelpdeskDto(includeDetails)).forEach(p::addItem);
+            this.statusHistory.stream().map(PayInStatusEntity::toDto).forEach(p::addStatusHistory);
         }
 
         return p;
