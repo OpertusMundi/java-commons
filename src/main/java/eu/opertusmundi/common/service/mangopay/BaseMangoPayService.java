@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import javax.annotation.PostConstruct;
 
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.mangopay.MangoPayApi;
@@ -26,6 +27,8 @@ import eu.opertusmundi.common.model.payment.PaymentMessageCode;
 
 public abstract class BaseMangoPayService {
 
+    private static final Logger logger = LoggerFactory.getLogger(BaseMangoPayService.class);
+    
     @Value("${opertusmundi.payments.mangopay.base-url:}")
     private String baseUrl;
 
@@ -165,8 +168,7 @@ public abstract class BaseMangoPayService {
         }
                
         return pEx;
-    }
-    
+    }   
 
     /**
      * Get existing response for an idempotency key
@@ -191,6 +193,8 @@ public abstract class BaseMangoPayService {
             }
         } catch (final ResponseException ex) {
             return null;
+        } catch (final Exception ex) {
+            throw this.wrapException("Get response from idempotency key", ex, idempotencyKey, logger);
         }
     }
 

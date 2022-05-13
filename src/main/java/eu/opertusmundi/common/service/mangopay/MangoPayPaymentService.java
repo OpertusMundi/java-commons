@@ -47,9 +47,12 @@ import com.mangopay.core.enumerations.LegalPersonType;
 import com.mangopay.core.enumerations.NaturalUserCapacity;
 import com.mangopay.core.enumerations.PayInExecutionType;
 import com.mangopay.core.enumerations.PayInPaymentType;
+import com.mangopay.core.enumerations.PayOutPaymentType;
+import com.mangopay.core.enumerations.PayoutMode;
 import com.mangopay.core.enumerations.PersonType;
 import com.mangopay.core.enumerations.SecureMode;
 import com.mangopay.core.enumerations.SortDirection;
+import com.mangopay.core.enumerations.TransactionType;
 import com.mangopay.core.interfaces.BankAccountDetails;
 import com.mangopay.entities.BankAccount;
 import com.mangopay.entities.Card;
@@ -1550,11 +1553,11 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
             final PayOutDto payout = this.payOutRepository.createPayOut(command);
 
-            // Start PayOut workflow instance
-            this.payOutService.start(command.getAdminUserKey(), payout.getKey());
-
             // Refresh provider's wallet from the payment provider
             this.updateCustomerWalletFunds(command.getProviderKey(), EnumCustomerType.PROVIDER);
+
+            // Start PayOut workflow instance
+            this.payOutService.start(command.getAdminUserKey(), payout.getKey());
 
             return payout;
         } catch (final Exception ex) {
@@ -1716,9 +1719,14 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         final String walletId      = customer.getPaymentProviderWallet();
         final String bankAccountId = customer.getBankAccount().getId();
 
+        Assert.hasText(userId, "Expected a non-empty provider user id");
+        Assert.hasText(walletId, "Expected a non-empty provider wallet id");
+        Assert.hasText(bankAccountId, "Expected a non-empty provider bank account id");
+
         final PayOutPaymentDetailsBankWire details = new PayOutPaymentDetailsBankWire();
         details.setBankAccountId(bankAccountId);
         details.setBankWireRef(payOut.getBankwireRef());
+        details.setPayoutModeRequested(PayoutMode.STANDARD);
 
         final PayOut result = new PayOut();
         result.setAuthorId(userId);
@@ -1726,7 +1734,9 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         result.setDebitedWalletId(walletId);
         result.setFees(new Money(CurrencyIso.EUR, payOut.getPlatformFees().multiply(BigDecimal.valueOf(100L)).intValue()));
         result.setMeanOfPaymentDetails(details);
+        result.setPaymentType(PayOutPaymentType.BANK_WIRE);
         result.setTag(payOut.getKey().toString());
+        result.setType(TransactionType.PAYOUT);
 
         return result;
     }
