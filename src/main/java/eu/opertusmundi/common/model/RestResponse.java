@@ -70,6 +70,14 @@ public class RestResponse<Result> extends BaseResponse {
         return new RestResponse<R>(null, errors);
     }
 
+    public static <R> RestResponse<R> failure(ServiceException ex) {
+        if (!ex.getMessages().isEmpty()) {
+            return failure(ex.getMessages());
+        }
+
+        return failure(ex.getCode(), ex.getMessage(), Message.EnumLevel.ERROR);
+    }
+    
     public static <R> RestResponse<R> accessDenied() {
         return RestResponse.<R>failure(new Message(BasicMessageCode.Unauthorized, "Access Denied", Message.EnumLevel.ERROR));
     }

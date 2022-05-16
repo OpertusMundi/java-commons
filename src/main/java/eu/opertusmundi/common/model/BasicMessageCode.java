@@ -22,8 +22,6 @@ public enum BasicMessageCode implements MessageCode {
     // Validation error codes
     Validation,
     ValidationNotUnique,
-    CannotDeleteSelf,
-    CannotRevokeLastAdmin,
     ForeignKeyConstraint,
     RecordNotFound,
     ReferenceNotFound,

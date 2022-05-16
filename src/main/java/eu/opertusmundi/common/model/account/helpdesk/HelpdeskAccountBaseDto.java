@@ -5,7 +5,6 @@ import java.util.Set;
 
 import javax.validation.constraints.NotEmpty;
 
-import eu.opertusmundi.common.model.account.helpdesk.EnumHelpdeskRole;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

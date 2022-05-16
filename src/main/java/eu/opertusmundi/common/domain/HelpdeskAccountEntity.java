@@ -25,6 +25,7 @@ import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.NaturalId;
 import org.hibernate.annotations.Type;
 
@@ -150,6 +151,12 @@ public class HelpdeskAccountEntity {
     )
     List<HelpdeskAccountRoleEntity> roles = new ArrayList<>();
 
+    @NotNull
+    @Column(name = "`idp`")
+    @Getter
+    @Setter
+    boolean registeredToIdp;
+    
     @Transient
     public String getFullName() {
         return String.format("%s %s", this.firstName, this.lastName).trim();
@@ -228,27 +235,28 @@ public class HelpdeskAccountEntity {
     }
 
 	public HelpdeskAccountDto toDto() {
-		final HelpdeskAccountDto a = new HelpdeskAccountDto();
+        final HelpdeskAccountDto a = new HelpdeskAccountDto();
 
-		a.setActive(this.active);
-		a.setBlocked(this.blocked);
+        a.setActive(this.active);
+        a.setBlocked(this.blocked);
         a.setCreatedOn(this.createdOn);
-		a.setEmail(this.email);
-		a.setEmailVerified(this.emailVerified);
-		a.setEmailVerifiedOn(this.emailVerifiedOn);
-		a.setFirstName(this.firstName);
-		a.setId(this.id);
-		a.setImage(this.image);
-		a.setImageMimeType(this.imageMimeType);
-		a.setKey(this.key);
-		a.setLastName(this.lastName);
-		a.setLocale(this.locale);
-		a.setMobile(this.mobile);
-		a.setModifiedOn(this.modifiedOn);
-		a.setPhone(this.phone);
-		a.setRoles(this.getRoles());
+        a.setEmail(this.email);
+        a.setEmailVerified(this.emailVerified);
+        a.setEmailVerifiedOn(this.emailVerifiedOn);
+        a.setFirstName(this.firstName);
+        a.setId(this.id);
+        a.setImage(this.image);
+        a.setImageMimeType(this.imageMimeType);
+        a.setKey(this.key);
+        a.setLastName(this.lastName);
+        a.setLocale(this.locale);
+        a.setMobile(StringUtils.defaultString(this.mobile));
+        a.setModifiedOn(this.modifiedOn);
+        a.setPhone(StringUtils.defaultString(this.phone));
+        a.setRegisteredToIdp(this.registeredToIdp);
+        a.setRoles(this.getRoles());
 
-		return a;
+        return a;
 	}
 
     public AccountDto toMarketplaceAccountDto() {

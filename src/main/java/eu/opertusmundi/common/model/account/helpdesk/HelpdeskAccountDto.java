@@ -22,5 +22,6 @@ public class HelpdeskAccountDto extends HelpdeskAccountBaseDto implements Serial
     private Integer       id;
     private UUID          key;
     private ZonedDateTime modifiedOn;
+    private boolean       registeredToIdp;
 
 }

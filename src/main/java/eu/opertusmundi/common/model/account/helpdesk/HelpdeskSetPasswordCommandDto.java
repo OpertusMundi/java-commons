@@ -7,8 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 public class HelpdeskSetPasswordCommandDto {
 
-	private String password;
-
-	private String passwordMatch;
+    private String password;
+    private String passwordMatch;
 
 }

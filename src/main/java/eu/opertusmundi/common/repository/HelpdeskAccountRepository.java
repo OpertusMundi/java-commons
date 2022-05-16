@@ -4,6 +4,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityNotFoundException;
 
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import eu.opertusmundi.common.domain.HelpdeskAccountEntity;
+import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.account.helpdesk.EnumHelpdeskRole;
 import eu.opertusmundi.common.model.account.helpdesk.HelpdeskAccountCommandDto;
 import eu.opertusmundi.common.model.account.helpdesk.HelpdeskAccountDto;
@@ -39,10 +41,26 @@ public interface HelpdeskAccountRepository extends JpaRepository<HelpdeskAccount
 	Optional<Long> countUsersWithRole(@Param("role") EnumHelpdeskRole role);
 
 	@Query("SELECT a FROM HelpdeskAccount a WHERE a.email like :email")
-	Page<HelpdeskAccountEntity> findAllByEmailContains(
-		@Param("email")String email,
-		Pageable pageable
-	);
+    Page<HelpdeskAccountEntity> findAllByEmailContains(String email, Pageable pageable);
+
+    @Modifying
+    @Transactional(readOnly = false)
+    @Query("UPDATE HelpdeskAccount a SET a.registeredToIdp = true WHERE a.id = :id")
+    void registerToIdp(int id);
+	   
+    default PageResultDto<HelpdeskAccountDto> findAllByEmailContainsAsObjects(String email, Pageable pageable) {
+        final Page<HelpdeskAccountEntity> entities = this.findAllByEmailContains(email, pageable);
+
+        final Page<HelpdeskAccountDto> p = entities.map(HelpdeskAccountEntity::toDto);
+
+        final long                              count   = p.getTotalElements();
+        final List<HelpdeskAccountDto>          records = p.stream().collect(Collectors.toList());
+        final PageResultDto<HelpdeskAccountDto> result  = PageResultDto.of(
+            pageable.getPageNumber(), pageable.getPageSize(), records, count
+        );
+
+        return result;
+    }
 
     @Query("SELECT a FROM HelpdeskAccount a WHERE a.key in :keys")
     List<HelpdeskAccountEntity> findAllByKey(@Param("keys") List<UUID> keys);
@@ -57,23 +75,21 @@ public interface HelpdeskAccountRepository extends JpaRepository<HelpdeskAccount
 	@Transactional(readOnly = false)
 	void setBlocked(@Param("id") Integer id, @Param("blocked") boolean blocked);
 
-	@Transactional(readOnly = false)
-	default HelpdeskAccountDto setPassword(Integer id, String password) {
+    @Transactional(readOnly = false)
+    default HelpdeskAccountDto setPassword(Integer id, String password) {
+        final HelpdeskAccountEntity accountEntity = this.findById(id).orElse(null);
 
-		// Retrieve entity from repository
-		final HelpdeskAccountEntity accountEntity = this.findById(id).orElse(null);
+        if (accountEntity == null) {
+            throw new EntityNotFoundException();
+        }
 
-		if (accountEntity == null) {
-			throw new EntityNotFoundException();
-		}
+        final PasswordEncoder encoder = new BCryptPasswordEncoder();
 
-		final PasswordEncoder encoder = new BCryptPasswordEncoder();
+        accountEntity.setPassword(encoder.encode(password));
+        accountEntity.setModifiedOn(ZonedDateTime.now());
 
-		accountEntity.setPassword(encoder.encode(password));
-		accountEntity.setModifiedOn(ZonedDateTime.now());
-
-		return this.saveAndFlush(accountEntity).toDto();
-	}
+        return this.saveAndFlush(accountEntity).toDto();
+    }
 
 	@Transactional(readOnly = false)
 	default HelpdeskAccountDto saveFrom(Integer creatorId, HelpdeskAccountCommandDto command) {
