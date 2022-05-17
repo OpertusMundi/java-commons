@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import eu.opertusmundi.common.feign.client.config.RatingServiceFeignClientConfiguration;
 import eu.opertusmundi.common.model.BaseResponse;
 import eu.opertusmundi.common.model.RestResponse;
+import eu.opertusmundi.common.model.rating.server.ServerAssetAverageRatingDto;
 import eu.opertusmundi.common.model.rating.server.ServerAssetRatingCommandDto;
 import eu.opertusmundi.common.model.rating.server.ServerProviderRatingCommandDto;
 import eu.opertusmundi.common.model.rating.server.ServerRatingDto;
@@ -31,8 +32,19 @@ public interface RatingServiceFeignClient {
      *
      * @return An instance of {@link ResponseEntity}
      */
-    @GetMapping(value = "/v1/rating/asset/{id}", produces = "application/json")
+    @GetMapping(value = "/v1/rating/assets/{id}", produces = "application/json")
     ResponseEntity<RestResponse<List<ServerRatingDto>>> getAssetRatings(@PathVariable(name = "id", required = true) String id);
+
+    /**
+     * Get average rating for all assets selected by the specified asset
+     * identifiers
+     *
+     * @param pids Asset identifiers
+     *
+     * @return An instance of {@link ResponseEntity}
+     */
+    @PostMapping(value = "/v1/rating/assets", produces = "application/json")
+    ResponseEntity<RestResponse<List<ServerAssetAverageRatingDto>>> getAssetsAverageRatings(@RequestBody List<String> pids);
 
     /**
      * Get ratings for a single provider
@@ -41,7 +53,7 @@ public interface RatingServiceFeignClient {
      *
      * @return An instance of {@link ResponseEntity}
      */
-    @GetMapping(value = "/v1/rating/provider/{id}", produces = "application/json")
+    @GetMapping(value = "/v1/rating/providers/{id}", produces = "application/json")
     ResponseEntity<RestResponse<List<ServerRatingDto>>> getProviderRatings(@PathVariable(name = "id", required = true) UUID id);
 
     /**
@@ -52,7 +64,7 @@ public interface RatingServiceFeignClient {
      *
      * @return An instance of {@link ResponseEntity}
      */
-    @PostMapping(value = "/v1/rating/asset/{id}", produces = "application/json")
+    @PostMapping(value = "/v1/rating/assets/{id}", produces = "application/json")
     ResponseEntity<BaseResponse> addAssetRating(
         @PathVariable(name = "id", required = true) String id,
         @RequestBody(required = true) ServerAssetRatingCommandDto command
@@ -66,7 +78,7 @@ public interface RatingServiceFeignClient {
      *
      * @return An instance of {@link ResponseEntity}
      */
-    @PostMapping(value = "/v1/rating/provider/{id}", produces = "application/json")
+    @PostMapping(value = "/v1/rating/providers/{id}", produces = "application/json")
     ResponseEntity<BaseResponse> addProviderRating(
         @PathVariable(name = "id", required = true) UUID id,
         @RequestBody(required = true) ServerProviderRatingCommandDto command
