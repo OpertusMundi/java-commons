@@ -6,12 +6,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +18,6 @@ import eu.opertusmundi.common.model.analytics.AssetStatisticsDto;
 import eu.opertusmundi.common.model.analytics.BigDecimalDataPoint;
 import eu.opertusmundi.common.model.spatial.CountryEuropeDto;
 
-
 @Repository
 @Transactional(readOnly = true)
 public interface AssetStatisticsRepository extends JpaRepository<AssetStatisticsEntity, Integer> {
@@ -30,10 +26,18 @@ public interface AssetStatisticsRepository extends JpaRepository<AssetStatistics
     Optional<AssetStatisticsEntity> findAssetStatisticsById(Integer id);
 
     @Query("SELECT a FROM AssetStatistics a WHERE a.pid = :pid")
-    Page<AssetStatisticsEntity> findAllByPid(String pid, Pageable page);
+    Optional<AssetStatisticsEntity> findAssetStatisticsByPid(String pid);
 
-    @Query("SELECT SUM(a.maxPrice) FROM AssetStatistics a "
-       	 + "WHERE a.active is true")
+    @Query("SELECT a FROM AssetStatistics a WHERE a.pid = :pid")
+    default Integer[] findAssetSalesAndDownloadsByPid(String pid) {
+        final AssetStatisticsEntity e = this.findAssetStatisticsByPid(pid).orElse(null);
+        if (e == null) {
+            return null;
+        }
+        return new Integer[]{e.getDownloads(), e.getSales()};
+    }
+
+    @Query("SELECT SUM(a.maxPrice) FROM AssetStatistics a WHERE a.active IS true")
     Optional<BigDecimal> findTotalFileAssetValue();
 
     @Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, SUM(a.maxPrice)) "
@@ -88,7 +92,21 @@ public interface AssetStatisticsRepository extends JpaRepository<AssetStatistics
     @Query("UPDATE AssetStatistics a "
          + "SET a.active = false "
          + "WHERE a.pid = :pid and a.active = true")
-    void setStatisticInactive(@Param("pid") String pid);
+    void setStatisticInactive(String pid);
+
+    @Modifying
+    @Transactional(readOnly = false)
+    @Query("UPDATE AssetStatistics a "
+         + "SET a.downloads = a.downloads + 1 "
+         + "WHERE a.pid = :pid and a.active = true")
+    void increaseDownloads(String pid);
+
+    @Modifying
+    @Transactional(readOnly = false)
+    @Query("UPDATE AssetStatistics a "
+         + "SET a.sales = a.sales + 1 "
+         + "WHERE a.pid = :pid and a.active = true")
+    void increaseSales(String pid);
 
     @Modifying
     @Transactional(readOnly = false)

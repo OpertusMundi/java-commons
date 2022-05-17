@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +47,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDraftDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemStatistics;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumCatalogueType;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQuery;
@@ -469,6 +471,10 @@ public class DefaultCatalogueService implements CatalogueService {
             }
         }
 
+        // Get statistics
+        final CatalogueItemStatistics statistics = this.statisticsService.findOne(feature.getId());
+        item.setStatistics(statistics);
+
         // Log asset views
         this.logView(ctx,  item, null, EnumAssetViewSource.VIEW);
 
@@ -661,7 +667,7 @@ public class DefaultCatalogueService implements CatalogueService {
             }
 
             // Deactivate related statistics
-            this.statisticsService.updateStatisticsUnpublishAsset(pid);
+            this.statisticsService.updateAssetUnpublish(pid);
 
             // Remove asset from the catalogue
             final CatalogueItemDetailsDto item = this.findOne(null, pid, publisherKey, false);
@@ -693,6 +699,8 @@ public class DefaultCatalogueService implements CatalogueService {
         Function<CatalogueFeature, T> converter,
         boolean includeProviders
     ) {
+        final List<String> pids = new ArrayList<>();
+
         // Convert features to items
         final List<T> items = features.stream()
             .map(item -> {
@@ -704,6 +712,8 @@ public class DefaultCatalogueService implements CatalogueService {
                 // Filter properties
                 dto.setAutomatedMetadata(null);
                 dto.setIngestionInfo(null);
+
+                pids.add(dto.getId());
 
                 return dto;
             })
@@ -740,6 +750,13 @@ public class DefaultCatalogueService implements CatalogueService {
                 span.end();
             }
         }
+
+        // Get statistics
+        final List<CatalogueItemStatistics> statistics = this.statisticsService.findAll(pids);
+        result.getItems().stream().forEach(i -> {
+            final CatalogueItemStatistics is = statistics.stream().filter(s -> s.getPid().equals(i.getId())).findFirst().orElse(null);
+            i.setStatistics(is);
+        });
 
         return new CatalogueResult<T>(result, publishers);
     }
@@ -806,7 +823,7 @@ public class DefaultCatalogueService implements CatalogueService {
             );
 
             // Update statistics
-            this.statisticsService.updateStatisticsPublishAsset(publishedItem);
+            this.statisticsService.updateAssetPublish(publishedItem);
 
             if (this.elasticSearchService != null) {
                 // For tabular assets, reset geometry

@@ -152,6 +152,9 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     @Autowired
     private ContractFileManager contractFileManager;
 
+    @Autowired
+    private StatisticsService statisticsService;
+
     @Override
     @Transactional
     public ProviderOrderDto acceptOrderByProvider(OrderConfirmCommandDto command) throws OrderException {
@@ -525,6 +528,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
                     // Register asset to the platform account
                     this.registerOrderItem(payIn, (PayInOrderItemEntity) item);
+
                     // Optional register asset to an external data provider
                     this.dataProviderManager.registerAsset(payInKey);
 
@@ -550,6 +554,10 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             // No registration required
             return;
         }
+
+        // Update asset statistics
+        this.statisticsService.increaseSales(orderItem.getAssetId());
+
         switch (asset.getType().getOrderItemType()) {
             case ASSET :
                 this.registerAsset(payIn, payInItem, asset);
