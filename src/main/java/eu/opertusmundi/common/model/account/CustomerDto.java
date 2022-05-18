@@ -6,6 +6,8 @@ import java.time.ZonedDateTime;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -18,7 +20,7 @@ public abstract class CustomerDto implements Serializable {
     private static final long serialVersionUID = 1L;
 
     protected UUID key;
-    
+
     protected UUID contract;
 
     protected ZonedDateTime createdAt;
@@ -36,10 +38,10 @@ public abstract class CustomerDto implements Serializable {
 
     protected ZonedDateTime modifiedAt;
 
-    @JsonIgnore
+    @JsonInclude(Include.NON_EMPTY)
     protected String paymentProviderUser;
 
-    @JsonIgnore
+    @JsonInclude(Include.NON_EMPTY)
     protected String paymentProviderWallet;
 
     @JsonIgnore

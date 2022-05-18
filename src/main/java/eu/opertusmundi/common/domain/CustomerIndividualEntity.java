@@ -178,6 +178,11 @@ public class CustomerIndividualEntity extends CustomerEntity {
 
     @Override
     public CustomerDto toDto() {
+        return this.toDto(false);
+    }
+
+    @Override
+    public CustomerDto toDto(boolean includeHelpdeskDetails) {
         final CustomerIndividualDto c = new CustomerIndividualDto();
 
         c.setAddress(this.address.toDto());

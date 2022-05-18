@@ -2,7 +2,8 @@ package eu.opertusmundi.common.model.account;
 
 import javax.validation.constraints.NotEmpty;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -11,7 +12,7 @@ import lombok.Setter;
 @Setter
 public class BankAccountBaseDto {
 
-    @JsonIgnore
+    @JsonInclude(Include.NON_EMPTY)
     protected String id;
 
     @NotEmpty

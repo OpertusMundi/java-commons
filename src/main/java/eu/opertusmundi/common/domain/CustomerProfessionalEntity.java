@@ -348,6 +348,11 @@ public class CustomerProfessionalEntity extends CustomerEntity {
 
     @Override
     public CustomerProfessionalDto toDto() {
+        return this.toDto(false);
+    }
+
+    @Override
+    public CustomerProfessionalDto toDto(boolean includeHelpdeskDetails) {
         final CustomerProfessionalDto p = new CustomerProfessionalDto();
 
         p.setAdditionalInfo(this.additionalInfo);

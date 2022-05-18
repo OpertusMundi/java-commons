@@ -227,7 +227,7 @@ public class OrderEntity {
 
         this.updateDto(o);
 
-        o.setConsumer(consumer.getProfile().getConsumer().toDto());
+        o.setConsumer(consumer.getProfile().getConsumer().toDto(true));
         if (payin != null) {
             o.setPayIn(payin.toHelpdeskDto(false));
         }

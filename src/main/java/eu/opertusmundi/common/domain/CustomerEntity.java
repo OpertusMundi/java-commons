@@ -182,6 +182,8 @@ public abstract class CustomerEntity {
 
     public abstract CustomerDto toDto();
 
+    public abstract CustomerDto toDto(boolean includeHelpdeskDetails);
+
     public abstract ConsumerDto toConsumerDto();
 
     public abstract void update(CustomerCommandDto command);
