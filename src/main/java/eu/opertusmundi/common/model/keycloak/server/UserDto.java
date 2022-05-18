@@ -3,6 +3,7 @@ package eu.opertusmundi.common.model.keycloak.server;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
@@ -25,7 +26,7 @@ public class UserDto
     
     @lombok.Setter
     @JsonProperty("enabled")
-    private boolean enabled = true;
+    private Boolean enabled;
     
     @lombok.Setter
     @JsonProperty("email")
@@ -33,7 +34,7 @@ public class UserDto
     
     @lombok.Setter
     @JsonProperty("emailVerified")
-    private boolean emailVerified = false; 
+    private Boolean emailVerified; 
     
     @lombok.Setter
     @JsonProperty("username")
@@ -51,6 +52,10 @@ public class UserDto
     @JsonIgnore
     private Instant created;
     
+    @lombok.Setter
+    @JsonProperty("requiredActions")
+    private Set<EnumRequiredAction> requiredActions;
+
     @JsonSetter("createdTimestamp")
     public void setCreatedFromTimestamp(Long t)
     {

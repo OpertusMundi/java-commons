@@ -2,11 +2,13 @@ package eu.opertusmundi.common.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.lang.Nullable;
 
 import eu.opertusmundi.common.model.keycloak.server.CredentialDto;
+import eu.opertusmundi.common.model.keycloak.server.EnumRequiredAction;
 import eu.opertusmundi.common.model.keycloak.server.GroupDto;
 import eu.opertusmundi.common.model.keycloak.server.GroupQueryDto;
 import eu.opertusmundi.common.model.keycloak.server.PageRequest;
@@ -31,6 +33,8 @@ public interface KeycloakAdminService {
 
     void resetPasswordForUser(UUID userId, String password, boolean temporary);
 
+    void executeEmailActionsForUser(UUID userId, Set<EnumRequiredAction> actions);
+    
     List<GroupDto> findGroups(@Nullable GroupQueryDto query);
 
     Optional<GroupDto> getGroup(UUID groupId);
@@ -44,5 +48,4 @@ public interface KeycloakAdminService {
     List<GroupDto> getUserGroups(UUID userId);
 
     void deleteGroup(UUID groupId);
-
 }

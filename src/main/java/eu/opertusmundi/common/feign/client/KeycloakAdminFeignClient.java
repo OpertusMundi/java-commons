@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.feign.client;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 
 import eu.opertusmundi.common.feign.client.config.KeycloakAdminFeignClientConfiguration;
 import eu.opertusmundi.common.model.keycloak.server.CredentialDto;
+import eu.opertusmundi.common.model.keycloak.server.EnumRequiredAction;
 import eu.opertusmundi.common.model.keycloak.server.GroupDto;
 import eu.opertusmundi.common.model.keycloak.server.GroupQueryDto;
 import eu.opertusmundi.common.model.keycloak.server.PageRequest;
@@ -185,6 +187,25 @@ public interface KeycloakAdminFeignClient
         @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
         @RequestBody CredentialDto cred);
 
+    /**
+     * Send email with link that allows execution of a set of actions on the account
+     * 
+     * @param realm
+     * @param userId
+     * @param authorizationHeader
+     * @param actions
+     * @return
+     */
+    @PutMapping(
+        path = "admin/realms/{realm}/users/{userId}/execute-actions-email",
+        produces = MediaType.APPLICATION_JSON_VALUE,
+        consumes = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<Void> executeEmailActionsForUser(
+        @PathVariable("realm") String realm,
+        @PathVariable("userId") UUID userId,
+        @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
+        @RequestBody Set<EnumRequiredAction> actions);
+    
     @GetMapping(
         path = "admin/realms/{realm}/groups",
         produces = MediaType.APPLICATION_JSON_VALUE)

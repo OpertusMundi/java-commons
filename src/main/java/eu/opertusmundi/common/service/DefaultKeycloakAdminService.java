@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -40,6 +41,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.opertusmundi.common.feign.client.KeycloakAdminFeignClient;
 import eu.opertusmundi.common.model.keycloak.KeycloakClientException;
 import eu.opertusmundi.common.model.keycloak.server.CredentialDto;
+import eu.opertusmundi.common.model.keycloak.server.EnumRequiredAction;
 import eu.opertusmundi.common.model.keycloak.server.GroupDto;
 import eu.opertusmundi.common.model.keycloak.server.GroupQueryDto;
 import eu.opertusmundi.common.model.keycloak.server.PageRequest;
@@ -358,6 +360,19 @@ public class DefaultKeycloakAdminService implements KeycloakAdminService
         final CredentialDto cred = CredentialDto.ofPassword(password);
         cred.setTemporary(temporary);
         this.resetPasswordForUser(userId, cred);
+    }
+    
+    @Override
+    public void executeEmailActionsForUser(UUID userId, Set<EnumRequiredAction> actions)
+    {
+        Assert.notNull(userId, "userId must not be null");
+        Assert.notEmpty(actions, "actions may not be empty");
+
+        try {
+            kcadm.executeEmailActionsForUser(realm, userId, authorizationHeader(), actions);
+        } catch (FeignException.BadRequest ex) {
+            throw translateException("email actions did not execute", ex);
+        }
     }
 
     @Override
