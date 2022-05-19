@@ -6,8 +6,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -133,6 +136,25 @@ public class PayOutEntity {
     @Setter
     private ZonedDateTime executedOn;
 
+    @NotNull
+    @Embedded
+    @AttributeOverrides({
+        @AttributeOverride(name = "id",                      column = @Column(name = "`bank_account_provider_id`")),
+        @AttributeOverride(name = "ownerName",               column = @Column(name = "`bank_account_owner_name`")),
+        @AttributeOverride(name = "ownerAddress.line1",      column = @Column(name = "`bank_account_owner_address_line1`")),
+        @AttributeOverride(name = "ownerAddress.line2",      column = @Column(name = "`bank_account_owner_address_line2`")),
+        @AttributeOverride(name = "ownerAddress.city",       column = @Column(name = "`bank_account_owner_address_city`")),
+        @AttributeOverride(name = "ownerAddress.region",     column = @Column(name = "`bank_account_owner_address_region`")),
+        @AttributeOverride(name = "ownerAddress.postalCode", column = @Column(name = "`bank_account_owner_address_postal_code`")),
+        @AttributeOverride(name = "ownerAddress.country",    column = @Column(name = "`bank_account_owner_address_country`")),
+        @AttributeOverride(name = "iban",                    column = @Column(name = "`bank_account_iban`")),
+        @AttributeOverride(name = "bic",                     column = @Column(name = "`bank_account_bic`")),
+        @AttributeOverride(name = "tag",                     column = @Column(name = "`bank_account_tag`")),
+    })
+    @Getter
+    @Setter
+    private CustomerBankAccountEmbeddable bankAccount;
+
     @NotEmpty
     @Column(name = "`bankwire_ref`")
     @Getter
@@ -187,6 +209,7 @@ public class PayOutEntity {
     public PayOutDto toDto(boolean includeHelpdeskData) {
         final PayOutDto p = new PayOutDto();
 
+        p.setBankAccount(this.bankAccount.toDto());
         p.setBankwireRef(bankwireRef);
         p.setCreatedOn(createdOn);
         p.setCurrency(currency);

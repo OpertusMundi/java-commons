@@ -111,6 +111,7 @@ public interface PayOutRepository extends JpaRepository<PayOutEntity, Integer> {
 
         final PayOutEntity payout = new PayOutEntity();
 
+        payout.setBankAccount(command.getBankAccount());
         payout.setBankwireRef("N/A");
         payout.setCurrency("EUR");
         payout.setDebitedFunds(command.getDebitedFunds());

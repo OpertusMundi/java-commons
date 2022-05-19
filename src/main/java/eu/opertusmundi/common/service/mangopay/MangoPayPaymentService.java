@@ -1551,6 +1551,9 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             // Fees are applied in Transfers.
             command.setFees(BigDecimal.ZERO);
 
+            // Set bank account
+            command.setBankAccount(customer.getBankAccount().clone());
+
             final PayOutDto payout = this.payOutRepository.createPayOut(command);
 
             // Refresh provider's wallet from the payment provider
@@ -1717,7 +1720,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
         final String userId        = customer.getPaymentProviderUser();
         final String walletId      = customer.getPaymentProviderWallet();
-        final String bankAccountId = customer.getBankAccount().getId();
+        final String bankAccountId = payOut.getBankAccount().getId();
 
         Assert.hasText(userId, "Expected a non-empty provider user id");
         Assert.hasText(walletId, "Expected a non-empty provider wallet id");

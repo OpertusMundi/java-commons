@@ -8,6 +8,7 @@ import javax.validation.constraints.Digits;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import eu.opertusmundi.common.domain.CustomerBankAccountEmbeddable;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,6 +24,9 @@ public class PayOutCommandDto {
 
     @JsonIgnore
     private UUID providerKey;
+
+    @JsonIgnore
+    private CustomerBankAccountEmbeddable bankAccount;
 
     @Schema(description = "Information about the funds that are being debited")
     @Digits(integer = 10, fraction = 2)

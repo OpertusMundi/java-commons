@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import eu.opertusmundi.common.model.account.BankAccountDto;
 import eu.opertusmundi.common.model.account.CustomerDto;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -42,6 +43,9 @@ public class PayOutDto {
     @JsonInclude(Include.NON_NULL)
     private String processInstance;
 
+    @Schema(description = "Payout bank account")
+    private BankAccountDto bankAccount;
+    
     @Schema(description = "Information about the funds that are being debited from seller's wallet")
     private BigDecimal debitedFunds;
 
