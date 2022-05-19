@@ -6,6 +6,7 @@ public enum EnumMarketplaceAccountSortField {
     EMAIL("email"),
     CONSUMER_FUNDS("profile.consumer.walletFunds"),
     PROVIDER_FUNDS("profile.provider.walletFunds"),
+    PROVIDER_PENDING_PAYOUT_FUNDS("profile.provider.pendingPayoutFunds"),
     ;
 
     @Getter

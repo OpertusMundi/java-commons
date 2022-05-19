@@ -1526,12 +1526,12 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         try {
             // Account with provider role must exist
             final AccountEntity              account  = this.getAccount(command.getProviderKey());
-            final CustomerProfessionalEntity customer = account.getProfile().getProvider();
+            final CustomerProfessionalEntity provider = account.getProfile().getProvider();
 
-            if (customer == null) {
+            if (provider == null) {
                 throw new PaymentException(
                     PaymentMessageCode.SERVER_ERROR,
-                    String.format("[MANGOPAY] Customer was not found for account [key=%s]", command.getProviderKey())
+                    String.format("[MANGOPAY] Provider was not found for account [key=%s]", command.getProviderKey())
                 );
             }
 
@@ -1544,20 +1544,24 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 );
             }
 
+            // Refresh provider's wallet from the payment provider
+            this.updateCustomerWalletFunds(command.getProviderKey(), EnumCustomerType.PROVIDER);
+
             // Funds must exist
-            if (customer.getWalletFunds().compareTo(command.getDebitedFunds()) < 0) {
+            if (provider.getWalletFunds().compareTo(command.getDebitedFunds()) < 0) {
                 throw new PaymentException(PaymentMessageCode.VALIDATION_ERROR, "Not enough funds. Check wallet balance");
             }
             // Fees are applied in Transfers.
             command.setFees(BigDecimal.ZERO);
-
             // Set bank account
-            command.setBankAccount(customer.getBankAccount().clone());
+            command.setBankAccount(provider.getBankAccount().clone());
+
+            // Update provider pending PayOut funds
+            provider.setPendingPayoutFunds(provider.getPendingPayoutFunds().add(command.getDebitedFunds()));
+            provider.setPendingPayoutFundsUpdatedOn(ZonedDateTime.now());
+            this.accountRepository.saveAndFlush(account);
 
             final PayOutDto payout = this.payOutRepository.createPayOut(command);
-
-            // Refresh provider's wallet from the payment provider
-            this.updateCustomerWalletFunds(command.getProviderKey(), EnumCustomerType.PROVIDER);
 
             // Start PayOut workflow instance
             this.payOutService.start(command.getAdminUserKey(), payout.getKey());
@@ -1604,6 +1608,8 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 .build();
 
             this.payOutRepository.updatePayOutStatus(update);
+
+            // Pending funds will be updated once the web hook event is received
 
             return payOut.toDto(true);
         } catch (final Exception ex) {
@@ -1657,6 +1663,14 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
             final PayOutDto result = this.payOutRepository.updatePayOutStatus(command);
 
+            // Update provider pending PayOut funds
+            final AccountEntity              account  = payOutEntity.getProvider();
+            final CustomerProfessionalEntity provider = account.getProfile().getProvider();
+
+            provider.setPendingPayoutFunds(provider.getPendingPayoutFunds().subtract(payOutEntity.getDebitedFunds()));
+            provider.setPendingPayoutFundsUpdatedOn(ZonedDateTime.now());
+
+            this.accountRepository.saveAndFlush(account);
 
             // Update provider wallet
             this.updateCustomerWalletFunds(payOutEntity.getProvider().getKey(), EnumCustomerType.PROVIDER);

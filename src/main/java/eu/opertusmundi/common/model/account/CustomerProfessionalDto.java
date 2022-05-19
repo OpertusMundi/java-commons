@@ -1,6 +1,8 @@
 package eu.opertusmundi.common.model.account;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -22,6 +24,8 @@ public class CustomerProfessionalDto extends CustomerDto implements Serializable
     private byte[]                    logoImage;
     private String                    logoImageMimeType;
     private String                    name;
+    private BigDecimal                pendingPayoutFunds;
+    private ZonedDateTime             pendingPayoutFundsUpdatedOn;
     private String                    phone;
     private Double                    rating;
     private CustomerRepresentativeDto representative;
@@ -29,5 +33,5 @@ public class CustomerProfessionalDto extends CustomerDto implements Serializable
 
     @JsonIgnore
     private Integer pidServiceUserId;
-    
+
 }

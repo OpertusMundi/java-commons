@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.domain;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 
 import javax.persistence.AttributeOverride;
@@ -226,6 +227,17 @@ public class CustomerProfessionalEntity extends CustomerEntity {
     @Setter
     private String siteUrl;
 
+    @NotNull
+    @Column(name = "`pending_payout_funds`", columnDefinition = "numeric", precision = 20, scale = 6)
+    @Getter
+    @Setter
+    private BigDecimal pendingPayoutFunds = BigDecimal.ZERO;
+
+    @Column(name = "`pending_payout_funds_updated_on`")
+    @Getter
+    @Setter
+    private ZonedDateTime pendingPayoutFundsUpdatedOn;
+    
     @Transient
     public Double getRating() {
         if (this.ratingCount == 0) {
@@ -379,6 +391,8 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         p.setName(this.name);
         p.setPaymentProviderUser(this.paymentProviderUser);
         p.setPaymentProviderWallet(this.paymentProviderWallet);
+        p.setPendingPayoutFunds(this.pendingPayoutFunds);
+        p.setPendingPayoutFundsUpdatedOn(this.pendingPayoutFundsUpdatedOn);
         p.setPhone(this.phone);
         p.setPidServiceUserId(this.pidServiceUserId);
         p.setRating(this.getRating());
