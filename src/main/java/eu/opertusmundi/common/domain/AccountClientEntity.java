@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.domain;
 
 import java.time.ZonedDateTime;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -14,26 +15,29 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
-import eu.opertusmundi.common.model.account.AccountApplicationKeyDto;
+import org.hibernate.annotations.NaturalId;
+
+import eu.opertusmundi.common.model.account.AccountClientDto;
 import lombok.Getter;
 import lombok.Setter;
 
-@Entity(name = "AccountApplicationKey")
-@Table(schema = "web", name = "`account_api_key`")
-public class AccountApplicationKeyEntity {
+@Entity(name = "AccountClient")
+@Table(schema = "web", name = "`account_client`")
+public class AccountClientEntity {
 
-    protected AccountApplicationKeyEntity() {
+    protected AccountClientEntity() {
 
     }
 
-    public AccountApplicationKeyEntity(String key) {
-        this.key = key;
+    public AccountClientEntity(String alias, UUID key) {
+        this.alias = alias;
+        this.key   = key;
     }
 
     @Id
     @Column(name = "`id`", updatable = false)
-    @SequenceGenerator(sequenceName = "web.account_api_key_id_seq", name = "account_api_key_id_seq", allocationSize = 1)
-    @GeneratedValue(generator = "account_api_key_id_seq", strategy = GenerationType.SEQUENCE)
+    @SequenceGenerator(sequenceName = "web.account_client_id_seq", name = "account_client_id_seq", allocationSize = 1)
+    @GeneratedValue(generator = "account_client_id_seq", strategy = GenerationType.SEQUENCE)
     @Getter
     private Integer id;
 
@@ -45,6 +49,17 @@ public class AccountApplicationKeyEntity {
     private AccountEntity account;
 
     @NotNull
+    @Column(name = "`alias`")
+    @Getter
+    private String alias;
+
+    @NotNull
+    @NaturalId
+    @Column(name = "key", updatable = false, columnDefinition = "uuid")
+    @Getter
+    private UUID key;
+
+    @NotNull
     @Column(name = "`created_on`")
     @Getter
     private final ZonedDateTime createdOn = ZonedDateTime.now();
@@ -53,26 +68,22 @@ public class AccountApplicationKeyEntity {
     @Getter
     private ZonedDateTime revokedOn;
 
-    @NotNull
-    @Column(name = "`key`")
-    @Getter
-    private String key;
-
     public void revoke() {
-        if (this.revokedOn != null) {
+        if (this.revokedOn == null) {
             this.revokedOn = ZonedDateTime.now();
         }
     }
 
-    public AccountApplicationKeyDto toDto() {
-        final AccountApplicationKeyDto k = new AccountApplicationKeyDto();
+    public AccountClientDto toDto() {
+        final AccountClientDto c = new AccountClientDto();
 
-        k.setCreatedOn(createdOn);
-        k.setId(id);
-        k.setKey(key);
-        k.setRevokedOn(revokedOn);
+        c.setAlias(alias);
+        c.setCreatedOn(createdOn);
+        c.setId(id);
+        c.setKey(key);
+        c.setRevokedOn(revokedOn);
 
-        return k;
+        return c;
     }
 
 }
