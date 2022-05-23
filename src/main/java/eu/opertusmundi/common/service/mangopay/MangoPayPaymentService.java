@@ -987,6 +987,13 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             if (command.getDebitedFunds().compareTo(BigDecimal.ZERO) <= 0) {
                 throw new PaymentException(PaymentMessageCode.ZERO_AMOUNT, "[TOPIO] PayIn amount must be greater than 0");
             }
+            // Bank wire PayIns are allowed only for assets
+            if (order.getItems().stream().filter(i -> i.getType() == EnumOrderItemType.SUBSCRIPTION).findAny().isPresent()) {
+                throw new PaymentException(
+                    PaymentMessageCode.PAYIN_TYPE_NOT_SUPPORTED,
+                    "[TOPIO] Bankwire PayIn is not supported for subscriptions"
+                );
+            }
 
             // Check if this is a retry operation
             PayIn payInResponse = this.<PayIn>getResponse(idempotencyKey);
