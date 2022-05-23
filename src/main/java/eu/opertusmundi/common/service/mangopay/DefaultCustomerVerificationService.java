@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.service.mangopay;
 
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -25,7 +26,9 @@ import com.mangopay.entities.User;
 import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.CustomerEntity;
 import eu.opertusmundi.common.domain.CustomerKycLevelEntity;
+import eu.opertusmundi.common.domain.CustomerProfessionalEntity;
 import eu.opertusmundi.common.model.PageResultDto;
+import eu.opertusmundi.common.model.account.AccountDto;
 import eu.opertusmundi.common.model.account.CustomerDto;
 import eu.opertusmundi.common.model.account.EnumCustomerType;
 import eu.opertusmundi.common.model.account.EnumKycLevel;
@@ -300,6 +303,25 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
         }
     }
 
+    @Override
+    public AccountDto refreshCustomerKycLevel(UUID accountKey) throws CustomerVerificationException {
+        AccountEntity                    account  = this.getAccount(accountKey);
+        final CustomerEntity             consumer = account.getProfile().getConsumer();
+        final CustomerProfessionalEntity provider = account.getProfile().getProvider();
+
+        if (consumer != null) {
+            UpdateKycLevelCommand consumerCommand = UpdateKycLevelCommand.of(consumer.getPaymentProviderUser(), ZonedDateTime.now());
+            this.updateCustomerKycLevel(consumerCommand);
+        }
+        if (provider != null) {
+            UpdateKycLevelCommand providerCommand = UpdateKycLevelCommand.of(provider.getPaymentProviderUser(), ZonedDateTime.now());
+            this.updateCustomerKycLevel(providerCommand);
+        }
+
+        account = this.getAccount(accountKey);
+
+        return account.toDto(true);
+    }
 
     @Override
     public CustomerDto updateCustomerKycLevel(UpdateKycLevelCommand command) throws CustomerVerificationException {
