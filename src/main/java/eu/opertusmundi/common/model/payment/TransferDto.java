@@ -39,6 +39,10 @@ public class TransferDto {
     @Schema(description = "Date of execution")
     private ZonedDateTime executedOn;
 
+    @Schema(hidden = true, description = "Payment provider transfer identifier")
+    @JsonInclude(Include.NON_EMPTY)
+    private String providerId;
+
     @Schema(hidden = true, description = "Payment provider result code")
     @JsonInclude(Include.NON_NULL)
     private String resultCode;

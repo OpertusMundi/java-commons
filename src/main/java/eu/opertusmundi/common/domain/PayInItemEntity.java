@@ -156,10 +156,10 @@ public abstract class PayInItemEntity {
         t.setStatus(transferStatus);
 
         if (includeHelpdeskData) {
+            t.setProviderId(transfer);
             t.setResultCode(transferResultCode);
             t.setResultMessage(transferResultMessage);
         }
-
 
         return t;
     }
