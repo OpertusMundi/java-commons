@@ -121,4 +121,8 @@ public class BpmEngineUtils {
         this.bpmClient.getObject().deleteProcessInstance(processInstanceId);
     }
 
+    public void deleteHistoryProcessInstance(String processInstanceId) {
+        this.bpmClient.getObject().deleteHistoryProcessInstance(processInstanceId);
+    }
+
 }

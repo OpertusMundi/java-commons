@@ -96,6 +96,14 @@ public interface BpmServerFeignClient {
     );
 
     /**
+     * Queries for the number of tasks that fulfill the given parameters.
+     *
+     * @see https://docs.camunda.org/manual/latest/reference/rest/task/get-query-count/
+     */
+    @PostMapping(value = "/task/count", consumes = "application/json")
+    CountResultDto countProcessInstanceTasks();
+
+    /**
      * Queries for process instances that fulfill given parameters. Parameters
      * may be static as well as dynamic runtime properties of process instances.
      *
@@ -312,5 +320,16 @@ public interface BpmServerFeignClient {
      */
     @DeleteMapping(value = "/process-instance/{id}")
     ResponseEntity<Void> deleteProcessInstance(@PathVariable("id") String processInstanceId);
+
+    /**
+     * Deletes a historic process instance by id
+     *
+     * @param processInstanceId
+     * @return
+     *
+     * @see https://docs.camunda.org/manual/latest/reference/rest/history/process-instance/delete-process-instance/
+     */
+    @DeleteMapping(value = "/history/process-instance/{id}")
+    ResponseEntity<Void> deleteHistoryProcessInstance(@PathVariable("id") String processInstanceId);
 
 }
