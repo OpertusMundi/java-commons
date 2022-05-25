@@ -15,6 +15,7 @@ import com.ibm.icu.text.MessageFormat;
 
 import eu.opertusmundi.common.domain.NotificationTemplateEntity;
 import eu.opertusmundi.common.model.ServiceException;
+import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.message.EnumNotificationType;
 import eu.opertusmundi.common.model.message.client.NotificationMessageCode;
 import eu.opertusmundi.common.model.order.HelpdeskOrderDto;
@@ -69,6 +70,7 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
             case FILES_UPLOAD_COMPLETED :
             case ASSET_PUBLISHING_ACCEPTED :
             case ASSET_PUBLISHING_REJECTED :
+            case ASSET_PUBLISHING_CANCELLED :
             case ASSET_PUBLISHED :
                 return MessageFormat.format(template.getText(), this.jsonToMap(data));
         }
@@ -134,6 +136,9 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
 
             case ASSET_PUBLISHING_REJECTED :
             	return populatePublishingRejectedModel(variables, data);
+
+            case ASSET_PUBLISHING_CANCELLED:
+                return populatePublishingCancelledModel(variables, data);
 
             case ASSET_PUBLISHED :
             	return populateAssetPublishedModel(variables, data);
@@ -225,6 +230,20 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
         data.put("assetName", assetName);
         return data;
 	}
+
+    private ObjectNode populatePublishingCancelledModel(Map<String, Object> variables, ObjectNode data) {
+        final UUID          draftKey = UUID.fromString((String) variables.get("draftKey"));
+        final AssetDraftDto draft    = this.providerAssetService.findOneDraft(draftKey);
+
+        Assert.notNull(draft, "Expected a non-null draft");
+
+        final String assetName    = draft.getTitle();
+        final String errorMessage = draft.getHelpdeskErrorMessage();
+
+        data.put("assetName", assetName);
+        data.put("errorMessage", errorMessage);
+        return data;
+    }
 
 	private ObjectNode populateAssetPublishedModel(Map<String, Object> variables, ObjectNode data) {
 		final UUID 		draftKey  			= UUID.fromString((String) variables.get("draftKey"));
