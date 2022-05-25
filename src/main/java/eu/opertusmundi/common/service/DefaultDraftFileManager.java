@@ -486,4 +486,24 @@ public class DefaultDraftFileManager implements DraftFileManager {
             throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
         }
     }
+
+    @Override
+    public void resetDraft(UUID publisherKey, UUID draftKey) throws FileSystemException, AssetRepositoryException {
+        Assert.notNull(publisherKey, "Expected a non-null publisher key");
+        Assert.notNull(draftKey, "Expected a non-null draft key");
+
+        try {
+            final DraftFileNamingStrategyContext ctx          = DraftFileNamingStrategyContext.of(publisherKey, draftKey);
+            final Path                           absolutePath = this.draftNamingStrategy.resolvePath(ctx, METADATA_PATH);
+            final File                           file         = absolutePath.toFile();
+
+            if (file.exists() && !FileUtils.deleteQuietly(file)) {
+                draftRepositoryLogger.error(String.format("Failed to delete metadata path for draft. [key=%s]", draftKey));
+            }
+        } catch (final FileSystemException ex) {
+            throw ex;
+        } catch (final Exception ex) {
+            throw new AssetRepositoryException(AssetMessageCode.IO_ERROR, "An unknown error has occurred", ex);
+        }
+    }
 }

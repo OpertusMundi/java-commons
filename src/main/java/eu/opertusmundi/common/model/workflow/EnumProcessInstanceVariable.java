@@ -4,6 +4,7 @@ public enum EnumProcessInstanceVariable {
     START_USER_KEY("startUserKey"),
     BPMN_BUSINESS_ERROR_DETAILS("bpmnBusinessErrorDetails"), 
     BPMN_BUSINESS_ERROR_MESSAGES("bpmnBusinessErrorMessages"),
+    HELPDESK_ERROR_MESSAGE("helpdeskErrorMessage"),
     ;
 
     private String value;

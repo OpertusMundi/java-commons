@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.locationtech.jts.geom.Geometry;
@@ -23,9 +24,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.ProviderAssetDraftEntity;
+import eu.opertusmundi.common.model.Message;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
+import eu.opertusmundi.common.model.asset.EnumResourceType;
+import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemMetadataCommandDto;
@@ -115,6 +119,17 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         String processDefinition,
         String processInstance
     ) throws AssetDraftException {
+        return this.update(command, status, processDefinition, processInstance, false);
+    }
+
+    @Transactional(readOnly = false)
+    default AssetDraftDto update(
+        CatalogueItemCommandDto command,
+        EnumProviderAssetDraftStatus status,
+        String processDefinition,
+        String processInstance,
+        boolean resetErrors
+    ) throws AssetDraftException {
         Assert.notNull(command, "Expected a non-null command");
 
         Assert.isTrue(
@@ -177,6 +192,12 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         draft.setType(command.getType());
         draft.setVendorAccount(owner);
         draft.setVersion(command.getVersion());
+
+        if (resetErrors) {
+            draft.setWorkflowErrorDetails(null);
+            draft.setWorkflowErrorMessages(null);
+            draft.setHelpdeskErrorMessage(null);
+        }
 
         this.saveAndFlush(draft);
 
@@ -254,6 +275,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         // is specified
         if (draft.getCommand().getGeometry() == null && geometry != null) {
             draft.getCommand().setGeometry(geometry);
+            draft.setComputedGeometry(true);
         }
 
 		draft.getCommand().setAutomatedMetadata(metadata);
@@ -348,7 +370,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
             );
         }
 
-        // Initialize ingestion data if needed
+        // Get ingestion data for the specified resource
         final ResourceIngestionDataDto ingestionData = draft.getCommand().getIngestionInfo().stream()
             .filter(i -> i.getKey().equals(resourceKey))
             .findFirst()
@@ -492,6 +514,67 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         draft.setProviderRejectionReason(reason);
 
         return nextStatus;
+    }
+
+    @Transactional(readOnly = false)
+    default void setErrorMessage(UUID publisherKey, UUID draftKey, String message) throws AssetDraftException {
+        final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
+
+        if (draft == null) {
+            throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
+        }
+        if (draft.getStatus() == EnumProviderAssetDraftStatus.DRAFT ||
+            draft.getStatus() == EnumProviderAssetDraftStatus.PUBLISHED
+        ) {
+            throw new AssetDraftException(
+                AssetMessageCode.INVALID_STATE,
+                String.format("Invalid draft status found. [status=%s]", draft.getStatus())
+            );
+        }
+        draft.setModifiedOn(ZonedDateTime.now());
+        draft.setHelpdeskErrorMessage(message);
+
+        this.saveAndFlush(draft);
+    }
+
+    @Transactional(readOnly = false)
+    default void resetDraft(UUID publisherKey, UUID draftKey, String errorDetails, List<Message> errorMessages) throws AssetDraftException {
+        final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
+
+        if (draft == null) {
+            throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
+        }
+        if (draft.getStatus() == EnumProviderAssetDraftStatus.DRAFT ||
+            draft.getStatus() == EnumProviderAssetDraftStatus.PUBLISHED
+        ) {
+            throw new AssetDraftException(
+                AssetMessageCode.INVALID_STATE,
+                String.format("Invalid draft status found. [status=%s]", draft.getStatus())
+            );
+        }
+
+        draft.setModifiedOn(ZonedDateTime.now());
+        draft.setStatus(EnumProviderAssetDraftStatus.DRAFT);
+        draft.setWorkflowErrorDetails(errorDetails);
+        draft.setWorkflowErrorMessages(errorMessages);
+
+        // Reset profile data
+        draft.getCommand().setAutomatedMetadata(null);
+        if (draft.isComputedGeometry()) {
+            draft.getCommand().setGeometry(null);
+            draft.setComputedGeometry(false);
+        }
+        // Reset ingest data
+        draft.getCommand().setIngestionInfo(null);
+        // Reset resources. Service resources are auto-generated by the BPM
+        // worker during the get capabilities task service
+        final List<ResourceDto> resources = draft.getCommand().getResources().stream()
+            .filter(r -> r.getType() == EnumResourceType.FILE)
+            .collect(Collectors.toList());
+
+        draft.getCommand().setResources(resources);
+
+        this.saveAndFlush(draft);
     }
 
     @Transactional(readOnly = false)

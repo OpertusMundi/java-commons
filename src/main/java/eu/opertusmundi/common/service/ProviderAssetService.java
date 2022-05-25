@@ -10,6 +10,7 @@ import java.util.UUID;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.model.EnumSortingOrder;
+import eu.opertusmundi.common.model.Message;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.asset.AssetContractAnnexCommandDto;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
@@ -32,6 +33,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemMetadataComman
 import eu.opertusmundi.common.model.catalogue.client.DraftApiCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.DraftFromAssetCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
+import eu.opertusmundi.common.model.catalogue.client.EnumDraftStatus;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.UnpublishAssetCommand;
 import eu.opertusmundi.common.model.contract.provider.ProviderUploadContractCommand;
@@ -220,6 +222,30 @@ public interface ProviderAssetService {
      * @throws AssetDraftException
      */
     void publishDraft(UUID ownerKey, UUID publisherKey, UUID draftKey) throws AssetDraftException;
+
+    /**
+     * Cancel a draft publication
+     *
+     * The draft status is set to {@link EnumDraftStatus#DRAFT} and error
+     * details are set for the workflow instance.
+     *
+     * @param publisherKey
+     * @param draftKey
+     * @param errorDetails
+     * @param errorMessages
+     * @throws AssetDraftException
+     */
+    void cancelPublishDraft(UUID publisherKey, UUID draftKey, String errorDetails, List<Message> errorMessages) throws AssetDraftException;
+
+    /**
+     * Reject a draft from a HelpDesk account
+     *
+     * @param publisherKey
+     * @param draftKey
+     * @param message
+     * @throws AssetDraftException
+     */
+    void setPublishError(UUID publisherKey, UUID draftKey, String message) throws AssetDraftException;
 
     /**
      * Update draft metadata

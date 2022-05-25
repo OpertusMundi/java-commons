@@ -58,4 +58,14 @@ public interface DraftFileManager {
     void deleteAllFiles(UUID publisherKey, UUID draftKey);
 
     void linkDraftFilesToAsset(UUID publisherKey, UUID draftKey, String pid) throws FileSystemException, AssetRepositoryException;
+
+    /**
+     * Reset draft files
+     *
+     * @param publisherKey
+     * @param draftKey
+     * @throws FileSystemException
+     * @throws AssetRepositoryException
+     */
+    void resetDraft(UUID publisherKey, UUID draftKey) throws FileSystemException, AssetRepositoryException;
 }

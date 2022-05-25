@@ -54,6 +54,7 @@ import eu.opertusmundi.common.domain.RecordLockEntity;
 import eu.opertusmundi.common.model.EnumLockResult;
 import eu.opertusmundi.common.model.EnumRecordLock;
 import eu.opertusmundi.common.model.EnumSortingOrder;
+import eu.opertusmundi.common.model.Message;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.RecordLockDto;
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
@@ -127,6 +128,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     private static final Logger logger = LoggerFactory.getLogger(DefaultProviderAssetService.class);
 
     private static final String TASK_REVIEW = "task-review";
+
+    private static final String TASK_SET_ERROR = "task-helpdesk-set-error";
 
     private static final String MESSAGE_PROVIDER_REVIEW = "provider-publish-asset-user-acceptance-message";
 
@@ -712,6 +715,11 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 }
             }
 
+            // Delete failed workflow instance
+            if (!StringUtils.isBlank(draft.getHelpdeskErrorMessage()) && draft.getProcessInstance() != null) {
+                this.bpmEngine.deleteHistoryProcessInstance(draft.getProcessInstance());
+            }
+
             // Check if workflow exists
             final EnumProviderAssetDraftStatus newStatus = EnumProviderAssetDraftStatus.SUBMITTED;
             ProcessInstanceDto                 instance  = this.bpmEngine.findInstance(command.getDraftKey());
@@ -731,7 +739,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 );
             }
 
-            this.draftRepository.update(command, newStatus, instance.getDefinitionId(), instance.getId());
+            this.draftRepository.update(command, newStatus, instance.getDefinitionId(), instance.getId(), true);
         } catch (final AssetDraftException ex) {
             throw ex;
         } finally {
@@ -938,6 +946,62 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             logger.error("Operation has failed", ex);
 
             throw new AssetDraftException(AssetMessageCode.ERROR, "Failed to publish asset", ex);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void setPublishError(UUID publisherKey, UUID draftKey, String message) throws AssetDraftException {
+        try {
+            // Update draft
+            this.draftRepository.setErrorMessage(publisherKey, draftKey, message);
+
+            // Find workflow task
+            final TaskDto task = this.bpmEngine.findTaskById(draftKey.toString(), TASK_SET_ERROR).orElse(null);
+
+            if (task != null) {
+                // Complete task
+                final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
+                    .variableAsString(EnumProcessInstanceVariable.HELPDESK_ERROR_MESSAGE.getValue(), message)
+                    .build();
+
+                this.bpmEngine.completeTask(task.getId(), variables);
+            }
+        } catch (final FeignException fex) {
+            logger.error("Operation has failed", fex);
+
+            throw new AssetDraftException(AssetMessageCode.BPM_SERVICE, "Operation on BPM server failed", fex);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void cancelPublishDraft(
+        UUID publisherKey, UUID draftKey, String errorDetails, List<Message> errorMessages
+    ) throws AssetDraftException {
+        try {
+            final ProviderAssetDraftEntity draft = this.draftRepository.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
+
+            if (draft == null) {
+                throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
+            }
+            if (draft.getStatus() == EnumProviderAssetDraftStatus.DRAFT ||
+                draft.getStatus() == EnumProviderAssetDraftStatus.PUBLISHED
+            ) {
+                throw new AssetDraftException(
+                    AssetMessageCode.INVALID_STATE,
+                    String.format("Invalid draft status found. [status=%s]", draft.getStatus())
+                );
+            }
+
+            // Cleanup files
+            this.draftFileManager.resetDraft(publisherKey, draftKey);
+            // Update data
+            this.draftRepository.resetDraft(publisherKey, draftKey, errorDetails, errorMessages);
+        } catch (final Exception ex) {
+            logger.error("Operation has failed", ex);
+
+            throw new AssetDraftException(AssetMessageCode.ERROR, "Failed to cancel asset publication", ex);
         }
     }
 
