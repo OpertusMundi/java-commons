@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.domain;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -19,7 +20,12 @@ import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
 
 import org.hibernate.annotations.NaturalId;
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TypeDef;
 
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
+
+import eu.opertusmundi.common.model.Message;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
@@ -32,6 +38,7 @@ import lombok.Setter;
 @Table(schema = "provider", name = "`asset_draft`", uniqueConstraints = {
     @UniqueConstraint(name = "uq_asset_draft_key", columnNames = {"`key`"}),
 })
+@TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
 public class ProviderAssetDraftEntity {
 
     @Id
@@ -147,13 +154,40 @@ public class ProviderAssetDraftEntity {
     @Setter
     private ZonedDateTime modifiedOn;
 
+    @Column(name = "`workflow_error_details`")
+    @Getter
+    @Setter
+    private String workflowErrorDetails;
+
+    @Type(type = "jsonb")
+    @Column(name = "`workflow_error_messages`", columnDefinition = "jsonb")
+    @Getter
+    @Setter
+    private List<Message> workflowErrorMessages;
+
+    @Column(name = "`helpdesk_error_message`")
+    @Getter
+    @Setter
+    private String helpdeskErrorMessage;
+
+    @Column(name = "`computed_geometry`")
+    @Getter
+    @Setter
+    private boolean computedGeometry;
+
     public AssetDraftDto toDto() {
+        return this.toDto(false);
+    }
+
+    public AssetDraftDto toDto(boolean includeHelpdeskDetails) {
         final AssetDraftDto a = new AssetDraftDto();
 
         a.setAssetDraft(this.assetDraft);
         a.setAssetPublished(this.assetPublished);
         a.setCreatedOn(this.createdOn);
         a.setCommand(this.command);
+        a.setComputedGeometry(this.computedGeometry);
+        a.setHelpdeskErrorMessage(helpdeskErrorMessage);
         a.setHelpdeskRejectionReason(this.helpdeskRejectionReason);
         a.setId(id);
         a.setIngested(this.ingested);
@@ -161,6 +195,7 @@ public class ProviderAssetDraftEntity {
         a.setModifiedOn(this.modifiedOn);
         a.setOwner(this.getVendorAccount() == null ? this.getAccount().getKey() : this.getVendorAccount().getKey());
         a.setParentId(this.parentId);
+        a.setProcessInstance(processInstance);
         a.setProviderRejectionReason(this.providerRejectionReason);
         a.setServiceType(this.serviceType);
         a.setStatus(this.status);
@@ -169,6 +204,11 @@ public class ProviderAssetDraftEntity {
         a.setVersion(this.version);
 
         a.setPublisher(this.account.getProvider().toProviderDto(true));
+
+        if(includeHelpdeskDetails) {
+            a.setWorkflowErrorDetails(workflowErrorDetails);
+            a.setWorkflowErrorMessages(workflowErrorMessages);
+        }
 
         return a;
     }

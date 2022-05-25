@@ -1,17 +1,21 @@
 package eu.opertusmundi.common.model.asset;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import eu.opertusmundi.common.model.Message;
 import eu.opertusmundi.common.model.RecordLockDto;
 import eu.opertusmundi.common.model.account.ProviderDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,6 +26,9 @@ public class AssetDraftDto {
 
     @JsonIgnore
     private int id;
+
+    @JsonIgnore
+    private String processInstance;
 
     @Schema(description=
           "Draft unique identifier. "
@@ -66,6 +73,9 @@ public class AssetDraftDto {
     )
     private boolean ingested = false;
 
+    @Schema(description = "`True` if the geometry has been set by automated metadata")
+    private boolean computedGeometry;
+
     @Schema(description = "Creation date in ISO format")
     private ZonedDateTime createdOn;
 
@@ -84,6 +94,26 @@ public class AssetDraftDto {
     @Schema(description = "Lock details. If a lock exists, the record type is always `DRAFT`")
     @JsonInclude(Include.NON_NULL)
     private RecordLockDto lock;
+
+    @Hidden
+    @Schema(description = "Workflow error details")
+    @JsonInclude(Include.NON_EMPTY)
+    private String workflowErrorDetails;
+
+    @Hidden
+    @ArraySchema(
+        arraySchema = @Schema(
+            description = "Workflow error messages"
+        ),
+        minItems = 0,
+        uniqueItems = true
+    )
+    @JsonInclude(Include.NON_EMPTY)
+    private List<Message> workflowErrorMessages;
+
+    @Schema(description = "Helpdesk error message")
+    @JsonInclude(Include.NON_EMPTY)
+    private String helpdeskErrorMessage;
 
     public ResourceDto getResourceByKey(String key) {
         return this.getCommand().getResources().stream()
