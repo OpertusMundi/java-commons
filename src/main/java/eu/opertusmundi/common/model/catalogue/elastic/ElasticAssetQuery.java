@@ -26,6 +26,9 @@ import lombok.Setter;
 @Builder
 public class ElasticAssetQuery {
 
+    @JsonIgnore
+    private boolean autocomplete;
+
     @Schema(description = "Text used for full text search")
     private String text;
 

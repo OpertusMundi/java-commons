@@ -104,7 +104,7 @@ public class SentinelHubDataProviderIntegrationService extends BaseDataProviderI
             .type(Arrays.asList(command.getType()))
             .build();
 
-        final List<CatalogueItemDto> items = catalogueService.findAllAdvanced(null, query).getResult().getItems();
+        final List<CatalogueItemDto> items = catalogueService.findAllElastic(null, query).getResult().getItems();
 
         switch (props.getType()) {
             case OPEN_DATA : {

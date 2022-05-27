@@ -47,7 +47,7 @@ public interface CatalogueService {
      * @return
      * @throws CatalogueServiceException
      */
-    CatalogueResult<CatalogueItemDto> findAllAdvanced(RequestContext ctx, ElasticAssetQuery request) throws CatalogueServiceException;
+    CatalogueResult<CatalogueItemDto> findAllElastic(RequestContext ctx, ElasticAssetQuery request) throws CatalogueServiceException;
 
     /**
      * Find all items with the specified identifiers

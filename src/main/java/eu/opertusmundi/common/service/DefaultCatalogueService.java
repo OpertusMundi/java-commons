@@ -204,7 +204,7 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     @Override
-    public CatalogueResult<CatalogueItemDto> findAllAdvanced(
+    public CatalogueResult<CatalogueItemDto> findAllElastic(
         RequestContext ctx, ElasticAssetQuery request
     ) throws CatalogueServiceException {
         Assert.notNull(request, "Expected a non-null request");
@@ -233,7 +233,7 @@ public class DefaultCatalogueService implements CatalogueService {
             this.logViews(ctx, response.getResult().getItems(), request.getText(), EnumAssetViewSource.SEARCH);
 
             // Log user search term
-            if (ctx != null && ctx.getAccount() != null && !StringUtils.isBlank(request.getText())) {
+            if (!request.isAutocomplete() && ctx != null && ctx.getAccount() != null && !StringUtils.isBlank(request.getText())) {
                 this.recentSearchRepository.add(ctx.getAccount().getId(), request.getText());
             }
 

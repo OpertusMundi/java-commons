@@ -27,6 +27,9 @@ public interface AccountRecentSearchRepository extends JpaRepository<AccountRece
     @Query("SELECT r FROM AccountRecentSearch r WHERE r.account.id = :id")
     Page<AccountRecentSearchEntity> findAllByAccount(int id, Pageable pageable);
 
+    @Query("SELECT r FROM AccountRecentSearch r WHERE r.account.id = :id and r.value = :value")
+    List<AccountRecentSearchEntity> findOneByAccountAndValue(int id, String value);
+
     default List<AccountRecentSearchDto> findAllObjectsByAccount(int id) {
         return this.findAllObjectsByAccount(id, 10);
     }
@@ -39,7 +42,12 @@ public interface AccountRecentSearchRepository extends JpaRepository<AccountRece
 
     @Transactional(readOnly = false)
     default void add(int userId, String value) {
-        final AccountEntity account = this.findOneAccountById(userId).orElse(null);
+        final AccountEntity account     = this.findOneAccountById(userId).orElse(null);
+        final boolean       valueExists = !this.findOneByAccountAndValue(userId, value).isEmpty();
+
+        if (valueExists) {
+            return;
+        }
 
         final AccountRecentSearchEntity e = new AccountRecentSearchEntity();
         e.setAccount(account);
