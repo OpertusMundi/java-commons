@@ -6,6 +6,7 @@ public enum EnumWorkflow {
 
     ACCOUNT_REGISTRATION                 ("account-registration"),
     CATALOGUE_HARVEST                    ("catalogue-harvest"),
+    CONSUMER_COPY_RESOURCE_TO_DRIVE      ("consumer-copy-resource-to-drive"),
     CONSUMER_PURCHASE_ASSET_WITH_PAYIN   ("consumer-purchase-asset-with-payin"),
     CONSUMER_PURCHASE_ASSET_WITHOUT_PAYIN("consumer-purchase-asset-without-payin"),
     CONSUMER_REGISTRATION                ("consumer-registration"),

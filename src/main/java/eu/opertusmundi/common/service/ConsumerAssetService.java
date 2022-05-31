@@ -4,13 +4,17 @@ import java.util.UUID;
 
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
+import eu.opertusmundi.common.model.ServiceException;
 import eu.opertusmundi.common.model.account.AccountAssetDto;
 import eu.opertusmundi.common.model.account.AccountSubscriptionDto;
 import eu.opertusmundi.common.model.account.ConsumerServiceException;
 import eu.opertusmundi.common.model.asset.EnumConsumerAssetSortField;
 import eu.opertusmundi.common.model.asset.EnumConsumerSubSortField;
+import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
+import eu.opertusmundi.common.model.file.CopyToDriveCommandDto;
+import eu.opertusmundi.common.model.file.CopyToDriveResultDto;
 
 public interface ConsumerAssetService {
 
@@ -62,5 +66,25 @@ public interface ConsumerAssetService {
      * @return
      */
     AccountSubscriptionDto findSubscription(UUID userKey, UUID orderKey);
+
+    /**
+     * Resolve the path of a resource for an asset, purchased by the specified user
+     *
+     * @param userKey
+     * @param pid
+     * @param resourceKey
+     * @return
+     * @throws ServiceException
+     */
+    FileResourceDto resolveResourcePath(UUID userKey, String pid, String resourceKey) throws ServiceException;
+
+    /**
+     * Copy asset resource to Topio drive
+     *
+     * @param command
+     * @return
+     * @throws ServiceException
+     */
+    CopyToDriveResultDto copyToDrive(CopyToDriveCommandDto command) throws ServiceException;
 
 }

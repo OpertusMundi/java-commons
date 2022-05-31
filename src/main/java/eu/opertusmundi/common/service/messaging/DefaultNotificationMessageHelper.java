@@ -72,6 +72,8 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
             case ASSET_PUBLISHING_REJECTED :
             case ASSET_PUBLISHING_CANCELLED :
             case ASSET_PUBLISHED :
+            case COPY_FILE_TO_TOPIO_DRIVE_SUCCESS:
+            case COPY_FILE_TO_TOPIO_DRIVE_ERROR:
                 return MessageFormat.format(template.getText(), this.jsonToMap(data));
         }
 
@@ -142,6 +144,13 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
 
             case ASSET_PUBLISHED :
             	return populateAssetPublishedModel(variables, data);
+
+            case COPY_FILE_TO_TOPIO_DRIVE_SUCCESS:
+            case COPY_FILE_TO_TOPIO_DRIVE_ERROR:
+                data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
+                data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+                data.put("resourceFileName", this.checkAndGetVariable(variables, "resourceFileName"));
+                return data;
         }
 
         // No variables required

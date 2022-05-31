@@ -217,7 +217,16 @@ public class DefaultUserFileManager implements UserFileManager {
     }
 
     @Override
+    public Path resolveDirPath(FilePathCommand command) throws FileSystemException {
+        return this.resolvePath(command, true);
+    }
+
+    @Override
     public Path resolveFilePath(FilePathCommand command) throws FileSystemException {
+        return this.resolvePath(command, false);
+    }
+
+    private Path resolvePath(FilePathCommand command, boolean isDir) throws FileSystemException {
         Assert.notNull(command, "Expected a non-null command");
         Assert.hasText(command.getUserName(), "Expected a non-null user name");
 
@@ -232,8 +241,10 @@ public class DefaultUserFileManager implements UserFileManager {
 
             if (!file.exists()) {
                 throw new FileSystemException(FileSystemMessageCode.PATH_NOT_FOUND, "File does not exist");
-            } else if (file.isDirectory()) {
+            } else if (!isDir && file.isDirectory()) {
                 throw new FileSystemException(FileSystemMessageCode.PATH_IS_DIRECTORY, "Path is not a file");
+            } else if (isDir && !file.isDirectory()) {
+                throw new FileSystemException(FileSystemMessageCode.PATH_IS_FILE, "Path is not a directory");
             }
 
             return file.toPath();

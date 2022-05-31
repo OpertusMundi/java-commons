@@ -8,6 +8,7 @@ public enum FileSystemMessageCode implements MessageCode {
     NOT_ENOUGH_SPACE,
     PATH_ALREADY_EXISTS,
     PATH_IS_DIRECTORY,
+    PATH_IS_FILE,
     PATH_IS_EMPTY,
     PATH_MAX_DEPTH,
     PATH_MAX_LENGTH,

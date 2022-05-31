@@ -18,7 +18,7 @@ public enum BasicMessageCode implements MessageCode {
     // Configuration
     SettingNotFound,
     InvalidSettingType,
-    
+
     // Validation error codes
     Validation,
     ValidationNotUnique,
@@ -55,6 +55,10 @@ public enum BasicMessageCode implements MessageCode {
     ;
 
     private final HttpStatus httpStatus;
+
+    public HttpStatus getHttpStatus() {
+        return this.httpStatus == null ? HttpStatus.INTERNAL_SERVER_ERROR : this.httpStatus;
+    }
 
     private BasicMessageCode() {
         this.httpStatus = null;

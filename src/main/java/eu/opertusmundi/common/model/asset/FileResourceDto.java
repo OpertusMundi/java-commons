@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.model.asset;
 
 import java.io.Serializable;
+import java.nio.file.Path;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 
@@ -8,10 +9,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.locationtech.jts.util.Assert;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueResource;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -115,5 +119,21 @@ public class FileResourceDto extends ResourceDto implements Serializable {
 
         return r;
     }
+
+    /**
+     * The path of the file resource
+     */
+    @JsonIgnore
+    @Hidden
+    private Path path;
+
+    /**
+     * Parent asset
+     */
+    @JsonIgnore
+    @Hidden
+    private CatalogueItemDetailsDto asset;
+
+
 
 }

@@ -16,7 +16,7 @@ public class ServiceException extends RuntimeException {
 
     @Getter
     private final MessageCode code;
-    
+
     @Getter
     private final List<Message> messages = new ArrayList<>();
 
@@ -48,10 +48,26 @@ public class ServiceException extends RuntimeException {
         final Throwable result = ExceptionUtils.getRootCause(this);
         return result == null ? this : result;
     }
-    
+
     public ServiceException addMessage(MessageCode code, String description) {
         this.messages.add(new Message(code, description));
         return this;
+    }
+
+    public static ServiceException unauthorized() {
+        return new ServiceException(BasicMessageCode.Unauthorized, "Not authorized to access resource");
+    }
+
+    public static ServiceException notFound() {
+        return new ServiceException(BasicMessageCode.NotFound, "Resource not found");
+    }
+
+    public static ServiceException error() {
+        return ServiceException.error("An unhandled exception has occurred");
+    }
+
+    public static ServiceException error(String message) {
+        return new ServiceException(BasicMessageCode.InternalServerError, message);
     }
 
 }

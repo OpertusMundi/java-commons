@@ -4,6 +4,7 @@ import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.RestResponse;
 import eu.opertusmundi.common.model.account.AccountAssetDto;
 import eu.opertusmundi.common.model.account.AccountSubscriptionDto;
+import eu.opertusmundi.common.model.file.CopyToDriveResultDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public class ConsumerEndpointTypes {
@@ -20,6 +21,11 @@ public class ConsumerEndpointTypes {
 
     @Schema(description = "Subscription response")
     public static class SubscriptionResponse extends RestResponse<AccountSubscriptionDto> {
+
+    }
+
+    @Schema(description = "File copy operation response")
+    public static class CopyToDriveResponse extends RestResponse<CopyToDriveResultDto> {
 
     }
 

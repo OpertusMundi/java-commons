@@ -18,12 +18,12 @@ public class FileUploadDto {
     @JsonIgnore
     private String relativePath;
 
-    private String               comment;
-    private ZonedDateTime        createdOn;
-    private String               fileName;
-    private UUID                 key;
-    private UUID                 owningEntityKey;
+    private String             comment;
+    private ZonedDateTime      createdOn;
+    private String             fileName;
+    private UUID               key;
+    private UUID               owningEntityKey;
     private EnumFileSystemType owningEntityType;
-    private Long                 size;
+    private Long               size;
 
 }

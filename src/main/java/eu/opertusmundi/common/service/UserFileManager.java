@@ -24,6 +24,8 @@ public interface UserFileManager {
 
     void deletePath(FilePathCommand command) throws FileSystemException;
 
+    Path resolveDirPath(FilePathCommand command) throws FileSystemException;
+
     Path resolveFilePath(FilePathCommand command) throws FileSystemException;
 
 }
