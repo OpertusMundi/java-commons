@@ -14,10 +14,11 @@ import lombok.Setter;
 @Setter
 public class CopyToDriveCommandDto {
 
-    @Schema(description = "File path in user's remote file system")
+    @Schema(description = "Directory path in user's remote file system")
     @NotEmpty
     private String path;
 
+    @Schema(description = "Optional filename. If not set, the resource filename is used")
     private String fileName;
 
     @JsonIgnore
