@@ -1,6 +1,6 @@
 package eu.opertusmundi.common.model.keycloak.server;
 
-import io.jsonwebtoken.lang.Assert;
+import org.springframework.util.Assert;
 
 @lombok.Getter
 @lombok.Setter
@@ -18,7 +18,7 @@ public class ClientQueryDto extends PageRequest
     
     public static ClientQueryDto forClientId(String clientId)
     {
-        Assert.hasText(clientId);
+        Assert.hasText(clientId, "clientId must not be empty");
         ClientQueryDto q = new ClientQueryDto();
         q.clientId = clientId;
         return q;
