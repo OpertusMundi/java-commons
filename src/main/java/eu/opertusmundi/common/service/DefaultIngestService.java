@@ -189,6 +189,28 @@ public class DefaultIngestService implements IngestService {
         }
     }
 
+    @Override
+    public void removeLayerAndData(String table, String schema, String workspace) throws IngestServiceException {
+        try {
+            final ResponseEntity<Void> e = this.ingestClient.getObject().removeLayerAndData(table, schema, workspace);
+
+            if (e.getStatusCode() != HttpStatus.NO_CONTENT) {
+                throw new IngestServiceException(
+                    IngestServiceMessageCode.SERVICE_ERROR,
+                    String.format("Invalid status code. [expected=%s, received=%]", HttpStatus.NO_CONTENT, e.getStatusCode())
+                );
+            }
+        } catch (final FeignException fex) {
+            logger.error("Operation has failed", fex);
+
+            throw new IngestServiceException(IngestServiceMessageCode.SERVICE_ERROR, fex.getMessage(), fex);
+        } catch (final Exception ex) {
+            logger.error("Operation has failed", ex);
+
+            throw new IngestServiceException(IngestServiceMessageCode.UNKNOWN, ex);
+        }
+    }
+
     private Path copyResource(String relativePath, String path) throws IOException {
         final String fileName           = FilenameUtils.getName(path);
         final Path   absoluteSourcePath = Paths.get(this.inputDir, relativePath, fileName);

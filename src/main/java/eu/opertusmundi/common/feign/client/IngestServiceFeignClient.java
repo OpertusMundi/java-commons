@@ -3,11 +3,13 @@ package eu.opertusmundi.common.feign.client;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 
 import eu.opertusmundi.common.feign.client.config.IngestServiceClientConfiguration;
@@ -113,5 +115,20 @@ public interface IngestServiceFeignClient {
      */
     @GetMapping(value = "/ticket_by_key/{key}", produces = "application/json")
     ResponseEntity<ServerIngestTicketResponseDto> getTicketFromIdempotentKey(@PathVariable("key") String key);
+    
+    /**
+     * Remove all ingested data relative to the given table
+     * 
+     * @param table Database table name
+     * @param schema The database schema; if not present the default schema will be assumed
+     * @param workspace The workspace that the layer belongs; if not present, the default workspace will be assumed
+     * @return
+     */
+    @DeleteMapping(value = "/ingest/{table}")
+    ResponseEntity<Void> removeLayerAndData(
+        @PathVariable("table") String table,
+        @RequestParam(name = "schema", required = false) String schema,
+        @RequestParam(name = "workspace", required = false) String workspace
+    );
     
 }
