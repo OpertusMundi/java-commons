@@ -46,13 +46,6 @@ import org.springframework.web.util.pattern.PathPatternParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import feign.Feign;
-import feign.FeignException;
-import feign.FeignException.FeignClientException;
-import feign.RequestInterceptor;
-import feign.RequestTemplate;
-import feign.httpclient.ApacheHttpClient;
-
 import eu.opertusmundi.common.feign.client.KeycloakAdminFeignClient;
 import eu.opertusmundi.common.feign.client.KeycloakRefreshTokenFeignClient;
 import eu.opertusmundi.common.model.keycloak.KeycloakClientException;
@@ -69,6 +62,12 @@ import eu.opertusmundi.common.model.keycloak.server.RoleDto;
 import eu.opertusmundi.common.model.keycloak.server.RoleQueryDto;
 import eu.opertusmundi.common.model.keycloak.server.UserDto;
 import eu.opertusmundi.common.model.keycloak.server.UserQueryDto;
+import feign.Feign;
+import feign.FeignException;
+import feign.FeignException.FeignClientException;
+import feign.RequestInterceptor;
+import feign.RequestTemplate;
+import feign.httpclient.ApacheHttpClient;
 
 
 @Service

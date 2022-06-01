@@ -1,7 +1,5 @@
 package eu.opertusmundi.common.model.keycloak.server;
 
-import java.util.Objects;
-
 import io.jsonwebtoken.lang.Assert;
 
 @lombok.Getter
