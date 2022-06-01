@@ -230,7 +230,9 @@ public class DefaultCatalogueService implements CatalogueService {
             );
 
             // Log asset views
-            this.logViews(ctx, response.getResult().getItems(), request.getText(), EnumAssetViewSource.SEARCH);
+            if (!request.isAutocomplete()) {
+                this.logViews(ctx, response.getResult().getItems(), request.getText(), EnumAssetViewSource.SEARCH);
+            }
 
             // Log user search term
             if (!request.isAutocomplete() && ctx != null && ctx.getAccount() != null && !StringUtils.isBlank(request.getText())) {
