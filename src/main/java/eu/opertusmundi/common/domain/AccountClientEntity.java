@@ -26,12 +26,11 @@ import lombok.Setter;
 public class AccountClientEntity {
 
     protected AccountClientEntity() {
-
     }
 
-    public AccountClientEntity(String alias, UUID key) {
+    public AccountClientEntity(String alias, UUID clientId) {
         this.alias = alias;
-        this.key   = key;
+        this.clientId = clientId;
     }
 
     @Id
@@ -55,9 +54,9 @@ public class AccountClientEntity {
 
     @NotNull
     @NaturalId
-    @Column(name = "key", updatable = false, columnDefinition = "uuid")
+    @Column(name = "client_id", updatable = false, columnDefinition = "uuid")
     @Getter
-    private UUID key;
+    private UUID clientId;
 
     @NotNull
     @Column(name = "`created_on`")
@@ -80,10 +79,9 @@ public class AccountClientEntity {
         c.setAlias(alias);
         c.setCreatedOn(createdOn);
         c.setId(id);
-        c.setKey(key);
+        c.setClientId(clientId);
         c.setRevokedOn(revokedOn);
 
         return c;
     }
-
 }

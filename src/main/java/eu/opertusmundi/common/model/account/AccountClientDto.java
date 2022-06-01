@@ -27,8 +27,8 @@ public class AccountClientDto {
     private String alias;
 
     @Schema(description = "Client id")
-    @JsonProperty("id")
-    private UUID key;
+    @JsonProperty("clientId")
+    private UUID clientId;
 
     /**
      * Client secret available only the first time the client is created

@@ -14,8 +14,9 @@ public class UserQueryDto extends PageRequest
     protected String username;
     
     protected String search;
-
+    
     protected Boolean exact;
-
+    
     protected Boolean enabled;
+
 }

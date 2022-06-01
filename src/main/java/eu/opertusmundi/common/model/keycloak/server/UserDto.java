@@ -15,44 +15,36 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 @lombok.Getter
+@lombok.Setter
 @lombok.ToString
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(Include.NON_NULL)
 public class UserDto
 {
-    @lombok.Setter
     @JsonProperty("id")
     private UUID id;
     
-    @lombok.Setter
     @JsonProperty("enabled")
     private Boolean enabled;
     
-    @lombok.Setter
     @JsonProperty("email")
     private String email;
     
-    @lombok.Setter
     @JsonProperty("emailVerified")
     private Boolean emailVerified; 
     
-    @lombok.Setter
     @JsonProperty("username")
     private String username;
     
-    @lombok.Setter
     @JsonProperty("firstName")
     private String firstName;
     
-    @lombok.Setter
     @JsonProperty("lastName")
     private String lastName;
     
-    @lombok.Setter
     @JsonIgnore
     private Instant created;
     
-    @lombok.Setter
     @JsonProperty("requiredActions")
     private Set<EnumRequiredAction> requiredActions;
 

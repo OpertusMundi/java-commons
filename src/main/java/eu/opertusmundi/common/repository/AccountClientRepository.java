@@ -24,14 +24,14 @@ public interface AccountClientRepository extends JpaRepository<AccountClientEnti
          + "WHERE a.id = :id")
     Optional<AccountEntity> findOneAccountById(Integer id);
 
-    @Query("SELECT c FROM AccountClient c WHERE c.key = :key")
-    Optional<AccountClientEntity> findOneByKey(String key);
+    @Query("SELECT c FROM AccountClient c WHERE c.clientId = :clientId")
+    Optional<AccountClientEntity> findOneByClientId(String clientId);
 
-    @Query("SELECT c FROM AccountClient c WHERE c.account.id = :accountId and c.key = :clientKey")
-    Optional<AccountClientEntity> findOneByAccountIdAndKey(Integer accountId, UUID clientKey);
+    @Query("SELECT c FROM AccountClient c WHERE c.account.id = :accountId and c.clientId = :clientId")
+    Optional<AccountClientEntity> findOneByAccountIdAndClientId(Integer accountId, UUID clientId);
 
-    @Query("SELECT c FROM AccountClient c WHERE c.account.key = :accountKey and c.key = :clientKey")
-    Optional<AccountClientEntity> findOneByAccountKeyAndKey(UUID accountKey, UUID clientKey);
+    @Query("SELECT c FROM AccountClient c WHERE c.account.key = :accountKey and c.clientId = :clientId")
+    Optional<AccountClientEntity> findOneByAccountKeyAndClientId(UUID accountKey, UUID clientId);
 
     @Query("SELECT c FROM AccountClient c WHERE c.account.id = :accountId and c.alias = :alias")
     Optional<AccountClientEntity> findOneByAccountIdAndAlias(Integer accountId, String alias);
@@ -46,28 +46,28 @@ public interface AccountClientRepository extends JpaRepository<AccountClientEnti
     Page<AccountClientEntity> findAllByAccountKey(UUID key, Pageable pageable);
 
     @Transactional(readOnly = false)
-    default AccountClientDto create(Integer accountId, String clientAlias, UUID clientKey) {
+    default AccountClientDto create(Integer accountId, String clientAlias, UUID clientId) {
         Assert.notNull(accountId, "Expected a non-null account identifier");
         Assert.hasText(clientAlias, "Expected a non-empty client alias");
-        Assert.notNull(clientKey, "Expected a non-null client key");
+        Assert.notNull(clientId, "Expected a non-null clientId");
 
         // Check account
         final AccountEntity account = this.findOneAccountById(accountId).orElse(null);
         Assert.notNull(account, "Expected a non-null account");
 
         // Create new client
-        final AccountClientEntity entity = new AccountClientEntity(clientAlias, clientKey);
+        final AccountClientEntity entity = new AccountClientEntity(clientAlias, clientId);
         entity.setAccount(account);
 
         return this.saveAndFlush(entity).toDto();
     }
 
     @Transactional(readOnly = false)
-    default AccountClientDto revoke(Integer accountId, UUID clientKey) {
+    default AccountClientDto revoke(Integer accountId, UUID clientId) {
         Assert.notNull(accountId, "Expected a non-null account identifier");
-        Assert.notNull(clientKey, "Expected a non-null client key");
+        Assert.notNull(clientId, "Expected a non-null clientId");
 
-        final AccountClientEntity entity = this.findOneByAccountIdAndKey(accountId, clientKey).orElse(null);
+        final AccountClientEntity entity = this.findOneByAccountIdAndClientId(accountId, clientId).orElse(null);
         Assert.notNull(entity, "Expected a non-null client");
 
         entity.revoke();

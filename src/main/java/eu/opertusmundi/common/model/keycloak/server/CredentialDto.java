@@ -22,11 +22,27 @@ public class CredentialDto
     
     public static CredentialDto ofPassword(String password)
     {
+        return ofPassword(password, false);
+    }
+    
+    public static CredentialDto ofPassword(String password, boolean temporary)
+    {
         Assert.hasText(password, "password must not be empty");
         
         CredentialDto cred = new CredentialDto();
         cred.type = PASSWORD_TYPE;
         cred.value = password;
+        cred.temporary = Boolean.valueOf(temporary);
+        return cred;
+    }
+    
+    public static CredentialDto ofSecret(String secret)
+    {
+        Assert.hasText(secret, "secret must not be empty");
+        
+        CredentialDto cred = new CredentialDto();
+        cred.type = SECRET_TYPE;
+        cred.value = secret;
         return cred;
     }
     
@@ -35,7 +51,7 @@ public class CredentialDto
     
     @lombok.Setter
     @JsonProperty("temporary")
-    private boolean temporary = false;
+    private Boolean temporary;
     
     @JsonProperty("value")
     private String value;
