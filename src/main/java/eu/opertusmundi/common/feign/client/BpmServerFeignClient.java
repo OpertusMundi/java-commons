@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
+import org.camunda.bpm.engine.rest.dto.ModificationDto;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.externaltask.SetRetriesForExternalTasksDto;
 import org.camunda.bpm.engine.rest.dto.history.HistoricActivityInstanceDto;
@@ -14,6 +15,7 @@ import org.camunda.bpm.engine.rest.dto.history.HistoricTaskInstanceDto;
 import org.camunda.bpm.engine.rest.dto.history.HistoricVariableInstanceDto;
 import org.camunda.bpm.engine.rest.dto.message.CorrelationMessageDto;
 import org.camunda.bpm.engine.rest.dto.message.MessageCorrelationResultWithVariableDto;
+import org.camunda.bpm.engine.rest.dto.repository.ProcessDefinitionDiagramDto;
 import org.camunda.bpm.engine.rest.dto.repository.ProcessDefinitionDto;
 import org.camunda.bpm.engine.rest.dto.repository.ProcessDefinitionQueryDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ActivityInstanceDto;
@@ -25,6 +27,7 @@ import org.camunda.bpm.engine.rest.dto.task.CompleteTaskDto;
 import org.camunda.bpm.engine.rest.dto.task.TaskDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.SpringQueryMap;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -63,6 +66,14 @@ public interface BpmServerFeignClient {
         @RequestParam("maxResults") int maxResults
     );
 
+    /**
+     * Retrieves the BPMN 2.0 XML of a process definition.
+     *
+     * @see https://docs.camunda.org/manual/latest/reference/rest/process-definition/get-xml/
+     */
+    @GetMapping(value = "/process-definition/{id}/xml", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<ProcessDefinitionDiagramDto> getBpmnXml(@PathVariable("id") String processDefinitionId);
+    
     /**
      * Instantiates a given process definition. Process variables and business
      * key may be supplied in the request body.
@@ -332,4 +343,22 @@ public interface BpmServerFeignClient {
     @DeleteMapping(value = "/history/process-instance/{id}")
     ResponseEntity<Void> deleteHistoryProcessInstance(@PathVariable("id") String processInstanceId);
 
+    /**
+     * Submits a list of modification instructions to change a process instance's execution state. A modification instruction is one of the following:
+     * 
+     * <ul>
+     *  <li>Starting execution before an activity</li>
+     *  <li>Starting execution after an activity on its single outgoing sequence flow</li>
+     *  <li>Starting execution on a specific sequence flow</li>
+     *  <li>Canceling an activity instance, transition instance, or all instances (activity or transition) for an activity</li>
+     * </ul>
+     *
+     * @see https://docs.camunda.org/manual/latest/reference/rest/process-instance/post-modification/
+     */
+    @PostMapping(value = "/process-instance/{id}/modification", consumes = "application/json")
+    ProcessInstanceWithVariablesDto modifyProcessInstance(
+        @PathVariable("id") String processInstanceId,
+        ModificationDto modification
+    );
+    
 }
