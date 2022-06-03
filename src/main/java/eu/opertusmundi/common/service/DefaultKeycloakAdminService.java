@@ -75,6 +75,9 @@ import feign.httpclient.ApacheHttpClient;
 public class DefaultKeycloakAdminService implements KeycloakAdminService
 {
     private static final Logger logger = LoggerFactory.getLogger(DefaultKeycloakAdminService.class);
+
+    @Value("${opertusmundi.feign.keycloak.log-level:BASIC}")
+    private feign.Logger.Level logLevel;
     
     @lombok.ToString
     @lombok.Getter
@@ -233,7 +236,7 @@ public class DefaultKeycloakAdminService implements KeycloakAdminService
             .decoder(decoder)
             .client(client)
             .logger(logger)
-            .logLevel(feign.Logger.Level.BASIC)
+            .logLevel(this.logLevel)
             .target(KeycloakRefreshTokenFeignClient.class, url.toString());
         
         this.keycloakAdminClient = Feign.builder()
@@ -249,7 +252,7 @@ public class DefaultKeycloakAdminService implements KeycloakAdminService
                 }
             })
             .logger(logger)
-            .logLevel(feign.Logger.Level.BASIC)
+            .logLevel(this.logLevel)
             .target(KeycloakAdminFeignClient.class, url.toString());
     }
     
