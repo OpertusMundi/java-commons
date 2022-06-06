@@ -209,7 +209,7 @@ public class PayOutEntity {
     public PayOutDto toDto(boolean includeHelpdeskData) {
         final PayOutDto p = new PayOutDto();
 
-        p.setBankAccount(this.bankAccount.toDto());
+        p.setBankAccount(this.bankAccount.toDto(includeHelpdeskData));
         p.setBankwireRef(bankwireRef);
         p.setCreatedOn(createdOn);
         p.setCurrency(currency);

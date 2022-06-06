@@ -24,11 +24,17 @@ public class CustomerBankAccountEmbeddable extends BankAccountEmbeddable impleme
     private String tag;
 
     public BankAccountDto toDto() {
+        return this.toDto(false);
+    }
+
+    public BankAccountDto toDto(boolean includeHelpdeskData) {
         final BankAccountDto a = new BankAccountDto();
 
         a.setBic(this.bic);
         a.setIban(this.iban);
-        a.setId(this.id);
+        if (includeHelpdeskData) {
+            a.setId(this.id);
+        }
         if (this.ownerAddress != null) {
             a.setOwnerAddress(this.ownerAddress.toDto());
         }
