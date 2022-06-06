@@ -64,7 +64,7 @@ public interface PayOutRepository extends JpaRepository<PayOutEntity, Integer> {
         "SELECT p "
       + "FROM   PayOut p "
       + "WHERE (p.status in :status or :status is null) and "
-      + "      (p.provider.email = :email or :email IS NULL) and "
+      + "      (p.provider.email like :email or :email IS NULL) and "
       + "      (:bankwireRef IS NULL or p.bankwireRef = :bankwireRef) "
     )
     Page<PayOutEntity> findAllPayOutEntities(

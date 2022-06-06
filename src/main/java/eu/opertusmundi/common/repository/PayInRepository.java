@@ -127,7 +127,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         "SELECT p "
       + "FROM   PayIn p "
       + "WHERE (p.status in :status or :status is null) and "
-      + "      (p.consumer.email = :email or :email IS NULL) and "
+      + "      (:email IS NULL or p.consumer.email like :email) and "
       + "      (:referenceNumber IS NULL or p.referenceNumber = :referenceNumber) "
     )
     Page<PayInEntity> findAllPayInEntities(

@@ -114,6 +114,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
          + "WHERE   (o.consumer.key = :consumerKey or cast(:consumerKey as org.hibernate.type.UUIDCharType) is null) and "
          + "        (i.provider.key = :providerKey or cast(:providerKey as org.hibernate.type.UUIDCharType) is null) and "
          + "        (:referenceNumber is null or o.referenceNumber like :referenceNumber) and "
+         + "        (:consumer is null or o.consumer.email like :consumer) and "
          + "        (o.status in :status or :status is null)"
     )
     Page<OrderEntity> findAll(
@@ -121,6 +122,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
         @Param("providerKey") UUID providerKey,
         @Param("referenceNumber")String referenceNumber,
         @Param("status") Set<EnumOrderStatus> status,
+        @Param("consumer") String consumer,
         Pageable pageable
     );
 
@@ -180,7 +182,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
     default Page<OrderDto> findAllObjects(
         UUID consumerKey, UUID providerKey, String referenceNumber,
-        @Param("status") Set<EnumOrderStatus> status,
+        Set<EnumOrderStatus> status, String consumer,
         Pageable pageable,
         boolean includeDetails, boolean includeHelpdeskData
     ) {
@@ -189,6 +191,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
             providerKey,
             StringUtils.isBlank(referenceNumber) ? null : referenceNumber,
             status != null && status.size() > 0 ? status : null,
+            StringUtils.isBlank(consumer) ? null : consumer,     
             pageable
         ).map(e -> e.toHelpdeskDto(includeDetails));
     }
