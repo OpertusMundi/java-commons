@@ -34,7 +34,8 @@ public class AccountDto implements Serializable {
     @JsonIgnore
     private boolean blocked;
 
-    @JsonIgnore
+    @Schema(hidden = true, description = "Account type")
+    @JsonInclude(Include.NON_NULL)
     private EnumAccountType type;
 
     @Schema(hidden = true, description = "Identifier of the workflow definition used for processing the account registration")

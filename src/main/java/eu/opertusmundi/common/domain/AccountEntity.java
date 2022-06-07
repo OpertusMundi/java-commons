@@ -292,7 +292,6 @@ public class AccountEntity {
         a.setPassword(this.password);
         a.setRegisteredAt(this.registeredAt);
         a.setRoles(this.roles.stream().map(r -> r.getRole()).collect(Collectors.toSet()));
-        a.setType(this.type);
 
         if (this.profile != null) {
             a.setProfile(this.profile.toDto());
@@ -305,6 +304,7 @@ public class AccountEntity {
         if (includeHelpdeskData) {
             a.setProcessDefinition(this.processDefinition);
             a.setProcessInstance(this.processInstance);
+            a.setType(this.type);
             if (this.getParent() != null) {
                 a.setParent(this.getParent().toDto());
             }

@@ -62,7 +62,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     Optional<AccountEntity> findOneByKey(@Param("key") UUID key);
 
     default Optional<AccountDto> findOneByKeyObject(UUID key) {
-        return this.findOneByKey(key).map(AccountEntity::toDto);
+        return this.findOneByKey(key).map(a -> a.toDto(true));
     }
 
     @Query("SELECT a FROM Account a "
