@@ -814,8 +814,8 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 this.orderFulfillmentService.sendOrderStatusByMail(EnumMailType.CONSUMER_PURCHASE_NOTIFICATION, consumer.getKey(), order.getKey());
 
                 final Map<String, Object> variables = new HashMap<>();
-                final String              title     = asset.getTitle();
-                variables.put("assetName", title);
+                variables.put("assetName", asset.getTitle());
+                variables.put("assetVersion", asset.getVersion());
 
                 this.orderFulfillmentService.sendOrderStatusByNotification("PURCHASE_REMINDER", asset.getPublisher().getKey(), variables);
             }
