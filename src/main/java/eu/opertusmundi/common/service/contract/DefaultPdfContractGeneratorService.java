@@ -1683,7 +1683,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		.findByIdAndVersion(provider.getKey(), contractId, contractVersion)
     		.get();
 
-        final byte[] result = renderPDF(contractParametersDto, command.isDraft(), contract, null);
+        final byte[] result = renderPDF(contractParametersDto, command.isDraft(), contract, null, orderKey);
 
     	return result;
     }
@@ -1694,7 +1694,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             .findByKey(command.getProviderKey(), command.getContractKey())
             .get();
 
-        final byte[]             result         = renderPDF(contractParametersDto, false, contract, null);
+        final byte[]             result         = renderPDF(contractParametersDto, false, contract, null, null);
 
         return result;
     }
@@ -1704,14 +1704,14 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             throws IOException {
         final MasterContractHistoryEntity masterContract = masterContractRepository.findHistoryByPublishedContractId(masterContractId).orElse(null);
         System.out.println("Master contract id " + masterContractId);
-        final byte[] result = renderPDF(contractParametersDto, false, null, masterContract);
+        final byte[] result = renderPDF(contractParametersDto, false, null, masterContract, null);
 
         return result;
     }
 
     private byte[] renderPDF(
         ContractParametersDto contractParametersDto, boolean draft,
-        ProviderTemplateContractHistoryEntity contract, MasterContractHistoryEntity masterContract
+        ProviderTemplateContractHistoryEntity contract, MasterContractHistoryEntity masterContract, UUID orderKey
     ) throws IOException {
         // Initialize all variables that are related to the PDF formatting
         final PDDocument          document = new PDDocument();
@@ -1744,7 +1744,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             if (masterContract == null) {
                 /* Get title and subtitles */
                 title    = contract.getTitle();
-                subtitle = contract.getSubtitle();
+                subtitle = ((orderKey != null ? "ORDER ID " + "(" + orderKey + ")" : contract.getSubtitle()));
 
                 /* Get all sections sorted by index */
                 final List<ProviderTemplateSectionHistoryEntity> sortedSections = contract.getSectionsSorted();
@@ -1835,7 +1835,11 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
             /* Add metadata, header and footer */
             addMetadata(ctx);
-            addHeaderAndFooter(ctx, title);
+            if (orderKey != null) {
+            	addHeaderAndFooter(ctx, title + " " + "(" + orderKey + ")");
+            } else {
+            	addHeaderAndFooter(ctx, title);
+            }
 
             // Release RenderContext before closing the document
             ctx.close();
@@ -1843,7 +1847,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             // Optionally add an overlay page
             try (
                 final Overlay     overlay     = draft ? new Overlay() : null;
-                final InputStream watermarkIs = resourceLoader.getResource(watermark).getInputStream();
+            	final InputStream watermarkIs = resourceLoader.getResource(watermark).getInputStream();
             ) {
                 // Add watermark if draft
                 if (draft) {
