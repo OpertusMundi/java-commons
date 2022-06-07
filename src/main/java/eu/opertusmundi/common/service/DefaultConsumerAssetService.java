@@ -262,6 +262,15 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
             );
             throw ServiceException.notFound();
         }
+        // Check if asset allows resource downloading
+        if (!asset.getType().isResourceDownloadAllowed()) {
+            logger.warn(
+                "Asset type does not support resource download. [userKey={}, pid={}, resourceKey={}, type={}]",
+                userKey, pid, resourceKey, asset.getType()
+            );
+            throw ServiceException.notFound();
+        }
+
         // Check resource
         final ResourceDto resource = asset.getResources().stream().filter(r -> r.getId().equals(resourceKey)).findFirst().orElse(null);
         if (resource == null || resource.getType() != EnumResourceType.FILE) {

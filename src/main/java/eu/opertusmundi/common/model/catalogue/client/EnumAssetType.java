@@ -27,7 +27,7 @@ public enum EnumAssetType {
     /**
      * OGC/Topio service
      */
-    SERVICE                         (false, "service",  EnumOrderItemType.SUBSCRIPTION, "OGC/Topio service"),
+    SERVICE                         (false, "service",  EnumOrderItemType.SUBSCRIPTION, "OGC/Topio service", false),
     /**
      * Tabular dataset
      */
@@ -52,7 +52,8 @@ public enum EnumAssetType {
         EnumRole.ROLE_SENTINEL_HUB,
         Arrays.asList(EnumPricingModel.SENTINEL_HUB_SUBSCRIPTION),
         Arrays.asList(EnumDeliveryMethod.DIGITAL_PROVIDER),
-        true
+        true,
+        false
     ),
     /**
      * Sentinel Hub commercial data
@@ -67,6 +68,7 @@ public enum EnumAssetType {
         EnumRole.ROLE_SENTINEL_HUB,
         Arrays.asList(EnumPricingModel.SENTINEL_HUB_IMAGES),
         Arrays.asList(EnumDeliveryMethod.DIGITAL_PROVIDER),
+        false,
         false
     ),
     ;
@@ -127,29 +129,61 @@ public enum EnumAssetType {
     private final List<EnumDeliveryMethod> allowedDeliveryMethods;
 
     /**
+     * True if the owner of this asset is allowed to download its resources
+     */
+    @Getter
+    private final boolean resourceDownloadAllowed;
+
+    /**
      * True if the pricing models are injected by an external data provider
      */
     @Getter
     private final boolean dynamicPricingModels;
 
-    private EnumAssetType(boolean primary, String value, EnumOrderItemType orderItemType, String description) {
-        this(primary, false, value, orderItemType, description, true, null, Collections.emptyList(), Collections.emptyList(), true);
+    private EnumAssetType(
+        boolean primary,
+        String value,
+        EnumOrderItemType orderItemType,
+        String description
+    ) {
+        this(primary, value, orderItemType, description, true);
+    }
+
+
+    private EnumAssetType(
+        boolean primary,
+        String value,
+        EnumOrderItemType orderItemType,
+        String description,
+        boolean resourceDownloadAllowed
+    ) {
+        this(primary, false, value, orderItemType, description, true, null, Collections.emptyList(), Collections.emptyList(), true, resourceDownloadAllowed);
     }
 
     private EnumAssetType(
-        boolean primary, boolean dynamicPricingModels, String value, EnumOrderItemType orderItemType, String description, boolean resourceRequired,
-        EnumRole requiredRole, List<EnumPricingModel> allowedPricingModels, List<EnumDeliveryMethod> allowedDeliveryMethods, boolean registeredOnPurchase
+        boolean primary,
+        boolean dynamicPricingModels,
+        String value,
+        EnumOrderItemType orderItemType,
+        String description,
+        boolean resourceRequired,
+        EnumRole requiredRole,
+        List<EnumPricingModel> allowedPricingModels,
+        List<EnumDeliveryMethod> allowedDeliveryMethods,
+        boolean registeredOnPurchase,
+        boolean resourceDownloadAllowed
     ) {
-        this.allowedPricingModels   = allowedPricingModels;
-        this.allowedDeliveryMethods = allowedDeliveryMethods;
-        this.description            = description;
-        this.dynamicPricingModels   = dynamicPricingModels;
-        this.orderItemType          = orderItemType;
-        this.primary                = primary;
-        this.registeredOnPurchase   = registeredOnPurchase;
-        this.requiredRole           = requiredRole;
-        this.resourceRequired       = resourceRequired;
-        this.value                  = value;
+        this.allowedPricingModels    = allowedPricingModels;
+        this.allowedDeliveryMethods  = allowedDeliveryMethods;
+        this.description             = description;
+        this.dynamicPricingModels    = dynamicPricingModels;
+        this.orderItemType           = orderItemType;
+        this.primary                 = primary;
+        this.registeredOnPurchase    = registeredOnPurchase;
+        this.requiredRole            = requiredRole;
+        this.resourceRequired        = resourceRequired;
+        this.value                   = value;
+        this.resourceDownloadAllowed = resourceDownloadAllowed;
     }
 
     public static EnumAssetType fromString(String value) {
