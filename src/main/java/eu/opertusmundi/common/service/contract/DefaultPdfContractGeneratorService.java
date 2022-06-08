@@ -69,7 +69,7 @@ import lombok.Setter;
 public class DefaultPdfContractGeneratorService implements PdfContractGeneratorService {
 
     private static float titleFontSize           = 32.0f;
-    private static float subTitleFontSize        = 20.0f;
+    private static float subTitleFontSize        = 15.0f;
     private static float sectionTitleFontSize    = 12.0f;
     private static float sectionSubTitleFontSize = 10.0f;
     private static float textFontSize            = 9.0f;
