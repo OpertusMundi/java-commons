@@ -72,20 +72,22 @@ public class DefaultConsumerRegistrationService extends AbstractCustomerRegistra
         final UUID       registrationKey = account.getProfile().getConsumer().getDraft().getKey();
 
         // Check if workflow exists
-        final ProcessInstanceDto instance = this.bpmEngine.findInstance(registrationKey.toString());
+        if(command.isWorkflowInstanceRequired()) {
+            final ProcessInstanceDto instance = this.bpmEngine.findInstance(registrationKey.toString());
 
-        if (instance == null) {
-            final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
-                .variableAsString(EnumProcessInstanceVariable.START_USER_KEY.getValue(), userKey.toString())
-                .variableAsString("userKey", userKey.toString())
-                .variableAsString("registrationKey", registrationKey.toString())
-                .variableAsBoolean("isUpdate", isUpdate)
-                .variableAsBoolean("isReviewRequired", true)
-                .build();
-
-            this.bpmEngine.startProcessDefinitionByKey(
-                EnumWorkflow.CONSUMER_REGISTRATION, registrationKey.toString(), variables, true
-            );
+            if (instance == null) {
+                final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
+                    .variableAsString(EnumProcessInstanceVariable.START_USER_KEY.getValue(), userKey.toString())
+                    .variableAsString("userKey", userKey.toString())
+                    .variableAsString("registrationKey", registrationKey.toString())
+                    .variableAsBoolean("isUpdate", isUpdate)
+                    .variableAsBoolean("isReviewRequired", true)
+                    .build();
+    
+                this.bpmEngine.startProcessDefinitionByKey(
+                    EnumWorkflow.CONSUMER_REGISTRATION, registrationKey.toString(), variables, true
+                );
+            }
         }
 
         return account;

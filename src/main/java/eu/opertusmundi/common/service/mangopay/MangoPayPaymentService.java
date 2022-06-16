@@ -53,6 +53,7 @@ import com.mangopay.core.enumerations.PersonType;
 import com.mangopay.core.enumerations.SecureMode;
 import com.mangopay.core.enumerations.SortDirection;
 import com.mangopay.core.enumerations.TransactionType;
+import com.mangopay.core.enumerations.UserCategory;
 import com.mangopay.core.interfaces.BankAccountDetails;
 import com.mangopay.entities.BankAccount;
 import com.mangopay.entities.Card;
@@ -373,7 +374,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                         user = this.createUserNatural(account, (CustomerDraftIndividualEntity) registration);
                         break;
                     case PROFESSIONAL :
-                        user = this.createUserLegal(account, (CustomerDraftProfessionalEntity) registration);
+                        user = this.createUserLegal(command.getType(), account, (CustomerDraftProfessionalEntity) registration);
                         break;
                     default :
                         throw new PaymentException(String.format("Customer type [%s] is not supported", type));
@@ -423,7 +424,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                     user = this.createUserNatural(account, (CustomerDraftIndividualEntity) registration, user.getId());
                     break;
                 case PROFESSIONAL :
-                    user = this.createUserLegal(account, (CustomerDraftProfessionalEntity) registration,user.getId());
+                    user = this.createUserLegal(command.getType(), account, (CustomerDraftProfessionalEntity) registration,user.getId());
                     break;
                 default :
                     throw new PaymentException(String.format("Customer type [%s] is not supported", type));
@@ -1930,19 +1931,39 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         return this.createUserNatural(a, r, null);
     }
 
-    private UserNatural createUserNatural(AccountEntity a, CustomerDraftIndividualEntity r, String id) {
+    /**
+     * Create MANGOPAY natural user
+     *
+     * @see https://docs.mangopay.com/endpoints/v2.01/users#e255_create-a-natural-user
+     *
+     * @param account
+     * @param registration
+     * @param id
+     * @return
+     */
+    private UserNatural createUserNatural(AccountEntity account, CustomerDraftIndividualEntity registration, String id) {
         final UserNatural u = new UserNatural();
 
-        u.setAddress(this.createAddress(r.getAddress()));
-        u.setBirthday(r.getBirthdate().toEpochSecond());
-        u.setCountryOfResidence(MangopayUtils.countryFromString(r.getCountryOfResidence()));
-        u.setEmail(r.getEmail());
-        u.setFirstName(r.getFirstName());
+        if (registration.getAddress() != null) {
+            u.setAddress(this.createAddress(registration.getAddress()));
+        }
+        if (registration.getBirthdate() != null) {
+            u.setBirthday(registration.getBirthdate().toEpochSecond());
+        }
+        if (!StringUtils.isBlank(registration.getCountryOfResidence())) {
+            u.setCountryOfResidence(MangopayUtils.countryFromString(registration.getCountryOfResidence()));
+        }
+        u.setEmail(registration.getEmail());
+        u.setFirstName(registration.getFirstName());
         u.setId(id);
-        u.setLastName(r.getLastName());
-        u.setNationality(MangopayUtils.countryFromString(r.getNationality()));
-        u.setOccupation(r.getOccupation());
-        u.setTag(a.getKey().toString());
+        u.setLastName(registration.getLastName());
+        if (!StringUtils.isBlank(registration.getNationality())) {
+            u.setNationality(MangopayUtils.countryFromString(registration.getNationality()));
+        }
+        u.setOccupation(registration.getOccupation());
+        u.setTag(account.getKey().toString());
+        // For natural users, user category is always PAYER
+        u.setUserCategory(UserCategory.PAYER);
 
         u.setCapacity(NaturalUserCapacity.NORMAL);
         u.setKycLevel(KycLevel.LIGHT);
@@ -1951,29 +1972,50 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         return u;
     }
 
-    private UserLegal createUserLegal(AccountEntity a, CustomerDraftProfessionalEntity r) {
-        return this.createUserLegal(a, r, null);
+    private UserLegal createUserLegal(EnumCustomerType type, AccountEntity account, CustomerDraftProfessionalEntity customer) {
+        return this.createUserLegal(type, account, customer, null);
     }
 
-    private UserLegal createUserLegal(AccountEntity a, CustomerDraftProfessionalEntity r, String id) {
+    /**
+     * Create MANGOPAY legal user
+     *
+     * @see https://docs.mangopay.com/endpoints/v2.01/users#e259_create-a-legal-user
+     * @see https://docs.mangopay.com/endpoints/v2.01/users#e1060_create-a-legal-user-owner
+     *
+     * @param type
+     * @param account
+     * @param customer
+     * @param id
+     * @return
+     */
+    private UserLegal createUserLegal(EnumCustomerType type, AccountEntity account, CustomerDraftProfessionalEntity customer, String id) {
         final UserLegal u = new UserLegal();
 
-        final CustomerRepresentativeEmbeddable lr = r.getRepresentative();
+        final CustomerRepresentativeEmbeddable representative = customer.getRepresentative();
 
-        u.setCompanyNumber(r.getCompanyNumber());
-        u.setEmail(r.getEmail());
-        u.setHeadquartersAddress(this.createAddress(r.getHeadquartersAddress()));
+        // Payer fields
+        u.setEmail(customer.getEmail());
+        u.setLegalPersonType(this.enumToLegalPersonType(customer.getLegalPersonType()));
+        u.setLegalRepresentativeFirstName(representative.getFirstName());
+        u.setLegalRepresentativeLastName(representative.getLastName());
+        u.setName(customer.getName());
+        if (representative.getAddress() != null) {
+            u.setLegalRepresentativeAddress(this.createAddress(representative.getAddress()));
+        }
+        u.setTag(account.getKey().toString());
+        u.setTermsAndConditionsAccepted(true);
+        u.setUserCategory(type == EnumCustomerType.CONSUMER ? UserCategory.PAYER : UserCategory.OWNER);
+
+        // Owner fields
+        u.setCompanyNumber(customer.getCompanyNumber());
+        if (customer.getHeadquartersAddress() != null) {
+            u.setHeadquartersAddress(this.createAddress(customer.getHeadquartersAddress()));
+        }
         u.setId(id);
-        u.setLegalPersonType(this.enumToLegalPersonType(r.getLegalPersonType()));
-        u.setLegalRepresentativeAddress(this.createAddress(lr.getAddress()));
-        u.setLegalRepresentativeBirthday(lr.getBirthdate().toEpochSecond());
-        u.setLegalRepresentativeCountryOfResidence(MangopayUtils.countryFromString(lr.getCountryOfResidence()));
-        u.setLegalRepresentativeEmail(lr.getEmail());
-        u.setLegalRepresentativeFirstName(lr.getFirstName());
-        u.setLegalRepresentativeLastName(lr.getLastName());
-        u.setLegalRepresentativeNationality(MangopayUtils.countryFromString(lr.getNationality()));
-        u.setName(r.getName());
-        u.setTag(a.getKey().toString());
+        u.setLegalRepresentativeBirthday(representative.getBirthdate().toEpochSecond());
+        u.setLegalRepresentativeCountryOfResidence(MangopayUtils.countryFromString(representative.getCountryOfResidence()));
+        u.setLegalRepresentativeEmail(representative.getEmail());
+        u.setLegalRepresentativeNationality(MangopayUtils.countryFromString(representative.getNationality()));
 
         u.setKycLevel(KycLevel.LIGHT);
         u.setPersonType(PersonType.LEGAL);

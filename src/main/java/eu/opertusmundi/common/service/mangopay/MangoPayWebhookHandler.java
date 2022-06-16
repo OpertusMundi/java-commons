@@ -91,6 +91,17 @@ public class MangoPayWebhookHandler {
                 this.paymentService.updateUserBlockStatus(resourceId);
                 break;
 
+            // TODO: Add support for recurring registration web hooks after java
+            // SDK is updated (currently the enumeration values are not declared)
+            // See: https://docs.mangopay.com/blog/new-release-shamrock
+
+            /*
+            case RECURRING_REGISTRATION_CREATED:
+            case RECURRING_REGISTRATION_AUTH_NEEDED:
+            case RECURRING_REGISTRATION_IN_PROGRESS:
+            case RECURRING_REGISTRATION_ENDED:
+            */
+
             default :
                 // Fail on unknown (not registered) web hooks
                 throw new PaymentException(PaymentMessageCode.WEB_HOOK_NOT_SUPPORTED);

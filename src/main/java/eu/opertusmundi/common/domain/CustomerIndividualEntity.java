@@ -36,7 +36,9 @@ public class CustomerIndividualEntity extends CustomerEntity {
     protected CustomerIndividualEntity(ConsumerIndividualCommandDto c) {
         super(EnumMangopayUserType.INDIVIDUAL);
 
-        this.address               = AddressEmbeddable.from(c.getAddress());
+        if (c.getAddress() != null) {
+            this.address = AddressEmbeddable.from(c.getAddress());
+        }
         this.birthdate             = c.getBirthdate();
         this.contract              = c.getContract();
         this.countryOfResidence    = c.getCountryOfResidence();
@@ -59,7 +61,9 @@ public class CustomerIndividualEntity extends CustomerEntity {
     protected CustomerIndividualEntity(CustomerDraftIndividualEntity e) {
         super(EnumMangopayUserType.INDIVIDUAL);
 
-        this.address               = e.getAddress().clone();
+        if (e.getAddress() != null) {
+            this.address = e.getAddress().clone();
+        }
         this.birthdate             = e.getBirthdate();
         this.contract              = null;
         this.countryOfResidence    = e.getCountryOfResidence();
@@ -92,13 +96,12 @@ public class CustomerIndividualEntity extends CustomerEntity {
     @Setter
     private String lastName;
 
-    @NotNull
     @Embedded
     @AttributeOverrides({
         @AttributeOverride(name = "line1",      column = @Column(name = "`address_line1`",       nullable = false)),
         @AttributeOverride(name = "line2",      column = @Column(name = "`address_line2`")),
         @AttributeOverride(name = "city",       column = @Column(name = "`address_city`",        nullable = false)),
-        @AttributeOverride(name = "region",     column = @Column(name = "`address_region`",      nullable = false)),
+        @AttributeOverride(name = "region",     column = @Column(name = "`address_region`")),
         @AttributeOverride(name = "postalCode", column = @Column(name = "`address_postal_code`", nullable = false)),
         @AttributeOverride(name = "country",    column = @Column(name = "`address_country`",     nullable = false)),
     })
@@ -106,19 +109,16 @@ public class CustomerIndividualEntity extends CustomerEntity {
     @Setter
     private AddressEmbeddable address;
 
-    @NotNull
     @Column(name = "`birthdate`")
     @Getter
     @Setter
     private ZonedDateTime birthdate;
 
-    @NotNull
     @Column(name = "`nationality`")
     @Getter
     @Setter
     private String nationality;
 
-    @NotNull
     @Column(name = "`country_of_residence`")
     @Getter
     @Setter
@@ -138,7 +138,9 @@ public class CustomerIndividualEntity extends CustomerEntity {
     public void update(CustomerDraftEntity e) {
         final CustomerDraftIndividualEntity i = (CustomerDraftIndividualEntity) e;
 
-        this.address            = i.getAddress().clone();
+        if (i.getAddress() != null) {
+            this.address = i.getAddress().clone();
+        }
         this.birthdate          = i.getBirthdate();
         this.contract           = null;
         this.countryOfResidence = i.getCountryOfResidence();
@@ -159,7 +161,9 @@ public class CustomerIndividualEntity extends CustomerEntity {
     public void update(CustomerCommandDto command) {
         final ConsumerIndividualCommandDto c = (ConsumerIndividualCommandDto) command;
 
-        this.address            = AddressEmbeddable.from(c.getAddress());
+        if (c.getAddress() != null) {
+            this.address = AddressEmbeddable.from(c.getAddress());
+        }
         this.birthdate          = c.getBirthdate();
         this.contract           = c.getContract();
         this.countryOfResidence = c.getCountryOfResidence();
@@ -185,7 +189,9 @@ public class CustomerIndividualEntity extends CustomerEntity {
     public CustomerDto toDto(boolean includeHelpdeskDetails) {
         final CustomerIndividualDto c = new CustomerIndividualDto();
 
-        c.setAddress(this.address.toDto());
+        if (this.address != null) {
+            c.setAddress(this.address.toDto());
+        }
         c.setBirthdate(this.birthdate);
         c.setBlockedInflows(this.blockedInflows);
         c.setBlockedOutflows(this.blockedOutflows);

@@ -3,6 +3,7 @@ package eu.opertusmundi.common.model.account;
 import java.io.Serializable;
 
 import javax.validation.Valid;
+import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -59,5 +60,8 @@ public final class ProviderProfessionalCommandDto extends CustomerCommandDto imp
     @Valid
     @NotNull
     private BankAccountCommandDto bankAccount;
+
+    @AssertTrue
+    private boolean termsAndConditionsAccepted;
 
 }

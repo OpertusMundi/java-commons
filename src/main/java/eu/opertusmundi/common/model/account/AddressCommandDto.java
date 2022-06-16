@@ -3,7 +3,6 @@ package eu.opertusmundi.common.model.account;
 import java.io.Serializable;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 
 import com.mangopay.core.Address;
@@ -12,9 +11,15 @@ import eu.opertusmundi.common.util.MangopayUtils;
 import eu.opertusmundi.common.validation.IsoCountryCode;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
 public class AddressCommandDto implements Serializable {
@@ -32,7 +37,6 @@ public class AddressCommandDto implements Serializable {
     @Size(min = 1, max = 255)
     private String city;
 
-    @NotEmpty
     @Size(min = 1, max = 255)
     private String region;
 

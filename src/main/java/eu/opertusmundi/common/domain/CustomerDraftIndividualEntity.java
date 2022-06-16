@@ -30,7 +30,9 @@ public class CustomerDraftIndividualEntity extends CustomerDraftEntity {
     protected CustomerDraftIndividualEntity(CustomerIndividualEntity e, ConsumerIndividualCommandDto c) {
         super(EnumMangopayUserType.INDIVIDUAL);
 
-        this.address            = AddressEmbeddable.from(c.getAddress());
+        if (c.getAddress() != null) {
+            this.address = AddressEmbeddable.from(c.getAddress());
+        }
         this.birthdate          = c.getBirthdate();
         this.countryOfResidence = c.getCountryOfResidence();
         this.email              = c.getEmail();
@@ -97,7 +99,9 @@ public class CustomerDraftIndividualEntity extends CustomerDraftEntity {
     public void update(CustomerCommandDto command) {
         final ConsumerIndividualCommandDto i = (ConsumerIndividualCommandDto) command;
 
-        this.address            = AddressEmbeddable.from(i.getAddress());
+        if (i.getAddress() != null) {
+            this.address = AddressEmbeddable.from(i.getAddress());
+        }
         this.birthdate          = i.getBirthdate();
         this.countryOfResidence = i.getCountryOfResidence();
         this.email              = i.getEmail();
@@ -112,7 +116,9 @@ public class CustomerDraftIndividualEntity extends CustomerDraftEntity {
     public CustomerDraftDto toDto() {
         final CustomerDraftIndividualDto c = new CustomerDraftIndividualDto();
 
-        c.setAddress(this.address.toDto());
+        if (this.address != null) {
+            c.setAddress(this.address.toDto());
+        }
         c.setBankAccountIdempotentKey(this.bankAccountIdempotentKey);
         c.setBirthdate(this.birthdate);
         c.setCountryOfResidence(this.countryOfResidence);

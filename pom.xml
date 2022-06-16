@@ -21,7 +21,7 @@
 
 	<properties>
 		<spring-cloud.version>2021.0.1</spring-cloud.version>
-		<com.mangopay.version>2.21.0</com.mangopay.version>
+		<com.mangopay.version>2.23.0</com.mangopay.version>
 		<commons-io.version>2.11.0</commons-io.version>
 		<feign-form.version>3.8.0</feign-form.version>
 		<geotools.version>26.3</geotools.version>
