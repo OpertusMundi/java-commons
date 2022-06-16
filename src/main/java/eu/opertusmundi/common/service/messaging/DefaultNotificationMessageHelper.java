@@ -14,6 +14,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ibm.icu.text.MessageFormat;
 
 import eu.opertusmundi.common.domain.NotificationTemplateEntity;
+import eu.opertusmundi.common.domain.OrderEntity;
+import eu.opertusmundi.common.domain.OrderItemEntity;
 import eu.opertusmundi.common.model.ServiceException;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.message.EnumNotificationType;
@@ -23,6 +25,7 @@ import eu.opertusmundi.common.model.order.HelpdeskOrderItemDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskOrderPayInItemDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
 import eu.opertusmundi.common.repository.NotificationTemplateRepository;
+import eu.opertusmundi.common.repository.OrderRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
 import eu.opertusmundi.common.service.CatalogueService;
 import eu.opertusmundi.common.service.ProviderAssetService;
@@ -39,6 +42,9 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
 
     @Autowired
     private PayInRepository payInRepository;
+    
+    @Autowired
+    private OrderRepository orderRepository;
 
     @Autowired
     private ProviderAssetService providerAssetService;
@@ -166,28 +172,24 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
     	data.put("orderId", order.getReferenceNumber());
         return data;
 	}
-
+	
 	private ObjectNode populatePurchaseApprovedBySupplierModel(Map<String, Object> variables, ObjectNode data) {
-        final UUID                      payInKey       = UUID.fromString((String) variables.get("payInKey"));
-        final HelpdeskPayInDto          helpDeskPayIn  = this.payInRepository.findOneObjectByKey(payInKey).get();
-        final HelpdeskOrderPayInItemDto payInOrderItem = (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
-        final HelpdeskOrderItemDto      orderItem      = payInOrderItem.getOrder().getItems().get(0);
+        final UUID                      orderKey       	= UUID.fromString((String) variables.get("orderKey"));
+        final OrderEntity     			orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderItemEntity			orderItemEntity = orderEntity.getItems().get(0);
 
-    	data.put("assetName", orderItem.getDescription());
-    	data.put("assetVersion", orderItem.getAssetVersion());
-    	data.put("supplierName", orderItem.getProvider().getName());
+    	data.put("assetName", orderItemEntity.getDescription());
+    	data.put("supplierName", orderItemEntity.getProvider().getProvider().getName());
         return data;
 	}
-
+	
 	private ObjectNode populatePurchaseRejectedBySupplierModel(Map<String, Object> variables, ObjectNode data) {
-        final UUID                      payInKey       = UUID.fromString((String) variables.get("payInKey"));
-        final HelpdeskPayInDto          helpDeskPayIn  = this.payInRepository.findOneObjectByKey(payInKey).get();
-        final HelpdeskOrderPayInItemDto payInOrderItem = (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
-        final HelpdeskOrderItemDto      orderItem      = payInOrderItem.getOrder().getItems().get(0);
+        final UUID                      orderKey       	= UUID.fromString((String) variables.get("orderKey"));
+        final OrderEntity     			orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderItemEntity			orderItemEntity = orderEntity.getItems().get(0);
 
-    	data.put("assetName", orderItem.getDescription());
-    	data.put("assetVersion", orderItem.getAssetVersion());
-    	data.put("supplierName", orderItem.getProvider().getName());
+    	data.put("assetName", orderItemEntity.getDescription());
+    	data.put("supplierName", orderItemEntity.getProvider().getProvider().getName());
         return data;
 	}
 
