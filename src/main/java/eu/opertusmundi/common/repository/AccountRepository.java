@@ -53,6 +53,9 @@ import eu.opertusmundi.common.util.TextUtils;
 @Transactional(readOnly = true)
 public interface AccountRepository extends JpaRepository<AccountEntity, Integer> {
 
+    @Query("SELECT r.account FROM AccountRole r WHERE r.role = :role")
+    List<AccountEntity> findAllWithRole(EnumRole role);
+
     @Query("SELECT a FROM Account a LEFT OUTER JOIN FETCH a.profile p WHERE a.key in :keys")
     List<AccountEntity> findAllByKey(@Param("keys") List<UUID> keys);
 
@@ -726,7 +729,15 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
         return account.toDto(true);
     }
 
-    @Query("SELECT r.account FROM AccountRole r WHERE r.role = :role")
-    List<AccountEntity> findAllWithRole(EnumRole role);
+    @Transactional(readOnly = false)
+    default void setPassword(int accountId, String password) {
+        final AccountEntity account = this.findById(accountId).orElse(null);
 
+        Assert.notNull(account, "Expected a non-null account");
+
+        final PasswordEncoder encoder = new BCryptPasswordEncoder();
+        account.setPassword(encoder.encode(password));
+
+        this.saveAndFlush(account);
+    }
 }
