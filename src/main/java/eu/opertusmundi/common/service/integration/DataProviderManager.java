@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.service.integration;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -23,7 +24,7 @@ import eu.opertusmundi.common.model.pricing.SystemQuotationParametersDto;
 @Service
 public class DataProviderManager implements DataProviderIntegrationService {
 
-    private Map<String, DataProviderIntegrationService> dataProviders;
+    private Map<String, DataProviderIntegrationService> dataProviders = new HashMap<>();
 
     @Autowired
     private ApplicationContext ctx;
