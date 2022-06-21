@@ -63,6 +63,29 @@ public interface AssetStatisticsRepository extends JpaRepository<AssetStatistics
     	 + "WHERE a.active is true "
          + "GROUP BY a.year, a.month, a.week, a.day")
     List<BigDecimalDataPoint> findTotalFileAssetValuePerDay();
+    
+	@Query("SELECT CAST(COUNT(DISTINCT a.pid) as java.math.BigDecimal) FROM AssetStatistics a WHERE a.active is true")
+	Optional<BigDecimal> countAssets();
+	
+	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, CAST(COUNT(DISTINCT a.pid) AS java.math.BigDecimal)) "
+		+  "FROM AssetStatistics a WHERE a.active is true "
+		+  "GROUP BY a.year")
+	List<BigDecimalDataPoint> countAssetsPerYear();
+	
+	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, a.month, CAST(COUNT(DISTINCT a.pid) AS java.math.BigDecimal)) "
+		+  "FROM AssetStatistics a WHERE a.active is true "
+		+  "GROUP BY a.year, a.month")
+	List<BigDecimalDataPoint> countAssetsPerMonth();
+	
+	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, a.month, a.week, CAST(COUNT(DISTINCT a.pid) AS java.math.BigDecimal)) "
+			+  "FROM AssetStatistics a WHERE a.active is true "
+			+  "GROUP BY a.year, a.month, a.week")
+	List<BigDecimalDataPoint> countAssetsPerWeek();
+	
+	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, a.month, a.week, a.day, CAST(COUNT(DISTINCT a.pid) AS java.math.BigDecimal)) "
+			+  "FROM AssetStatistics a WHERE a.active is true "
+			+  "GROUP BY a.year, a.month, a.week, a.day")
+	List<BigDecimalDataPoint> countAssetsPerDay();
 
     @Transactional(readOnly = false)
     default AssetStatisticsDto create(AssetStatisticsCommandDto command) {
