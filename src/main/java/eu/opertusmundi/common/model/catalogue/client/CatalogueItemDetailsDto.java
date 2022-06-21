@@ -97,6 +97,10 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
         this.contract = contract;
     }
 
+    public void resetContract() {
+        this.contract = null;
+    }
+
     @Schema(description = "The unique key of the favorite record, if the asset is already added to the user's favorite list")
     @Getter
     @Setter

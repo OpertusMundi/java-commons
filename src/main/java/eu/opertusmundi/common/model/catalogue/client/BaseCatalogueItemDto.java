@@ -97,6 +97,10 @@ public abstract class BaseCatalogueItemDto {
 	@JsonInclude(Include.NON_NULL)
 	private JsonNode automatedMetadata;
 
+    public void resetAutomatedMetadata() {
+        this.automatedMetadata = null;
+    }
+	
     @Schema(description = "Degree of conformity with the implementing rules/standard of the metadata followed")
     private EnumConformity conformity;
 
