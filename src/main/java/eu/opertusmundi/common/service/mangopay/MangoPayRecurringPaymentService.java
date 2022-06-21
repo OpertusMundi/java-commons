@@ -96,7 +96,7 @@ public class MangoPayRecurringPaymentService extends BaseMangoPayService impleme
             final PayInRecurringRegistrationEntity payment = recurringPaymentRepository.findOneEntityByKey(command.getOrderKey()).orElse(null);
 
             if (payment != null) {
-                return payment.toConsumerDto(true);
+                return payment.toConsumerDto(true, false);
             } else {
                 final RecurringRegistrationDto result = this.recurringPaymentRepository.initialize(command);
 

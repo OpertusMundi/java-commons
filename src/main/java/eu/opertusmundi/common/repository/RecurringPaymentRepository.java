@@ -32,7 +32,7 @@ public interface RecurringPaymentRepository extends JpaRepository<PayInRecurring
     Optional<PayInRecurringRegistrationEntity> findOneEntityByProviderId(String id);
 
     default Optional<RecurringRegistrationDto> findOneObjectByKey(UUID key) {
-        return this.findOneEntityByKey(key).map(o -> o.toHelpdeskDto(true));
+        return this.findOneEntityByKey(key).map(o -> o.toHelpdeskDto(true, true));
     }
 
     @Transactional(readOnly = false)
@@ -69,7 +69,7 @@ public interface RecurringPaymentRepository extends JpaRepository<PayInRecurring
 
         this.saveAndFlush(registration);
 
-        return registration.toConsumerDto(true);
+        return registration.toConsumerDto(true, false);
     }
 
     @Transactional(readOnly = false)
@@ -78,7 +78,7 @@ public interface RecurringPaymentRepository extends JpaRepository<PayInRecurring
 
         // Update only on status changes
         if (registration.getStatus() == command.getStatus()) {
-            return registration.toHelpdeskDto(true);
+            return registration.toHelpdeskDto(true, false);
         }
 
         registration.setStatus(command.getStatus());
@@ -94,7 +94,7 @@ public interface RecurringPaymentRepository extends JpaRepository<PayInRecurring
 
         this.saveAndFlush(registration);
 
-        return registration.toHelpdeskDto(true);
+        return registration.toHelpdeskDto(true, false);
     }
 
 }

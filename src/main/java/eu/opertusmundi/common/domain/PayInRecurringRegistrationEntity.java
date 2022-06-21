@@ -211,33 +211,33 @@ public class PayInRecurringRegistrationEntity {
         }
     }
 
-    public RecurringRegistrationDto toConsumerDto(boolean includeDetails) {
+    public RecurringRegistrationDto toConsumerDto(boolean includeDetails, boolean includeSubscription) {
         final RecurringRegistrationDto r = new RecurringRegistrationDto();
         this.updateDto(r, includeDetails);
 
-        if (subscription != null) {
+        if (includeSubscription && subscription != null) {
             r.setSubscription(subscription.toConsumerDto(includeDetails));
         }
 
         return r;
     }
 
-    public RecurringRegistrationDto toProviderDto(boolean includeDetails) {
+    public RecurringRegistrationDto toProviderDto(boolean includeDetails, boolean includeSubscription) {
         final RecurringRegistrationDto r = new RecurringRegistrationDto();
         this.updateDto(r, includeDetails);
 
-        if (subscription != null) {
+        if (includeSubscription && subscription != null) {
             r.setSubscription(subscription.toProviderDto());
         }
 
         return r;
     }
 
-    public RecurringRegistrationDto toHelpdeskDto(boolean includeDetails) {
+    public RecurringRegistrationDto toHelpdeskDto(boolean includeDetails, boolean includeSubscription) {
         final RecurringRegistrationDto r = new RecurringRegistrationDto();
         this.updateDto(r, includeDetails);
 
-        if (subscription != null) {
+        if (includeSubscription && subscription != null) {
             r.setSubscription(subscription.toHelpdeskDto());
         }
 

@@ -162,7 +162,7 @@ public class CardDirectPayInEntity extends PayInEntity {
         p.setAlias(alias);
         p.setCard(card);
         if (recurringPayment != null) {
-            p.setRecurringPayment(recurringPayment.toConsumerDto(includeDetails));
+            p.setRecurringPayment(recurringPayment.toConsumerDto(includeDetails, false));
         }
         p.setRecurringPaymentType(recurringPaymentType);
         p.setStatementDescriptor(statementDescriptor);
@@ -217,7 +217,7 @@ public class CardDirectPayInEntity extends PayInEntity {
         p.setProviderResultCode(resultCode);
         p.setProviderResultMessage(resultMessage);
         if (recurringPayment != null) {
-            p.setRecurringPayment(recurringPayment.toHelpdeskDto(includeDetails));
+            p.setRecurringPayment(recurringPayment.toHelpdeskDto(includeDetails, false));
         }
         p.setRecurringPaymentType(recurringPaymentType);
         p.setStatementDescriptor(statementDescriptor);
