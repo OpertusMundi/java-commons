@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.model.payment;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.validation.constraints.NotEmpty;
@@ -7,24 +9,30 @@ import javax.validation.constraints.NotNull;
 
 import org.springframework.util.Assert;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Schema(description = "An object that contains information about a service usage over a specific period")
 @AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @Getter
 public class ServiceUseStatsDto {
 
     @Schema(description = "Subscriber account unique key")
     @NotNull
-    private final UUID userKey;
+    private UUID userKey;
 
     @Schema(description = "Asset unique PID")
     @NotEmpty
-    private final UUID subscriptionKey;
+    private UUID subscriptionKey;
 
     @Schema(description = "Number of service calls")
     @Builder.Default
@@ -33,6 +41,14 @@ public class ServiceUseStatsDto {
     @Schema(description = "Number of rows returned by service calls")
     @Builder.Default
     private int rows = 0;
+
+    @Schema(description = "Number of service calls per client")
+    @JsonInclude(Include.NON_EMPTY)
+    private final Map<UUID, Integer> clientCalls = new HashMap<>();
+
+    @Schema(description = "Number of rows returned by service calls per client")
+    @JsonInclude(Include.NON_EMPTY)
+    private final Map<UUID, Integer> clientRows = new HashMap<>();
 
     public void decreaseRows(long rows) {
         this.rows -= rows;
@@ -44,5 +60,18 @@ public class ServiceUseStatsDto {
         this.calls -= calls;
 
         Assert.isTrue(calls >= 0, "Negative calls number");
+    }
+
+    public ServiceUseStatsDto shallowCopy() {
+        final ServiceUseStatsDto s = new ServiceUseStatsDto();
+
+        s.userKey         = this.userKey;
+        s.subscriptionKey = this.subscriptionKey;
+        s.calls           = this.calls;
+        s.rows            = this.rows;
+        s.clientCalls.putAll(this.clientCalls);
+        s.clientRows.putAll(this.clientRows);
+
+        return s;
     }
 }

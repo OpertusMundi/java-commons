@@ -54,4 +54,7 @@ public abstract class SubscriptionBillingDto {
     @Schema(description = "Item tax ", example = "0.24")
     private BigDecimal totalTax;
 
+    @Schema(description = "Use statistics")
+    private ServiceUseStatsDto stats;
+
 }

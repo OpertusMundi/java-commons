@@ -37,14 +37,17 @@ public class DefaultSubscriptionUseStatsService implements SubscriptionUseStatsS
     public ServiceUseStatsDto getUseStats(UUID userKey, UUID subscriptionKey, int year, int month) {
         // TODO: Query service use statistics logs ...
 
-        final int calls = ThreadLocalRandom.current().nextInt(1, 100000);
-
-        return ServiceUseStatsDto.builder()
+        final int                calls  = ThreadLocalRandom.current().nextInt(1, 100000);
+        final ServiceUseStatsDto result = ServiceUseStatsDto.builder()
             .userKey(userKey)
             .subscriptionKey(subscriptionKey)
             .calls(calls)
             .rows(0)
             .build();
+
+        result.getClientCalls().put(UUID.randomUUID(), result.getCalls());
+
+        return result;
     }
 
 }

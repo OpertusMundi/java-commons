@@ -74,6 +74,8 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
                 if (subStats.getCalls() == 0 && subStats.getRows() == 0) {
                     continue;
                 }
+                final ServiceUseStatsDto initialStats = subStats.shallowCopy();
+
                 // Find subscription
                 final AccountSubscriptionEntity subscription = subsciptions.stream()
                     .filter(s -> s.getOrder().getKey().equals(subStats.getSubscriptionKey()))
@@ -99,17 +101,17 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
                 for (final AccountSubscriptionSkuEntity sku : subscription.getSkus()) {
                     final int availableRows  = sku.getAvailableRows();
                     final int availableCalls = sku.getAvailableCalls();
-                    final int usedRows       = subStats.getRows();
-                    final int usedCalls      = subStats.getCalls();
+                    final int chargedRows    = subStats.getRows();
+                    final int chargedCalls   = subStats.getCalls();
 
-                    if (usedRows > 0 && availableRows > 0) {
-                        final int prepaidRows = availableRows >= usedRows ? usedRows : availableRows;
+                    if (chargedRows > 0 && availableRows > 0) {
+                        final int prepaidRows = availableRows >= chargedRows ? chargedRows : availableRows;
                         totalSkuRows += prepaidRows;
                         sku.usePrepaidRows(prepaidRows);
                         subStats.decreaseRows(prepaidRows);
                     }
-                    if (usedCalls > 0 && availableCalls > 0) {
-                        final int prepaidCalls = availableCalls >= usedCalls ? usedCalls : availableCalls;
+                    if (chargedCalls > 0 && availableCalls > 0) {
+                        final int prepaidCalls = availableCalls >= chargedCalls ? chargedCalls : availableCalls;
                         totalSkuCalls += prepaidCalls;
                         sku.usePrepaidCalls(prepaidCalls);
                         subStats.decreaseCalls(prepaidCalls);
@@ -139,6 +141,7 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
                     .totalPriceExcludingTax(quotation.getTotalPriceExcludingTax())
                     .totalPrice(quotation.getTotalPrice())
                     .totalTax(quotation.getTax())
+                    .stats(initialStats)
                     .build();
 
                 subBilling = subscriptionBillingRepository.saveAndFlush(subBilling);

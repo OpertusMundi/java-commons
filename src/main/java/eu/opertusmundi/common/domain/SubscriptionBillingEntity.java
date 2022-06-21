@@ -14,6 +14,12 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TypeDef;
+
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
+
+import eu.opertusmundi.common.model.payment.ServiceUseStatsDto;
 import eu.opertusmundi.common.model.payment.SubscriptionBillingDto;
 import eu.opertusmundi.common.model.payment.consumer.ConsumerSubscriptionBillingDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskSubscriptionBillingDto;
@@ -26,6 +32,7 @@ import lombok.Setter;
 
 @Entity(name = "SubscriptionBilling")
 @Table(schema = "billing", name = "`subscription_billing`")
+@TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -99,6 +106,13 @@ public class SubscriptionBillingEntity {
     @Setter
     private BigDecimal totalTax;
 
+    @NotNull
+    @Type(type = "jsonb")
+    @Column(name = "`stats`", columnDefinition = "jsonb")
+    @Getter
+    @Setter
+    private ServiceUseStatsDto stats;
+
     private void updateDto(SubscriptionBillingDto s) {
         s.setFromDate(fromDate);
         s.setId(id);
@@ -106,6 +120,7 @@ public class SubscriptionBillingEntity {
         s.setService(this.getSubscription().getAsset());
         s.setSkuTotalCalls(skuTotalCalls);
         s.setSkuTotalRows(skuTotalRows);
+        s.setStats(stats);
         s.setToDate(toDate);
         s.setTotalCalls(totalCalls);
         s.setTotalPrice(totalPrice);
