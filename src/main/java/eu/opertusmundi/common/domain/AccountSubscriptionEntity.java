@@ -139,12 +139,13 @@ public class AccountSubscriptionEntity {
 
     public void updateDto(AccountSubscriptionDto s) {
         s.setAddedOn(addedOn);
+        s.setAssetId(asset);
         s.setId(id);
         s.setKey(order.getKey());
         s.setOrderId(order.getId());
         s.setSegment(segment);
-        s.setAssetId(asset);
         s.setSource(source);
+        s.setStatus(status);
         s.setUpdatedOn(updatedOn);
     }
 
@@ -154,6 +155,10 @@ public class AccountSubscriptionEntity {
         this.updateDto(s);
 
         s.setProvider(this.provider.getProvider().toProviderDto(includeProviderDetails));
+        if (this.recurringPayIn != null) {
+            s.setRecurringRegistration(this.recurringPayIn.toConsumerDto(true, false));
+        }
+
 
         return s;
     }
@@ -164,6 +169,9 @@ public class AccountSubscriptionEntity {
         this.updateDto(s);
 
         s.setConsumer(this.consumer.getConsumer().toConsumerDto());
+        if (this.recurringPayIn != null) {
+            s.setRecurringRegistration(this.recurringPayIn.toProviderDto(true, false));
+        }
 
         return s;
     }
@@ -175,6 +183,9 @@ public class AccountSubscriptionEntity {
 
         s.setConsumer(this.consumer.getConsumer().toDto());
         s.setProvider(this.provider.getProvider().toDto());
+        if (this.recurringPayIn != null) {
+            s.setRecurringRegistration(this.recurringPayIn.toHelpdeskDto(true, false));
+        }
 
         return s;
     }

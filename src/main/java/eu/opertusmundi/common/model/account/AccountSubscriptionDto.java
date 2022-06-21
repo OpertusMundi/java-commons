@@ -4,9 +4,12 @@ import java.time.ZonedDateTime;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
+import eu.opertusmundi.common.model.payment.RecurringRegistrationDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,7 +29,7 @@ public abstract class AccountSubscriptionDto {
     @Schema(description = "Subscription key")
     private UUID key;
 
-    @Schema(description = "Service PID")
+    @Schema(description = "Asset PID")
     private String assetId;
 
     @Schema(description = "When the subscription was registered to the user account")
@@ -41,7 +44,14 @@ public abstract class AccountSubscriptionDto {
     @Schema(description = "First asset topic category if any exist")
     private EnumTopicCategory segment;
 
+    private EnumSubscriptionStatus status;
+    
     @Schema(description = "Catalogue item")
+    @JsonInclude(Include.NON_NULL)
     private CatalogueItemDto item;
+
+    @Schema(description = "Recurring PayIn registration")
+    @JsonInclude(Include.NON_NULL)
+    private RecurringRegistrationDto recurringRegistration;
 
 }

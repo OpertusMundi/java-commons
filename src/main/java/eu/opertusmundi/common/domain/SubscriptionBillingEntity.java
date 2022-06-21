@@ -18,11 +18,17 @@ import eu.opertusmundi.common.model.payment.SubscriptionBillingDto;
 import eu.opertusmundi.common.model.payment.consumer.ConsumerSubscriptionBillingDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskSubscriptionBillingDto;
 import eu.opertusmundi.common.model.payment.provider.ProviderSubscriptionBillingDto;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity(name = "SubscriptionBilling")
 @Table(schema = "billing", name = "`subscription_billing`")
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class SubscriptionBillingEntity {
 
     @Id
@@ -101,10 +107,10 @@ public class SubscriptionBillingEntity {
         s.setSkuTotalCalls(skuTotalCalls);
         s.setSkuTotalRows(skuTotalRows);
         s.setToDate(toDate);
-        s.setTotalCalls(skuTotalCalls);
+        s.setTotalCalls(totalCalls);
         s.setTotalPrice(totalPrice);
         s.setTotalPriceExcludingTax(totalPriceExcludingTax);
-        s.setTotalRows(skuTotalRows);
+        s.setTotalRows(totalRows);
         s.setTotalTax(totalTax);
     }
 

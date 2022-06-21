@@ -9,7 +9,10 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
+
+import org.springframework.util.Assert;
 
 import eu.opertusmundi.common.model.account.AccountSubscriptionSkuDto;
 import lombok.Getter;
@@ -55,14 +58,34 @@ public class AccountSubscriptionSkuEntity {
     @NotNull
     @Column(name = "`used_rows`")
     @Getter
-    @Setter
     private Integer usedRows = 0;
 
     @NotNull
     @Column(name = "`used_calls`")
     @Getter
-    @Setter
     private Integer usedCalls = 0;
+
+    @Transient
+    public Integer getAvailableRows() {
+        return this.purchasedRows - this.usedRows;
+    }
+
+    @Transient
+    public Integer getAvailableCalls() {
+        return this.purchasedCalls - this.usedCalls;
+    }
+
+    public void usePrepaidRows(int rows) {
+        this.usedRows += rows;
+
+        Assert.isTrue(this.purchasedRows >= this.usedRows, "Used rows exceed purchased rows");
+    }
+
+    public void usePrepaidCalls(int calls) {
+        this.usedCalls += calls;
+
+        Assert.isTrue(this.purchasedCalls >= this.usedCalls, "Used calls exceed purchased rows");
+    }
 
     public AccountSubscriptionSkuDto toDto() {
         final AccountSubscriptionSkuDto s = new AccountSubscriptionSkuDto();
@@ -77,5 +100,5 @@ public class AccountSubscriptionSkuEntity {
 
         return s;
     }
-    
+
 }

@@ -3,6 +3,7 @@ package eu.opertusmundi.common.repository;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import eu.opertusmundi.common.domain.AccountSubscriptionEntity;
 import eu.opertusmundi.common.model.account.AccountSubscriptionDto;
+import eu.opertusmundi.common.model.account.EnumSubscriptionStatus;
 import eu.opertusmundi.common.model.payment.provider.ProviderAccountSubscriptionDto;
 
 @Repository
@@ -24,17 +26,38 @@ public interface AccountSubscriptionRepository extends JpaRepository<AccountSubs
     @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey")
     List<AccountSubscriptionEntity> findAllEntitiesByConsumer(UUID userKey);
 
-    @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey")
+    @Query("SELECT  s "
+         + "FROM    AccountSubscription s "
+         + "WHERE   (s.status in :status or :status is null) and "
+         + "        (cast(:consumerKey as org.hibernate.type.UUIDCharType) IS NULL or s.consumer.key = :consumerKey) and "
+         + "        (cast(:providerKey as org.hibernate.type.UUIDCharType) IS NULL or s.provider.key = :providerKey) "
+     )
+    Page<AccountSubscriptionEntity> findAllEntitiesByConsumer(
+        UUID consumerKey, UUID providerKey, Set<EnumSubscriptionStatus> status, Pageable pageable
+    );
+
     default List<AccountSubscriptionDto> findAllObjectsByConsumer(UUID userKey, boolean includeProviderDetails) {
         return this.findAllEntitiesByConsumer(userKey).stream()
             .map(e -> e.toConsumerDto(includeProviderDetails))
             .collect(Collectors.toList());
     }
 
+    default Page<AccountSubscriptionDto> findAllObjectsByConsumer(
+        UUID consumerKey, UUID providerKey, Set<EnumSubscriptionStatus> status, Pageable pageable
+    ) {
+        final Page<AccountSubscriptionEntity> page = this.findAllEntitiesByConsumer(
+            consumerKey,
+            providerKey,
+            status != null && status.size() > 0 ? status : null,
+            pageable
+        );
+
+        return page.map(AccountSubscriptionEntity::toHelpdeskDto);
+    }
+
     @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey and order.key = :orderKey")
     Optional<AccountSubscriptionEntity> findAllEntitiesByConsumerAndOrder(UUID userKey, UUID orderKey);
 
-    @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey and order.key = :orderKey")
     default Optional<AccountSubscriptionDto> findAllObjectsByConsumerAndOrder(UUID userKey, UUID orderKey, boolean includeProviderDetails) {
         return this.findAllEntitiesByConsumerAndOrder(userKey, orderKey)
             .map(e -> e.toConsumerDto(includeProviderDetails));
@@ -47,7 +70,6 @@ public interface AccountSubscriptionRepository extends JpaRepository<AccountSubs
     @Query("SELECT s FROM AccountSubscription s WHERE s.provider.key = :userKey")
     Page<AccountSubscriptionEntity> findAllEntitiesByProvider(UUID userKey, Pageable pageable);
 
-    @Query("SELECT s FROM AccountSubscription s WHERE s.provider.key = :userKey")
     default Page<ProviderAccountSubscriptionDto> findAllObjectsByProvider(UUID userKey, Pageable pageable) {
         return this.findAllEntitiesByProvider(userKey, pageable).map(e -> e.toProviderDto());
     }
