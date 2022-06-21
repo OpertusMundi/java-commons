@@ -11,6 +11,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
+import eu.opertusmundi.common.model.payment.ServiceUseStatsDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.pricing.FixedPopulationQuotationParametersDto;
@@ -96,9 +97,26 @@ public class DefaultQuotationService implements QuotationService {
                 // Compute default quotations without parameters. No
                 // parameter validation is required. Some pricing model may
                 // return an empty result
-                return m.compute(null, systemParams);
+                return m.compute((QuotationParametersDto) null, systemParams);
             })
             .collect(Collectors.toList());
+    }
+
+    @Override
+    public QuotationDto createQuotation(BasePricingModelCommandDto model, ServiceUseStatsDto stats) throws QuotationException {
+        if (!model.getType().isUseStatsSupported()) {
+            throw new QuotationException(
+                QuotationMessageCode.QUOTATION_NOT_SUPPORTED,
+                String.format("Pricing model [%s] does not support service statistics parameters", model.getType())
+            );
+        }
+
+        // Get system parameters
+        final SystemQuotationParametersDto systemParams = this.getSystemParameters(model, null);
+
+        final QuotationDto result = model.compute(stats, systemParams);
+
+        return result;
     }
 
     /**

@@ -2,10 +2,12 @@ package eu.opertusmundi.common.model.pricing.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import eu.opertusmundi.common.model.payment.ServiceUseStatsDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.pricing.EnumContinent;
 import eu.opertusmundi.common.model.pricing.EnumPricingModel;
+import eu.opertusmundi.common.model.pricing.QuotationDto;
 import eu.opertusmundi.common.model.pricing.QuotationException;
 import eu.opertusmundi.common.model.pricing.QuotationMessageCode;
 import eu.opertusmundi.common.model.pricing.QuotationParametersDto;
@@ -81,5 +83,11 @@ public class SHImagePricingModelCommandDto extends BasePricingModelCommandDto {
 
         return result;
     }
+
+    @Override
+    public QuotationDto compute(ServiceUseStatsDto stats, SystemQuotationParametersDto systemParams) throws QuotationException {
+        throw new QuotationException(QuotationMessageCode.QUOTATION_NOT_SUPPORTED, "Model does not support service statistics parameters");
+    }
+
 
 }

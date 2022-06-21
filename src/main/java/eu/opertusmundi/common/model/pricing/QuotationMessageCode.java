@@ -23,6 +23,7 @@ public enum QuotationMessageCode implements MessageCode {
     SUBSCRIPTION_FREQUENCY_NOT_SET,
     SUBSCRIPTION_FREQUENCY_NOT_SUPPORTED,
     SUBSCRIPTION_EXISTS,
+    QUOTATION_NOT_SUPPORTED,
     ;
 
     @Override

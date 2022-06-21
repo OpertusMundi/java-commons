@@ -69,20 +69,21 @@ import eu.opertusmundi.common.model.order.OrderShippingCommandDto;
 import eu.opertusmundi.common.model.order.ProviderOrderDto;
 import eu.opertusmundi.common.model.order.UploadOrderContractCommand;
 import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
+import eu.opertusmundi.common.model.payment.EnumPaymentMethod;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.PaymentMessageCode;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskOrderPayInItemDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
-import eu.opertusmundi.common.model.pricing.CallPrePaidPricingModelCommandDto;
-import eu.opertusmundi.common.model.pricing.CallPrePaidQuotationParametersDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.pricing.EnumPricingModel;
 import eu.opertusmundi.common.model.pricing.FixedPricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.PerCallPricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.PerCallQuotationParametersDto;
+import eu.opertusmundi.common.model.pricing.PerRowPricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.PerRowQuotationParametersDto;
 import eu.opertusmundi.common.model.pricing.PrePaidTierDto;
 import eu.opertusmundi.common.model.pricing.QuotationParametersDto;
-import eu.opertusmundi.common.model.pricing.RowPrePaidPricingModelCommandDto;
-import eu.opertusmundi.common.model.pricing.RowPrePaidQuotationParametersDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.AccountAssetRepository;
@@ -632,54 +633,62 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             .findFirst().orElse(null);
         final boolean renewal = activeSubscription != null;
 
-        if(renewal) {
-            activeSubscription.setUpdatedOn(now);
-        }
-
         // Create/Update subscription for consumer account
-        final AccountSubscriptionEntity sub = new AccountSubscriptionEntity();
+        AccountSubscriptionEntity sub;
+        if (renewal) {
+            sub = activeSubscription;
+            sub.setUpdatedOn(now);
+        } else {
+            sub = new AccountSubscriptionEntity();
 
-        sub.setAddedOn(now);
-        sub.setAsset(orderItem.getAssetId());
-        sub.setCancelledOn(null);
-        sub.setConsumer(payIn.getConsumer());
-        sub.setExpiresOn(null);
-        sub.setLastPayinDate(order.getPayin().getExecutedOn());
-        sub.setNextPayinDate(null);
-        sub.setOrder(order);
-        sub.setProvider(orderItem.getProvider());
-        sub.setRecurringPayIn(null);
-        sub.setSegment(asset.getTopicCategory().stream().findFirst().orElse(null));
-        sub.setSource(renewal ? EnumAssetSource.UPDATE : EnumAssetSource.PURCHASE);
-        sub.setStatus(EnumSubscriptionStatus.ACTIVE);
-        sub.setUpdatedOn(now);
+            sub.setAddedOn(now);
+            sub.setAsset(orderItem.getAssetId());
+            sub.setCancelledOn(null);
+            sub.setConsumer(payIn.getConsumer());
+            sub.setExpiresOn(null);
+            sub.setLastPayinDate(order.getPayin().getExecutedOn());
+            sub.setNextPayinDate(null);
+            sub.setOrder(order);
+            sub.setProvider(orderItem.getProvider());
+            sub.setSegment(asset.getTopicCategory().stream().findFirst().orElse(null));
+            sub.setSource(EnumAssetSource.PURCHASE);
+            sub.setStatus(EnumSubscriptionStatus.ACTIVE);
+            sub.setUpdatedOn(now);
+
+            if (payIn.getPaymentMethod() == EnumPaymentMethod.CARD_DIRECT) {
+                final CardDirectPayInEntity payInCardDirect = (CardDirectPayInEntity) payIn;
+                sub.setRecurringPayIn(payInCardDirect.getRecurringPayment());
+            }
+        }
 
         // Register call/rows SKUs
         final QuotationParametersDto params = pricingModel.getUserParameters();
         AccountSubscriptionSkuEntity sku    = null;
 
         switch (pricingModel.getModel().getType()) {
-            case PER_CALL_WITH_PREPAID :
-                final CallPrePaidPricingModelCommandDto prePaidCallModel = (CallPrePaidPricingModelCommandDto) pricingModel.getModel();
-                final CallPrePaidQuotationParametersDto typedParams1 = (CallPrePaidQuotationParametersDto) params;
-                final PrePaidTierDto callTier = prePaidCallModel.getPrePaidTiers().get(typedParams1.getPrePaidTier());
-
-                sku = new AccountSubscriptionSkuEntity();
-                sku.setPurchasedCalls(callTier.getCount());
-                sku.setPurchasedRows(0);
-
+            case PER_CALL : {
+                final PerCallPricingModelCommandDto prePaidCallModel = (PerCallPricingModelCommandDto) pricingModel.getModel();
+                final PerCallQuotationParametersDto typedParams1     = (PerCallQuotationParametersDto) params;
+                final Integer                       callTierIndex    = typedParams1.getPrePaidTier();
+                if (callTierIndex != null) {
+                    final PrePaidTierDto callTier = prePaidCallModel.getPrePaidTiers().get(callTierIndex);
+                    sku = new AccountSubscriptionSkuEntity();
+                    sku.setPurchasedCalls(callTier.getCount());
+                }
                 break;
+            }
 
-            case PER_ROW_WITH_PREPAID :
-                final RowPrePaidPricingModelCommandDto prePaidRowModel = (RowPrePaidPricingModelCommandDto) pricingModel.getModel();
-                final RowPrePaidQuotationParametersDto typedParams2 = (RowPrePaidQuotationParametersDto) params;
-                final PrePaidTierDto rowTier = prePaidRowModel.getPrePaidTiers().get(typedParams2.getPrePaidTier());
-
-                sku = new AccountSubscriptionSkuEntity();
-                sku.setPurchasedCalls(0);
-                sku.setPurchasedRows(rowTier.getCount());
-
+            case PER_ROW : {
+                final PerRowPricingModelCommandDto prePaidRowModel = (PerRowPricingModelCommandDto) pricingModel.getModel();
+                final PerRowQuotationParametersDto typedParams2    = (PerRowQuotationParametersDto) params;
+                final Integer                      rowTierIndex    = typedParams2.getPrePaidTier();
+                if (rowTierIndex != null) {
+                    final PrePaidTierDto rowTier = prePaidRowModel.getPrePaidTiers().get(rowTierIndex);
+                    sku = new AccountSubscriptionSkuEntity();
+                    sku.setPurchasedRows(rowTier.getCount());
+                }
                 break;
+            }
 
             default :
                 // No action is required
@@ -688,8 +697,6 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         if (sku != null) {
             sku.setOrder(order);
             sku.setSubscription(sub);
-            sku.setUsedCalls(0);
-            sku.setUsedRows(0);
 
             sub.getSkus().add(sku);
         }

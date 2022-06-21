@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
 
 @Schema(enumAsRef = true)
 public enum EnumPricingModel {
@@ -34,21 +35,14 @@ public enum EnumPricingModel {
      */
     FIXED_FOR_POPULATION,
     /**
-     * Pay per call, optional buy prepaid SKUs with reverse block rate
+     * Pay per call, with optional prepaid SKUs and/or reverse block rate
+     * pricing
      */
-    PER_CALL_WITH_PREPAID,
+    PER_CALL(true),
     /**
-     * Pay per call, optional define reverse block rate pricing
+     * Pay per row, with optional prepaid SKUs and/or reverse block rate pricing
      */
-    PER_CALL_WITH_BLOCK_RATE,
-    /**
-     * Pay per row, optional buy prepaid SKUs with reverse block rate
-     */
-    PER_ROW_WITH_PREPAID,
-    /**
-     * Pay per row, optional define reverse block rate pricing
-     */
-    PER_ROW_WITH_BLOCK_RATE,
+    PER_ROW(true),
 
     // Sentinel Hub
 
@@ -61,6 +55,17 @@ public enum EnumPricingModel {
      */
     SENTINEL_HUB_IMAGES,
     ;
+
+    private EnumPricingModel() {
+        this.useStatsSupported = false;
+    }
+
+    private EnumPricingModel(boolean useStatsSupported) {
+        this.useStatsSupported = useStatsSupported;
+    }
+
+    @Getter
+    public final boolean useStatsSupported;
 
     public static EnumPricingModel fromString(String value) {
         for (final EnumPricingModel item : EnumPricingModel.values()) {

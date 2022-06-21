@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import eu.opertusmundi.common.model.payment.ServiceUseStatsDto;
 import eu.opertusmundi.common.model.pricing.integration.SHImagePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.integration.SHSubscriptionPricingModelCommandDto;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
@@ -24,33 +25,29 @@ import lombok.Setter;
     use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type"
 )
 @JsonSubTypes({
-    @Type(name = "FREE", value = FreePricingModelCommandDto.class),
-    @Type(name = "FIXED", value = FixedPricingModelCommandDto.class),
-    @Type(name = "FIXED_PER_ROWS", value = FixedRowPricingModelCommandDto.class),
-    @Type(name = "FIXED_FOR_POPULATION", value = FixedPopulationPricingModelCommandDto.class),
-    @Type(name = "PER_CALL_WITH_PREPAID", value = CallPrePaidPricingModelCommandDto.class),
-    @Type(name = "PER_CALL_WITH_BLOCK_RATE", value = CallBlockRatePricingModelCommandDto.class),
-    @Type(name = "PER_ROW_WITH_PREPAID", value = RowPrePaidPricingModelCommandDto.class),
-    @Type(name = "PER_ROW_WITH_BLOCK_RATE", value = RowBlockRatePricingModelCommandDto.class),
+    @Type(name = "FREE",                    value = FreePricingModelCommandDto.class),
+    @Type(name = "FIXED",                   value = FixedPricingModelCommandDto.class),
+    @Type(name = "FIXED_PER_ROWS",          value = FixedRowPricingModelCommandDto.class),
+    @Type(name = "FIXED_FOR_POPULATION",    value = FixedPopulationPricingModelCommandDto.class),
+    @Type(name = "PER_CALL",                value = PerCallPricingModelCommandDto.class),
+    @Type(name = "PER_ROW",                 value = PerRowPricingModelCommandDto.class),
     // External Data Provider pricing models
-    @Type(name = "SENTINEL_HUB_SUBSCRIPTION", value = SHSubscriptionPricingModelCommandDto.class),
-    @Type(name = "SENTINEL_HUB_IMAGES", value = SHImagePricingModelCommandDto.class),
+    @Type(name = "SENTINEL_HUB_SUBSCRIPTION",   value = SHSubscriptionPricingModelCommandDto.class),
+    @Type(name = "SENTINEL_HUB_IMAGES",         value = SHImagePricingModelCommandDto.class),
 })
 @Schema(
     description = "Pricing model command",
     required = true,
     discriminatorMapping = {
-        @DiscriminatorMapping(value = "FREE", schema = FreePricingModelCommandDto.class),
-        @DiscriminatorMapping(value = "FIXED", schema = FixedPricingModelCommandDto.class),
-        @DiscriminatorMapping(value = "FIXED_PER_ROWS", schema = FixedRowPricingModelCommandDto.class),
-        @DiscriminatorMapping(value = "FIXED_FOR_POPULATION", schema = FixedPopulationPricingModelCommandDto.class),
-        @DiscriminatorMapping(value = "PER_CALL_WITH_PREPAID", schema = CallPrePaidPricingModelCommandDto.class),
-        @DiscriminatorMapping(value = "PER_CALL_WITH_BLOCK_RATE", schema = CallBlockRatePricingModelCommandDto.class),
-        @DiscriminatorMapping(value = "PER_ROW_WITH_PREPAID", schema = RowPrePaidPricingModelCommandDto.class),
-        @DiscriminatorMapping(value = "PER_ROW_WITH_BLOCK_RATE", schema = RowBlockRatePricingModelCommandDto.class),
+        @DiscriminatorMapping(value = "FREE",                   schema = FreePricingModelCommandDto.class),
+        @DiscriminatorMapping(value = "FIXED",                  schema = FixedPricingModelCommandDto.class),
+        @DiscriminatorMapping(value = "FIXED_PER_ROWS",         schema = FixedRowPricingModelCommandDto.class),
+        @DiscriminatorMapping(value = "FIXED_FOR_POPULATION",   schema = FixedPopulationPricingModelCommandDto.class),
+        @DiscriminatorMapping(value = "PER_CALL",               schema = PerCallPricingModelCommandDto.class),
+        @DiscriminatorMapping(value = "PER_ROW",                schema = PerRowPricingModelCommandDto.class),
         // External Data Provider pricing models
-        @DiscriminatorMapping(value = "SENTINEL_HUB_SUBSCRIPTION", schema = SHSubscriptionPricingModelCommandDto.class),
-        @DiscriminatorMapping(value = "SENTINEL_HUB_IMAGES", schema = SHImagePricingModelCommandDto.class)
+        @DiscriminatorMapping(value = "SENTINEL_HUB_SUBSCRIPTION",  schema = SHSubscriptionPricingModelCommandDto.class),
+        @DiscriminatorMapping(value = "SENTINEL_HUB_IMAGES",        schema = SHImagePricingModelCommandDto.class)
     }
 )
 public abstract class BasePricingModelCommandDto implements Serializable {
@@ -162,7 +159,7 @@ public abstract class BasePricingModelCommandDto implements Serializable {
     public abstract void validate() throws QuotationException;
 
     /**
-     * Validate quotation parameters
+     * Validate model and quotation parameters
      *
      * @param params
      * @param ignoreMissing Do not validate missing parameters
@@ -171,8 +168,8 @@ public abstract class BasePricingModelCommandDto implements Serializable {
     public abstract void validate(@Nullable QuotationParametersDto params, boolean ignoreMissing) throws QuotationException;
 
     /**
-     * Computes the effective pricing model given a valid quotation parameters
-     * object
+     * Computes the effective pricing model given a system parameters object and
+     * optionally a user parameters object
      *
      * @param userParams Pricing model specific quotation parameters set by the user
      * @param systemParams Pricing model specific quotation parameters set by the system
@@ -182,5 +179,15 @@ public abstract class BasePricingModelCommandDto implements Serializable {
     public abstract EffectivePricingModelDto compute(
         @Nullable QuotationParametersDto userParams, SystemQuotationParametersDto systemParams
     ) throws QuotationException;
+
+    /**
+     * Computes a quotation given use statistics for a service
+     *
+     * @param stats
+     * @param systemParams
+     * @return
+     * @throws QuotationException
+     */
+    public abstract QuotationDto compute(ServiceUseStatsDto stats, SystemQuotationParametersDto systemParams) throws QuotationException;
 
 }

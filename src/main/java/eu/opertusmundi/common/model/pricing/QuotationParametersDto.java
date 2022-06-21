@@ -21,26 +21,26 @@ import lombok.ToString;
     use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type", defaultImpl = EmptyQuotationParametersDto.class
 )
 @JsonSubTypes({
-    @Type(name = "UNDEFINED", value = EmptyQuotationParametersDto.class),
-    @Type(name = "FIXED_PER_ROWS", value = FixedRowQuotationParametersDto.class),
-    @Type(name = "FIXED_FOR_POPULATION", value = FixedPopulationQuotationParametersDto.class),
-    @Type(name = "PER_CALL_WITH_PREPAID", value = CallPrePaidQuotationParametersDto.class),
-    @Type(name = "PER_ROW_WITH_PREPAID", value = RowPrePaidQuotationParametersDto.class),
+    @Type(name = "UNDEFINED",               value = EmptyQuotationParametersDto.class),
+    @Type(name = "FIXED_PER_ROWS",          value = FixedRowQuotationParametersDto.class),
+    @Type(name = "FIXED_FOR_POPULATION",    value = FixedPopulationQuotationParametersDto.class),
+    @Type(name = "PER_CALL",                value = PerCallQuotationParametersDto.class),
+    @Type(name = "PER_ROW",                 value = PerRowQuotationParametersDto.class),
     // External Data Provider pricing models
-    @Type(name = "SENTINEL_HUB_SUBSCRIPTION", value = SHSubscriptionQuotationParametersDto.class),
-    @Type(name = "SENTINEL_HUB_IMAGES", value = SHImageQuotationParametersDto.class),
+    @Type(name = "SENTINEL_HUB_SUBSCRIPTION",   value = SHSubscriptionQuotationParametersDto.class),
+    @Type(name = "SENTINEL_HUB_IMAGES",         value = SHImageQuotationParametersDto.class),
 })
 @Schema(
     description = "User-defined quotation parameters",
     discriminatorMapping = {
-        @DiscriminatorMapping(value = "UNDEFINED", schema = EmptyQuotationParametersDto.class),
-        @DiscriminatorMapping(value = "FIXED_PER_ROWS", schema = FixedRowQuotationParametersDto.class),
-        @DiscriminatorMapping(value = "FIXED_FOR_POPULATION", schema = FixedPopulationQuotationParametersDto.class),
-        @DiscriminatorMapping(value = "PER_CALL_WITH_PREPAID", schema = CallPrePaidQuotationParametersDto.class),
-        @DiscriminatorMapping(value = "PER_ROW_WITH_PREPAID", schema = RowPrePaidQuotationParametersDto.class),
+        @DiscriminatorMapping(value = "UNDEFINED",              schema = EmptyQuotationParametersDto.class),
+        @DiscriminatorMapping(value = "FIXED_PER_ROWS",         schema = FixedRowQuotationParametersDto.class),
+        @DiscriminatorMapping(value = "FIXED_FOR_POPULATION",   schema = FixedPopulationQuotationParametersDto.class),
+        @DiscriminatorMapping(value = "PER_CALL",               schema = PerCallQuotationParametersDto.class),
+        @DiscriminatorMapping(value = "PER_ROW",                schema = PerRowQuotationParametersDto.class),
         // External Data Provider pricing models
-        @DiscriminatorMapping(value = "SENTINEL_HUB_SUBSCRIPTION", schema = SHSubscriptionQuotationParametersDto.class),
-        @DiscriminatorMapping(value = "SENTINEL_HUB_IMAGES", schema = SHImageQuotationParametersDto.class)
+        @DiscriminatorMapping(value = "SENTINEL_HUB_SUBSCRIPTION",  schema = SHSubscriptionQuotationParametersDto.class),
+        @DiscriminatorMapping(value = "SENTINEL_HUB_IMAGES",        schema = SHImageQuotationParametersDto.class)
     }
 )
 public class QuotationParametersDto implements Serializable {
@@ -74,4 +74,7 @@ public class QuotationParametersDto implements Serializable {
     @Setter
     private String userName;
 
+    public static QuotationParametersDto empty() {
+        return new EmptyQuotationParametersDto();
+    }
 }

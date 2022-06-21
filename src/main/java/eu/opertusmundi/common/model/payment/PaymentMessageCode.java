@@ -4,6 +4,8 @@ import eu.opertusmundi.common.model.MessageCode;
 
 public enum PaymentMessageCode implements MessageCode {
     NOT_IMPLEMENTED,
+    ACCOUNT_NOT_FOUND,
+    SUBSCRIPTION_NOT_FOUND,
     API_ERROR,
     ASSET_NOT_FOUND,
     CART_IS_EMPTY,
@@ -24,6 +26,7 @@ public enum PaymentMessageCode implements MessageCode {
     WEB_HOOK_NOT_SUPPORTED,
     ZERO_AMOUNT,
     CARD_NOT_FOUND,
+    QUOTATION_ERROR,
     ;
 
     @Override

@@ -2,6 +2,8 @@ package eu.opertusmundi.common.model.pricing;
 
 import java.math.BigDecimal;
 
+import eu.opertusmundi.common.model.payment.ServiceUseStatsDto;
+
 public class FreePricingModelCommandDto extends BasePricingModelCommandDto {
 
     private static final long serialVersionUID = 1L;
@@ -39,5 +41,11 @@ public class FreePricingModelCommandDto extends BasePricingModelCommandDto {
 
         return EffectivePricingModelDto.from(this, userParams, systemParams, quotation);
     }
+
+    @Override
+    public QuotationDto compute(ServiceUseStatsDto stats, SystemQuotationParametersDto systemParams) throws QuotationException {
+        throw new QuotationException(QuotationMessageCode.QUOTATION_NOT_SUPPORTED, "Model does not support service statistics parameters");
+    }
+
 
 }

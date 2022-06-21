@@ -10,6 +10,7 @@ import javax.validation.constraints.Digits;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+import eu.opertusmundi.common.model.payment.ServiceUseStatsDto;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -114,5 +115,11 @@ public class FixedRowPricingModelCommandDto extends BasePricingModelCommandDto {
 
         return EffectivePricingModelDto.from(this, userParams, systemParams);
     }
+
+    @Override
+    public QuotationDto compute(ServiceUseStatsDto stats, SystemQuotationParametersDto systemParams) throws QuotationException {
+        throw new QuotationException(QuotationMessageCode.QUOTATION_NOT_SUPPORTED, "Model does not support service statistics parameters");
+    }
+
 
 }

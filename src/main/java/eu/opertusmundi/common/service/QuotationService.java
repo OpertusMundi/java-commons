@@ -3,8 +3,10 @@ package eu.opertusmundi.common.service;
 import java.util.List;
 
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
+import eu.opertusmundi.common.model.payment.ServiceUseStatsDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
+import eu.opertusmundi.common.model.pricing.QuotationDto;
 import eu.opertusmundi.common.model.pricing.QuotationException;
 import eu.opertusmundi.common.model.pricing.QuotationParametersDto;
 
@@ -56,5 +58,15 @@ public interface QuotationService {
      * @throws QuotationException
      */
     List<EffectivePricingModelDto> createQuotation(CatalogueItemDto asset) throws QuotationException;
+
+    /**
+     * Compute a quotation for the specified service pricing model and use
+     * statistics
+     *
+     * @param stats
+     * @return
+     * @throws QuotationException if the model does not support services or computation fails
+     */
+    QuotationDto createQuotation(BasePricingModelCommandDto model, ServiceUseStatsDto stats) throws QuotationException;
 
 }

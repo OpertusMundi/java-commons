@@ -6,10 +6,12 @@ import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Digits;
 
 import eu.opertusmundi.common.model.payment.EnumRecurringPaymentFrequency;
+import eu.opertusmundi.common.model.payment.ServiceUseStatsDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.pricing.EnumContinent;
 import eu.opertusmundi.common.model.pricing.EnumPricingModel;
+import eu.opertusmundi.common.model.pricing.QuotationDto;
 import eu.opertusmundi.common.model.pricing.QuotationException;
 import eu.opertusmundi.common.model.pricing.QuotationMessageCode;
 import eu.opertusmundi.common.model.pricing.QuotationParametersDto;
@@ -109,6 +111,11 @@ public class SHSubscriptionPricingModelCommandDto extends BasePricingModelComman
         // subscription to the cart, the price will be computed using the
         // Sentinel Hub external data provider service
         return EffectivePricingModelDto.from(this, userParams, systemParams);
+    }
+
+    @Override
+    public QuotationDto compute(ServiceUseStatsDto stats, SystemQuotationParametersDto systemParams) throws QuotationException {
+        throw new QuotationException(QuotationMessageCode.QUOTATION_NOT_SUPPORTED, "Model does not support service statistics parameters");
     }
 
 }

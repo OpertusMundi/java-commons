@@ -8,12 +8,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
-public class RowPrePaidQuotationParametersDto extends QuotationParametersDto implements Serializable {
+public class PerRowQuotationParametersDto extends QuotationParametersDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    protected RowPrePaidQuotationParametersDto() {
-        super(EnumPricingModel.PER_ROW_WITH_PREPAID);
+    protected PerRowQuotationParametersDto() {
+        super(EnumPricingModel.PER_ROW);
     }
 
     @Schema(description = "Selected prepaid tier index if feature is supported. If a tier is selected and the pricing "
