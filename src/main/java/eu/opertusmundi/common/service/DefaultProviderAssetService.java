@@ -432,6 +432,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             draftCommand.setTitle(command.getTitle());
             draftCommand.setType(EnumAssetType.SERVICE);
             draftCommand.setVersion(command.getVersion());
+            draftCommand.setVettingRequired(false);
 
             AssetDraftDto draft = this.updateDraft(draftCommand);
 
