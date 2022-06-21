@@ -22,20 +22,26 @@ import lombok.Setter;
 @Setter
 public class PlatformAccountCommandDto implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     @Builder
     public PlatformAccountCommandDto(
-        boolean active, boolean blocked, String email, EnumAuthProvider idpName, AccountProfileCommandDto profile, String password
+        boolean active, boolean blocked,
+        String email, EnumAuthProvider idpName, AccountProfileCommandDto profile, String password,
+        boolean consumerRegistrationRequired
     ) {
-        this.active   = active;
-        this.blocked  = blocked;
-        this.email    = email;
-        this.idpName  = idpName;
-        this.password = password;
-        this.profile  = profile;
-        this.type     = EnumAccountType.OPERTUSMUNDI;
+        this.active                       = active;
+        this.blocked                      = blocked;
+        this.consumerRegistrationRequired = consumerRegistrationRequired;
+        this.email                        = email;
+        this.idpName                      = idpName;
+        this.password                     = password;
+        this.profile                      = profile;
+        this.type                         = EnumAccountType.OPERTUSMUNDI;
     }
 
-    private static final long serialVersionUID = 1L;
+    @Schema(description = "If `true`, the new account is also registered as an individual consumer")
+    private boolean consumerRegistrationRequired = false;
 
     @JsonIgnore
     private boolean blocked;
