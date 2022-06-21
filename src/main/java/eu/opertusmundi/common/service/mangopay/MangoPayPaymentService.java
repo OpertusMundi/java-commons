@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.elasticsearch.core.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -424,7 +425,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                     user = this.createUserNatural(account, (CustomerDraftIndividualEntity) registration, user.getId());
                     break;
                 case PROFESSIONAL :
-                    user = this.createUserLegal(command.getType(), account, (CustomerDraftProfessionalEntity) registration,user.getId());
+                    user = this.createUserLegal(command.getType(), account, (CustomerDraftProfessionalEntity) registration, user.getId());
                     break;
                 default :
                     throw new PaymentException(String.format("Customer type [%s] is not supported", type));
@@ -930,7 +931,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         final Direction direction = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
 
         final PageRequest       pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
-        final Page<PayInEntity> page        = this.payInRepository.findAllConsumerPayIns(userKey, status, pageRequest);
+        final Page<PayInEntity> page        = this.payInRepository.findAllConsumerPayIns(userKey, null, status, pageRequest);
 
         final long                   count   = page.getTotalElements();
         final List<ConsumerPayInDto> records = page.getContent().stream()
@@ -947,7 +948,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         final Direction direction = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
 
         final PageRequest           pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
-        final Page<PayInItemEntity> page        = this.payInRepository.findAllProviderPayInItems(userKey, status, pageRequest);
+        final Page<PayInItemEntity> page        = this.payInRepository.findAllProviderPayInItems(userKey, null, Set.of(status), pageRequest);
 
         final long                       count   = page.getTotalElements();
         final List<ProviderPayInItemDto> records = page.getContent().stream()
@@ -1966,7 +1967,6 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         u.setUserCategory(UserCategory.PAYER);
 
         u.setCapacity(NaturalUserCapacity.NORMAL);
-        u.setKycLevel(KycLevel.LIGHT);
         u.setPersonType(PersonType.NATURAL);
 
         return u;

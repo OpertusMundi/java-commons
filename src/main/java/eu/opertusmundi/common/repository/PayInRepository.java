@@ -44,6 +44,7 @@ import eu.opertusmundi.common.model.payment.PayInStatusUpdateCommand;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.consumer.ConsumerPayInDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInItemDto;
 import io.jsonwebtoken.lang.Assert;
 
 @Repository
@@ -101,6 +102,9 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     /**
      * Query consumer PayIns
      *
+     * <br />
+     * <br />
+     *
      * This method does not return PayIn records with payment method
      * <b>CARD_DIRECT</b> which have status <b>CREATED</b>.
      *
@@ -111,42 +115,75 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
      */
     @Query("SELECT p FROM PayIn p "
          + "WHERE (:status IS NULL or p.status = :status) and "
-         + "      (p.consumer.key = :userKey) and "
-         + "      (p.status <> 'CREATED' or p.paymentMethod <> 'CARD_DIRECT')"
+         + "      (p.consumer.key = :consumerKey) and "
+         + "      (p.status <> 'CREATED' or p.paymentMethod <> 'CARD_DIRECT') and "
+         + "      (:referenceNumber IS NULL or p.referenceNumber = :referenceNumber) "
     )
     Page<PayInEntity> findAllConsumerPayIns(
-        @Param("userKey") UUID userKey, @Param("status") EnumTransactionStatus status, Pageable pageable
+        UUID consumerKey, String referenceNumber, EnumTransactionStatus status, Pageable pageable
     );
 
-    @Query("SELECT i FROM PayInItem i WHERE (:status IS NULL or i.payin.status = :status) and (i.provider.key = :userKey)")
+    default Page<ConsumerPayInDto> findAllObjectsConsumerPayIns(
+        UUID consumerKey, String referenceNumber, EnumTransactionStatus status,
+        Pageable pageable,
+        boolean includeDetails
+    ) {
+        return this.findAllConsumerPayIns(
+            consumerKey,
+            StringUtils.isBlank(referenceNumber) ? null : referenceNumber,
+            status,
+            pageable
+        ).map(e -> e.toConsumerDto(includeDetails));
+    }
+
+    @Query("SELECT  i "
+         + "FROM    PayInItem i "
+         + "WHERE   (:status IS NULL or i.payin.status in :status) and "
+         + "        (i.provider.key = :userKey) and "
+         + "        (:referenceNumber IS NULL or i.payin.referenceNumber = :referenceNumber)")
     Page<PayInItemEntity> findAllProviderPayInItems(
-        @Param("userKey") UUID userKey, @Param("status") EnumTransactionStatus status, Pageable pageable
+        UUID userKey, String referenceNumber, Set<EnumTransactionStatus> status, Pageable pageable
     );
+
+    default Page<HelpdeskPayInItemDto> findAllObjectsProviderPayInItems(
+        UUID userKey, String referenceNumber, Set<EnumTransactionStatus> status, Pageable pageable
+    ) {
+        final Page<PayInItemEntity> page = this.findAllProviderPayInItems(
+            userKey, referenceNumber, status, pageable
+        );
+
+        return page.map(e -> e.toHelpdeskDto(true));
+    }
+
 
     @Query(
         "SELECT p "
       + "FROM   PayIn p "
-      + "WHERE (p.status in :status or :status is null) and "
-      + "      (:email IS NULL or p.consumer.email like :email) and "
-      + "      (:referenceNumber IS NULL or p.referenceNumber = :referenceNumber) "
+      + "WHERE (p.status in :status or :status is NULL) and "
+      + "      (cast(:consumerKey as org.hibernate.type.UUIDCharType) IS NULL or p.consumer.key = :consumerKey) and "
+      + "      (:consumerEmail IS NULL or p.consumer.email like :consumerEmail) and "
+      + "      (:referenceNumber IS NULL or p.referenceNumber = :referenceNumber)"
     )
     Page<PayInEntity> findAllPayInEntities(
-        @Param("status") Set<EnumTransactionStatus> status,
-        @Param("email") String email,
-        @Param("referenceNumber") String referenceNumber,
+        UUID consumerKey,
+        String consumerEmail,
+        String referenceNumber,
+        Set<EnumTransactionStatus> status,
         Pageable pageable
     );
 
     default Page<HelpdeskPayInDto> findAllPayInObjects(
-        @Param("status") Set<EnumTransactionStatus> status,
-        @Param("email") String email,
-        @Param("referenceNumber") String referenceNumber,
+        UUID consumerKey,
+        String consumerEmail,
+        String referenceNumber,
+        Set<EnumTransactionStatus> status,
         Pageable pageable
     ) {
         final Page<PayInEntity> page = this.findAllPayInEntities(
-            status != null && status.size() > 0 ? status : null,
-            StringUtils.isBlank(email) ? null : email,
+            consumerKey,
+            StringUtils.isBlank(consumerEmail) ? null : consumerEmail,
             StringUtils.isBlank(referenceNumber) ? null : referenceNumber,
+            status != null && status.size() > 0 ? status : null,
             pageable
         );
 
@@ -157,21 +194,25 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         "SELECT i "
       + "FROM   PayInItem i "
       + "WHERE (i.transferStatus in :status or :status is null) and "
+      + "      (cast(:providerKey as org.hibernate.type.UUIDCharType) IS NULL or i.provider.key = :providerKey) and "
       + "      (i.transfer is not null) and "
       + "      (:referenceNumber IS NULL or i.payin.referenceNumber = :referenceNumber) "
     )
     Page<PayInItemEntity> findAllTransferEntities(
-        @Param("status") Set<EnumTransactionStatus> status,
-        @Param("referenceNumber") String referenceNumber,
+        UUID providerKey,
+        Set<EnumTransactionStatus> status,
+        String referenceNumber,
         Pageable pageable
     );
 
     default Page<PayInItemDto> findAllTransferObjects(
-        @Param("status") Set<EnumTransactionStatus> status,
-        @Param("referenceNumber") String referenceNumber,
+        UUID providerKey,
+        Set<EnumTransactionStatus> status,
+        String referenceNumber,
         Pageable pageable
     ) {
         final Page<PayInItemEntity> page = this.findAllTransferEntities(
+            providerKey,
             status != null && status.size() > 0 ? status : null,
             StringUtils.isBlank(referenceNumber) ? null : referenceNumber,
             pageable

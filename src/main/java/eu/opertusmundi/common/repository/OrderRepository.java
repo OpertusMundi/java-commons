@@ -114,15 +114,15 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
          + "WHERE   (o.consumer.key = :consumerKey or cast(:consumerKey as org.hibernate.type.UUIDCharType) is null) and "
          + "        (i.provider.key = :providerKey or cast(:providerKey as org.hibernate.type.UUIDCharType) is null) and "
          + "        (:referenceNumber is null or o.referenceNumber like :referenceNumber) and "
-         + "        (:consumer is null or o.consumer.email like :consumer) and "
+         + "        (:consumerEmail is null or o.consumer.email like :consumerEmail) and "
          + "        (o.status in :status or :status is null)"
     )
     Page<OrderEntity> findAll(
-        @Param("consumerKey") UUID consumerKey,
-        @Param("providerKey") UUID providerKey,
-        @Param("referenceNumber")String referenceNumber,
-        @Param("status") Set<EnumOrderStatus> status,
-        @Param("consumer") String consumer,
+        UUID consumerKey,
+        String consumerEmail,
+        UUID providerKey,
+        String referenceNumber,
+        Set<EnumOrderStatus> status,
         Pageable pageable
     );
 
@@ -144,9 +144,9 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
           + "        (o.status in :status or :status is null) and (o.status <> 'CREATED')"
      )
      Page<OrderEntity> findAllForConsumer(
-         @Param("consumerKey") UUID consumerKey,
-         @Param("referenceNumber")String referenceNumber,
-         @Param("status") Set<EnumOrderStatus> status,
+         UUID consumerKey,
+         String referenceNumber,
+         Set<EnumOrderStatus> status,
          Pageable pageable
      );
 
@@ -181,17 +181,16 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     Optional<PayInEntity> findPayInById(@Param("payIn") String payIn);
 
     default Page<OrderDto> findAllObjects(
-        UUID consumerKey, UUID providerKey, String referenceNumber,
-        Set<EnumOrderStatus> status, String consumer,
+        UUID consumerKey, String consumerEmail, UUID providerKey, String referenceNumber, Set<EnumOrderStatus> status,
         Pageable pageable,
         boolean includeDetails, boolean includeHelpdeskData
     ) {
         return this.findAll(
             consumerKey,
+            StringUtils.isBlank(consumerEmail) ? null : consumerEmail,
             providerKey,
             StringUtils.isBlank(referenceNumber) ? null : referenceNumber,
             status != null && status.size() > 0 ? status : null,
-            StringUtils.isBlank(consumer) ? null : consumer,     
             pageable
         ).map(e -> e.toHelpdeskDto(includeDetails));
     }

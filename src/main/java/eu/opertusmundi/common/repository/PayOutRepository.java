@@ -64,25 +64,29 @@ public interface PayOutRepository extends JpaRepository<PayOutEntity, Integer> {
         "SELECT p "
       + "FROM   PayOut p "
       + "WHERE (p.status in :status or :status is null) and "
-      + "      (p.provider.email like :email or :email IS NULL) and "
+      + "      (p.provider.key = :providerKey or cast(:providerKey as org.hibernate.type.UUIDCharType) IS NULL) and "
+      + "      (p.provider.email like :providerEmail or :providerEmail IS NULL) and "
       + "      (:bankwireRef IS NULL or p.bankwireRef = :bankwireRef) "
     )
     Page<PayOutEntity> findAllPayOutEntities(
-        @Param("status") Set<EnumTransactionStatus> status,
-        @Param("email") String email,
-        @Param("bankwireRef") String bankwireRef,
+        UUID providerKey,
+        String providerEmail,
+        Set<EnumTransactionStatus> status,
+        String bankwireRef,
         Pageable pageable
     );
 
     default Page<PayOutDto> findAllPayOutObjects(
-        @Param("status") Set<EnumTransactionStatus> status,
-        @Param("email") String email,
+        UUID providerKey,
+        String providerEmail,
+        Set<EnumTransactionStatus> status,
         @Param("bankwireRef") String bankwireRef,
         Pageable pageable
     ) {
         final Page<PayOutEntity> page = this.findAllPayOutEntities(
+            providerKey,
+            StringUtils.isBlank(providerEmail) ? null : providerEmail,
             status != null && status.size() > 0 ? status : null,
-            StringUtils.isBlank(email) ? null : email,
             StringUtils.isBlank(bankwireRef) ? null : bankwireRef,
             pageable
         );
