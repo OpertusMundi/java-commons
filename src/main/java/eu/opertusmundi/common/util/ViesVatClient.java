@@ -12,11 +12,11 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.ws.client.core.support.WebServiceGatewaySupport;
 import org.springframework.ws.soap.client.core.SoapActionCallback;
 
-import eu.europa.ec.taxation.wsdl.CheckVat;
-import eu.europa.ec.taxation.wsdl.CheckVatResponse;
 import eu.opertusmundi.common.domain.CountryEuropeEntity;
 import eu.opertusmundi.common.model.spatial.CountryEuropeDto;
 import eu.opertusmundi.common.repository.CountryRepository;
+import eu.opertusmundi.common.xjc.generated.vies.CheckVat;
+import eu.opertusmundi.common.xjc.generated.vies.CheckVatResponse;
 
 public class ViesVatClient extends WebServiceGatewaySupport {
 
