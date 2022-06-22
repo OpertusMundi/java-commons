@@ -21,6 +21,8 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import eu.opertusmundi.common.model.EnumRole;
+import eu.opertusmundi.common.model.analytics.AssetCountQuery;
 import eu.opertusmundi.common.model.analytics.AssetTotalValueQuery;
 import eu.opertusmundi.common.model.analytics.AssetViewQuery;
 import eu.opertusmundi.common.model.analytics.BigDecimalDataPoint;
@@ -32,8 +34,10 @@ import eu.opertusmundi.common.model.analytics.SalesQuery;
 import eu.opertusmundi.common.model.analytics.SegmentDimension;
 import eu.opertusmundi.common.model.analytics.SpatialDimension;
 import eu.opertusmundi.common.model.analytics.TemporalDimension;
+import eu.opertusmundi.common.model.analytics.VendorCountQuery;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import eu.opertusmundi.common.model.spatial.CountryCapitalCityDto;
+import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.AssetStatisticsRepository;
 import eu.opertusmundi.common.repository.CountryRepository;
 import eu.opertusmundi.common.util.StreamUtils;
@@ -48,6 +52,9 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 
     @Autowired
     private CountryRepository countryRepository;
+    
+    @Autowired
+    private AccountRepository accountRepository;
 
     @Autowired
     private AssetStatisticsRepository assetStatisticsRepository;
@@ -410,6 +417,47 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 
         return result;
     }
+    
+    @Override
+    public DataSeries<?> executeAssetCount(AssetCountQuery query) {
+        if (query == null) {
+            return DataSeries.<BigInteger>empty();
+        }
+
+        final DataSeries<BigDecimal> result          = new DataSeries<>();
+        final TemporalDimension      time            = query.getTime();
+        List<BigDecimalDataPoint>    assetStatistics = new ArrayList<>();
+
+        if (time != null && time.getUnit() != null) {
+            // Apply temporal dimension grouping
+            result.setTimeUnit(time.getUnit());
+
+            switch (time.getUnit()) {
+                case YEAR :
+                    assetStatistics = this.assetStatisticsRepository.countAssetsPerYear();
+                    break;
+                case MONTH :
+                    assetStatistics = this.assetStatisticsRepository.countAssetsPerMonth();
+                    break;
+                case WEEK :
+                    assetStatistics = this.assetStatisticsRepository.countAssetsPerWeek();
+                    break;
+                case DAY :
+                    assetStatistics = this.assetStatisticsRepository.countAssetsPerDay();
+                    break;
+            }
+            StreamUtils.from(assetStatistics).forEach(result.getPoints()::add);
+        } else {
+            final BigDecimal            value = this.assetStatisticsRepository.countAssets().orElse(BigDecimal.ZERO);
+            final DataPoint<BigDecimal> p     = new DataPoint<>();
+
+            p.setValue(value);
+
+            result.getPoints().add(p);
+        }
+
+        return result;
+    }
 
     @Override
     public List<ImmutablePair<String, Integer>> executePopularAssetViewsAndSearches(AssetViewQuery query) {
@@ -427,6 +475,48 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
         }
 
         return this.elasticSearchService.findPopularTerms();
+    }
+    
+    @Override
+    public DataSeries<?> executeVendorCount(VendorCountQuery query) {
+        if (query == null) {
+            return DataSeries.<BigInteger>empty();
+        }
+
+        final DataSeries<BigDecimal> result          = new DataSeries<>();
+        final TemporalDimension      time            = query.getTime();
+        List<BigDecimalDataPoint>    assetStatistics = new ArrayList<>();
+
+        if (time != null && time.getUnit() != null) {
+            // Apply temporal dimension grouping
+            result.setTimeUnit(time.getUnit());
+
+            switch (time.getUnit()) {
+                case YEAR :
+                    assetStatistics = this.accountRepository.countUsersWithRolePerYear(EnumRole.ROLE_PROVIDER);
+                    break;
+                case MONTH :
+                    assetStatistics = this.accountRepository.countUsersWithRolePerMonth(EnumRole.ROLE_PROVIDER);
+                    break;
+                case WEEK :
+                	// TODO: Should be replaced with countUsersWithRolePerWeek (See AccountRepository.countUsersWithRolePerWeel comment)
+                	assetStatistics = this.accountRepository.countUsersWithRolePerMonth(EnumRole.ROLE_PROVIDER);
+                    break;
+                case DAY :
+                    assetStatistics = this.accountRepository.countUsersWithRolePerDay(EnumRole.ROLE_PROVIDER);
+                    break;
+            }
+            StreamUtils.from(assetStatistics).forEach(result.getPoints()::add);
+        } else {
+            final BigDecimal            value = this.accountRepository.countUsersWithRole(EnumRole.ROLE_PROVIDER).orElse(BigDecimal.ZERO);
+            final DataPoint<BigDecimal> p     = new DataPoint<>();
+
+            p.setValue(value);
+
+            result.getPoints().add(p);
+        }
+
+        return result;
     }
 
 }

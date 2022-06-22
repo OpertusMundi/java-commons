@@ -4,11 +4,13 @@ import java.util.List;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
+import eu.opertusmundi.common.model.analytics.AssetCountQuery;
 import eu.opertusmundi.common.model.analytics.AssetTotalValueQuery;
 import eu.opertusmundi.common.model.analytics.AssetViewQuery;
 import eu.opertusmundi.common.model.analytics.CoverageQuery;
 import eu.opertusmundi.common.model.analytics.DataSeries;
 import eu.opertusmundi.common.model.analytics.SalesQuery;
+import eu.opertusmundi.common.model.analytics.VendorCountQuery;
 
 public interface DataAnalysisService {
 
@@ -43,6 +45,14 @@ public interface DataAnalysisService {
      * @return
      */
     DataSeries<?> executeTotalAssetValue(AssetTotalValueQuery query);
+    
+    /**
+     * Executes a query and returns the count of assets
+     *
+     * @param query
+     * @return
+     */
+	DataSeries<?> executeAssetCount(AssetCountQuery query);
 
     /**
      * Find popular asset views/searches
@@ -59,5 +69,13 @@ public interface DataAnalysisService {
      * @return
      */
     List<ImmutablePair<String, Integer>> executePopularTerms();
+    
+    /**
+     * Executes a query and returns the count of active vendors
+     *
+     * @param query
+     * @return
+     */
+	DataSeries<?> executeVendorCount(VendorCountQuery query);
 
 }
