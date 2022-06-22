@@ -1,10 +1,16 @@
 package eu.opertusmundi.common.model.payment;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import eu.opertusmundi.common.model.account.AccountSubscriptionDto;
+import eu.opertusmundi.common.model.account.EnumSubscriptionBillingStatus;
+import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,17 +27,18 @@ public abstract class SubscriptionBillingDto {
     @JsonIgnore
     private Integer subscriptionId;
 
-    @Schema(description = "Service unique PID")
-    private String service;
+    private ZonedDateTime createdOn;
 
-    @Schema(description = "Service description")
-    private String subscriptionDescription;
+    private ZonedDateTime updatedOn;
 
     @Schema(description = "Billing interval first date")
-    private ZonedDateTime fromDate;
+    private LocalDate fromDate;
 
     @Schema(description = "Billing interval last date")
-    private ZonedDateTime toDate;
+    private LocalDate toDate;
+
+    @Schema(description = "Payment due date")
+    private LocalDate dueDate;
 
     @Schema(description = "Total rows charged in this record. This field is exclusive with field `totalCalls`")
     private Integer totalRows;
@@ -54,7 +61,18 @@ public abstract class SubscriptionBillingDto {
     @Schema(description = "Item tax ", example = "0.24")
     private BigDecimal totalTax;
 
+    @Schema(description = "Quotation pricing model")
+    private BasePricingModelCommandDto pricingModel;
+
     @Schema(description = "Use statistics")
     private ServiceUseStatsDto stats;
+
+    private EnumSubscriptionBillingStatus status;
+
+    @JsonInclude(Include.NON_NULL)
+    private PayInDto payin;
+
+        @JsonInclude(Include.NON_NULL)
+    private AccountSubscriptionDto subscription;
 
 }

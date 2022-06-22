@@ -184,14 +184,15 @@ public class PerRowPricingModelCommandDto extends BasePricingModelCommandDto {
                     final BigDecimal cost     = BigDecimal.valueOf(blockCount)
                         .multiply(this.price)
                         .multiply(discount)
-                        .divide(new BigDecimal(100));
-                    price = cost.add(cost);
+                        .divide(new BigDecimal(100))
+                        .setScale(2, RoundingMode.HALF_UP);
+                    price = price.add(cost);
                 }
                 rowsLeft -= blockCount;
             }
         }
         if (rowsLeft > 0) {
-            final BigDecimal cost = BigDecimal.valueOf(rowsLeft).multiply(this.price);
+            final BigDecimal cost = BigDecimal.valueOf(rowsLeft).multiply(this.price).setScale(2, RoundingMode.HALF_UP);
             price = price.add(cost);
         }
 

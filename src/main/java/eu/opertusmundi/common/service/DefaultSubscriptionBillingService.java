@@ -1,12 +1,15 @@
 package eu.opertusmundi.common.service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +19,7 @@ import eu.opertusmundi.common.domain.AccountSubscriptionSkuEntity;
 import eu.opertusmundi.common.domain.OrderItemEntity;
 import eu.opertusmundi.common.domain.SubscriptionBillingEntity;
 import eu.opertusmundi.common.model.account.AccountDto;
+import eu.opertusmundi.common.model.account.EnumSubscriptionBillingStatus;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.PaymentMessageCode;
 import eu.opertusmundi.common.model.payment.ServiceUseStatsDto;
@@ -29,6 +33,8 @@ import eu.opertusmundi.common.repository.SubscriptionBillingRepository;
 
 @Service
 public class DefaultSubscriptionBillingService implements SubscriptionBillingService {
+
+    private static final Logger logger = LoggerFactory.getLogger(DefaultSubscriptionBillingService.class);
 
     private final AccountRepository accountRepository;
 
@@ -59,6 +65,14 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
     @Transactional
     public List<SubscriptionBillingDto> create(UUID userKey, int year, int month) throws PaymentException {
         try {
+            // Compute dates
+            final LocalDate     fromDate = LocalDate.now()
+                .withYear(year)
+                .withMonth(month)
+                .with(TemporalAdjusters.firstDayOfMonth());
+            final LocalDate     toDate   = fromDate.with(TemporalAdjusters.lastDayOfMonth());
+            final LocalDate     dueDate  = fromDate.plusMonths(1);
+
             final List<SubscriptionBillingDto> result = new ArrayList<>();
 
             final AccountDto account = this.accountRepository.findOneByKeyObject(userKey).orElse(null);
@@ -66,8 +80,8 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
                 throw new PaymentException(PaymentMessageCode.ACCOUNT_NOT_FOUND, String.format("Account was not found [userKey=%s]", userKey));
             }
 
-            final List<AccountSubscriptionEntity> subsciptions = this.accountSubscriptionRepository.findAllEntitiesByConsumer(userKey);
-            final List<ServiceUseStatsDto>        stats        = this.subscriptionUseStatsService.getUseStats(userKey, year, month);
+            final List<AccountSubscriptionEntity> subscriptions = this.accountSubscriptionRepository.findAllEntitiesByConsumer(userKey);
+            final List<ServiceUseStatsDto>        stats         = this.subscriptionUseStatsService.getUseStats(userKey, year, month);
 
             for (final ServiceUseStatsDto subStats : stats) {
                 // Ignore unused subscriptions
@@ -77,7 +91,7 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
                 final ServiceUseStatsDto initialStats = subStats.shallowCopy();
 
                 // Find subscription
-                final AccountSubscriptionEntity subscription = subsciptions.stream()
+                final AccountSubscriptionEntity subscription = subscriptions.stream()
                     .filter(s -> s.getOrder().getKey().equals(subStats.getSubscriptionKey()))
                     .findFirst()
                     .orElse(null);
@@ -86,7 +100,20 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
                         "Subscription was not found [subscriptionKey=%s]", subStats.getSubscriptionKey()
                     ));
                 }
+                // Check if billing has already been computed
+                final SubscriptionBillingEntity existing = this.subscriptionBillingRepository
+                    .findOneBySubscriptionAndInterval(fromDate, toDate, subscription.getId())
+                    .orElse(null);
 
+                if (existing != null) {
+                    // Validate use statistics
+                    this.validateBillingStats(existing, subStats);
+                    // Skip subscription
+                    continue;
+                }
+
+                // Get pricing model. Create quotation based on the pricing
+                // model of the asset
                 final OrderItemEntity          orderItem    = subscription.getOrder().getItems().get(0);
                 final EffectivePricingModelDto pricingModel = orderItem.getPricingModel();
 
@@ -123,25 +150,27 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
                 final QuotationDto quotation = this.quotationService.createQuotation(pricingModel.getModel(), subStats);
 
                 // Add billing record
-                final ZonedDateTime fromDate = ZonedDateTime.now()
-                    .withYear(year)
-                    .withMonth(month)
-                    .truncatedTo(ChronoUnit.DAYS)
-                    .with(TemporalAdjusters.firstDayOfMonth());
-                final ZonedDateTime toDate   = fromDate.with(TemporalAdjusters.lastDayOfMonth());
+                final ZonedDateTime now = ZonedDateTime.now();
 
                 SubscriptionBillingEntity subBilling = SubscriptionBillingEntity.builder()
+                    .createdOn(now)
+                    .dueDate(dueDate)
                     .fromDate(fromDate)
-                    .toDate(toDate)
+                    .pricingModel(pricingModel.getModel())
                     .skuTotalCalls(totalSkuCalls)
                     .skuTotalRows(totalSkuRows)
                     .subscription(subscription)
+                    .toDate(toDate)
                     .totalCalls(totalCalls)
                     .totalRows(totalRows)
                     .totalPriceExcludingTax(quotation.getTotalPriceExcludingTax())
                     .totalPrice(quotation.getTotalPrice())
                     .totalTax(quotation.getTax())
                     .stats(initialStats)
+                    .status(quotation.getTotalPrice().compareTo(BigDecimal.ZERO) == 0
+                        ? EnumSubscriptionBillingStatus.NO_CHARGE
+                        : EnumSubscriptionBillingStatus.DUE)
+                    .updatedOn(now)
                     .build();
 
                 subBilling = subscriptionBillingRepository.saveAndFlush(subBilling);
@@ -157,7 +186,14 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
                 "Failed to create quotation [userKey=%s, year=%d, month=%d]", userKey, year, month
             ));
         }
+    }
 
+    private void validateBillingStats(SubscriptionBillingEntity record, ServiceUseStatsDto newStats) {
+        final ServiceUseStatsDto prevStats = record.getStats();
+
+        if (prevStats.getCalls() != newStats.getCalls() || prevStats.getRows() != newStats.getRows()) {
+            logger.warn("Use statistics mismatch found [prevStats={}, newStats={}]", prevStats, newStats);
+        }
     }
 
 }

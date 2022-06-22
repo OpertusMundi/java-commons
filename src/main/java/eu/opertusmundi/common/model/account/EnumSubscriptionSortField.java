@@ -25,7 +25,7 @@ public enum EnumSubscriptionSortField {
             }
         }
 
-        throw new IllegalArgumentException(String.format("Value [%s] is not a valid member of enum [EnumSubscriptionStorField]", value));
+        throw new IllegalArgumentException(String.format("Value [%s] is not a valid member of enum [EnumSubscriptionSortField]", value));
     }
 
 }
