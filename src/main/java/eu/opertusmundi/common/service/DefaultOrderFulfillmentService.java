@@ -176,20 +176,20 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             final Map<String, Object> variables = new HashMap<>();
             if (accepted) {
                 order = this.orderRepository.acceptOrderByProvider(publisherKey, orderKey);
-               
+
                 this.sendOrderStatusByMail(EnumMailType.CONSUMER_PURCHASE_APPROVED, consumerKey, orderKey);
 
-                variables.put("orderKey", orderKey);
+                variables.put("orderKey", orderKey.toString());
                 this.sendOrderStatusByNotification("PURCHASE_APPROVED", consumerKey, variables);
-                
+
                 if (this.orderRepository.findOrderEntityByKey(orderKey).get().getItems().get(0).getContractType() == EnumContractType.UPLOADED_CONTRACT) {
                 	this.sendOrderStatusByMail(EnumMailType.SUPPLIER_CONTRACT_TO_BE_FILLED_OUT, publisherKey, orderKey);
                 }
             } else {
                 order = this.orderRepository.rejectOrderByProvider(publisherKey, orderKey, rejectReason);
-                
+
                 this.sendOrderStatusByMail(EnumMailType.CONSUMER_PURCHASE_REJECTION, consumerKey, orderKey);
-                
+
                 variables.put("orderKey", orderKey);
                 this.sendOrderStatusByNotification("PURCHASE_REJECTED", consumerKey, variables);
             }
