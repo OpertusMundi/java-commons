@@ -27,6 +27,9 @@ public enum PaymentMessageCode implements MessageCode {
     ZERO_AMOUNT,
     CARD_NOT_FOUND,
     QUOTATION_ERROR,
+    QUOTATION_INTERVAL_YEAR,
+    QUOTATION_INTERVAL_MONTH,
+    USE_STATS_NOT_READY,
     ;
 
     @Override

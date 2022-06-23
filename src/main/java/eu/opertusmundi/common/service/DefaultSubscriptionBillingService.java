@@ -11,6 +11,7 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +36,13 @@ import eu.opertusmundi.common.repository.SubscriptionBillingRepository;
 public class DefaultSubscriptionBillingService implements SubscriptionBillingService {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultSubscriptionBillingService.class);
+
+    /**
+     * Offset in days after the first day of the current month, at which a
+     * quotation may be created
+     */
+    @Value("${opertusmundi.subscription-billing.quotation-min-offset:5}")
+    private int quotationMinOffset;
 
     private final AccountRepository accountRepository;
 
@@ -65,13 +73,27 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
     @Transactional
     public List<SubscriptionBillingDto> create(UUID userKey, int year, int month) throws PaymentException {
         try {
+            // Validate interval
+            this.validateInterval(year, month);
+
             // Compute dates
-            final LocalDate     fromDate = LocalDate.now()
+            final LocalDate fromDate       = LocalDate.now()
                 .withYear(year)
                 .withMonth(month)
                 .with(TemporalAdjusters.firstDayOfMonth());
-            final LocalDate     toDate   = fromDate.with(TemporalAdjusters.lastDayOfMonth());
-            final LocalDate     dueDate  = fromDate.plusMonths(1);
+            final LocalDate toDate         = fromDate
+                .with(TemporalAdjusters.lastDayOfMonth());
+            final LocalDate dueDate        = LocalDate.now()
+                .with(TemporalAdjusters.firstDayOfMonth())
+                .plusMonths(1);
+            final LocalDate statsReadyDate = LocalDate.now().with(TemporalAdjusters.firstDayOfMonth()).plusDays(this.quotationMinOffset);
+
+            // Check quotation date
+            if (statsReadyDate.isAfter(LocalDate.now())) {
+                throw new PaymentException(PaymentMessageCode.USE_STATS_NOT_READY, String.format(
+                    "Use statistics are not available for the selected interval was not found [statsReadyDate=%s]", statsReadyDate.toString()
+                ));
+            }
 
             final List<SubscriptionBillingDto> result = new ArrayList<>();
 
@@ -185,6 +207,21 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
             throw new PaymentException(PaymentMessageCode.QUOTATION_ERROR, String.format(
                 "Failed to create quotation [userKey=%s, year=%d, month=%d]", userKey, year, month
             ));
+        }
+    }
+
+    private void validateInterval(int year, int month) throws PaymentException {
+        final ZonedDateTime now      = ZonedDateTime.now();
+        final int           nowYear  = now.getYear();
+        final int           nowMonth = now.getMonthValue();
+        final int           maxYear  = nowMonth == 1 ? nowYear - 1 : nowYear;
+        final int           maxMonth = nowMonth == 1 ? 12 : nowMonth - 1;
+        // Minimum year (project first year)
+        if (year < 2020 || year > maxYear) {
+            throw new PaymentException(PaymentMessageCode.QUOTATION_INTERVAL_YEAR, "Quotation interval year is out of range");
+        }
+        if (month < 1 || (year == maxYear && month > maxMonth) || (year < maxYear && month > 12)) {
+            throw new PaymentException(PaymentMessageCode.QUOTATION_INTERVAL_MONTH, "Quotation interval month is out of range");
         }
     }
 
