@@ -15,7 +15,10 @@ public class WebServiceClientConfiguration {
         final Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
         // This package must match the package in the <generatePackage>
         // specified in pom.xml
-        marshaller.setContextPath("eu.europa.ec.taxation.wsdl");
+        // Auto-generated package by maven plugin
+        // marshaller.setContextPath("eu.europa.ec.taxation.wsdl");
+        // Custom generated classes using wsimport tool
+        marshaller.setContextPath("eu.opertusmundi.common.xjc.generated.vies");
         return marshaller;
     }
 
