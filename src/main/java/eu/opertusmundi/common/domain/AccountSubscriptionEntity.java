@@ -3,6 +3,7 @@ package eu.opertusmundi.common.domain;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -19,6 +20,8 @@ import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
+
+import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.account.AccountSubscriptionDto;
 import eu.opertusmundi.common.model.account.EnumAssetSource;
@@ -40,6 +43,12 @@ public class AccountSubscriptionEntity {
     @GeneratedValue(generator = "account_sub_id_seq", strategy = GenerationType.SEQUENCE)
     @Getter
     private Integer id;
+
+    @NotNull
+    @NaturalId
+    @Column(name = "key", updatable = false, columnDefinition = "uuid")
+    @Getter
+    private final UUID key = UUID.randomUUID();
 
     @NotNull
     @ManyToOne(targetEntity = AccountEntity.class)
@@ -141,7 +150,7 @@ public class AccountSubscriptionEntity {
         s.setAddedOn(addedOn);
         s.setAssetId(asset);
         s.setId(id);
-        s.setKey(order.getKey());
+        s.setKey(key);
         s.setOrderId(order.getId());
         s.setSegment(segment);
         s.setSource(source);

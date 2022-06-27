@@ -2,6 +2,7 @@ package eu.opertusmundi.common.service;
 
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import eu.opertusmundi.common.domain.AccountSubscriptionEntity;
 import eu.opertusmundi.common.model.BasicMessageCode;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageRequestDto;
@@ -28,6 +30,7 @@ import eu.opertusmundi.common.model.account.AccountDto;
 import eu.opertusmundi.common.model.account.AccountSubscriptionDto;
 import eu.opertusmundi.common.model.account.ConsumerServiceException;
 import eu.opertusmundi.common.model.account.ConsumerServiceMessageCode;
+import eu.opertusmundi.common.model.account.EnumSubscriptionStatus;
 import eu.opertusmundi.common.model.asset.EnumConsumerAssetSortField;
 import eu.opertusmundi.common.model.asset.EnumConsumerSubSortField;
 import eu.opertusmundi.common.model.asset.EnumResourceType;
@@ -220,8 +223,8 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
     }
 
     @Override
-    public AccountSubscriptionDto findSubscription(UUID userKey, UUID orderKey) {
-       final AccountSubscriptionDto result = this.accountSubscriptionRepository.findAllObjectsByConsumerAndOrder(userKey, orderKey, true)
+    public AccountSubscriptionDto findSubscription(UUID userKey, UUID subscriptionKey) {
+       final AccountSubscriptionDto result = this.accountSubscriptionRepository.findOneObjectByConsumerAndOrder(userKey, subscriptionKey, true)
            .orElse(null);
 
         if (result == null) {
@@ -239,6 +242,22 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
         result.setItem(assets.get(0));
 
        return result;
+    }
+
+    @Override
+    @Transactional
+    public void cancelSubscription(UUID userKey, UUID subscriptionKey) {
+        final AccountSubscriptionEntity subscription = this.accountSubscriptionRepository
+            .findOneByConsumerAndOrder(userKey, subscriptionKey)
+            .orElse(null);
+
+        if (subscription == null || subscription.getStatus() == EnumSubscriptionStatus.INACTIVE) {
+            return;
+        }
+        subscription.setStatus(EnumSubscriptionStatus.INACTIVE);
+        subscription.setCancelledOn(ZonedDateTime.now());
+
+        this.accountSubscriptionRepository.saveAndFlush(subscription);
     }
 
     @Override

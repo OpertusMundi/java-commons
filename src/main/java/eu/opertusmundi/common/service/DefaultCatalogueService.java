@@ -58,7 +58,9 @@ import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueResponse;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.model.workflow.EnumWorkflow;
+import eu.opertusmundi.common.repository.AccountAssetRepository;
 import eu.opertusmundi.common.repository.AccountRecentSearchRepository;
+import eu.opertusmundi.common.repository.AccountSubscriptionRepository;
 import eu.opertusmundi.common.repository.AssetAdditionalResourceRepository;
 import eu.opertusmundi.common.repository.AssetResourceRepository;
 import eu.opertusmundi.common.repository.FavoriteRepository;
@@ -100,6 +102,12 @@ public class DefaultCatalogueService implements CatalogueService {
 
     @Autowired
     private AssetAdditionalResourceRepository assetAdditionalResourceRepository;
+
+    @Autowired
+    private AccountAssetRepository accountAssetRepository;
+
+    @Autowired
+    private AccountSubscriptionRepository accountSubscriptionRepository;
 
     @Autowired
     private BpmEngineUtils bpmEngine;
@@ -342,6 +350,9 @@ public class DefaultCatalogueService implements CatalogueService {
             final CatalogueFeature        feature = catalogueResponse.getResult();
             final CatalogueItemDetailsDto item    = this.featureToItem(ctx, feature, publisherKey, includeAutomatedMetadata);
 
+            // Check ownership
+            this.checkOwnership(ctx, id, item);
+
             return item;
         } catch (final FeignException fex) {
             // Convert 404 errors to empty results
@@ -376,6 +387,9 @@ public class DefaultCatalogueService implements CatalogueService {
             final CatalogueFeature        feature = catalogueResponse.getResult();
             final CatalogueItemDetailsDto item    = this.featureToItem(ctx, feature, publisherKey, includeAutomatedMetadata);
 
+            // Check ownership
+            this.checkOwnership(ctx, id, item);
+
             return item;
         } catch (final FeignException fex) {
             // Convert 404 errors to empty results
@@ -390,6 +404,22 @@ public class DefaultCatalogueService implements CatalogueService {
             logger.error("Operation has failed", ex);
 
             throw CatalogueServiceException.wrap(ex);
+        }
+    }
+
+    private void checkOwnership(RequestContext ctx, String id, CatalogueItemDetailsDto item) {
+        // Check ownership
+        if (ctx != null && ctx.getUserKey() != null) {
+            final boolean owned;
+            switch (item.getType()) {
+                case SERVICE :
+                case SENTINEL_HUB_OPEN_DATA :
+                    owned = this.accountSubscriptionRepository.subscriptionExists(ctx.getUserKey(), id, true);
+                    break;
+                default :
+                    owned = this.accountAssetRepository.checkOwnershipByAsset(ctx.getUserKey(), id);
+            }
+            item.setOwned(owned);
         }
     }
 

@@ -26,6 +26,9 @@ public interface AccountSubscriptionRepository extends JpaRepository<AccountSubs
     @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey")
     List<AccountSubscriptionEntity> findAllEntitiesByConsumer(UUID userKey);
 
+    @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey and s.status = :status")
+    List<AccountSubscriptionEntity> findAllEntitiesByConsumerAndStatus(UUID userKey, EnumSubscriptionStatus status);
+
     @Query("SELECT  s "
          + "FROM    AccountSubscription s "
          + "WHERE   (s.status in :status or :status is null) and "
@@ -55,11 +58,13 @@ public interface AccountSubscriptionRepository extends JpaRepository<AccountSubs
         return page.map(AccountSubscriptionEntity::toHelpdeskDto);
     }
 
-    @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey and order.key = :orderKey")
-    Optional<AccountSubscriptionEntity> findAllEntitiesByConsumerAndOrder(UUID userKey, UUID orderKey);
+    @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey and s.key = :subscriptionKey")
+    Optional<AccountSubscriptionEntity> findOneByConsumerAndOrder(UUID userKey, UUID subscriptionKey);
 
-    default Optional<AccountSubscriptionDto> findAllObjectsByConsumerAndOrder(UUID userKey, UUID orderKey, boolean includeProviderDetails) {
-        return this.findAllEntitiesByConsumerAndOrder(userKey, orderKey)
+    default Optional<AccountSubscriptionDto> findOneObjectByConsumerAndOrder(
+        UUID userKey, UUID subscriptionKey, boolean includeProviderDetails
+    ) {
+        return this.findOneByConsumerAndOrder(userKey, subscriptionKey)
             .map(e -> e.toConsumerDto(includeProviderDetails));
 
     }

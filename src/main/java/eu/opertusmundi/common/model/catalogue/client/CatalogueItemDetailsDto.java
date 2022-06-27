@@ -106,6 +106,12 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
     @Setter
     private UUID favorite;
 
+    @Schema(description = "`true` if the current user owns the specific asset")
+    @JsonInclude(Include.NON_NULL)
+    @Getter
+    @Setter
+    private Boolean owned;
+
     @Schema(description = "Publisher details")
     @JsonProperty(access = Access.READ_ONLY)
     @Getter

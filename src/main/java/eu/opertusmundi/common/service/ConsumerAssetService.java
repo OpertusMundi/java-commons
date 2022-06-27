@@ -62,10 +62,18 @@ public interface ConsumerAssetService {
      * Get a subscription
      *
      * @param userKey
-     * @param orderKey
+     * @param subscriptionKey
      * @return
      */
-    AccountSubscriptionDto findSubscription(UUID userKey, UUID orderKey);
+    AccountSubscriptionDto findSubscription(UUID userKey, UUID subscriptionKey);
+
+    /**
+     * Cancel active subscription
+     *
+     * @param userKey
+     * @param subscriptionKey
+     */
+    void cancelSubscription(UUID userKey, UUID subscriptionKey);
 
     /**
      * Resolve the path of a resource for an asset, purchased by the specified user

@@ -114,7 +114,7 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
 
                 // Find subscription
                 final AccountSubscriptionEntity subscription = subscriptions.stream()
-                    .filter(s -> s.getOrder().getKey().equals(subStats.getSubscriptionKey()))
+                    .filter(s -> s.getKey().equals(subStats.getSubscriptionKey()))
                     .findFirst()
                     .orElse(null);
                 if (subscription == null) {
