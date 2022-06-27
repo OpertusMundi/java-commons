@@ -357,6 +357,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             draftCommand.setDeliveryMethod(EnumDeliveryMethod.DIGITAL_PLATFORM);
             draftCommand.setIngested(true);
             draftCommand.setIngestionInfo(null);
+            draftCommand.setOpenDataset(false);
             draftCommand.setOwnerKey(command.getOwnerKey());
             draftCommand.setParentDataSourceId(command.getPid());
             draftCommand.setParentId(null);
