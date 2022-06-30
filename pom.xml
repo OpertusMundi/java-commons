@@ -351,6 +351,13 @@
 			<version>2.0.0</version>
 		</dependency>
 
+		<!-- Google Clients -->
+		<dependency>
+			<groupId>com.google.apis</groupId>
+			<artifactId>google-api-services-analyticsreporting</artifactId>
+			<version>v4-rev174-1.25.0</version>
+		</dependency>
+
 		<!-- JDBC drivers -->
 		<dependency>
 			<groupId>org.postgresql</groupId>
