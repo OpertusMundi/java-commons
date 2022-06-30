@@ -14,6 +14,7 @@ public enum EnumWorkflow {
     PROVIDER_PUBLISH_ASSET               ("provider-publish-asset"),
     PROVIDER_REGISTRATION                ("provider-registration"),
     PROVIDER_REMOVE_ASSET                ("provider-remove-asset"),
+    SUBSCRIPTION_BILLING                 ("workflow-subscription-billing"),
     SYSTEM_DATABASE_MAINTENANCE          ("system-database-maintenance"),
     VENDOR_ACCOUNT_REGISTRATION          ("vendor-account-registration"),
     ;

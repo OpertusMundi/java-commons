@@ -29,6 +29,11 @@ public class BpmInstanceVariablesBuilder {
         return this;
     }
 
+    public BpmInstanceVariablesBuilder variableAsInteger(String name, Integer value) {
+        this.variable("Integer", name, value);
+        return this;
+    }
+
     public BpmInstanceVariablesBuilder variableAsUuid(String name, UUID value) {
         this.variable("String", name, value);
         return this;
