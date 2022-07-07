@@ -16,12 +16,15 @@ public class ServerMessageCommandDto extends ServerBaseMessageCommandDto {
     }
 
     @Builder
-    public ServerMessageCommandDto(UUID recipient, String text, UUID sender, UUID thread) {
+    public ServerMessageCommandDto(UUID recipient, String text, UUID sender, UUID thread, String idempotentKey) {
         super(EnumMessageType.MESSAGE, recipient, text);
 
-        this.sender = sender;
-        this.thread = thread;
+        this.sender        = sender;
+        this.thread        = thread;
+        this.idempotentKey = idempotentKey;
     }
+
+    private String idempotentKey;
 
     private UUID sender;
 

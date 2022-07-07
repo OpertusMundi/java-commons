@@ -171,27 +171,34 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
     private ProviderOrderDto confirmOrder(UUID publisherKey, UUID orderKey, boolean accepted, String rejectReason) throws OrderException {
         try {
-            ProviderOrderDto order;
-            final UUID consumerKey = this.orderRepository.findOrderEntityByKey(orderKey).get().getConsumer().getKey();
-            final Map<String, Object> variables = new HashMap<>();
+            ProviderOrderDto          order;
+            final UUID                consumerKey = this.orderRepository.findOrderEntityByKey(orderKey).get().getConsumer().getKey();
+            final Map<String, Object> variables   = new HashMap<>();
+
             if (accepted) {
                 order = this.orderRepository.acceptOrderByProvider(publisherKey, orderKey);
 
                 this.sendOrderStatusByMail(EnumMailType.CONSUMER_PURCHASE_APPROVED, consumerKey, orderKey);
 
+                final EnumNotificationType notificationType = EnumNotificationType.PURCHASE_APPROVED;
+                final String               idempotentKey    = orderKey.toString() + "::" + notificationType.toString();
                 variables.put("orderKey", orderKey.toString());
-                this.sendOrderStatusByNotification("PURCHASE_APPROVED", consumerKey, variables);
+
+                this.sendOrderStatusByNotification(notificationType, consumerKey, variables, idempotentKey);
 
                 if (this.orderRepository.findOrderEntityByKey(orderKey).get().getItems().get(0).getContractType() == EnumContractType.UPLOADED_CONTRACT) {
-                	this.sendOrderStatusByMail(EnumMailType.SUPPLIER_CONTRACT_TO_BE_FILLED_OUT, publisherKey, orderKey);
+                    this.sendOrderStatusByMail(EnumMailType.SUPPLIER_CONTRACT_TO_BE_FILLED_OUT, publisherKey, orderKey);
                 }
             } else {
                 order = this.orderRepository.rejectOrderByProvider(publisherKey, orderKey, rejectReason);
 
                 this.sendOrderStatusByMail(EnumMailType.CONSUMER_PURCHASE_REJECTION, consumerKey, orderKey);
 
+                final EnumNotificationType notificationType = EnumNotificationType.PURCHASE_REJECTED;
+                final String               idempotentKey    = orderKey.toString() + "::" + notificationType.toString();
                 variables.put("orderKey", orderKey);
-                this.sendOrderStatusByNotification("PURCHASE_REJECTED", consumerKey, variables);
+
+                this.sendOrderStatusByNotification(notificationType, consumerKey, variables, idempotentKey);
             }
 
             return order;
@@ -777,17 +784,17 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
     @Override
     @Transactional
-    public void sendOrderStatusByNotification(String notificationType, UUID recipientKey, Map<String, Object>  variables) {
+    public void sendOrderStatusByNotification(
+        EnumNotificationType type, UUID recipientKey, Map<String, Object>  variables, String idempotentKey
+    ) {
         try {
-
-        	final EnumNotificationType type = EnumNotificationType.valueOf(notificationType);
-
             // Build notification message
             final JsonNode data = this.notificationMessageBuilder.collectNotificationData(type, variables);
 
             final ServerNotificationCommandDto notification = ServerNotificationCommandDto.builder()
                 .data(data)
-                .eventType(notificationType)
+                .eventType(type.toString())
+                .idempotentKey(idempotentKey)
                 .recipient(recipientKey)
                 .text(this.notificationMessageBuilder.composeNotificationText(type, data))
                 .build();
@@ -801,5 +808,4 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             );
         }
     }
-
 }

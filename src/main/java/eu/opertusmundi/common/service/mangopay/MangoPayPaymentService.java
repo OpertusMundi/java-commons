@@ -105,6 +105,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumContractType;
 import eu.opertusmundi.common.model.email.EnumMailType;
 import eu.opertusmundi.common.model.location.Location;
+import eu.opertusmundi.common.model.message.EnumNotificationType;
 import eu.opertusmundi.common.model.order.CartDto;
 import eu.opertusmundi.common.model.order.CartItemDto;
 import eu.opertusmundi.common.model.order.EnumOrderItemType;
@@ -815,11 +816,13 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 final AccountEntity consumer = this.orderRepository.findAccountById(cart.getAccountId()).orElse(null);
                 this.orderFulfillmentService.sendOrderStatusByMail(EnumMailType.CONSUMER_PURCHASE_NOTIFICATION, consumer.getKey(), order.getKey());
 
-                final Map<String, Object> variables = new HashMap<>();
+                final EnumNotificationType notificationType = EnumNotificationType.PURCHASE_REMINDER;
+                final String               idempotentKey    = order.getKey().toString() + "::" + notificationType.toString();
+                final Map<String, Object>  variables        = new HashMap<>();
                 variables.put("assetName", asset.getTitle());
                 variables.put("assetVersion", asset.getVersion());
 
-                this.orderFulfillmentService.sendOrderStatusByNotification("PURCHASE_REMINDER", asset.getPublisher().getKey(), variables);
+                this.orderFulfillmentService.sendOrderStatusByNotification(notificationType, asset.getPublisher().getKey(), variables, idempotentKey);
             }
 
             return order;

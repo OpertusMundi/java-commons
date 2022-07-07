@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import eu.opertusmundi.common.model.ServiceException;
 import eu.opertusmundi.common.model.email.EnumMailType;
+import eu.opertusmundi.common.model.message.EnumNotificationType;
 import eu.opertusmundi.common.model.order.AcceptOrderContractCommand;
 import eu.opertusmundi.common.model.order.ConsumerOrderDto;
 import eu.opertusmundi.common.model.order.OrderConfirmCommandDto;
@@ -133,11 +134,12 @@ public interface OrderFulfillmentService {
     /**
      * Send order status by notification
      *
-     * @param mailType
+     * @param notificationType
      * @param recipientKey
      * @param variables
+     * @param idempotentKey
      * @throws ServiceException if send notification fails
      */
-    void sendOrderStatusByNotification(String notificationType, UUID recipientKey, Map<String, Object>  variables);
+    void sendOrderStatusByNotification(EnumNotificationType notificationType, UUID recipientKey, Map<String, Object>  variables, String idempotentKey);
 
 }

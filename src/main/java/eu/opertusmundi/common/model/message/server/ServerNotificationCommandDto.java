@@ -18,12 +18,15 @@ public class ServerNotificationCommandDto extends ServerBaseMessageCommandDto {
     }
 
     @Builder
-    public ServerNotificationCommandDto(UUID recipient, String text, String eventType, JsonNode data) {
+    public ServerNotificationCommandDto(UUID recipient, String text, String eventType, JsonNode data, String idempotentKey) {
         super(EnumMessageType.NOTIFICATION, recipient, text);
 
-        this.eventType = eventType;
-        this.data      = data;
+        this.eventType     = eventType;
+        this.data          = data;
+        this.idempotentKey = idempotentKey;
     }
+
+    private String idempotentKey;
 
     private String eventType;
 
