@@ -18,7 +18,7 @@ import eu.opertusmundi.common.model.RecordLockDto;
 
 @Repository
 @Transactional(readOnly = true)
-public interface RecordLockRepository extends JpaRepository<RecordLockEntity, BigInteger> {
+public interface DraftLockRepository extends JpaRepository<RecordLockEntity, BigInteger> {
 
     @Query("SELECT a FROM Account a WHERE a.key = :key")
     Optional<AccountEntity> findAccountByKey(UUID key);
@@ -27,26 +27,26 @@ public interface RecordLockRepository extends JpaRepository<RecordLockEntity, Bi
          + "    LEFT OUTER JOIN ProviderAssetDraft d "
          + "    ON l.recordId = d.id "
          + "WHERE l.recordType = 'DRAFT' and d.key = :draftKey")
-    Optional<RecordLockEntity> findOneForDraft(UUID draftKey);
+    Optional<RecordLockEntity> findOne(UUID draftKey);
 
-    default Optional<RecordLockDto> findOneForDraftAsObject(UUID draftKey) {
-        return this.findOneForDraft(draftKey).map(RecordLockEntity::toDto);
+    default Optional<RecordLockDto> findOneObject(UUID draftKey) {
+        return this.findOne(draftKey).map(RecordLockEntity::toDto);
     }
 
     @Query("SELECT l FROM RecordLock l "
          + "    LEFT OUTER JOIN ProviderAssetDraft d "
          + "    ON l.recordId = d.id "
          + "WHERE l.owner.key = :userKey and l.recordType = 'DRAFT' and d.key = :draftKey")
-    Optional<RecordLockEntity> findOneForDraft(UUID userKey, UUID draftKey);
+    Optional<RecordLockEntity> findOne(UUID userKey, UUID draftKey);
 
     @Query("SELECT l FROM RecordLock l "
          + "    LEFT OUTER JOIN ProviderAssetDraft d "
          + "    ON l.recordId = d.id "
          + "WHERE l.recordType = 'DRAFT' and d.key in :keys")
-    List<RecordLockEntity> findAllForDrafts(List<UUID> keys);
+    List<RecordLockEntity> findAll(List<UUID> keys);
 
-    default List<RecordLockDto> findAllForDraftsAsObjects(List<UUID> keys) {
-        return this.findAllForDrafts(keys).stream()
+    default List<RecordLockDto> findAllObjects(List<UUID> keys) {
+        return this.findAll(keys).stream()
             .map(RecordLockEntity::toDto)
             .collect(Collectors.toList());
     }

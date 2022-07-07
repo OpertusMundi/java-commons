@@ -35,6 +35,8 @@ public class FileSystemConfiguration {
 
     private Path orderDir;
 
+    private Path userServiceDir;
+
     private static final Set<PosixFilePermission> DEFAULT_DIRECTORY_PERMISSIONS = PosixFilePermissions.fromString("rwxrwxr-x");
 
     @Autowired
@@ -86,10 +88,24 @@ public class FileSystemConfiguration {
         this.orderDir = path;
     }
 
+    @Autowired
+    private void setUserServiceDir(@Value("${opertusmundi.file-system.user-service-dir}") String d) {
+        final Path path = Paths.get(d);
+        Assert.isTrue(path.isAbsolute(), "Expected an absolute directory path");
+        this.userServiceDir = path;
+    }
+
     @PostConstruct
     private void initialize() throws IOException {
         for (final Path dataDir : Arrays.asList(
-            this.tempDir, this.userDir, this.draftDir, this.assetDir, this.contractDir, this.invoiceDir, this.orderDir
+            this.assetDir,
+            this.contractDir,
+            this.draftDir,
+            this.invoiceDir,
+            this.orderDir,
+            this.tempDir,
+            this.userDir,
+            this.userServiceDir
         )) {
             try {
                 if(!dataDir.toFile().exists()) {
@@ -135,6 +151,11 @@ public class FileSystemConfiguration {
     @Bean
     Path orderDirectory() {
         return this.orderDir;
+    }
+
+    @Bean
+    Path userServiceDirectory() {
+        return this.userServiceDir;
     }
 
 }

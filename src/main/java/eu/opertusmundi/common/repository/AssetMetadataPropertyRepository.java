@@ -5,7 +5,6 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,11 +16,9 @@ import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 public interface AssetMetadataPropertyRepository extends JpaRepository<AssetMetadataPropertyEntity, Integer> {
 
     @Query("SELECT p FROM AssetMetadataProperty p WHERE p.assetType = :assetType")
-    List<AssetMetadataPropertyEntity> findAllByAssetType(@Param("assetType") EnumAssetType assetType);
+    List<AssetMetadataPropertyEntity> findAllByAssetType(EnumAssetType assetType);
 
     @Query("SELECT p FROM AssetMetadataProperty p WHERE p.assetType = :assetType and p.name = :name")
-    Optional<AssetMetadataPropertyEntity> findOneByAssetTypeAndName(
-        @Param("assetType") EnumAssetType assetType, @Param("name") String name
-    );
+    Optional<AssetMetadataPropertyEntity> findOneByAssetTypeAndName(EnumAssetType assetType, String name);
 
 }

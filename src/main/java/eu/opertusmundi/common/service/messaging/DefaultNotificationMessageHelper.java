@@ -78,8 +78,11 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
             case ASSET_PUBLISHING_REJECTED :
             case ASSET_PUBLISHING_CANCELLED :
             case ASSET_PUBLISHED :
-            case COPY_FILE_TO_TOPIO_DRIVE_SUCCESS:
-            case COPY_FILE_TO_TOPIO_DRIVE_ERROR:
+            case COPY_FILE_TO_TOPIO_DRIVE_SUCCESS :
+            case COPY_FILE_TO_TOPIO_DRIVE_ERROR :
+            case USER_SERVICE_PUBLISH_SUCCESS :
+            case USER_SERVICE_PUBLISH_FAILURE :
+            case USER_SERVICE_REMOVE :
                 return MessageFormat.format(template.getText(), this.jsonToMap(data));
         }
 
@@ -156,6 +159,14 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
                 data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
                 data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
                 data.put("resourceFileName", this.checkAndGetVariable(variables, "resourceFileName"));
+                return data;
+                
+            case USER_SERVICE_PUBLISH_SUCCESS :
+            case USER_SERVICE_PUBLISH_FAILURE :
+            case USER_SERVICE_REMOVE :
+                data.put("serviceTitle", this.checkAndGetVariable(variables, "serviceTitle"));
+                data.put("serviceVersion", this.checkAndGetVariable(variables, "serviceVersion"));
+                data.put("serviceKey", this.checkAndGetVariable(variables, "serviceKey"));
                 return data;
         }
 

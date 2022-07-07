@@ -113,8 +113,8 @@ import eu.opertusmundi.common.repository.AssetContractAnnexRepository;
 import eu.opertusmundi.common.repository.AssetFileTypeRepository;
 import eu.opertusmundi.common.repository.AssetMetadataPropertyRepository;
 import eu.opertusmundi.common.repository.AssetResourceRepository;
+import eu.opertusmundi.common.repository.DraftLockRepository;
 import eu.opertusmundi.common.repository.DraftRepository;
-import eu.opertusmundi.common.repository.RecordLockRepository;
 import eu.opertusmundi.common.repository.contract.ProviderTemplateContractHistoryRepository;
 import eu.opertusmundi.common.util.BpmEngineUtils;
 import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
@@ -128,8 +128,6 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     private static final Logger logger = LoggerFactory.getLogger(DefaultProviderAssetService.class);
 
     private static final String TASK_REVIEW = "task-review";
-
-    private static final String TASK_SET_ERROR = "task-helpdesk-set-error";
 
     private static final String MESSAGE_PROVIDER_REVIEW = "provider-publish-asset-user-acceptance-message";
 
@@ -145,7 +143,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     private AssetMetadataPropertyRepository assetMetadataPropertyRepository;
 
     @Autowired
-    private RecordLockRepository recordLockRepository;
+    private DraftLockRepository recordLockRepository;
 
     @Autowired
     private DraftRepository draftRepository;
@@ -216,7 +214,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         // Get locks
         final List<UUID>          keys  = records.stream().map(r -> r.getKey()).collect(Collectors.toList());
-        final List<RecordLockDto> locks = this.recordLockRepository.findAllForDraftsAsObjects(keys);
+        final List<RecordLockDto> locks = this.recordLockRepository.findAllObjects(keys);
 
         records.forEach(r -> {
             final RecordLockDto lock = locks.stream()
@@ -948,31 +946,6 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             logger.error("Operation has failed", ex);
 
             throw new AssetDraftException(AssetMessageCode.ERROR, "Failed to publish asset", ex);
-        }
-    }
-
-    @Override
-    @Transactional
-    public void setPublishError(UUID publisherKey, UUID draftKey, String message) throws AssetDraftException {
-        try {
-            // Update draft
-            this.draftRepository.setErrorMessage(publisherKey, draftKey, message);
-
-            // Find workflow task
-            final TaskDto task = this.bpmEngine.findTaskById(draftKey.toString(), TASK_SET_ERROR).orElse(null);
-
-            if (task != null) {
-                // Complete task
-                final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
-                    .variableAsString(EnumProcessInstanceVariable.HELPDESK_ERROR_MESSAGE.getValue(), message)
-                    .build();
-
-                this.bpmEngine.completeTask(task.getId(), variables);
-            }
-        } catch (final FeignException fex) {
-            logger.error("Operation has failed", fex);
-
-            throw new AssetDraftException(AssetMessageCode.BPM_SERVICE, "Operation on BPM server failed", fex);
         }
     }
 
@@ -1818,7 +1791,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     }
 
     private Pair<EnumLockResult, RecordLockDto> getLock(UUID userKey, UUID draftKey, boolean required) throws AssetDraftException {
-        final RecordLockDto lock = this.recordLockRepository.findOneForDraftAsObject(draftKey).orElse(null);
+        final RecordLockDto lock = this.recordLockRepository.findOneObject(draftKey).orElse(null);
 
         if (required && lock != null && !lock.getOwnerKey().equals(userKey)) {
             throw new AssetDraftException(
@@ -1839,7 +1812,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Override
     @Transactional
     public void releaseLock(UUID userKey, UUID draftKey) throws AssetDraftException {
-        final Optional<RecordLockEntity> lock = this.recordLockRepository.findOneForDraft(draftKey);
+        final Optional<RecordLockEntity> lock = this.recordLockRepository.findOne(draftKey);
 
         if (lock.isPresent()) {
             if (!lock.get().getOwner().getKey().equals(userKey)) {

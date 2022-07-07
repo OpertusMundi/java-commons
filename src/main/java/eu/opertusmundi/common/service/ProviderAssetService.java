@@ -238,16 +238,6 @@ public interface ProviderAssetService {
     void cancelPublishDraft(UUID publisherKey, UUID draftKey, String errorDetails, List<Message> errorMessages) throws AssetDraftException;
 
     /**
-     * Reject a draft from a HelpDesk account
-     *
-     * @param publisherKey
-     * @param draftKey
-     * @param message
-     * @throws AssetDraftException
-     */
-    void setPublishError(UUID publisherKey, UUID draftKey, String message) throws AssetDraftException;
-
-    /**
      * Update draft metadata
      *
      * @param publisherKey

@@ -18,6 +18,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
+@Getter
+@Setter
 public class PerCallPricingModelCommandDto extends BasePricingModelCommandDto {
 
     private static final long serialVersionUID = 1L;
@@ -30,8 +32,6 @@ public class PerCallPricingModelCommandDto extends BasePricingModelCommandDto {
     @NotNull
     @DecimalMin(value = "0.000", inclusive = false)
     @Digits(integer = 3, fraction = 3)
-    @Getter
-    @Setter
     private BigDecimal price;
 
     @ArraySchema(
@@ -46,8 +46,6 @@ public class PerCallPricingModelCommandDto extends BasePricingModelCommandDto {
     )
     @Size(min = 0, max = 3)
     @Valid
-    @Getter
-    @Setter
     private List<PrePaidTierDto> prePaidTiers;
 
     @ArraySchema(
@@ -62,8 +60,6 @@ public class PerCallPricingModelCommandDto extends BasePricingModelCommandDto {
     )
     @Size(min = 0, max = 3)
     @Valid
-    @Getter
-    @Setter
     private List<DiscountRateDto> discountRates;
 
     @Override
