@@ -22,23 +22,20 @@ public class FileResourceCommandDto extends ResourceCommandDto implements Serial
     @JsonIgnore
     private EnumAssetType category;
 
-    @Schema(description = "File format")
-    @NotBlank
-    private String format;
-
-    @Schema(description = "File encoding", example = "UTF-8")
-    private String encoding;
+    @JsonIgnore
+    private Long size;
 
     @Schema(description = "Geometry data CRS", example = "EPSG:4326")
     private String crs;
 
+    @Schema(description = "File encoding", example = "UTF-8")
+    private String encoding;
+
     @Schema(description = "File name. If not set, the name of uploaded file is used.")
     private String fileName;
 
-    /**
-     * File size is set at the server
-     */
-    @JsonIgnore
-    private Long size;
+    @Schema(description = "File format")
+    @NotBlank
+    private String format;
 
 }

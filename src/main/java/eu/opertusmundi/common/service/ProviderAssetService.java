@@ -12,11 +12,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.Message;
 import eu.opertusmundi.common.model.PageResultDto;
+import eu.opertusmundi.common.model.asset.AssetAdditionalResourceCommandDto;
 import eu.opertusmundi.common.model.asset.AssetContractAnnexCommandDto;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.asset.AssetDraftReviewCommandDto;
 import eu.opertusmundi.common.model.asset.AssetDraftSetStatusCommandDto;
-import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceCommandDto;
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftSortField;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
@@ -276,7 +276,7 @@ public interface ProviderAssetService {
     ) throws AssetDraftException;
 
     /**
-     * Adds a file resource from the user's file system
+     * Adds a file from the user's file system to the selected asset
      *
      * @param command Resource metadata. If a file with the same name already exists for the asset, it is overwritten
      *
@@ -286,12 +286,12 @@ public interface ProviderAssetService {
      * @throws AssetRepositoryException
      * @throws AssetDraftException
      */
-    AssetDraftDto addFileResource(
+    AssetDraftDto addFileResourceFromFileSystem(
         UserFileResourceCommandDto command
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
 
     /**
-     * Uploads a file resource to the selected asset
+     * Adds an uploaded file to the selected asset
      *
      * @param command Resource metadata. If a file with the same name already exists for the asset, it is overwritten
      * @param input An input stream of the uploaded file. The caller should close the stream.
@@ -302,7 +302,7 @@ public interface ProviderAssetService {
      * @throws AssetRepositoryException
      * @throws AssetDraftException
      */
-    AssetDraftDto addFileResource(
+    AssetDraftDto addFileResourceFromUpload(
         FileResourceCommandDto command, InputStream input
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
 
@@ -330,11 +330,11 @@ public interface ProviderAssetService {
      * @throws AssetDraftException
      */
     AssetDraftDto addAdditionalResource(
-        AssetFileAdditionalResourceCommandDto command, InputStream input
+        AssetAdditionalResourceCommandDto command, InputStream input
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
 
     /**
-     * Uploads a contract file for the selected asset
+     * Sets the contract file for the selected asset
      *
      * @param command Uploaded contract. If a file with the same name already already exists for the asset, it is overwritten
      * @param data A byte array with the uploaded file
@@ -345,12 +345,12 @@ public interface ProviderAssetService {
      * @throws AssetRepositoryException
      * @throws AssetDraftException
      */
-    void uploadContract(
+    void setContract(
 		ProviderUploadContractCommand command, byte[] data
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
 
     /**
-     * Uploads an additional contract annex file for the selected asset
+     * Adds an additional contract annex file for the selected asset
      *
      * @param command Contract annex metadata. If a file with the same name already already exists for the asset, it is overwritten
      * @param data A byte array with the uploaded file
@@ -361,7 +361,7 @@ public interface ProviderAssetService {
      * @throws AssetRepositoryException
      * @throws AssetDraftException
      */
-    AssetDraftDto uploadContractAnnex(
+    AssetDraftDto addContractAnnex(
         AssetContractAnnexCommandDto command, byte[] data
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
 

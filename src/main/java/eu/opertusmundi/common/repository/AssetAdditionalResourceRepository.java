@@ -16,7 +16,7 @@ import org.springframework.util.Assert;
 import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.AssetAdditionalResourceEntity;
 import eu.opertusmundi.common.domain.ProviderAssetDraftEntity;
-import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceCommandDto;
+import eu.opertusmundi.common.model.asset.AssetAdditionalResourceCommandDto;
 import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceDto;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
@@ -57,7 +57,7 @@ public interface AssetAdditionalResourceRepository extends JpaRepository<AssetAd
     List<AssetAdditionalResourceEntity> findAllResourcesByAssetPid(@Param("pid") String pid);
 
     @Transactional(readOnly = false)
-    default AssetFileAdditionalResourceDto update(AssetFileAdditionalResourceCommandDto command) throws AssetDraftException {
+    default AssetFileAdditionalResourceDto update(AssetAdditionalResourceCommandDto command) throws AssetDraftException {
         Assert.notNull(command, "Expected a non-null command");
         Assert.notNull(command.getDraftKey(), "Expected a non-null draft key");
         Assert.notNull(command.getPublisherKey(), "Expected a non-null publisher key");

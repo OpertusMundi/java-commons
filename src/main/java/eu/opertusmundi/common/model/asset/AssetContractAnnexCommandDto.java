@@ -16,16 +16,16 @@ public class AssetContractAnnexCommandDto extends ResourceCommandDto implements 
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * File size is set at the server
+     */
+    @JsonIgnore
+    private Long size;
+
     @Schema(description = "File description")
     private String description;
 
     @Schema(description = "File name. If not set, the name of uploaded file is used.")
     private String fileName;
 
-    /**
-     * File size is set at the server
-     */
-    @JsonIgnore
-    private Long size;
-    
 }

@@ -10,6 +10,8 @@ import org.locationtech.jts.util.Assert;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
@@ -32,36 +34,41 @@ public class FileResourceDto extends ResourceDto implements Serializable {
     public FileResourceDto(
         @JsonProperty("id") String id,
         @JsonProperty("parentId") String parentId,
-        @JsonProperty("size") Long size,
         @JsonProperty("category") EnumAssetType category,
-        @JsonProperty("fileName") String fileName,
-        @JsonProperty("modifiedOn") ZonedDateTime modifiedOn,
-        @JsonProperty("format") String format,
+        @JsonProperty("crs") String crs,
         @JsonProperty("encoding") String encoding,
-        @JsonProperty("crs") String crs
+        @JsonProperty("fileName") String fileName,
+        @JsonProperty("format") String format,
+        @JsonProperty("modifiedOn") ZonedDateTime modifiedOn,
+        @JsonProperty("path") String path,
+        @JsonProperty("size") Long size,
+        @JsonProperty("source") EnumResourceSource source
     ) {
         super(id, parentId, EnumResourceType.FILE);
 
-        this.size       = size;
         this.category   = category;
-        this.fileName   = fileName;
-        this.modifiedOn = modifiedOn;
-        this.format     = format;
-        this.encoding   = encoding;
         this.crs        = crs;
+        this.format     = format;
+        this.fileName   = fileName;
+        this.format     = format;
+        this.modifiedOn = modifiedOn;
+        this.path       = path;
+        this.size       = size;
+        this.source     = source;
     }
 
     public FileResourceDto(CatalogueResource r) {
         this.category   = r.getCategory();
+        this.crs        = r.getCrs() != null && !r.getCrs().isEmpty() ? r.getCrs().get(0) : null;
+        this.encoding   = r.getEncoding();
         this.fileName   = r.getFileName();
         this.format     = r.getFormat();
         this.id         = r.getId();
         this.modifiedOn = r.getModifiedOn();
         this.parentId   = r.getParentId();
         this.size       = r.getSize();
+        this.source     = EnumResourceSource.NONE;
         this.type       = r.getType();
-        this.encoding   = r.getEncoding();
-        this.crs        = r.getCrs() != null && !r.getCrs().isEmpty() ? r.getCrs().get(0) : null;
     }
 
     @Schema(description = "File size")
@@ -85,18 +92,27 @@ public class FileResourceDto extends ResourceDto implements Serializable {
     @Schema(description = "Geometry data CRS")
     private String crs;
 
+    @Schema(description = "Resource source")
+    private EnumResourceSource source;
+
+    @Schema(description = "The relative path of the file in the user's file system. Available only when source is `FILE_SYSTEM`")
+    @JsonInclude(Include.NON_EMPTY)
+    private String path;
+
     @Override
     public void patch(ResourceDto r) {
         Assert.isTrue(r.getType() == EnumResourceType.FILE);
 
         final FileResourceDto resource = (FileResourceDto) r;
         // Id, type and file name are immutable
-        this.size       = resource.size;
-        this.modifiedOn = resource.modifiedOn;
         this.category   = resource.category;
-        this.format     = resource.format;
         this.crs        = resource.crs;
         this.encoding   = resource.encoding;
+        this.format     = resource.format;
+        this.modifiedOn = resource.modifiedOn;
+        this.path       = resource.path;
+        this.size       = resource.size;
+        this.source     = resource.source;
     }
 
     @Override
@@ -125,7 +141,7 @@ public class FileResourceDto extends ResourceDto implements Serializable {
      */
     @JsonIgnore
     @Hidden
-    private Path path;
+    private Path relativePath;
 
     /**
      * Parent asset
@@ -133,7 +149,5 @@ public class FileResourceDto extends ResourceDto implements Serializable {
     @JsonIgnore
     @Hidden
     private CatalogueItemDetailsDto asset;
-
-
 
 }

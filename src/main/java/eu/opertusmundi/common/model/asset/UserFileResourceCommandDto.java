@@ -18,10 +18,16 @@ public class UserFileResourceCommandDto extends ResourceCommandDto implements Se
     private static final long serialVersionUID = 1L;
 
     @JsonIgnore
-    private String userName;
+    private Long size;
 
     @JsonIgnore
-    private Long size;
+    private String userName;
+
+    @Schema(description = "Geometry data CRS", example = "EPSG:4326")
+    private String crs;
+
+    @Schema(description = "File encoding", example = "UTF-8")
+    private String encoding;
 
     @Schema(description =
         "Optional file name. If it is not set, the name of the selected file is used. "
@@ -30,18 +36,11 @@ public class UserFileResourceCommandDto extends ResourceCommandDto implements Se
     )
     private String fileName;
 
-    @Schema(description = "Path to user's file system", required = true)
-    @NotEmpty
-    private String path;
-
     @Schema(description = "File format")
     @NotBlank
     private String format;
 
-    @Schema(description = "File encoding", example = "UTF-8")
-    private String encoding;
-
-    @Schema(description = "Geometry data CRS", example = "EPSG:4326")
-    private String crs;
-
+    @Schema(description = "Path to user's file system")
+    @NotEmpty
+    private String path;
 }

@@ -5,8 +5,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 
+import eu.opertusmundi.common.model.asset.AssetAdditionalResourceCommandDto;
 import eu.opertusmundi.common.model.asset.AssetContractAnnexCommandDto;
-import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceCommandDto;
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
 import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.contract.provider.ProviderUploadContractCommand;
@@ -19,17 +19,17 @@ public interface DraftFileManager {
 
     List<FileDto> getAdditionalResources(UUID publisherKey, UUID draftKey) throws FileSystemException, AssetRepositoryException;
 
-    void uploadResource(
+    void addResource(
         FileResourceCommandDto command, InputStream input
     ) throws FileSystemException, AssetRepositoryException;
 
-    void uploadAdditionalResource(
-        AssetFileAdditionalResourceCommandDto command, InputStream input
+    void addAdditionalResource(
+        AssetAdditionalResourceCommandDto command, InputStream input
     ) throws FileSystemException, AssetRepositoryException;
 
-    void uploadContract(ProviderUploadContractCommand command, byte[] data) throws AssetRepositoryException, FileSystemException;
+    void setContract(ProviderUploadContractCommand command, byte[] data) throws AssetRepositoryException, FileSystemException;
 
-    void uploadContractAnnex(AssetContractAnnexCommandDto command, byte[] data) throws FileSystemException, AssetRepositoryException;
+    void addContractAnnex(AssetContractAnnexCommandDto command, byte[] data) throws FileSystemException, AssetRepositoryException;
 
     void deleteResource(UUID publisherKey, UUID draftKey, String fileName) throws FileSystemException, AssetRepositoryException;
 

@@ -12,9 +12,15 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class AssetUploadedContractCommandDto extends ResourceCommandDto implements Serializable {
+public class AssetAdditionalResourceCommandDto extends ResourceCommandDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    /**
+     * File size is set at the server
+     */
+    @JsonIgnore
+    private Long size;
 
     @Schema(description = "File description")
     private String description;
@@ -22,10 +28,4 @@ public class AssetUploadedContractCommandDto extends ResourceCommandDto implemen
     @Schema(description = "File name. If not set, the name of uploaded file is used.")
     private String fileName;
 
-    /**
-     * File size is set at the server
-     */
-    @JsonIgnore
-    private Long size;
-    
 }

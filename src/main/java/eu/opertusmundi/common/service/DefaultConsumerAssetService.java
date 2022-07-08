@@ -300,7 +300,8 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
             final FileResourceDto fileResource = (FileResourceDto) resource;
             final Path            path         = assetFileManager.resolveResourcePath(pid, fileResource.getFileName());
             fileResource.setAsset(asset);
-            fileResource.setPath(path);
+            fileResource.setRelativePath(path);
+            fileResource.setPath(path.toString());
 
             assetStatisticsRepository.increaseDownloads(pid);
 
@@ -338,7 +339,7 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
 
             final Path   targetDir  = this.userFileManager.resolveDirPath(pathCommand);
             final String fileName   = StringUtils.isBlank(command.getFileName()) ? resource.getFileName() : command.getFileName();
-            final Path   sourcePath = resource.getPath();
+            final Path   sourcePath = resource.getRelativePath();
             final Path   targetPath = targetDir.resolve(fileName);
 
             if (resource.getSize() < asyncCopyThresholdSize) {

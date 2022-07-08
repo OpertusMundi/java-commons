@@ -57,13 +57,13 @@ import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.Message;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.RecordLockDto;
+import eu.opertusmundi.common.model.asset.AssetAdditionalResourceCommandDto;
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
 import eu.opertusmundi.common.model.asset.AssetContractAnnexCommandDto;
 import eu.opertusmundi.common.model.asset.AssetContractAnnexDto;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.asset.AssetDraftReviewCommandDto;
 import eu.opertusmundi.common.model.asset.AssetDraftSetStatusCommandDto;
-import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceCommandDto;
 import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceDto;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
@@ -72,6 +72,7 @@ import eu.opertusmundi.common.model.asset.EnumMetadataPropertyType;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftSortField;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.asset.EnumProviderSubSortField;
+import eu.opertusmundi.common.model.asset.EnumResourceSource;
 import eu.opertusmundi.common.model.asset.EnumResourceType;
 import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.FileResourceDto;
@@ -384,7 +385,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
                 final Path resourcePath = this.assetFileManager.resolveResourcePath(command.getPid(), r.getFileName());
                 try (final InputStream input = Files.newInputStream(resourcePath)) {
-                    draft = this.addFileResource(resourceCommand, input);
+                    draft = this.addFileResource(resourceCommand, input, EnumResourceSource.PARENT_DATASOURCE, null);
                 } catch(final Exception ex) {
                     throw new AssetDraftException(
                         AssetMessageCode.API_COMMAND_RESOURCE_COPY,
@@ -453,7 +454,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             resourceCommand.setSize(resourcePath.toFile().length());
 
             try (final InputStream input = Files.newInputStream(resourcePath)) {
-                draft = this.addFileResource(resourceCommand, input);
+                draft = this.addFileResource(resourceCommand, input, EnumResourceSource.FILE_SYSTEM, resourcePath.toString());
             } catch(final AssetDraftException ex) {
                 throw ex;
             } catch(final Exception ex) {
@@ -1176,7 +1177,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     @Transactional
-    public AssetDraftDto addFileResource(
+    public AssetDraftDto addFileResourceFromFileSystem(
         UserFileResourceCommandDto command
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException {
         // The provider must have access to the selected draft and also the
@@ -1210,7 +1211,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         resourceCommand.setSize(command.getSize());
 
         try (final InputStream input = Files.newInputStream(path)) {
-            draft = this.addFileResource(resourceCommand, input);
+            draft = this.addFileResource(resourceCommand, input, EnumResourceSource.FILE_SYSTEM, command.getPath());
         } catch(final AssetDraftException ex) {
             throw ex;
         } catch(final Exception ex) {
@@ -1232,8 +1233,14 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     @Transactional
-    public AssetDraftDto addFileResource(
+    public AssetDraftDto addFileResourceFromUpload(
         FileResourceCommandDto command, InputStream input
+    ) throws FileSystemException, AssetRepositoryException, AssetDraftException {
+        return this.addFileResource(command, input, EnumResourceSource.UPLOAD, null);
+    }
+
+    private  AssetDraftDto addFileResource(
+        FileResourceCommandDto command, InputStream input, EnumResourceSource source, String path
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException {
         // The provider must have access to the selected draft and also the
         // draft must be editable
@@ -1250,10 +1257,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         }
 
         // Update database link
-        final FileResourceDto resource = assetResourceRepository.update(command);
+        final FileResourceDto resource = assetResourceRepository.update(command, source, path);
 
         // Update asset file repository
-        this.draftFileManager.uploadResource(command, input);
+        this.draftFileManager.addResource(command, input);
 
         // Update draft with new file resource
         draft.getCommand().setDraftKey(command.getDraftKey());
@@ -1284,7 +1291,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Override
     @Transactional
     public AssetDraftDto addAdditionalResource(
-        AssetFileAdditionalResourceCommandDto command, InputStream input
+        AssetAdditionalResourceCommandDto command, InputStream input
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException {
         // The provider must have access to the selected draft and also the
         // draft must be editable
@@ -1299,7 +1306,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         final AssetFileAdditionalResourceDto resource = assetAdditionalResourceRepository.update(command);
 
         // Update asset file repository
-        this.draftFileManager.uploadAdditionalResource(command, input);
+        this.draftFileManager.addAdditionalResource(command, input);
 
         // Update draft with new file resource
         draft.getCommand().setDraftKey(command.getDraftKey());
@@ -1321,7 +1328,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     @Transactional
-    public void uploadContract(
+    public void setContract(
 		ProviderUploadContractCommand command, byte[] data
     ) throws AssetDraftException, FileSystemException, AssetRepositoryException {
         // The provider must have access to the selected draft and also the
@@ -1342,7 +1349,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         final Pair<EnumLockResult, RecordLockDto> lock = this.getLock(command.getOwnerKey(), command.getDraftKey(), true);
 
         // Update asset file repository
-        this.draftFileManager.uploadContract(command, data);
+        this.draftFileManager.setContract(command, data);
 
         // Release lock if it was created only for the specific operation
         if (lock != null && lock.getLeft() == EnumLockResult.CREATED) {
@@ -1385,7 +1392,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     @Transactional
-    public AssetDraftDto uploadContractAnnex(
+    public AssetDraftDto addContractAnnex(
 		AssetContractAnnexCommandDto command, byte[] data
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException {
         // The provider must have access to the selected draft and also the
@@ -1409,7 +1416,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         final AssetContractAnnexDto annex = assetContractAnnexRepository.update(command);
 
         // Update asset file repository
-        this.draftFileManager.uploadContractAnnex(command, data);
+        this.draftFileManager.addContractAnnex(command, data);
 
         // Update draft with new file resource
         draft.getCommand().setDraftKey(command.getDraftKey());

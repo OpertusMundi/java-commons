@@ -21,8 +21,6 @@ public class ServiceResourceCommandDto extends ResourceCommandDto implements Ser
 
     @Schema(description = "Parent resource unique identifier")
     @JsonInclude(Include.NON_NULL)
-    @Getter
-    @Setter
     protected UUID parentId;
 
     @Schema(description = "Service type")

@@ -27,8 +27,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import eu.opertusmundi.common.model.asset.AssetAdditionalResourceCommandDto;
 import eu.opertusmundi.common.model.asset.AssetContractAnnexCommandDto;
-import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceCommandDto;
 import eu.opertusmundi.common.model.asset.AssetFileNamingStrategyContext;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
@@ -113,7 +113,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
     }
 
     @Override
-    public void uploadResource(
+    public void addResource(
         FileResourceCommandDto command, InputStream input
     ) throws AssetRepositoryException, FileSystemException {
         Assert.notNull(command, "Expected a non-null command");
@@ -123,8 +123,8 @@ public class DefaultDraftFileManager implements DraftFileManager {
     }
 
     @Override
-    public void uploadAdditionalResource(
-        AssetFileAdditionalResourceCommandDto command, InputStream input
+    public void addAdditionalResource(
+        AssetAdditionalResourceCommandDto command, InputStream input
     ) throws AssetRepositoryException, FileSystemException {
         Assert.notNull(command, "Expected a non-null command");
         Assert.isTrue(command.getSize() > 0, "Expected file size to be greater than 0");
@@ -196,7 +196,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
     }
 
     @Override
-    public void uploadContract(
+    public void setContract(
 		ProviderUploadContractCommand command, byte[] data
     ) throws AssetRepositoryException, FileSystemException {
         Assert.notNull(command, "Expected a non-null command");
@@ -232,7 +232,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
     }
 
     @Override
-    public void uploadContractAnnex(
+    public void addContractAnnex(
         AssetContractAnnexCommandDto command, byte[] data
     ) throws AssetRepositoryException, FileSystemException {
         Assert.notNull(command, "Expected a non-null command");

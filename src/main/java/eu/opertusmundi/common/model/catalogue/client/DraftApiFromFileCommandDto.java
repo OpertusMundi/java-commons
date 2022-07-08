@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 import javax.validation.constraints.NotEmpty;
 
+import eu.opertusmundi.common.model.asset.EnumResourceSource;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,18 +19,22 @@ public class DraftApiFromFileCommandDto extends DraftApiCommandDto implements Se
         super(EnumDraftCommandType.FILE);
     }
 
-    @Schema(description = "Path to user's file system", required = true)
-    @NotEmpty
-    private String path;
+    @Schema(description = "Geometry data CRS")
+    private String crs;
+
+    @Schema(description = "File encoding")
+    private String encoding;
 
     @Schema(description = "File format", required = true)
     @NotEmpty
     private String format;
 
-    @Schema(description = "File encoding")
-    private String encoding;
+    @Schema(description = "Path to user's file system", required = true)
+    @NotEmpty
+    private String path;
 
-    @Schema(description = "Geometry data CRS")
-    private String crs;
+    public EnumResourceSource getSource() {
+        return EnumResourceSource.FILE_SYSTEM;
+    }
 
 }
