@@ -819,6 +819,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                 final EnumNotificationType notificationType = EnumNotificationType.PURCHASE_REMINDER;
                 final String               idempotentKey    = order.getKey().toString() + "::" + notificationType.toString();
                 final Map<String, Object>  variables        = new HashMap<>();
+                variables.put("orderKey", order.getKey().toString());
                 variables.put("assetName", asset.getTitle());
                 variables.put("assetVersion", asset.getVersion());
 

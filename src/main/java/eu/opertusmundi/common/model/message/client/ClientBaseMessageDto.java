@@ -11,9 +11,12 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import eu.opertusmundi.common.model.message.EnumMessageType;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
+@Getter
+@Setter
 public class ClientBaseMessageDto {
 
     public ClientBaseMessageDto(EnumMessageType type) {
@@ -21,44 +24,30 @@ public class ClientBaseMessageDto {
     }
 
     @JsonIgnore
-    @Getter
+    @Getter(AccessLevel.PRIVATE)
     private final EnumMessageType type;
 
     @Schema(description = "Message unique id")
-    @Getter
-    @Setter
     private UUID id;
 
     @Schema(description = "Message text")
     @NotEmpty
-    @Getter
-    @Setter
     private String text;
 
     @Schema(description = "Created at")
-    @Getter
-    @Setter
     private ZonedDateTime createdAt;
 
     @Schema(description = "Read at")
-    @Getter
-    @Setter
     private ZonedDateTime readAt;
 
     @Schema(description = "Message is marked as read")
-    @Getter
-    @Setter
     private boolean read;
 
     @Schema(description = "Message sender identifier")
-    @Getter
-    @Setter
     private UUID senderId;
-    
+
     @Schema(description = "Message sender contact")
     @JsonInclude(Include.NON_NULL)
-    @Getter
-    @Setter
     private ClientContactDto sender;
 
 }

@@ -18,6 +18,7 @@ import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.OrderItemEntity;
 import eu.opertusmundi.common.model.ServiceException;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
+import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
 import eu.opertusmundi.common.model.message.EnumNotificationType;
 import eu.opertusmundi.common.model.message.client.NotificationMessageCode;
 import eu.opertusmundi.common.model.order.HelpdeskOrderDto;
@@ -42,7 +43,7 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
 
     @Autowired
     private PayInRepository payInRepository;
-    
+
     @Autowired
     private OrderRepository orderRepository;
 
@@ -94,11 +95,14 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
         Assert.isTrue(type != null, "Expected a non-null notification type");
 
         final ObjectNode data = objectMapper.createObjectNode();
+        data.put("type", type.toString());
 
         switch (type) {
             case CATALOGUE_ASSET_UNPUBLISHED :
+                data.put("assetId", this.checkAndGetVariable(variables, "assetId"));
                 data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
                 data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+                data.put("publisherKey", this.checkAndGetVariable(variables, "publisherKey"));
                 return data;
 
             case CATALOGUE_HARVEST_COMPLETED :
@@ -107,66 +111,69 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
                 return data;
 
             case ORDER_CONFIRMATION :
-            	return populateOrderConfirmationModel(variables, data);
+                return populateOrderConfirmationModel(variables, data);
 
             case DELIVERY_REQUEST :
-            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
-            	return data;
+                data.put("orderKey", this.checkAndGetVariable(variables, "orderKey"));
+                data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
+                return data;
 
             case DIGITAL_DELIVERY :
-            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
-            	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
-            	return data;
+                data.put("orderKey", this.checkAndGetVariable(variables, "orderKey"));
+                data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
+                data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+                return data;
 
             case PURCHASE_REMINDER :
-            	data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
-            	data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
-            	return data;
+                data.put("orderKey", this.checkAndGetVariable(variables, "orderKey"));
+                data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
+                data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+                return data;
 
             case DIGITAL_DELIVERY_BY_SUPPLIER :
-            	return populateDigitalDeliveryBySupplierModel(variables, data);
+                return populateDigitalDeliveryBySupplierModel(variables, data);
 
             case PHYSICAL_DELIVERY_BY_SUPPLIER :
-            	return populatePhysicalDeliveryBySupplierModel(variables, data);
+                return populatePhysicalDeliveryBySupplierModel(variables, data);
 
             case DIGITAL_DELIVERY_BY_PLATFORM :
-            	return populateDigitalDeliveryByPlatformModel(variables, data);
+                return populateDigitalDeliveryByPlatformModel(variables, data);
 
             case PURCHASE_APPROVED :
-            	return populatePurchaseApprovedBySupplierModel(variables, data);
-
             case PURCHASE_REJECTED :
-            	return populatePurchaseRejectedBySupplierModel(variables, data);
+                return populatePurchaseApprovedBySupplierModel(variables, data);
 
             case FILES_UPLOAD_COMPLETED :
-            	// No parameters needed
-            	return data;
+                // No parameters needed
+                return data;
 
             case ASSET_PUBLISHING_ACCEPTED :
-            	return populatePublishingAcceptedModel(variables, data);
+                return populatePublishingAcceptedModel(variables, data);
 
             case ASSET_PUBLISHING_REJECTED :
-            	return populatePublishingRejectedModel(variables, data);
+                return populatePublishingRejectedModel(variables, data);
 
             case ASSET_PUBLISHING_CANCELLED:
                 return populatePublishingCancelledModel(variables, data);
 
             case ASSET_PUBLISHED :
-            	return populateAssetPublishedModel(variables, data);
+                return populateAssetPublishedModel(variables, data);
 
             case COPY_FILE_TO_TOPIO_DRIVE_SUCCESS:
             case COPY_FILE_TO_TOPIO_DRIVE_ERROR:
+                data.put("assetId", this.checkAndGetVariable(variables, "assetId"));
                 data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
                 data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+                data.put("resourceKey", this.checkAndGetVariable(variables, "resourceKey"));
                 data.put("resourceFileName", this.checkAndGetVariable(variables, "resourceFileName"));
                 return data;
-                
+
             case USER_SERVICE_PUBLISH_SUCCESS :
             case USER_SERVICE_PUBLISH_FAILURE :
             case USER_SERVICE_REMOVE :
+                data.put("serviceKey", this.checkAndGetVariable(variables, "serviceKey"));
                 data.put("serviceTitle", this.checkAndGetVariable(variables, "serviceTitle"));
                 data.put("serviceVersion", this.checkAndGetVariable(variables, "serviceVersion"));
-                data.put("serviceKey", this.checkAndGetVariable(variables, "serviceKey"));
                 return data;
         }
 
@@ -174,84 +181,93 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
         return null;
     }
 
-	private ObjectNode populateOrderConfirmationModel(Map<String, Object> variables, ObjectNode data) {
+    private ObjectNode populateOrderConfirmationModel(Map<String, Object> variables, ObjectNode data) {
         final UUID                      payInKey       = UUID.fromString((String) variables.get("payInKey"));
         final HelpdeskPayInDto          helpDeskPayIn  = this.payInRepository.findOneObjectByKey(payInKey).get();
         final HelpdeskOrderPayInItemDto payInOrderItem = (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
         final HelpdeskOrderDto          order          = payInOrderItem.getOrder();
 
-    	data.put("orderId", order.getReferenceNumber());
+        data.put("orderId", order.getReferenceNumber());
+        data.put("orderKey", order.getKey().toString());
+        data.put("payInKey", payInKey.toString());
         return data;
-	}
-	
-	private ObjectNode populatePurchaseApprovedBySupplierModel(Map<String, Object> variables, ObjectNode data) {
-        final UUID                      orderKey       	= UUID.fromString((String) variables.get("orderKey"));
-        final OrderEntity     			orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
-        final OrderItemEntity			orderItemEntity = orderEntity.getItems().get(0);
+    }
 
-    	data.put("assetName", orderItemEntity.getDescription());
-    	data.put("supplierName", orderItemEntity.getProvider().getProvider().getName());
+    private ObjectNode populatePurchaseApprovedBySupplierModel(Map<String, Object> variables, ObjectNode data) {
+        final UUID            orderKey        = UUID.fromString((String) variables.get("orderKey"));
+        final OrderEntity     orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderItemEntity orderItemEntity = orderEntity.getItems().get(0);
+
+        data.put("orderId", orderEntity.getReferenceNumber());
+        data.put("orderKey", orderEntity.getKey().toString());
+        data.put("assetId", orderItemEntity.getAssetId());
+        data.put("assetName", orderItemEntity.getDescription());
+        data.put("assetVersion", orderItemEntity.getAssetVersion());
+        data.put("supplierName", orderItemEntity.getProvider().getProvider().getName());
         return data;
-	}
-	
-	private ObjectNode populatePurchaseRejectedBySupplierModel(Map<String, Object> variables, ObjectNode data) {
-        final UUID                      orderKey       	= UUID.fromString((String) variables.get("orderKey"));
-        final OrderEntity     			orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
-        final OrderItemEntity			orderItemEntity = orderEntity.getItems().get(0);
+    }
 
-    	data.put("assetName", orderItemEntity.getDescription());
-    	data.put("supplierName", orderItemEntity.getProvider().getProvider().getName());
-        return data;
-	}
-
-	private ObjectNode populateDigitalDeliveryBySupplierModel(Map<String, Object> variables, ObjectNode data) {
+    private ObjectNode populateDigitalDeliveryBySupplierModel(Map<String, Object> variables, ObjectNode data) {
         final UUID                      payInKey       = UUID.fromString((String) variables.get("payInKey"));
         final HelpdeskPayInDto          helpDeskPayIn  = this.payInRepository.findOneObjectByKey(payInKey).get();
         final HelpdeskOrderPayInItemDto payInOrderItem = (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
         final HelpdeskOrderItemDto      orderItem      = payInOrderItem.getOrder().getItems().get(0);
 
-    	data.put("assetName", orderItem.getDescription());
-    	data.put("assetVersion", orderItem.getAssetVersion());
+        data.put("payInKey", payInKey.toString());
+        data.put("orderKey", payInOrderItem.getOrder().getKey().toString());
+        data.put("assetId", orderItem.getAssetId());
+        data.put("assetName", orderItem.getDescription());
+        data.put("assetVersion", orderItem.getAssetVersion());
         return data;
-	}
+    }
 
-	private ObjectNode populatePhysicalDeliveryBySupplierModel(Map<String, Object> variables, ObjectNode data) {
+    private ObjectNode populatePhysicalDeliveryBySupplierModel(Map<String, Object> variables, ObjectNode data) {
         final UUID                      payInKey       = UUID.fromString((String) variables.get("payInKey"));
         final HelpdeskPayInDto          helpDeskPayIn  = this.payInRepository.findOneObjectByKey(payInKey).get();
         final HelpdeskOrderPayInItemDto payInOrderItem = (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
         final HelpdeskOrderItemDto      orderItem      = payInOrderItem.getOrder().getItems().get(0);
 
-    	data.put("assetName", orderItem.getDescription());
-    	data.put("assetVersion", orderItem.getAssetVersion());
+        data.put("payInKey", payInKey.toString());
+        data.put("orderKey", payInOrderItem.getOrder().getKey().toString());
+        data.put("assetId", orderItem.getAssetId());
+        data.put("assetName", orderItem.getDescription());
+        data.put("assetVersion", orderItem.getAssetVersion());
         return data;
-	}
+    }
 
-	private ObjectNode populateDigitalDeliveryByPlatformModel(Map<String, Object> variables, ObjectNode data) {
+    private ObjectNode populateDigitalDeliveryByPlatformModel(Map<String, Object> variables, ObjectNode data) {
         final UUID                      payInKey       = UUID.fromString((String) variables.get("payInKey"));
         final HelpdeskPayInDto          helpDeskPayIn  = this.payInRepository.findOneObjectByKey(payInKey).get();
         final HelpdeskOrderPayInItemDto payInOrderItem = (HelpdeskOrderPayInItemDto) helpDeskPayIn.getItems().get(0);
         final HelpdeskOrderItemDto      orderItem      = payInOrderItem.getOrder().getItems().get(0);
 
-    	data.put("assetName", orderItem.getDescription());
-    	data.put("assetVersion", orderItem.getAssetVersion());
+        data.put("payInKey", payInKey.toString());
+        data.put("orderKey", payInOrderItem.getOrder().getKey().toString());
+        data.put("assetId", orderItem.getAssetId());
+        data.put("assetName", orderItem.getDescription());
+        data.put("assetVersion", orderItem.getAssetVersion());
         return data;
-	}
+    }
 
-	private ObjectNode populatePublishingAcceptedModel(Map<String, Object> variables, ObjectNode data) {
-        final UUID 		draftKey  = UUID.fromString((String) variables.get("draftKey"));
-        final String 	assetName = this.providerAssetService.findOneDraft(draftKey).getTitle();
+    private ObjectNode populatePublishingAcceptedModel(Map<String, Object> variables, ObjectNode data) {
+        final UUID          draftKey = UUID.fromString((String) variables.get("draftKey"));
+        final AssetDraftDto draft    = this.providerAssetService.findOneDraft(draftKey);
 
-        data.put("assetName", assetName);
+        data.put("draftKey", draftKey.toString());
+        data.put("assetName", draft.getTitle());
+        data.put("assetVersion", draft.getVersion());
         return data;
-	}
+    }
 
-	private ObjectNode populatePublishingRejectedModel(Map<String, Object> variables, ObjectNode data) {
-        final UUID 		draftKey  = UUID.fromString((String) variables.get("draftKey"));
-        final String 	assetName = this.providerAssetService.findOneDraft(draftKey).getTitle();
+    private ObjectNode populatePublishingRejectedModel(Map<String, Object> variables, ObjectNode data) {
+        final UUID          draftKey = UUID.fromString((String) variables.get("draftKey"));
+        final AssetDraftDto draft    = this.providerAssetService.findOneDraft(draftKey);
 
-        data.put("assetName", assetName);
+        data.put("draftKey", draftKey.toString());
+        data.put("assetName", draft.getTitle());
+        data.put("assetVersion", draft.getVersion());
         return data;
-	}
+    }
 
     private ObjectNode populatePublishingCancelledModel(Map<String, Object> variables, ObjectNode data) {
         final UUID          draftKey = UUID.fromString((String) variables.get("draftKey"));
@@ -260,21 +276,27 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
         Assert.notNull(draft, "Expected a non-null draft");
 
         final String assetName    = draft.getTitle();
+        final String assetVersion = draft.getVersion();
         final String errorMessage = draft.getHelpdeskErrorMessage();
 
+        data.put("draftKey", draftKey.toString());
         data.put("assetName", assetName);
+        data.put("assetVersion", assetVersion);
         data.put("errorMessage", errorMessage);
         return data;
     }
 
-	private ObjectNode populateAssetPublishedModel(Map<String, Object> variables, ObjectNode data) {
-		final UUID 		draftKey  			= UUID.fromString((String) variables.get("draftKey"));
-		final String 	assetPublishedId	= this.providerAssetService.findOneDraft(draftKey).getAssetPublished();
-		final String 	assetName			= this.catalogueService.findOneFeature(assetPublishedId).getProperties().getTitle();
+    private ObjectNode populateAssetPublishedModel(Map<String, Object> variables, ObjectNode data) {
+        final UUID                       draftKey         = UUID.fromString((String) variables.get("draftKey"));
+        final String                     assetPublishedId = this.providerAssetService.findOneDraft(draftKey).getAssetPublished();
+        final CatalogueFeatureProperties props            = this.catalogueService.findOneFeature(assetPublishedId).getProperties();
 
-        data.put("assetName", assetName);
+        data.put("draftKey", draftKey.toString());
+        data.put("assetId", assetPublishedId);
+        data.put("assetName", props.getTitle());
+        data.put("assetVersion", props.getVersion());
         return data;
-	}
+    }
 
     private String checkAndGetVariable(Map<String, Object> variables, String name) {
         if (!variables.containsKey(name)) {
