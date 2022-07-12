@@ -172,7 +172,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
     private ProviderOrderDto confirmOrder(UUID publisherKey, UUID orderKey, boolean accepted, String rejectReason) throws OrderException {
         try {
             ProviderOrderDto          order;
-            final UUID                consumerKey = this.orderRepository.findOrderEntityByKey(orderKey).get().getConsumer().getKey();
+            final UUID                consumerKey = this.orderRepository.findByKey(orderKey).get().getConsumer().getKey();
             final Map<String, Object> variables   = new HashMap<>();
 
             if (accepted) {
@@ -186,7 +186,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
                 this.sendOrderStatusByNotification(notificationType, consumerKey, variables, idempotentKey);
 
-                if (this.orderRepository.findOrderEntityByKey(orderKey).get().getItems().get(0).getContractType() == EnumContractType.UPLOADED_CONTRACT) {
+                if (this.orderRepository.findByKey(orderKey).get().getItems().get(0).getContractType() == EnumContractType.UPLOADED_CONTRACT) {
                     this.sendOrderStatusByMail(EnumMailType.SUPPLIER_CONTRACT_TO_BE_FILLED_OUT, publisherKey, orderKey);
                 }
             } else {
@@ -217,7 +217,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
     @Override
     @Transactional
-    public ProviderOrderDto uploadContractByProvider(UploadOrderContractCommand command, InputStream input) throws OrderException {
+    public ProviderOrderDto uploadContractByProvider(UploadOrderContractCommand command, InputStream input, boolean sendNotification) throws OrderException {
         try {
             Assert.notNull(command, "Expected a non-null command");
             Assert.isTrue(command.getSize() > 0, "Expected file size to be greater than 0");
@@ -231,8 +231,10 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             this.saveUploadedContract(order.getConsumer().getId(), command, false, input);
 
             // Send email notification to consumer
-            final UUID consumerKey = order.getConsumer().getKey();
-            this.sendOrderStatusByMail(EnumMailType.CONSUMER_FILLED_OUT_CONTRACT, consumerKey, command.getOrderKey());
+            if (sendNotification) {
+                final UUID consumerKey = order.getConsumer().getKey();
+                this.sendOrderStatusByMail(EnumMailType.CONSUMER_FILLED_OUT_CONTRACT, consumerKey, command.getOrderKey());
+            }
 
             return order;
         } catch (final OrderException ex) {
@@ -273,7 +275,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
     @Override
     public Path resolveOrderContractPath(UUID providerKey, UUID orderKey) {
-        final ProviderOrderDto order = this.orderRepository.findOrderObjectByKeyAndProvider(providerKey, orderKey).orElse(null);
+        final ProviderOrderDto order = this.orderRepository.findObjectByProviderAndKeyAndStatusNotCreated(providerKey, orderKey).orElse(null);
         if (order == null) {
             return null;
         }

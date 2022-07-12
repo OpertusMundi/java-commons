@@ -966,7 +966,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         try {
             final AccountEntity  account        = this.getAccount(command.getUserKey());
             final CustomerEntity customer       = account.getProfile().getConsumer();
-            final OrderEntity    order          = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).orElse(null);
+            final OrderEntity    order          = this.orderRepository.findByKey(command.getOrderKey()).orElse(null);
 
             // Check customer
             this.ensureCustomer(customer, command.getUserKey());
@@ -1041,7 +1041,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         try {
             final AccountEntity  account        = this.getAccount(command.getUserKey());
             final CustomerEntity customer       = account.getProfile().getConsumer();
-            final OrderEntity    order          = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).orElse(null);
+            final OrderEntity    order          = this.orderRepository.findByKey(command.getOrderKey()).orElse(null);
 
             // Check customer
             this.ensureCustomer(customer, command.getUserKey());
@@ -1078,7 +1078,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         try {
             final AccountEntity  account  = this.getAccount(command.getUserKey());
             final CustomerEntity customer = account.getProfile().getConsumer();
-            final OrderEntity    order    = this.orderRepository.findOrderEntityByKey(command.getOrderKey()).orElse(null);
+            final OrderEntity    order    = this.orderRepository.findByKey(command.getOrderKey()).orElse(null);
 
             // Check customer
             this.ensureCustomer(customer, command.getUserKey());

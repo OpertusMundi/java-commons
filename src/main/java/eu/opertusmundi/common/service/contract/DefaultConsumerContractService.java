@@ -46,8 +46,7 @@ public class DefaultConsumerContractService implements ConsumerContractService {
         try {
             Assert.isNull(command.getPath(), "Expected a null contract path");
 
-            final ContractParametersDto parameters   = contractParametersFactory.create(command.getOrderKey());
-            final Path                  contractPath = contractFileManager.resolveMasterContractPath(
+            final Path contractPath = contractFileManager.resolveMasterContractPath(
                 command.getUserId(),
                 command.getOrderKey(),
                 command.getItemIndex(),
@@ -57,7 +56,8 @@ public class DefaultConsumerContractService implements ConsumerContractService {
             command.setDraft(true);
 
             if (!command.getPath().toFile().exists()) {
-                final byte[] result = pdfService.renderConsumerPDF(parameters, command);
+                final ContractParametersDto parameters = contractParametersFactory.create(command.getOrderKey());
+                final byte[]                result     = pdfService.renderConsumerPDF(parameters, command);
 
                 // Save contract to file
                 this.save(command.getPath(), result);

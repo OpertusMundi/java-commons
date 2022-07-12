@@ -195,7 +195,7 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
 
     private ObjectNode populatePurchaseApprovedBySupplierModel(Map<String, Object> variables, ObjectNode data) {
         final UUID            orderKey        = UUID.fromString((String) variables.get("orderKey"));
-        final OrderEntity     orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderEntity     orderEntity     = orderRepository.findByKey(orderKey).get();
         final OrderItemEntity orderItemEntity = orderEntity.getItems().get(0);
 
         data.put("orderId", orderEntity.getReferenceNumber());

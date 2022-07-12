@@ -42,10 +42,13 @@ public interface OrderFulfillmentService {
      * Fill out the contract with the consumer's info
      *
      * @param command
+     * @param input
+     * @param sendNotification
+     *
      * @return
      * @throws OrderException if order not found or order status is invalid
      */
-    ProviderOrderDto uploadContractByProvider(UploadOrderContractCommand command, InputStream input) throws OrderException;
+    ProviderOrderDto uploadContractByProvider(UploadOrderContractCommand command, InputStream input, boolean sendNotification) throws OrderException;
 
     /**
      * Resolve path of an order uploaded contract

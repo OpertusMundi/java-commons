@@ -314,7 +314,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 
         final AddressEmbeddable consumerAddress = ((CustomerIndividualEntity) account.getConsumer()).getAddress();
 
-        final OrderEntity     orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderEntity     orderEntity     = orderRepository.findByKey(orderKey).get();
         final OrderItemEntity orderItemEntity = orderEntity.getItems().get(0);
 
         // TODO: Add shipping address to order
@@ -352,7 +352,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
         final UUID orderKey = UUID.fromString((String) builder.get("orderKey"));
 
         final AccountEntity 	account 		= this.accountRepository.findOneByKey(userKey).get();
-        final OrderEntity     	orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderEntity     	orderEntity     = orderRepository.findByKey(orderKey).get();
         final OrderItemEntity	orderItemEntity = orderEntity.getItems().get(0);
         final AccountEntity		customerEntity	= orderEntity.getConsumer();
 
@@ -372,7 +372,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
         final UUID orderKey = UUID.fromString((String) builder.get("orderKey"));
 
         final AccountEntity 	account 		= this.accountRepository.findOneByKey(userKey).get();
-        final OrderEntity     	orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderEntity     	orderEntity     = orderRepository.findByKey(orderKey).get();
         final OrderItemEntity	orderItemEntity = orderEntity.getItems().get(0);
         final AccountEntity		customerEntity	= orderEntity.getConsumer();
 
@@ -391,7 +391,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
         final UUID orderKey = UUID.fromString((String) builder.get("orderKey"));
 
         final AccountEntity 	account 		= this.accountRepository.findOneByKey(userKey).get();
-        final OrderEntity     	orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderEntity     	orderEntity     = orderRepository.findByKey(orderKey).get();
         final OrderItemEntity	orderItemEntity = orderEntity.getItems().get(0);
         final AccountEntity		customerEntity	= orderEntity.getConsumer();
 
@@ -498,7 +498,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 
         final AccountEntity account = this.accountRepository.findOneByKey(userKey).get();
 
-        final OrderEntity     orderEntity     	= orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderEntity     orderEntity     	= orderRepository.findByKey(orderKey).get();
         final OrderItemEntity orderItemEntity 	= orderEntity.getItems().get(0);
 
         final AccountEntity			customer		= orderEntity.getConsumer();
@@ -545,7 +545,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 
         final AccountEntity account = this.accountRepository.findOneByKey(userKey).get();
 
-        final OrderEntity     orderEntity     	= orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderEntity     orderEntity     	= orderRepository.findByKey(orderKey).get();
         final OrderItemEntity orderItemEntity 	= orderEntity.getItems().get(0);
 
         builder
@@ -563,7 +563,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 
         final AccountEntity account = this.accountRepository.findOneByKey(userKey).get();
 
-        final OrderEntity     orderEntity     	= orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderEntity     orderEntity     	= orderRepository.findByKey(orderKey).get();
 
         builder
         .setRecipientName(account.getFullName())
@@ -578,7 +578,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 
         final AccountEntity account = this.accountRepository.findOneByKey(userKey).get();
 
-        final OrderEntity     orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderEntity     orderEntity     = orderRepository.findByKey(orderKey).get();
         final OrderItemEntity orderItemEntity = orderEntity.getItems().get(0);
 
         builder
@@ -595,7 +595,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
         final UUID orderKey = UUID.fromString((String) builder.get("orderKey"));
 
         final AccountEntity account 	= this.accountRepository.findOneByKey(userKey).get();
-        final OrderEntity 	orderEntity	= orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderEntity 	orderEntity	= orderRepository.findByKey(orderKey).get();
 
         builder
             .setRecipientName(account.getFullName())
@@ -611,7 +611,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 
         final AccountEntity account = this.accountRepository.findOneByKey(userKey).get();
 
-        final OrderEntity     orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderEntity     orderEntity     = orderRepository.findByKey(orderKey).get();
         final OrderItemEntity orderItemEntity = orderEntity.getItems().get(0);
 
         builder
@@ -628,7 +628,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
         final UUID orderKey = UUID.fromString((String) builder.get("orderKey"));
 
         final AccountEntity account 	= this.accountRepository.findOneByKey(userKey).get();
-        final OrderEntity 	orderEntity	= orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderEntity 	orderEntity	= orderRepository.findByKey(orderKey).get();
 
         builder
             .setRecipientName(account.getFullName())
@@ -643,7 +643,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
         final UUID orderKey = UUID.fromString((String) builder.get("orderKey"));
 
         final AccountEntity account 	= this.accountRepository.findOneByKey(userKey).get();
-        final OrderEntity 	orderEntity	= orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderEntity 	orderEntity	= orderRepository.findByKey(orderKey).get();
 
         builder
             .setRecipientName(account.getFullName())
@@ -659,7 +659,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 
         final AccountEntity account 	= this.accountRepository.findOneByKey(userKey).get();
 
-        final OrderEntity     orderEntity     	= orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderEntity     orderEntity     	= orderRepository.findByKey(orderKey).get();
         final OrderItemEntity orderItemEntity 	= orderEntity.getItems().get(0);
 
         builder
@@ -675,7 +675,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
         final UUID orderKey = UUID.fromString((String) builder.get("orderKey"));
 
         final AccountEntity 	account 		= this.accountRepository.findOneByKey(userKey).get();
-        final OrderEntity     	orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderEntity     	orderEntity     = orderRepository.findByKey(orderKey).get();
         final OrderItemEntity	orderItemEntity = orderEntity.getItems().get(0);
 
         builder
@@ -693,7 +693,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
         final UUID orderKey = UUID.fromString((String) builder.get("orderKey"));
 
         final AccountEntity 	account 		= this.accountRepository.findOneByKey(userKey).get();
-        final OrderEntity     	orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderEntity     	orderEntity     = orderRepository.findByKey(orderKey).get();
         final OrderItemEntity	orderItemEntity = orderEntity.getItems().get(0);
 
         builder

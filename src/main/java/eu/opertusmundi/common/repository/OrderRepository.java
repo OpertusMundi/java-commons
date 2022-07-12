@@ -10,7 +10,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,16 +39,16 @@ import io.jsonwebtoken.lang.Assert;
 public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
     @Query("SELECT a FROM Account a WHERE a.id = :id")
-    Optional<AccountEntity> findAccountById(@Param("id") Integer id);
+    Optional<AccountEntity> findAccountById(Integer id);
 
     @Query("SELECT a FROM Account a WHERE a.key = :key")
-    Optional<AccountEntity> findAccountByKey(@Param("key") UUID key);
+    Optional<AccountEntity> findAccountByKey(UUID key);
 
     @Query("SELECT c FROM Cart c WHERE c.id = :id")
-    Optional<CartEntity> findCartById(@Param("id") Integer id);
+    Optional<CartEntity> findCartById(Integer id);
 
     @Query("SELECT o FROM Order o WHERE o.key = :key")
-    Optional<OrderEntity> findOrderEntityByKey(@Param("key") UUID key);
+    Optional<OrderEntity> findByKey(UUID key);
 
     /**
      * Find an order created by a specific consumer
@@ -63,9 +62,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     @Query("SELECT o FROM Order o "
          + "WHERE o.key = :orderKey and o.consumer.key = :consumerKey and o.status <> 'CREATED'"
     )
-    Optional<OrderEntity> findEntityByKeyAndConsumerAndStatusNotCreated(
-        @Param("consumerKey") UUID consumerKey, @Param("orderKey") UUID orderKey
-    );
+    Optional<OrderEntity> findByConsumerAndKeyAndStatusNotCreated(UUID consumerKey, UUID orderKey);
 
     /**
      * Find an order created by a specific consumer
@@ -78,22 +75,14 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     @Query("SELECT o FROM Order o "
          + "WHERE o.key = :orderKey and o.consumer.key = :consumerKey"
     )
-    Optional<OrderEntity> findEntityByKeyAndConsumerKey(UUID consumerKey, UUID orderKey);
+    Optional<OrderEntity> findEntityByConsumerAndKey(UUID consumerKey, UUID orderKey);
 
-    /**
-     * Find an order created by a specific consumer
-     *
-     *
-     * @param consumerKey
-     * @param orderKey
-     * @return
-     */
-    default Optional<ConsumerOrderDto> findObjectByKeyAndConsumerKey(UUID consumerKey, UUID orderKey) {
-        return this.findEntityByKeyAndConsumerKey(consumerKey, orderKey).map(o -> o.toConsumerDto(true, false));
+    default Optional<ConsumerOrderDto> findObjectByConsumerAndKey(UUID consumerKey, UUID orderKey) {
+        return this.findEntityByConsumerAndKey(consumerKey, orderKey).map(o -> o.toConsumerDto(true, false));
     }
 
     /**
-     * Find an order linked to a specific provider.
+     * Find an order created for a specific provider
      *
      * Orders support only a single item. Provider orders are the ones that
      * reference an item with the same provider.
@@ -107,7 +96,32 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     @Query("SELECT distinct i.order FROM OrderItem i "
          + "WHERE i.order.key = :orderKey and i.provider.key = :providerKey and i.order.status <> 'CREATED'"
     )
-    Optional<OrderEntity> findOrderEntityByKeyAndProviderKey(UUID providerKey, UUID orderKey);
+    Optional<OrderEntity> findEntityByProviderAndKeyAndStatusNotCreated(UUID providerKey, UUID orderKey);
+
+    default Optional<ProviderOrderDto> findObjectByProviderAndKeyAndStatusNotCreated(UUID providerKey, UUID orderKey) {
+        return this.findEntityByProviderAndKeyAndStatusNotCreated(providerKey, orderKey).map(o -> o.toProviderDto(true));
+    }
+
+    /**
+     * Find an order created for a specific provider
+     *
+     * Orders support only a single item. Provider orders are the ones that
+     * reference an item with the same provider.
+     *
+     * This method does not return orders with status <b>CREATED</b>.
+     *
+     * @param providerKey
+     * @param orderKey
+     * @return
+     */
+    @Query("SELECT distinct i.order FROM OrderItem i "
+         + "WHERE i.order.key = :orderKey and i.provider.key = :providerKey"
+    )
+    Optional<OrderEntity> findEntityByProviderAndKey(UUID providerKey, UUID orderKey);
+
+    default Optional<ProviderOrderDto> findObjectByProviderAndKey(UUID providerKey, UUID orderKey) {
+        return this.findEntityByProviderAndKey(providerKey, orderKey).map(o -> o.toProviderDto(true));
+    }
 
     @Query("SELECT  distinct o "
          + "FROM    Order o INNER JOIN o.items i "
@@ -170,15 +184,10 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
           + "        (:referenceNumber is null or o.referenceNumber like :referenceNumber) and "
           + "        (o.status in :status or :status is null) and (o.status <> 'CREATED')"
      )
-     Page<OrderEntity> findAllForProvider(
-         @Param("providerKey") UUID providerKey,
-         @Param("referenceNumber")String referenceNumber,
-         @Param("status") Set<EnumOrderStatus> status,
-         Pageable pageable
-     );
+    Page<OrderEntity> findAllForProvider(UUID providerKey, String referenceNumber, Set<EnumOrderStatus> status, Pageable pageable);
 
     @Query("SELECT p FROM PayIn p WHERE p.payIn = :payIn")
-    Optional<PayInEntity> findPayInById(@Param("payIn") String payIn);
+    Optional<PayInEntity> findPayInById(String payIn);
 
     default Page<OrderDto> findAllObjects(
         UUID consumerKey, String consumerEmail, UUID providerKey, String referenceNumber, Set<EnumOrderStatus> status,
@@ -222,15 +231,11 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     }
 
     default Optional<HelpdeskOrderDto> findOrderObjectByKey(UUID key) {
-        return this.findOrderEntityByKey(key).map(o -> o.toHelpdeskDto(true));
+        return this.findByKey(key).map(o -> o.toHelpdeskDto(true));
     }
 
-    default Optional<ConsumerOrderDto> findOrderObjectByKeyAndConsumer(UUID consumerKey, UUID orderKey) {
-        return this.findEntityByKeyAndConsumerAndStatusNotCreated(consumerKey, orderKey).map(o -> o.toConsumerDto(true, true));
-    }
-
-    default Optional<ProviderOrderDto> findOrderObjectByKeyAndProvider(UUID providerKey, UUID orderKey) {
-        return this.findOrderEntityByKeyAndProviderKey(providerKey, orderKey).map(o -> o.toProviderDto(true));
+    default Optional<ConsumerOrderDto> findObjectByKeyAndConsumerAndStatusNotCreated(UUID consumerKey, UUID orderKey) {
+        return this.findByConsumerAndKeyAndStatusNotCreated(consumerKey, orderKey).map(o -> o.toConsumerDto(true, true));
     }
 
     @Transactional(readOnly = false)
@@ -307,8 +312,8 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     @Transactional(readOnly = false)
     default void setPayIn(UUID orderKey, String payInProviderId, UUID accountKey) throws Exception {
         final AccountEntity account = this.findAccountByKey(accountKey).orElse(null);
-        final OrderEntity order = this.findOrderEntityByKey(orderKey).orElse(null);
-        final PayInEntity payIn = this.findPayInById(payInProviderId).orElse(null);
+        final OrderEntity   order   = this.findByKey(orderKey).orElse(null);
+        final PayInEntity   payIn   = this.findPayInById(payInProviderId).orElse(null);
 
         Assert.notNull(order, "Expected a non-null order");
         Assert.notNull(payIn, "Expected a non-null payIn");
@@ -343,7 +348,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
      */
     @Transactional(readOnly = false)
     default void setStatus(UUID orderKey, EnumOrderStatus status) {
-        final OrderEntity order = this.findOrderEntityByKey(orderKey).orElse(null);
+        final OrderEntity order = this.findByKey(orderKey).orElse(null);
 
         // Update only on status changes
         if (order.getStatus() == status) {
@@ -364,7 +369,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
     @Transactional(readOnly = false)
     default void setContractSignedDate(UUID orderKey, ZonedDateTime contractSignedOn) throws Exception {
-        final OrderEntity order = this.findOrderEntityByKey(orderKey).orElse(null);
+        final OrderEntity order = this.findByKey(orderKey).orElse(null);
 
         Assert.notNull(order, "Expected a non-null order");
         Assert.isTrue(order.getItems().size() == 1, "Expected a single order item");
@@ -385,7 +390,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
      */
     @Transactional(readOnly = false)
     default ProviderOrderDto acceptOrderByProvider(UUID providerKey, UUID orderKey) throws Exception {
-        final OrderEntity order = this.findOrderEntityByKeyAndProviderKey(providerKey, orderKey).orElse(null);
+        final OrderEntity order = this.findEntityByProviderAndKeyAndStatusNotCreated(providerKey, orderKey).orElse(null);
 
         if (order == null) {
             throw new OrderException(OrderMessageCode.ORDER_NOT_FOUND, "Order not found");
@@ -421,7 +426,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
     @Transactional(readOnly = false)
     default ProviderOrderDto rejectOrderByProvider(UUID providerKey, UUID orderKey, String reason) throws Exception {
-        final OrderEntity order = this.findOrderEntityByKeyAndProviderKey(providerKey, orderKey).orElse(null);
+        final OrderEntity order = this.findEntityByProviderAndKeyAndStatusNotCreated(providerKey, orderKey).orElse(null);
 
         if (order == null) {
             throw new OrderException(OrderMessageCode.ORDER_NOT_FOUND, "Order not found");
@@ -448,7 +453,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
     @Transactional(readOnly = false)
     default ProviderOrderDto uploadContractByProvider(UUID providerKey, UUID orderKey, boolean updateStatus) throws OrderException {
-        final OrderEntity order = this.findOrderEntityByKeyAndProviderKey(providerKey, orderKey).orElse(null);
+        final OrderEntity order = this.findEntityByProviderAndKeyAndStatusNotCreated(providerKey, orderKey).orElse(null);
 
         if (order == null) {
             throw new OrderException(OrderMessageCode.ORDER_NOT_FOUND, "Order not found");
@@ -475,7 +480,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
     @Transactional(readOnly = false)
     default ConsumerOrderDto acceptContractByConsumer(UUID consumerKey, UUID orderKey) throws Exception {
-        final OrderEntity order = this.findEntityByKeyAndConsumerAndStatusNotCreated(consumerKey, orderKey)
+        final OrderEntity order = this.findByConsumerAndKeyAndStatusNotCreated(consumerKey, orderKey)
             .orElse(null);
 
         if (order == null) {
@@ -503,7 +508,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
     @Transactional(readOnly = false)
     default ProviderOrderDto sendOrderByProvider(OrderShippingCommandDto command) throws Exception {
-        final OrderEntity order = this.findOrderEntityByKeyAndProviderKey(command.getPublisherKey(), command.getOrderKey()).orElse(null);
+        final OrderEntity order = this.findEntityByProviderAndKeyAndStatusNotCreated(command.getPublisherKey(), command.getOrderKey()).orElse(null);
 
         if (order == null) {
             throw new OrderException(OrderMessageCode.ORDER_NOT_FOUND, "Order not found");
@@ -532,7 +537,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
     @Transactional(readOnly = false)
     default ConsumerOrderDto receiveOrderByConsumer(OrderDeliveryCommand command) throws Exception {
-        final OrderEntity order = this.findEntityByKeyAndConsumerAndStatusNotCreated(command.getConsumerKey(), command.getOrderKey())
+        final OrderEntity order = this.findByConsumerAndKeyAndStatusNotCreated(command.getConsumerKey(), command.getOrderKey())
             .orElse(null);
 
         if (order == null) {

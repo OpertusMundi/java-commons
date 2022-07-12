@@ -1669,7 +1669,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     @Override
     public byte[] renderConsumerPDF(ContractParametersDto contractParametersDto, ConsumerContractCommand command) throws IOException {
         final UUID             orderKey        = command.getOrderKey();
-        final OrderEntity      orderEntity     = orderRepository.findOrderEntityByKey(orderKey).get();
+        final OrderEntity      orderEntity     = orderRepository.findByKey(orderKey).get();
         final OrderItemEntity  orderItemEntity = orderEntity.getItems().get(0);
         final AccountEntity    provider        = orderItemEntity.getProvider();
         final EnumContractType contractType    = orderItemEntity.getContractType();
