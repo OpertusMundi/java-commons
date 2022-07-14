@@ -680,7 +680,7 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     @Override
-    public void unpublish(UUID publisherKey, String pid) throws CatalogueServiceException {
+    public CatalogueItemDetailsDto unpublish(UUID publisherKey, String pid) throws CatalogueServiceException {
         try {
             // Remove all references from favorites
             this.favoriteRepository.deleteAllByAssetId(pid);
@@ -706,6 +706,7 @@ public class DefaultCatalogueService implements CatalogueService {
             if (item != null) {
                 this.catalogueClient.getObject().deletePublished(pid);
             }
+            return item;
         } catch (final CatalogueServiceException ex) {
             throw ex;
         } catch (final Exception ex) {

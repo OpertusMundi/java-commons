@@ -162,7 +162,8 @@ public interface CatalogueService {
      *
      * @param publisherKey
      * @param pid
+     * @return The removed catalogue item
      * @throws CatalogueServiceException
      */
-    void unpublish(UUID publisherKey, String pid) throws CatalogueServiceException;
+    CatalogueItemDetailsDto unpublish(UUID publisherKey, String pid) throws CatalogueServiceException;
 }
