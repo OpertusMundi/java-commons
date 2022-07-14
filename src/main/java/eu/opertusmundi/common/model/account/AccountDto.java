@@ -34,6 +34,9 @@ public class AccountDto implements Serializable {
     @JsonIgnore
     private boolean blocked;
 
+    @JsonIgnore
+    private EnumAccountActiveTask activeTask;
+
     @Schema(hidden = true, description = "Account type")
     @JsonInclude(Include.NON_NULL)
     private EnumAccountType type;
@@ -107,7 +110,7 @@ public class AccountDto implements Serializable {
     @Schema(hidden = true, description = "Parent vendor account")
     @JsonInclude(Include.NON_NULL)
     private AccountDto parent;
-    
+
     public boolean hasRole(EnumRole role) {
         if (this.roles == null) {
             return false;

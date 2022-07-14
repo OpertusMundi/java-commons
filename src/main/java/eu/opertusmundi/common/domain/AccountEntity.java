@@ -35,9 +35,11 @@ import eu.opertusmundi.common.model.EnumAuthProvider;
 import eu.opertusmundi.common.model.EnumRole;
 import eu.opertusmundi.common.model.account.AccountDto;
 import eu.opertusmundi.common.model.account.AccountProfileCommandDto;
+import eu.opertusmundi.common.model.account.EnumAccountActiveTask;
 import eu.opertusmundi.common.model.account.EnumActivationStatus;
 import eu.opertusmundi.common.model.account.EnumCustomerType;
 import eu.opertusmundi.common.model.account.SimpleAccountDto;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -50,138 +52,107 @@ import lombok.Setter;
         @UniqueConstraint(name = "uq_account_email", columnNames = {"`email`"}),
     }
 )
+@Getter
+@Setter
 public class AccountEntity {
 
     @Id
     @Column(name = "`id`", updatable = false)
     @SequenceGenerator(sequenceName = "web.account_id_seq", name = "account_id_seq", allocationSize = 1)
     @GeneratedValue(generator = "account_id_seq", strategy = GenerationType.SEQUENCE)
-    @Getter
+    @Setter(AccessLevel.PRIVATE)
     private Integer id;
 
     @NotNull
     @NaturalId
     @Column(name = "key", updatable = false, columnDefinition = "uuid")
-    @Getter
-    private final UUID key = UUID.randomUUID();
+    @Setter(AccessLevel.PRIVATE)
+    private UUID key = UUID.randomUUID();
 
     @NotNull
     @Column(name = "`type`", nullable = false)
     @Enumerated(EnumType.STRING)
-    @Getter
-    @Setter
     private EnumAccountType type;
 
     @OneToOne(
         optional = true, fetch = FetchType.LAZY
     )
     @JoinColumn(name = "`parent`", foreignKey = @ForeignKey(name = "fk_account_parent_account"))
-    @Getter
-    @Setter
     private AccountEntity parent;
 
     /**
      * Account registration workflow definition
      */
     @Column(name = "`registration_process_definition`")
-    @Getter
-    @Setter
     private String processDefinition;
 
     /**
      * Account registration workflow process instance
      */
     @Column(name = "`registration_process_instance`")
-    @Getter
-    @Setter
     private String processInstance;
 
     @OneToOne(mappedBy = "account", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
-    @Getter
-    @Setter
     private AccountProfileEntity profile;
 
     @Column(name = "`active`")
-    @Getter
-    @Setter
     private boolean active = true;
 
     @Column(name = "`blocked`")
-    @Getter
-    @Setter
     private boolean blocked = false;
 
     @NotNull
     @Email
     @Column(name = "`email`", nullable = false, length = 120)
-    @Getter
-    @Setter
     private String email;
 
     @Column(name = "`email_verified`")
-    @Getter
-    @Setter
     private boolean emailVerified = false;
 
     @Column(name = "`email_verified_at`")
-    @Getter
-    @Setter
     private ZonedDateTime emailVerifiedAt;
 
     @Column(name = "`firstname`", length = 64)
-    @Getter
-    @Setter
     private String firstName;
 
     @Column(name = "`lastname`", length = 64)
-    @Getter
-    @Setter
     private String lastName;
 
     @NotNull
     @Pattern(regexp = "[a-z][a-z]")
     @Column(name = "`locale`")
-    @Getter
-    @Setter
     private String locale;
 
     @Column(name = "`password`")
-    @Getter
-    @Setter
     private String password;
 
     @Column(name = "`registered_at`", nullable = false)
-    @Getter
-    private final ZonedDateTime registeredAt = ZonedDateTime.now();
+    @Setter(AccessLevel.PRIVATE)
+    private ZonedDateTime registeredAt = ZonedDateTime.now();
 
     @NotNull
     @Column(name = "`activation_status`", nullable = false)
     @Enumerated(EnumType.STRING)
-    @Getter
-    @Setter
     private EnumActivationStatus activationStatus;
 
     @Column(name = "`activation_at`")
-    @Getter
-    @Setter
     private ZonedDateTime activatedAt;
 
     @Column(name = "`idp_name`", length = 20)
     @Enumerated(EnumType.STRING)
-    @Getter
-    @Setter
     private EnumAuthProvider idpName;
 
     @NotNull
     @Column(name = "`terms_accepted`")
-    @Getter
-    @Setter
     private boolean termsAccepted = false;
 
     @Column(name = "`terms_accepted_at`")
-    @Getter
-    @Setter
     private ZonedDateTime termsAcceptedAt;
+
+    @NotNull
+    @Column(name = "`active_task`")
+    @Enumerated(EnumType.STRING)
+    private EnumAccountActiveTask activeTask;
 
     @OneToMany(
         targetEntity = AccountRoleEntity.class,
@@ -190,7 +161,13 @@ public class AccountEntity {
         cascade = CascadeType.ALL,
         orphanRemoval = true
     )
-    private final List<AccountRoleEntity> roles = new ArrayList<>();
+    @Setter(AccessLevel.PRIVATE)
+    private List<AccountRoleEntity> roles = new ArrayList<>();
+
+    @Transient
+    public UUID getParentKey() {
+        return this.getParent() == null ? this.key : this.getParent().getKey();
+    }
 
     @Transient
     public String getFullName() {
@@ -282,6 +259,7 @@ public class AccountEntity {
         a.setActivatedAt(this.activatedAt);
         a.setActivationStatus(this.activationStatus);
         a.setActive(this.active);
+        a.setActiveTask(this.activeTask);
         a.setBlocked(this.blocked);
         a.setEmail(this.email);
         a.setEmailVerified(this.emailVerified);

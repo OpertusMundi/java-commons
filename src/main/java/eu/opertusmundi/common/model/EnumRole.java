@@ -10,6 +10,10 @@ public enum EnumRole {
      */
     ROLE_USER,
     /**
+     * System tester
+     */
+    ROLE_TESTER,
+    /**
      * Role for enabling additional features for development
      */
     ROLE_DEVELOPER,
