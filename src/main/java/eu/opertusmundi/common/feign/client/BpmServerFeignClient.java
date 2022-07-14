@@ -23,6 +23,7 @@ import org.camunda.bpm.engine.rest.dto.runtime.IncidentDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceWithVariablesDto;
 import org.camunda.bpm.engine.rest.dto.runtime.StartProcessInstanceDto;
+import org.camunda.bpm.engine.rest.dto.runtime.VariableInstanceDto;
 import org.camunda.bpm.engine.rest.dto.task.CompleteTaskDto;
 import org.camunda.bpm.engine.rest.dto.task.TaskDto;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -73,7 +74,7 @@ public interface BpmServerFeignClient {
      */
     @GetMapping(value = "/process-definition/{id}/xml", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<ProcessDefinitionDiagramDto> getBpmnXml(@PathVariable("id") String processDefinitionId);
-    
+
     /**
      * Instantiates a given process definition. Process variables and business
      * key may be supplied in the request body.
@@ -125,6 +126,34 @@ public interface BpmServerFeignClient {
         @RequestParam(name = "processDefinitionKey", required = false) String processDefinitionKey,
         @RequestParam(name = "processInstanceBusinessKey", required = false) String businessKey,
         @RequestParam(name = "processInstanceId", required = false) String processInstanceId
+    );
+
+    /**
+     * Queries for historic variable instances that fulfill the given parameters
+     *
+     * @param variableName Filter by variable name
+     * @param variableValue Filter by variable value. Is treated as a {@code String} object on server side
+     * @return
+     *
+     * @see https://docs.camunda.org/manual/latest/reference/rest/history/variable-instance/get-variable-instance-query/
+     */
+    @GetMapping(value = "/history/variable-instance", consumes = "application/json")
+    List<VariableInstanceDto> getHistoryVariables(
+        @RequestParam("variableName") String variableName,
+        @RequestParam("variableValue") String variableValue
+    );
+
+    /**
+     * Queries for variable instances that fulfill the given parameters.
+     *
+     * @param variableValues
+     * @return
+     *
+     * @see https://docs.camunda.org/manual/latest/reference/rest/variable-instance/get-query/
+     */
+    @GetMapping(value = "/variable-instance", consumes = "application/json")
+    List<VariableInstanceDto> getVariables(
+        @RequestParam("variableValues") String variableValues
     );
 
     /**
@@ -345,7 +374,7 @@ public interface BpmServerFeignClient {
 
     /**
      * Submits a list of modification instructions to change a process instance's execution state. A modification instruction is one of the following:
-     * 
+     *
      * <ul>
      *  <li>Starting execution before an activity</li>
      *  <li>Starting execution after an activity on its single outgoing sequence flow</li>
@@ -360,5 +389,5 @@ public interface BpmServerFeignClient {
         @PathVariable("id") String processInstanceId,
         ModificationDto modification
     );
-    
+
 }

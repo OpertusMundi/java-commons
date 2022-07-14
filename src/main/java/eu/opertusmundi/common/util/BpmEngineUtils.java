@@ -11,6 +11,7 @@ import org.camunda.bpm.engine.rest.dto.externaltask.SetRetriesForExternalTasksDt
 import org.camunda.bpm.engine.rest.dto.message.CorrelationMessageDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
 import org.camunda.bpm.engine.rest.dto.runtime.StartProcessInstanceDto;
+import org.camunda.bpm.engine.rest.dto.runtime.VariableInstanceDto;
 import org.camunda.bpm.engine.rest.dto.task.CompleteTaskDto;
 import org.camunda.bpm.engine.rest.dto.task.TaskDto;
 import org.slf4j.Logger;
@@ -117,6 +118,15 @@ public class BpmEngineUtils {
         this.bpmClient.getObject().setExternalTaskRetries(request);
     }
 
+    public List<VariableInstanceDto> getHistoryVariables(String variableName, String variableValue) {
+        return this.bpmClient.getObject().getHistoryVariables(variableName, variableValue);
+    }
+    
+    public List<VariableInstanceDto> getVariables(String variableName, String variableValue) {
+        final String variableValues = variableName + "_eq_" + variableValue;
+        return this.bpmClient.getObject().getVariables(variableValues);
+    }
+    
     public void deleteProcessInstance(String processInstanceId) {
         this.bpmClient.getObject().deleteProcessInstance(processInstanceId);
     }
