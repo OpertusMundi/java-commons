@@ -17,8 +17,11 @@ public enum EnumWorkflow {
     PUBLISH_USER_SERVICE                 ("user-publish-service"),
     REMOVE_USER_SERVICE                  ("user-remove-service"),
     SUBSCRIPTION_BILLING                 ("workflow-subscription-billing"),
-    SYSTEM_DATABASE_MAINTENANCE          ("system-database-maintenance"),
     VENDOR_ACCOUNT_REGISTRATION          ("vendor-account-registration"),
+
+    // System Maintenance workflows
+    SYSTEM_MAINTENANCE_DATABASE          ("system-maintenance-database"),
+    SYSTEM_MAINTENANCE_DELETE_USER       ("system-maintenance-remove-all-user-data"),
     ;
 
     @Getter
