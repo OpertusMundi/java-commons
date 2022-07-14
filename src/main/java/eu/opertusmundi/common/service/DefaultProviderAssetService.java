@@ -733,6 +733,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                     .variableAsString("type", command.getType().toString())
                     .variableAsBoolean("ingested", command.isIngested())
                     .variableAsString("status", newStatus.toString())
+                    .variableAsString("assetTitle", draft.getTitle())
+                    .variableAsString("assetVersion", draft.getVersion())
+                    .variableAsString("assetType", draft.getType().toString())
                     .build();
 
                 instance = this.bpmEngine.startProcessDefinitionByKey(
