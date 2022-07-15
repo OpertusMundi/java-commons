@@ -125,7 +125,7 @@ public class DefaultAccountClientService implements AccountClientService {
             if (keycloakAdminService != null) {
                 final UUID clientUuid = keycloakAdminService.getClientById(realm, clientId.toString())
                     .map(ClientDto::getId).get();
-                keycloakAdminService.deleteClient(clientUuid);
+                keycloakAdminService.deleteClient(realm, clientUuid);
             }
         } catch (final ServiceException ex) {
             throw ex;
