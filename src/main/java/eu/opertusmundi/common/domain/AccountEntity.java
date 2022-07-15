@@ -152,7 +152,7 @@ public class AccountEntity {
     @NotNull
     @Column(name = "`active_task`")
     @Enumerated(EnumType.STRING)
-    private EnumAccountActiveTask activeTask;
+    private EnumAccountActiveTask activeTask = EnumAccountActiveTask.NONE;
 
     @OneToMany(
         targetEntity = AccountRoleEntity.class,
