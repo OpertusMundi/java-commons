@@ -141,6 +141,10 @@ public class DefaultUserServiceService implements UserServiceService {
     @Override
     @Transactional
     public UserServiceDto findOne(UUID ownerKey, UUID parentKey, UUID serviceKey) {
+        return this.findOne(ownerKey, parentKey, serviceKey, false);
+    }
+
+    private UserServiceDto findOne(UUID ownerKey, UUID parentKey, UUID serviceKey, boolean includeHelpdeskDetails) {
         Assert.notNull(ownerKey, "Expected a non-null owner key");
         Assert.notNull(parentKey, "Expected a non-null parent key");
         Assert.notNull(serviceKey, "Expected a non-null service key");
@@ -149,7 +153,7 @@ public class DefaultUserServiceService implements UserServiceService {
             ? this.userServiceRepository.findOneByOwnerAndKey(ownerKey, serviceKey).orElse(null)
             : this.userServiceRepository.findOneByOwnerAndParentAndKey(ownerKey, parentKey, serviceKey).orElse(null);
 
-        final UserServiceDto service = e != null ? e.toDto() : null;
+        final UserServiceDto service = e != null ? e.toDto(true) : null;
         if (service != null) {
             this.injectProperties(service);
         }
@@ -161,7 +165,7 @@ public class DefaultUserServiceService implements UserServiceService {
     public UserServiceDto findOne(UUID serviceKey) {
         final UserServiceEntity e = this.userServiceRepository.findOneByKey(serviceKey).orElse(null);
 
-        final UserServiceDto service = e != null ? e.toDto(true) : null;
+        final UserServiceDto service = e != null ? e.toDto() : null;
         if (service != null) {
             this.injectProperties(service);
         }
@@ -207,6 +211,7 @@ public class DefaultUserServiceService implements UserServiceService {
                 final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
                     .variableAsString(EnumProcessInstanceVariable.START_USER_KEY.getValue(), command.getOwnerKey().toString())
                     .variableAsString("ownerKey", command.getOwnerKey().toString())
+                    .variableAsString("ownerName", service.getOwner().getUsername())
                     .variableAsString("parentKey", command.getParentKey().toString())
                     .variableAsString("serviceKey", businessKey)
                     .variableAsString("status", service.getStatus().toString())
@@ -460,6 +465,7 @@ public class DefaultUserServiceService implements UserServiceService {
                         final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
                             .variableAsString(EnumProcessInstanceVariable.START_USER_KEY.getValue(), ownerKey.toString())
                             .variableAsString("ownerKey", ownerKey.toString())
+                            .variableAsString("ownerName", service.getOwner().getUsername())
                             .variableAsString("parentKey", parentKey.toString())
                             .variableAsUuid("serviceKey", serviceKey)
                             .variableAsString("serviceTitle", service.getTitle())
@@ -501,7 +507,7 @@ public class DefaultUserServiceService implements UserServiceService {
     private UserServiceDto ensureServiceAndStatus(
         UUID ownerKey, UUID parentKey, UUID assetKey, EnumUserServiceStatus... status
     ) throws UserServiceException {
-        final UserServiceDto service = this.findOne(ownerKey, parentKey, assetKey);
+        final UserServiceDto service = this.findOne(ownerKey, parentKey, assetKey, true);
 
         if (service == null) {
             throw new UserServiceException(UserServiceMessageCode.SERVICE_NOT_FOUND);

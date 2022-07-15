@@ -67,7 +67,6 @@ public class DefaultProviderRegistrationService extends AbstractCustomerRegistra
 
         final AccountDto account         = this.accountRepository.submitProviderRegistration(command);
         final boolean    isUpdate        = account.getProfile().getProvider().getCurrent() != null;
-        final UUID       userKey         = account.getKey();
         final UUID       registrationKey = account.getProfile().getProvider().getDraft().getKey();
 
         // Check if workflow exists
@@ -75,8 +74,10 @@ public class DefaultProviderRegistrationService extends AbstractCustomerRegistra
 
         if (instance == null) {
             final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
-                .variableAsString(EnumProcessInstanceVariable.START_USER_KEY.getValue(), userKey.toString())
-                .variableAsString("userKey", userKey.toString())
+                .variableAsString(EnumProcessInstanceVariable.START_USER_KEY.getValue(), account.getKey().toString())
+                .variableAsString("userId", account.getId().toString())
+                .variableAsString("userKey", account.getKey().toString())
+                .variableAsString("userName", account.getEmail())
                 .variableAsString("registrationKey", registrationKey.toString())
                 .variableAsBoolean("isUpdate", isUpdate)
                 .variableAsBoolean("isReviewRequired", true)

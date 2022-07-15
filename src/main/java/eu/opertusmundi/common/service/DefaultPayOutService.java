@@ -65,7 +65,9 @@ public class DefaultPayOutService implements PayOutService {
                 final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
                     .variableAsUuid(EnumProcessInstanceVariable.START_USER_KEY.getValue(), userKey)
                     .variableAsUuid("providerKey", payOut.getProvider().getKey())
+                    .variableAsString("providerName", payOut.getProvider().getEmail())
                     .variableAsUuid("payOutKey", payOutKey)
+                    .variableAsString("payOutBankwireRef", payOut.getBankwireRef())
                     .variableAsString("payOutId", null)
                     .variableAsString("payOutStatus", payOut.getStatus().toString())
                     .build();
