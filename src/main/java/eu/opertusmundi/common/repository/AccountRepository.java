@@ -57,26 +57,26 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
 
     @Query("SELECT r.account FROM AccountRole r WHERE r.role = :role")
     List<AccountEntity> findAllWithRole(EnumRole role);
-    
+
 	@Query("SELECT CAST(COUNT(DISTINCT r.account) AS java.math.BigDecimal) FROM AccountRole r WHERE r.role = :role")
 	Optional<BigDecimal> countUsersWithRole(EnumRole role);
-	
+
 	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(YEAR(r.grantedAt), CAST(COUNT(DISTINCT r.account) AS java.math.BigDecimal)) "
 		 + "FROM AccountRole r WHERE r.role = :role "
 		 + "GROUP BY YEAR(grantedAt)")
 	List<BigDecimalDataPoint> countUsersWithRolePerYear(EnumRole role);
-	
+
 	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(YEAR(grantedAt), MONTH(r.grantedAt), CAST(COUNT(DISTINCT r.account) AS java.math.BigDecimal)) "
 			 + "FROM AccountRole r WHERE r.role = :role "
 			 + "GROUP BY YEAR(grantedAt), MONTH(r.grantedAt)")
 	List<BigDecimalDataPoint> countUsersWithRolePerMonth(EnumRole role);
-	 
+
 	// TODO: WEEK(r.grantedAt) does not exist in HQL
 //	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(YEAR(grantedAt), MONTH(r.grantedAt), CAST(COUNT(DISTINCT r.account) AS java.math.BigDecimal)) "
 //			 + "FROM AccountRole r WHERE r.role = :role "
 //			 + "GROUP BY YEAR(grantedAt), MONTH(r.grantedAt)")
 //	List<BigDecimalDataPoint> countUsersWithRolePerWeek(EnumRole role);
-	
+
 	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(YEAR(grantedAt), MONTH(r.grantedAt), DAY(r.grantedAt), CAST(COUNT(DISTINCT r.account) AS java.math.BigDecimal)) "
 			 + "FROM AccountRole r WHERE r.role = :role "
 			 + "GROUP BY YEAR(grantedAt), MONTH(r.grantedAt), DAY(r.grantedAt)")
@@ -97,7 +97,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     @Query("SELECT a FROM Account a "
          + "LEFT OUTER JOIN FETCH a.profile p "
          + "WHERE a.parent.key = :parentKey and a.key = :userKey")
-   Optional<AccountEntity> findOneByParentAndKey(UUID parentKey, UUID userKey);
+    Optional<AccountEntity> findOneByParentAndKey(UUID parentKey, UUID userKey);
 
     @Lock(LockModeType.PESSIMISTIC_READ)
     @Query("SELECT a FROM Account a  "

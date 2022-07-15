@@ -18,6 +18,7 @@ import javax.annotation.PreDestroy;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
@@ -36,7 +37,10 @@ import org.elasticsearch.action.ingest.PutPipelineRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import org.elasticsearch.client.Request;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.Response;
+import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
@@ -98,6 +102,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
@@ -525,6 +531,28 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             client.index(request, RequestOptions.DEFAULT);
         } catch (final Exception ex) {
             throw new ElasticServiceException("Failed to add profile to index", ex);
+        }
+    }
+
+    @Override
+    public boolean removeProfile(UUID key) throws ElasticServiceException {
+        try {
+            final String        indexName = this.configuration.getProfileIndex().getName();
+            final DeleteRequest request   = new DeleteRequest(indexName);
+
+            request.id(key.toString());
+
+            final DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
+            final boolean        success  = response.getResult() == DocWriteResponse.Result.DELETED;
+            if (!success) {
+                logger.warn(
+                    "Failed to remove profile from index [index={}, key={}, result={}]",
+                    indexName, key, response.getResult()
+                );
+            }
+            return success;
+        } catch (final Exception ex) {
+            throw new ElasticServiceException("Failed to remove profile from index", ex);
         }
     }
 
@@ -1363,7 +1391,6 @@ public class DefaultElasticSearchService implements ElasticSearchService {
 
     @Override
     public List<ImmutablePair<String, Integer>> findPopularTerms() {
-
         try {
         	final List<ImmutablePair<String, Integer>> 	result 			= new ArrayList<ImmutablePair<String, Integer>>();
             TermsValuesSourceBuilder                    aggregationByTerm   	= null;
@@ -1403,7 +1430,6 @@ public class DefaultElasticSearchService implements ElasticSearchService {
 
     @Override
     public long getCountOf(EnumCountCategory category) {
-
         try {
 
             String fieldName = null;
@@ -1440,6 +1466,36 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             return result;
         } catch (final Exception ex) {
             throw new ElasticServiceException("Search operation has failed", ex);
+        }
+    }
+
+    @Override
+    public boolean performRequest(HttpMethod method, String endpoint, String entity) throws ElasticServiceException {
+        Assert.notNull(method, "Expected a non-null method");
+        Assert.hasText(endpoint, "Expected a non-empty endpoint");
+        Assert.hasText(entity, "Expected a non-empty entity");
+
+        try {
+            RestClient client = this.client.getLowLevelClient();
+
+            Request request = new Request(method.toString(), endpoint);
+            request.setJsonEntity(entity);
+
+            Response         response       = client.performRequest(request);
+            final HttpStatus responseStatus = HttpStatus.valueOf(response.getStatusLine().getStatusCode());
+            final boolean    success        = responseStatus.is2xxSuccessful();
+            if (!success) {
+                String responseBody = EntityUtils.toString(response.getEntity());
+                logger.warn(
+                    "Failed to perform request [method={}, endpoint={}, entity={}, responseBody={}]",
+                    method, endpoint, entity, responseBody
+                );
+            }
+            return success;
+        } catch (final Exception ex) {
+            throw new ElasticServiceException(String.format(
+                "Failed to perform request [method=%, endpoint=%, entity=%]", method, endpoint, entity
+            ), ex);
         }
     }
 

@@ -2,8 +2,10 @@ package eu.opertusmundi.common.service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.springframework.http.HttpMethod;
 
 import eu.opertusmundi.common.model.analytics.AssetViewQuery;
 import eu.opertusmundi.common.model.analytics.DataSeries;
@@ -70,6 +72,15 @@ public interface ElasticSearchService {
     void addProfile(ProfileRecord profile) throws ElasticServiceException;
 
     /**
+     * Remove the user profile for the given key
+     *
+     * @param key
+     * @return {@code true} if the record was deleted
+     * @throws ElasticServiceException
+     */
+    boolean removeProfile(UUID key) throws ElasticServiceException;
+
+    /**
      * Add or update feature
      *
      * @param feature
@@ -89,13 +100,13 @@ public interface ElasticSearchService {
 
     /**
      * Searches for a single asset
-     * 
+     *
      * @param pid
      * @return
      * @throws ElasticServiceException
      */
     CatalogueFeature findAsset(String pid) throws ElasticServiceException;
-    
+
     /**
      * Remove asset
      *
@@ -206,31 +217,48 @@ public interface ElasticSearchService {
      *
      * @param query
      * @return
+     * @throws ElasticServiceException
      */
     DataSeries<BigDecimal> searchAssetViews(AssetViewQuery query) throws ElasticServiceException;
-    
+
     /**
      * Find popular asset views/searches
      *
-     * @param 
+     * @param query
      * @return
+     * @throws ElasticServiceException
      */
-    public List<ImmutablePair<String, Integer>> findPopularAssetViewsAndSearches(AssetViewQuery query)  throws ElasticServiceException;
-    
+    List<ImmutablePair<String, Integer>> findPopularAssetViewsAndSearches(AssetViewQuery query) throws ElasticServiceException;
+
     /**
      * Find popular terms
      *
-     * @param 
      * @return
+     * @throws ElasticServiceException
      */
-    public List<ImmutablePair<String, Integer>> findPopularTerms();
-    
+    List<ImmutablePair<String, Integer>> findPopularTerms() throws ElasticServiceException;
+
     /**
      * Find count of vendors/assets
      *
-     * @param 
+     * @param category
      * @return
+     * @throws ElasticServiceException
      */
-    public long getCountOf(EnumCountCategory category);
+    long getCountOf(EnumCountCategory category) throws ElasticServiceException;
+
+    /**
+     * Send a synchronous request using the low level REST client
+     *
+     * @param method the request HTTP method
+     * @param endpoint the Elasticsearch endpoint
+     * @param entity the request entity as a JSON object
+     * @return
+     * @throws ElasticServiceException
+     *
+     * @see https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/current/java-rest-low-usage-requests.html
+     * @see https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/master/java-rest-low-usage-responses.html
+     */
+    boolean performRequest(HttpMethod method, String endpoint, String entity) throws ElasticServiceException;
 
 }

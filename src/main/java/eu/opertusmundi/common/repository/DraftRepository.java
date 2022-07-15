@@ -91,10 +91,8 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         @Param("status") Set<EnumProviderAssetDraftStatus> status, Pageable pageable
     );
 
-    @Query("SELECT a FROM ProviderAssetDraft a WHERE a.key = :key and a.account.key = :publisherKey")
-    Optional<ProviderAssetDraftEntity> findOneByPublisherAndKey(
-        @Param("publisherKey") UUID publisherKey, @Param("key") UUID assetKey
-    );
+    @Query("SELECT a FROM ProviderAssetDraft a WHERE a.key = :draftKey and a.account.key = :publisherKey")
+    Optional<ProviderAssetDraftEntity> findOneByPublisherAndKey(UUID publisherKey, UUID draftKey);
 
     @Query("SELECT a FROM ProviderAssetDraft a WHERE a.key = :key and a.account.key = :publisherKey and a.vendorAccount.key = :ownerKey")
     Optional<ProviderAssetDraftEntity> findOneByOwnerAndPublisherAndKey(
