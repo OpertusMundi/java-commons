@@ -118,7 +118,7 @@ public final class CatalogueItemDetailsDto extends CatalogueItemDto implements S
     private ProviderDto publisher;
 
     public void setPublisher(ProviderDto publisher) {
-        Assert.isTrue(publisher.getKey().equals(this.publisherId), "Provider account key does not match publisher id");
+        Assert.isTrue(publisher == null || publisher.getKey().equals(this.publisherId), "Provider account key does not match publisher id");
 
         this.publisher = publisher;
     }

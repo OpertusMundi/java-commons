@@ -35,4 +35,13 @@ public class CatalogueAssetQuery extends PageRequestDto {
         return PageRequestDto.of(this.page, this.size);
     }
 
+    public CatalogueAssetQuery next() {
+        return new CatalogueAssetQuery(this.page + 1, this.size, publisherKey, query);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Catalogue asset query [page: %d, size %d, publisherKey: %s, query: %s]", page, size, publisherKey, query);
+    }
+
 }

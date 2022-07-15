@@ -127,12 +127,14 @@ public class CatalogueItemUtils {
             feature.getProperties().getContractTemplateVersion()
         ).orElse(null);
 
-        final TemplateContractDto contract = providerTemplate.toSimpleDto();
+        if (providerTemplate != null) {
+            final TemplateContractDto contract = providerTemplate.toSimpleDto();
 
-        // Inject contract terms and conditions
-        setContractTermsAndConditions(providerTemplate, contract);
+            // Inject contract terms and conditions
+            setContractTermsAndConditions(providerTemplate, contract);
 
-        item.setContract(contract);
+            item.setContract(contract);
+        }
     }
 
     private void setCustomContract(CatalogueItemDetailsDto item, CatalogueFeature feature) {

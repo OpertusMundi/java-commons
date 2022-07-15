@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.AssetAdditionalResourceEntity;
 import eu.opertusmundi.common.domain.AssetResourceEntity;
 import eu.opertusmundi.common.domain.FavoriteEntity;
@@ -120,6 +121,38 @@ public class DefaultCatalogueService implements CatalogueService {
 
     @Autowired
     private CatalogueItemUtils catalogueItemUtils;
+
+    @Override
+    public List<CatalogueFeature> findAllFeatures(CatalogueAssetQuery request) throws CatalogueServiceException {
+        Assert.notNull(request, "Expected a non-null request");
+
+        try {
+            // Catalogue service data page index is 1-based
+            final ResponseEntity<CatalogueResponse<CatalogueCollection>> e = this.catalogueClient.getObject().findAll(
+                request.getQuery(), request.getPublisherKey(), request.getPage() + 1, request.getSize()
+            );
+
+            final CatalogueResponse<CatalogueCollection> catalogueResponse = e.getBody();
+            if (!catalogueResponse.isSuccess()) {
+                throw CatalogueServiceException.fromService(catalogueResponse.getMessage());
+            }
+
+            return catalogueResponse.getResult().getItems();
+        } catch (final FeignException fex) {
+            // Convert 404 errors to empty results
+            if (fex.status() == HttpStatus.NOT_FOUND.value()) {
+                return Collections.emptyList();
+            }
+
+            logger.error("Operation has failed", fex);
+
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage(), fex);
+        } catch (final Exception ex) {
+            logger.error("Operation has failed", ex);
+
+            throw CatalogueServiceException.wrap(ex);
+        }
+    }
 
     @Override
     public CatalogueResult<CatalogueItemDto> findAll(RequestContext ctx, CatalogueAssetQuery request) throws CatalogueServiceException {
@@ -448,7 +481,8 @@ public class DefaultCatalogueService implements CatalogueService {
         }
 
         // Inject publisher details
-        final ProviderDto publisher = this.providerRepository.findOneByKey(item.getPublisherId()).getProvider().toProviderDto(true);
+        final AccountEntity account   = this.providerRepository.findOneByKey(item.getPublisherId());
+        final ProviderDto   publisher = account == null ? null : account.getProvider().toProviderDto(true);
         item.setPublisher(publisher);
 
         // Inject contract details

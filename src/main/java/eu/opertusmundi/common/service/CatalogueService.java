@@ -20,6 +20,16 @@ import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 public interface CatalogueService {
 
     /**
+     * Search for published features
+     *
+     * @param ctx
+     * @param request
+     * @return
+     * @throws CatalogueServiceException
+     */
+    List<CatalogueFeature> findAllFeatures(CatalogueAssetQuery request) throws CatalogueServiceException;
+
+    /**
      * Search for published items
      *
      * @param ctx
