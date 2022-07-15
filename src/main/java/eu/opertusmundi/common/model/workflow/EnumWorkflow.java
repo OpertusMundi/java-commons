@@ -20,7 +20,7 @@ public enum EnumWorkflow {
     VENDOR_ACCOUNT_REGISTRATION          ("vendor-account-registration"),
 
     // System Maintenance workflows
-    SYSTEM_MAINTENANCE_DATABASE          ("system-maintenance-database"),
+    SYSTEM_MAINTENANCE                   ("system-maintenance"),
     SYSTEM_MAINTENANCE_DELETE_USER       ("system-maintenance-remove-all-user-data"),
     ;
 
