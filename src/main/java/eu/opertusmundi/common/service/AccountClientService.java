@@ -28,11 +28,11 @@ public interface AccountClientService {
     /**
      * Find all clients for the specified account key
      *
-     * @param accontKey
+     * @param accountKey
      * @param pageable
      * @return
      */
-    PageResultDto<AccountClientDto> findAll(UUID accontKey, Pageable pageable);
+    PageResultDto<AccountClientDto> findAll(UUID accountKey, Pageable pageable);
 
     /**
      * Create new client and return the new client with its secret

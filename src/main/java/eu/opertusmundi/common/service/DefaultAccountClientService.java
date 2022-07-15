@@ -53,8 +53,8 @@ public class DefaultAccountClientService implements AccountClientService {
     }
 
     @Override
-    public PageResultDto<AccountClientDto> findAll(UUID accontKey, Pageable pageable) {
-        final Page<AccountClientDto> page = this.accountClientRepository.findAllByAccountKey(accontKey, pageable)
+    public PageResultDto<AccountClientDto> findAll(UUID accountKey, Pageable pageable) {
+        final Page<AccountClientDto> page = this.accountClientRepository.findAllByAccountKey(accountKey, pageable)
             .map(AccountClientEntity::toDto);
 
         return PageResultDto.of(pageable.getPageNumber(), pageable.getPageSize(), page.getContent(), page.getTotalElements());
