@@ -176,12 +176,19 @@ public class OrderEntity {
     @Setter
     private String providerRejectionReason;
 
+    @Column(name = "`invoice_printed_on`")
+    @Getter
+    @Setter
+    private ZonedDateTime invoicePrintedOn;
+
     private void updateDto(OrderDto o) {
         o.setCartId(cart);
         o.setCreatedOn(createdOn);
         o.setCurrency(currency);
         o.setDeliveryMethod(deliveryMethod);
         o.setId(id);
+        o.setInvoicePrinted(this.invoicePrintedOn != null);
+        o.setInvoicePrintedOn(this.invoicePrintedOn);
         o.setKey(key);
         if (this.payin != null) {
             o.setPaymentMethod(this.payin.getPaymentMethod());

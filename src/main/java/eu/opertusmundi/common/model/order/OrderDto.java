@@ -47,6 +47,12 @@ public abstract class OrderDto {
     @Schema(description = "Date of creation in ISO format", example = "2021-06-18T10:48:19.684+03:00")
     private ZonedDateTime createdOn;
 
+    @JsonIgnore
+    private ZonedDateTime invoicePrintedOn;
+
+    @Schema(description = "`true` if the invoice has been created")
+    private boolean invoicePrinted;
+
     @Schema(description = "Current order status")
     private EnumOrderStatus status;
 

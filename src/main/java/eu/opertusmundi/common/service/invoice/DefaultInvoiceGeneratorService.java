@@ -46,18 +46,17 @@ import lombok.Setter;
 @Transactional
 public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
 
-
     @Autowired
     private InvoiceFileManager invoiceFileManager;
 
-    private static float headerFontSize          = 12.0f;
-    private static float footerFontSize          = 7.0f;
-    private static float textFontSize            = 9.0f;
-    private static float titleFontSize           = 12.0f;
-    private static Color color                   = Color.BLACK;
-    private static Color color2                  = Color.BLUE;
-    
-	@Value("${opertusmundi.contract.logo}")
+    private static float headerFontSize = 12.0f;
+    private static float footerFontSize = 7.0f;
+    private static float textFontSize   = 9.0f;
+    private static float titleFontSize  = 12.0f;
+    private static Color color          = Color.BLACK;
+    private static Color color2         = Color.BLUE;
+
+    @Value("${opertusmundi.contract.logo}")
     private String logoFilename;
 
     @Value("${opertusmundi.contract.font-regular}")
@@ -71,14 +70,14 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
 
     @Value("${opertusmundi.contract.font-bold-italic}")
     private String boldItalicFont;
-	
+
     @Autowired
     private ResourceLoader resourceLoader;
-	
-	@Autowired
+
+    @Autowired
     private PayInRepository payInRepository;
-	
-	@Getter
+
+    @Getter
     private static class Fonts {
 
         private final PDFont title;
@@ -98,7 +97,7 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
             textBoldItalic = boldItalic;
         }
     }
-	
+
 	@RequiredArgsConstructor(staticName = "of")
     @Getter
     private static class RenderContext implements AutoCloseable {
@@ -149,7 +148,7 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
         }
 
     }
-	
+
 	private void drawLine(
 	        PDPageContentStream contentStream, float lineWidth, float sx, float sy, float linePosition, float pageWidth
 	    ) throws IOException {
@@ -159,7 +158,7 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
 	        contentStream.lineTo(pageWidth, sy + linePosition);
 	        contentStream.stroke();
 	    }
-	
+
 	private float VerticalOffset(String move, float pageHeight) {
         float offset = 0;
 
@@ -171,7 +170,7 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
 
         return offset;
     }
-	
+
 	private void addHeaderAndFooter(RenderContext ctx, String contractTitle) throws IOException {
         final PDDocument document    = ctx.getDocument();
         final Fonts      fonts       = ctx.getFonts();
@@ -243,8 +242,8 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
             currentPage++;
         }
     }
-	
-	private void addMetadata(RenderContext ctx) {
+
+    private void addMetadata(RenderContext ctx) {
         final PDDocumentInformation pdd = ctx.getDocument().getDocumentInformation();
 
         pdd.setAuthor("Topio Market");
@@ -253,256 +252,237 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
         pdd.setSubject("Contract");
         pdd.setKeywords("topio, contract, pdf documnet");
     }
-	
-	
+
     /**
      * Create invoice PDF
      *
-     * @param command
+     * @param payinKey
      * @return
      * @throws IOException
      */
-    public String generateInvoicePdf(UUID payinKey) throws IOException{
-    	
+    @Override
+    public String generateInvoicePdf(UUID payinKey) throws IOException {
+        final PayInEntity   payin                = payInRepository.findOneEntityByKey(payinKey).orElse(null);
+        final OrderEntity   order                = ((PayInOrderItemEntity) payin.getItems().get(0)).getOrder();
+        final AccountEntity consumer             = order.getConsumer();
+        final CustomerDto   customerDto          = consumer.getProfile().getConsumer().toDto();
+        final Integer       userId               = consumer.getId();
+        final String        payinReferenceNumber = payin.getReferenceNumber();
 
-		final PayInEntity payin 				= payInRepository.findOneEntityByKey(payinKey).orElse(null);
-		final OrderEntity	orderEntity	   		= ((PayInOrderItemEntity)payin.getItems().get(0)).getOrder();
-		final AccountEntity consumer			= orderEntity.getConsumer();
-		final CustomerDto customerDto 			= consumer.getProfile().getConsumer().toDto();
-		final Integer userId					= consumer.getId();
-      	String payinReferenceNumber 			= payin.getReferenceNumber();
-
-
-        
-        final Path path = invoiceFileManager.resolvePath(
-        		userId,
-                payinReferenceNumber
-            );
-
-		final byte[] data = renderPDF(payin, orderEntity, customerDto);
-		
-		// Save generated invoice to file
+        final Path   path = invoiceFileManager.resolvePath(userId, payinReferenceNumber);
+        final byte[] data = renderPDF(payin, order, customerDto);
         this.save(path, data);
-        
+
+        order.setInvoicePrintedOn(ZonedDateTime.now());
+        this.payInRepository.saveAndFlush(payin);
+
         return path.toString();
-    	
     }
-    
-    private byte[] renderPDF(PayInEntity payin, OrderEntity	orderEntity, CustomerDto customerDto)
-         throws IOException {
-	        final OrderItemEntity orderItemEntity 	= orderEntity.getItems().get(0);
-	        final String orderReferenceNumber 		= orderEntity.getReferenceNumber();
-	        //final AccountEntity   	provider        = orderItemEntity.getProvider(); 
-	        String fullName 						= orderEntity.getConsumer().getFullName();
-	        final CustomerIndividualDto customer 	= (CustomerIndividualDto) customerDto;
-        	String address 							= customer.getAddress().toString();
-	        String country 							= customer.getCountryOfResidence();
-	        String assetName						= orderItemEntity.getDescription();
-	        BigDecimal priceExclTax 				= payin.getTotalPriceExcludingTax();
-	        BigDecimal tax 							= payin.getTotalTax();
-	        BigDecimal totalPrice 					= payin.getTotalPrice();
-	        ZonedDateTime orderDate 				= orderEntity.getCreatedOn();
-	        
-	        
-            // Initialize all variables that are related to the PDF formatting
-            final PDDocument          document = new PDDocument();
-            Fonts                     fonts;
-            byte[]                    logo;
 
-            try (
-                InputStream logoIs = resourceLoader.getResource(logoFilename).getInputStream();
-                InputStream regularFontIs = resourceLoader.getResource(regularFont).getInputStream();
-                InputStream boldFontIs = resourceLoader.getResource(boldFont).getInputStream();
-                InputStream italicFontIs = resourceLoader.getResource(italicFont).getInputStream();
-                InputStream boldItalicFontIs = resourceLoader.getResource(boldItalicFont).getInputStream();
-            ) {
-                logo = IOUtils.toByteArray(logoIs);
+    private byte[] renderPDF(PayInEntity payin, OrderEntity orderEntity, CustomerDto customerDto) throws IOException {
+        final OrderItemEntity orderItemEntity      = orderEntity.getItems().get(0);
+        final String          orderReferenceNumber = orderEntity.getReferenceNumber();
+        // final AccountEntity provider = orderItemEntity.getProvider();
+        final String                fullName     = orderEntity.getConsumer().getFullName();
+        final CustomerIndividualDto customer     = (CustomerIndividualDto) customerDto;
+        final String                address      = customer.getAddress().toString();
+        final String                country      = customer.getCountryOfResidence();
+        final String                assetName    = orderItemEntity.getDescription();
+        final BigDecimal            priceExclTax = payin.getTotalPriceExcludingTax();
+        final BigDecimal            tax          = payin.getTotalTax();
+        final BigDecimal            totalPrice   = payin.getTotalPrice();
+        final ZonedDateTime         orderDate    = orderEntity.getCreatedOn();
 
-                final PDFont bold       = PDType0Font.load(document, boldFontIs);
-                final PDFont regular    = PDType0Font.load(document, regularFontIs);
-                final PDFont italic     = PDType0Font.load(document, italicFontIs);
-                final PDFont boldItalic = PDType0Font.load(document, boldItalicFontIs);
+        // Initialize all variables that are related to the PDF formatting
+        final PDDocument document = new PDDocument();
+        Fonts            fonts;
+        byte[]           logo;
 
-                fonts = new Fonts(regular, bold, italic, boldItalic);
-            }
+        try (
+            InputStream logoIs = resourceLoader.getResource(logoFilename).getInputStream();
+            InputStream regularFontIs = resourceLoader.getResource(regularFont).getInputStream();
+            InputStream boldFontIs = resourceLoader.getResource(boldFont).getInputStream();
+            InputStream italicFontIs = resourceLoader.getResource(italicFont).getInputStream();
+            InputStream boldItalicFontIs = resourceLoader.getResource(boldItalicFont).getInputStream();
+        ) {
+            logo = IOUtils.toByteArray(logoIs);
 
-            // Create rendering context
-            try (final RenderContext ctx = RenderContext.of(document, logo, fonts)) {
-                /* Get title and subtitles */
-                final String title    = "Invoice";
-                
+            final PDFont bold       = PDType0Font.load(document, boldFontIs);
+            final PDFont regular    = PDType0Font.load(document, regularFontIs);
+            final PDFont italic     = PDType0Font.load(document, italicFontIs);
+            final PDFont boldItalic = PDType0Font.load(document, boldItalicFontIs);
 
-                ctx.addPage();
-                PDPage              page    = ctx.getPage();
-                fonts   = ctx.getFonts();
-                PDPageContentStream content = ctx.getContent();
-
-                final PDRectangle pageSize = page.getMediaBox();
-                
-                /* Get the width and height of the page */
-                final float pageWidth  = pageSize.getWidth();
-                //final float pageHeight = pageSize.getHeight();
-
-                
-                drawLine(content, 0.5f, 60, 690 , 0, pageWidth - 72);
-                
-                content.beginText();
-                content.setFont(fonts.textBold, titleFontSize);
-                content.newLineAtOffset(60, 670);
-                content.showText("Billing address");
-                content.endText();
-                
-
-                content.beginText();
-                content.newLineAtOffset(460, 670);
-                content.showText("Sold by");
-                content.endText();
-
-                
-                //Customer details
-                
-                content.beginText();
-                content.setFont(fonts.getText(), textFontSize);
-                content.setLeading(20f);
-                content.newLineAtOffset(60, 650);
-                content.showText(fullName);
-                content.endText();
-                
-                content.beginText();
-                content.newLineAtOffset(60, 635);
-                content.showText(address);
-                content.endText();
-                
-                content.beginText();
-                content.newLineAtOffset(60, 620);
-                content.showText(country);
-                content.endText();
-                
-                
-                //Marketplace details
-                
-                content.beginText();
-                content.newLineAtOffset(460, 650);
-                content.showText("Topio Market");
-                content.endText();
-                
-
-                drawLine(content, 0.5f, 60, 600 , 0, pageWidth - 72);
-                
-
-                //Order details
-                
-                content.beginText();
-                content.setFont(fonts.textBold, titleFontSize);
-                content.newLineAtOffset(60, 580);
-                content.showText("Order details");
-                content.endText();
-                
-                content.beginText();
-                content.setFont(fonts.getText(), textFontSize);
-                content.newLineAtOffset(60, 560);
-                content.showText("Order date");
-                content.endText();
-                
-                content.beginText();
-                content.newLineAtOffset(60, 540);
-                content.showText("Order #");
-                content.endText();
-                
-                content.beginText();
-                content.newLineAtOffset(200, 560);
-                content.showText(orderDate.toString());
-                content.endText();
-                
-                content.beginText();
-                content.newLineAtOffset(200, 540);
-                content.showText(orderReferenceNumber);
-                content.endText();
-                
-
-                drawLine(content, 0.5f, 60, 520 , 0, pageWidth - 72);
-                
-                //Invoice details
-                
-                content.beginText();
-                content.setFont(fonts.textBold, titleFontSize);
-                content.newLineAtOffset(60, 500);
-                content.showText("Invoice details");
-                content.endText();
-                
-                content.beginText();
-                content.setFont(fonts.getTextBold(), textFontSize);
-                content.newLineAtOffset(60, 480);
-                content.showText("Description");
-                content.endText();
-                
-                content.beginText();
-                content.newLineAtOffset(300, 480);
-                content.showText("Price (excl. VAT)");
-                content.endText();
-                
-                content.beginText();
-                content.newLineAtOffset(400, 480);
-                content.showText("VAT");
-                content.endText();
-                
-                content.beginText();
-                content.newLineAtOffset(470, 480);
-                content.showText("Total price");
-                content.endText();
-                
-                content.beginText();
-                content.setFont(fonts.getText(), textFontSize);
-                content.newLineAtOffset(60, 460);
-                content.showText(assetName);
-                content.endText();
-                
-                content.beginText();
-                content.newLineAtOffset(300, 460);
-                content.showText(priceExclTax.toString());
-                content.endText();
-                
-                content.beginText();
-                content.newLineAtOffset(400, 460);
-                content.showText(tax.toString());
-                content.endText();
-                
-                content.beginText();
-                content.newLineAtOffset(470, 460);
-                content.showText(totalPrice.toString());
-                content.endText();
-                
-                content.beginText();
-                content.setFont(fonts.textBold, titleFontSize);
-                content.newLineAtOffset(300, 430);
-                content.showText("Invoice total");
-                content.endText();
-                
-                content.beginText();
-                content.newLineAtOffset(470, 430);
-                content.showText(totalPrice.toString());
-                content.endText();
-                
-                /* Add metadata, header and footer */
-                addMetadata(ctx);
-                addHeaderAndFooter(ctx, title);
-
-                // Release RenderContext before closing the document
-                ctx.close();
-                try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
-                    document.save(byteArrayOutputStream);
-                    document.close();
-
-                    return byteArrayOutputStream.toByteArray();
-                }
-
-            }
+            fonts = new Fonts(regular, bold, italic, boldItalic);
         }
-    
+
+        // Create rendering context
+        try (final RenderContext ctx = RenderContext.of(document, logo, fonts)) {
+            /* Get title and subtitles */
+            final String title = "Invoice";
+
+            ctx.addPage();
+            final PDPage page = ctx.getPage();
+            fonts = ctx.getFonts();
+            final PDPageContentStream content = ctx.getContent();
+
+            final PDRectangle pageSize = page.getMediaBox();
+
+            /* Get the width and height of the page */
+            final float pageWidth = pageSize.getWidth();
+            // final float pageHeight = pageSize.getHeight();
+
+            drawLine(content, 0.5f, 60, 690, 0, pageWidth - 72);
+
+            content.beginText();
+            content.setFont(fonts.textBold, titleFontSize);
+            content.newLineAtOffset(60, 670);
+            content.showText("Billing address");
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(460, 670);
+            content.showText("Sold by");
+            content.endText();
+
+            // Customer details
+
+            content.beginText();
+            content.setFont(fonts.getText(), textFontSize);
+            content.setLeading(20f);
+            content.newLineAtOffset(60, 650);
+            content.showText(fullName);
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(60, 635);
+            content.showText(address);
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(60, 620);
+            content.showText(country);
+            content.endText();
+
+            // Marketplace details
+
+            content.beginText();
+            content.newLineAtOffset(460, 650);
+            content.showText("Topio Market");
+            content.endText();
+
+            drawLine(content, 0.5f, 60, 600, 0, pageWidth - 72);
+
+            // Order details
+
+            content.beginText();
+            content.setFont(fonts.textBold, titleFontSize);
+            content.newLineAtOffset(60, 580);
+            content.showText("Order details");
+            content.endText();
+
+            content.beginText();
+            content.setFont(fonts.getText(), textFontSize);
+            content.newLineAtOffset(60, 560);
+            content.showText("Order date");
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(60, 540);
+            content.showText("Order #");
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(200, 560);
+            content.showText(orderDate.toString());
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(200, 540);
+            content.showText(orderReferenceNumber);
+            content.endText();
+
+            drawLine(content, 0.5f, 60, 520, 0, pageWidth - 72);
+
+            // Invoice details
+
+            content.beginText();
+            content.setFont(fonts.textBold, titleFontSize);
+            content.newLineAtOffset(60, 500);
+            content.showText("Invoice details");
+            content.endText();
+
+            content.beginText();
+            content.setFont(fonts.getTextBold(), textFontSize);
+            content.newLineAtOffset(60, 480);
+            content.showText("Description");
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(300, 480);
+            content.showText("Price (excl. VAT)");
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(400, 480);
+            content.showText("VAT");
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(470, 480);
+            content.showText("Total price");
+            content.endText();
+
+            content.beginText();
+            content.setFont(fonts.getText(), textFontSize);
+            content.newLineAtOffset(60, 460);
+            content.showText(assetName);
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(300, 460);
+            content.showText(priceExclTax.toString());
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(400, 460);
+            content.showText(tax.toString());
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(470, 460);
+            content.showText(totalPrice.toString());
+            content.endText();
+
+            content.beginText();
+            content.setFont(fonts.textBold, titleFontSize);
+            content.newLineAtOffset(300, 430);
+            content.showText("Invoice total");
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(470, 430);
+            content.showText(totalPrice.toString());
+            content.endText();
+
+            /* Add metadata, header and footer */
+            addMetadata(ctx);
+            addHeaderAndFooter(ctx, title);
+
+            // Release RenderContext before closing the document
+            ctx.close();
+            try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+                document.save(byteArrayOutputStream);
+                document.close();
+
+                return byteArrayOutputStream.toByteArray();
+            }
+
+        }
+    }
+
     private void save(Path path, byte[] data) throws FileNotFoundException, IOException {
         try (final FileOutputStream fos = new FileOutputStream(path.toFile())) {
             fos.write(data);
         }
     }
-    
 }
