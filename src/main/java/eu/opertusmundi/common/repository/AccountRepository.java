@@ -85,6 +85,9 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     @Query("SELECT a FROM Account a LEFT OUTER JOIN FETCH a.profile p WHERE a.key in :keys")
     List<AccountEntity> findAllByKey(@Param("keys") List<UUID> keys);
 
+    @Query("SELECT a FROM Account a WHERE a.email like :email")
+    Page<AccountEntity> findAllByEmailContains(String email, Pageable pageable);
+
     @Query("SELECT a FROM Account a "
          + "LEFT OUTER JOIN FETCH a.profile p "
          + "WHERE a.key = :key")

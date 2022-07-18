@@ -38,6 +38,10 @@ public class ServiceException extends RuntimeException {
         this.code = code;
     }
 
+    public ServiceException(String message, Throwable cause) {
+        this(BasicMessageCode.InternalServerError, message, cause);
+    }
+
     public ServiceException(MessageCode code, String message, Throwable cause) {
         super(message, cause);
 

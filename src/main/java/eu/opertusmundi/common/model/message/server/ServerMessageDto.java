@@ -14,5 +14,7 @@ public class ServerMessageDto extends ServerBaseMessageDto {
     private UUID thread;
 
     private UUID reply;
-    
+
+    private String subject;
+
 }

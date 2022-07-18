@@ -18,6 +18,7 @@ import eu.opertusmundi.common.model.BaseResponse;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.RestResponse;
+import eu.opertusmundi.common.model.message.EnumMessageStatus;
 import eu.opertusmundi.common.model.message.EnumNotificationSortField;
 import eu.opertusmundi.common.model.message.server.ServerMessageCommandDto;
 import eu.opertusmundi.common.model.message.server.ServerMessageDto;
@@ -74,12 +75,13 @@ public interface MessageServiceFeignClient {
      */
     @GetMapping(value = "/v1/messages/user/{userKey}")
     ResponseEntity<RestResponse<PageResultDto<ServerMessageDto>>> findMessages(
-        @PathVariable(name = "userKey")                     UUID          userKey,
-        @RequestParam(name = "page",      required = false) Integer       pageIndex,
-        @RequestParam(name = "size",      required = false) Integer       pageSize,
-        @RequestParam(name = "date-from", required = false) ZonedDateTime dateFrom,
-        @RequestParam(name = "date-to",   required = false) ZonedDateTime dateTo,
-        @RequestParam(name = "read",      required = false) Boolean       read
+        @PathVariable(name = "userKey")                      UUID          userKey,
+        @RequestParam(name = "page",       required = false) Integer       pageIndex,
+        @RequestParam(name = "size",       required = false) Integer       pageSize,
+        @RequestParam(name = "date-from",  required = false) ZonedDateTime dateFrom,
+        @RequestParam(name = "date-to",    required = false) ZonedDateTime dateTo,
+        @RequestParam(name = "status",      required = false, defaultValue = "ALL") EnumMessageStatus status,
+        @RequestParam(name = "contactKey", required = false) UUID          contactKey
     );
 
     /**
@@ -184,21 +186,27 @@ public interface MessageServiceFeignClient {
     /**
      * Mark notification as read
      *
+     * @param recipientKey The key of the recipient
      * @param key The key of the notification to mark as read
      *
      * @return An instance of {@link BaseResponse}
      */
-    @PutMapping(value = "/v1/notifications/{key}")
-    ResponseEntity<BaseResponse> readNotification(@PathVariable(name = "key", required = true) UUID key);
+    @PutMapping(value = "/v1/notifications/user/{recipientKey}/notification/{key}")
+    ResponseEntity<BaseResponse> readNotification(
+        @PathVariable(name = "recipientKey", required = true) UUID recipientKey,
+        @PathVariable(name = "key", required = true) UUID key
+    );
 
     /**
      * Mark all notifications as read
      *
-     * @param key The key of the recipient
+     * @param recipientKey The key of the recipient
      *
      * @return An instance of {@link BaseResponse}
      */
-    @PutMapping(value = "/v1/notifications/user/{key}")
-    ResponseEntity<BaseResponse> readAllNotifications(@PathVariable(name = "key", required = true) UUID key);
+    @PutMapping(value = "/v1/notifications/user/{recipientKey}")
+    ResponseEntity<BaseResponse> readAllNotifications(
+        @PathVariable(name = "recipientKey", required = true) UUID recipientKey
+    );
 
 }

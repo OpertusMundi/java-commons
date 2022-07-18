@@ -12,6 +12,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Schema(description = "Message object")
+@Getter
+@Setter
 public class ClientMessageDto extends ClientBaseMessageDto {
 
     public ClientMessageDto() {
@@ -28,31 +30,27 @@ public class ClientMessageDto extends ClientBaseMessageDto {
         c.setReadAt(m.getReadAt());
         c.setRecipientId(m.getRecipient());
         c.setReply(m.getReply());
+        c.setSubject(m.getSubject());
         c.setText(m.getText());
         c.setThread(m.getThread());
 
         return c;
     }
-    
+
     @Schema(description = "Message recipient identifier")
-    @Getter
-    @Setter
     private UUID recipientId;
-    
+
     @Schema(description = "Message recipient contact")
     @JsonInclude(Include.NON_NULL)
-    @Getter
-    @Setter
     private ClientContactDto recipient;
-    
+
     @Schema(description = "Message thread unique id")
-    @Getter
-    @Setter
     private UUID thread;
-    
+
     @Schema(description = "Reply message unique id")
-    @Getter
-    @Setter
     private UUID reply;
+
+    @Schema(description = "Message subject")
+    private String subject;
 
 }

@@ -15,15 +15,17 @@ import lombok.Setter;
 public class ClientContactDto {
 
     public ClientContactDto(AccountEntity e) {
-        this.id   = e.getKey();
-        this.name = e.getFullName();
+        this.email = e.getEmail();
+        this.id    = e.getKey();
+        this.name  = e.getFullName();
         if (e.getProfile().getProvider() != null) {
-            this.logoImage = e.getProfile().getProvider().getLogoImage();
+            this.logoImage         = e.getProfile().getProvider().getLogoImage();
             this.logoImageMimeType = e.getProfile().getProvider().getLogoImageMimeType();
         }
     }
 
     public ClientContactDto(HelpdeskAccountEntity e) {
+        this.email             = e.getEmail();
         this.id                = e.getKey();
         this.name              = e.getFullName();
         this.logoImage         = e.getImage();
@@ -35,6 +37,9 @@ public class ClientContactDto {
 
     @Schema(description = "User full name")
     private String name;
+
+    @Schema(description = "User email")
+    private String email;
 
     @Schema(description = "Company image")
     private byte[] logoImage;

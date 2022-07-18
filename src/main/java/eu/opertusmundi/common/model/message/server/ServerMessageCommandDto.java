@@ -30,4 +30,6 @@ public class ServerMessageCommandDto extends ServerBaseMessageCommandDto {
 
     private UUID thread;
 
+    private String subject;
+
 }

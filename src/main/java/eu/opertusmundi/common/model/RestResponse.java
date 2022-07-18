@@ -77,7 +77,7 @@ public class RestResponse<Result> extends BaseResponse {
 
         return failure(ex.getCode(), ex.getMessage(), Message.EnumLevel.ERROR);
     }
-    
+
     public static <R> RestResponse<R> accessDenied() {
         return RestResponse.<R>failure(new Message(BasicMessageCode.Unauthorized, "Access Denied", Message.EnumLevel.ERROR));
     }
