@@ -36,11 +36,13 @@ public interface MessageService {
 
     ClientMessageDto readMessage(UUID ownerKey, UUID messageKey);
 
+    List<ClientMessageDto> readThread(UUID ownerKey, UUID threadKey);
+
     ClientMessageDto sendMessage(UUID senderKey, UUID recipientKey, ClientMessageCommandDto clientMessage);
 
     ClientMessageDto replyToMessage(UUID senderKey, UUID threadKey, ClientMessageCommandDto clientMessage);
 
-    List<ClientMessageDto> getMessageThread(UUID threadKey, UUID ownerKey);
+    List<ClientMessageDto> getMessageThread(UUID ownerKey, UUID threadKey);
 
     PageResultDto<ClientNotificationDto> findNotifications(
         UUID ownerKey, Integer pageIndex, Integer pageSize,

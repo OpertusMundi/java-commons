@@ -54,7 +54,7 @@ public class DefaultMessageService implements MessageService {
 
             return result;
         } catch (final Exception ex) {
-            throw new ServiceException("Failed to count unassinged messages", ex);
+            throw new ServiceException("Failed to count unassigned messages", ex);
         }
     }
 
@@ -71,7 +71,7 @@ public class DefaultMessageService implements MessageService {
 
             if (!serviceResponse.getSuccess()) {
                 final String message = serviceResponse.getMessages().get(0).getDescription();
-                logger.error("Failed to load unassinged messages [message={}]", message);
+                logger.error("Failed to load unassigned messages [message={}]", message);
                 throw new ServiceException("Failed to load messages");
             }
 
@@ -81,8 +81,8 @@ public class DefaultMessageService implements MessageService {
         } catch (final ServiceException ex) {
             throw ex;
         } catch (final Exception ex) {
-            logger.error("Failed to load unassinged message", ex);
-            throw new ServiceException("Failed to load unassinged messages");
+            logger.error("Failed to load unassigned message", ex);
+            throw new ServiceException("Failed to load unassigned messages");
         }
     }
 
@@ -215,6 +215,33 @@ public class DefaultMessageService implements MessageService {
     }
 
     @Override
+    public List<ClientMessageDto> readThread(UUID ownerKey, UUID threadKey) {
+        try {
+            final ResponseEntity<RestResponse<List<ServerMessageDto>>> e = this.messageClient.getObject().readThread(ownerKey, threadKey);
+
+            final RestResponse<List<ServerMessageDto>> serviceResponse = e.getBody();
+
+            if (!serviceResponse.getSuccess()) {
+                final String message = serviceResponse.getMessages().get(0).getDescription();
+                logger.error("Failed to mark thread messages as read[ownerKey={}, threadKey={}, message={}]", ownerKey, threadKey, message);
+                throw new ServiceException("Failed to mark thread messages as read");
+            }
+
+            final List<ClientMessageDto> result = serviceResponse.getResult().stream()
+               .map(ClientMessageDto::from)
+               .collect(Collectors.toList());
+
+            return result;
+        } catch (final ServiceException ex) {
+            throw ex;
+        } catch (final Exception ex) {
+            final String message = "Failed to read message";
+            logger.error(message, ex);
+            throw new ServiceException(message);
+        }
+    }
+
+    @Override
     public ClientMessageDto sendMessage(UUID senderKey, UUID recipientKey, ClientMessageCommandDto clientMessage) {
         try {
             final ServerMessageCommandDto serverMessage = new ServerMessageCommandDto();
@@ -278,15 +305,15 @@ public class DefaultMessageService implements MessageService {
     }
 
     @Override
-    public List<ClientMessageDto> getMessageThread(UUID threadKey, UUID ownerKey) {
+    public List<ClientMessageDto> getMessageThread(UUID ownerKey, UUID threadKey) {
         try {
             final ResponseEntity<RestResponse<List<ServerMessageDto>>> e               = this.messageClient.getObject()
-                    .getMessageThread(threadKey, ownerKey);
+                .getMessageThread(ownerKey, threadKey);
             final RestResponse<List<ServerMessageDto>>                 serviceResponse = e.getBody();
 
             if (!serviceResponse.getSuccess()) {
                 final String message = serviceResponse.getMessages().get(0).getDescription();
-                logger.error("Failed to load message thread [threadKey={}, ownerKey={}, message={}]", threadKey, ownerKey, message);
+                logger.error("Failed to load message thread [ownerKey={}, threadKey={}, message={}]", ownerKey, threadKey, message);
                 throw new ServiceException("Failed to load message thread");
             }
 
