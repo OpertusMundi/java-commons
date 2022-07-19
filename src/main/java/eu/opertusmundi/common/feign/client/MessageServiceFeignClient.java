@@ -64,18 +64,19 @@ public interface MessageServiceFeignClient {
     /**
      * Find user messages
      *
+     * @param ownerKey
      * @param pageIndex
      * @param pageSize
-     * @param userKey
      * @param dateFrom
      * @param dateTo
-     * @param read
+     * @param status
+     * @param contactKey
      *
      * @return An instance of {@link MessageEndPointTypes.MessageListResponseDto}
      */
-    @GetMapping(value = "/v1/messages/user/{userKey}")
+    @GetMapping(value = "/v1/messages/user/{ownerKey}")
     ResponseEntity<RestResponse<PageResultDto<ServerMessageDto>>> findMessages(
-        @PathVariable(name = "userKey")                      UUID          userKey,
+        @PathVariable(name = "ownerKey")                     UUID          ownerKey,
         @RequestParam(name = "page",       required = false) Integer       pageIndex,
         @RequestParam(name = "size",       required = false) Integer       pageSize,
         @RequestParam(name = "date-from",  required = false) ZonedDateTime dateFrom,
@@ -87,16 +88,16 @@ public interface MessageServiceFeignClient {
     /**
      * Count user new (unread) messages
      *
+     * @param ownerKey The user key
      * @return The number of new messages
      */
-    @GetMapping(value = "/v1/messages/user/{userKey}/count")
-    ResponseEntity<RestResponse<Long>> countUserNewMessages(@PathVariable(name = "userKey") UUID userKey);
+    @GetMapping(value = "/v1/messages/user/{ownerKey}/count")
+    ResponseEntity<RestResponse<Long>> countUserNewMessages(@PathVariable(name = "ownerKey") UUID ownerKey);
 
     /**
      * Send message
      *
-     * @param userKey Recipient user unique key
-     * @param message Message configuration object
+     * @param message Send message command
      *
      * @return An instance of {@link BaseResponse}
      */
@@ -108,14 +109,29 @@ public interface MessageServiceFeignClient {
     /**
      * Mark message as read
      *
-     * @param key The message to mark as read
+     * @param ownerKey The message owner key
+     * @param messageKey The message to mark as read
      *
      * @return An instance of {@link BaseResponse}
      */
-    @PutMapping(value = "/v1/messages/user/{owner}/message/{key}")
+    @PutMapping(value = "/v1/messages/user/{ownerKey}/message/{messageKey}")
     ResponseEntity<RestResponse<ServerMessageDto>> readMessage(
-        @PathVariable(name = "owner", required = true) UUID owner,
-        @PathVariable(name = "key", required = true) UUID key
+        @PathVariable(name = "ownerKey", required = true) UUID ownerKey,
+        @PathVariable(name = "messageKey", required = true) UUID messageKey
+    );
+
+    /**
+     * Mark all messages of a thread as read
+     *
+     * @param ownerKey The thread owner key
+     * @param threadKey The thread key
+     *
+     * @return An instance of {@link BaseResponse}
+     */
+    @PutMapping(value = "/v1/messages/user/{ownerKey}/thread/{threadKey}")
+    ResponseEntity<RestResponse<List<ServerMessageDto>>> readThread(
+        @PathVariable(name = "ownerKey", required = true) UUID ownerKey,
+        @PathVariable(name = "threadKey", required = true) UUID threadKey
     );
 
     /**
@@ -135,15 +151,15 @@ public interface MessageServiceFeignClient {
     /**
      * Get a message thread
      *
-     * @param userKey The owner of the message
+     * @param ownerKey The owner of the message
      * @param messageKey The key of any message from the thread
      *
      * @return An instance of {@link BaseResponse}
      */
-    @GetMapping(value = "/v1/messages/thread/{threadKey}/sender/{ownerKey}")
+    @GetMapping(value = "/v1/messages/user/{ownerKey}/thread/{threadKey}")
     ResponseEntity<RestResponse<List<ServerMessageDto>>> getMessageThread(
-        @PathVariable(name = "threadKey", required = true) UUID threadKey,
-        @PathVariable(name = "ownerKey", required = true) UUID ownerKey
+        @PathVariable(name = "ownerKey", required = true) UUID ownerKey,
+        @PathVariable(name = "threadKey", required = true) UUID threadKey
     );
 
     /**
@@ -155,6 +171,8 @@ public interface MessageServiceFeignClient {
      * @param dateFrom
      * @param dateTo
      * @param read
+     * @param orderBy
+     * @param order
      *
      * @return An instance of {@link BaseResponse}
      */
@@ -174,7 +192,7 @@ public interface MessageServiceFeignClient {
     /**
      * Send notification
      *
-     * @param notification Notification command object
+     * @param notification Send notification command
      *
      * @return An instance of {@link BaseResponse}
      */
