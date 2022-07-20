@@ -1,10 +1,12 @@
 package eu.opertusmundi.common.util;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.externaltask.SetRetriesForExternalTasksDto;
@@ -28,7 +30,7 @@ import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import feign.FeignException;
 
 @Service
-public class BpmEngineUtils {
+public final class BpmEngineUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(BpmEngineUtils.class);
 
@@ -59,6 +61,25 @@ public class BpmEngineUtils {
         }
     }
 
+    public List<ProcessInstanceDto> findInstancesByProcessDefinitionKey(String processDefinitionKey) throws ApplicationException {
+        try {
+            final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstances(processDefinitionKey, null);
+
+            return instances.stream()
+                .filter(i -> !i.isEnded())
+                .collect(Collectors.toList());
+        } catch (final FeignException fex) {
+            logger.error("[Feign Client] Operation has failed", fex);
+
+            // Handle 404 errors as valid responses
+            if (fex.status() == HttpStatus.NOT_FOUND.value()) {
+                return Collections.emptyList();
+            }
+
+            throw ApplicationException.fromMessage(fex, BasicMessageCode.BpmServiceError, "Operation on BPM server failed");
+        }
+    }
+    
     public ProcessInstanceDto startProcessDefinitionByKey(
         EnumWorkflow workflow, String businessKey, Map<String, VariableValueDto> variables
     ) {
