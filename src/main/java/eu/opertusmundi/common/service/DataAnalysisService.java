@@ -6,10 +6,12 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import eu.opertusmundi.common.model.analytics.AssetCountQuery;
 import eu.opertusmundi.common.model.analytics.AssetTotalValueQuery;
+import eu.opertusmundi.common.model.analytics.AssetTypeEarningsQuery;
 import eu.opertusmundi.common.model.analytics.AssetViewQuery;
 import eu.opertusmundi.common.model.analytics.CoverageQuery;
 import eu.opertusmundi.common.model.analytics.DataSeries;
 import eu.opertusmundi.common.model.analytics.SalesQuery;
+import eu.opertusmundi.common.model.analytics.SubscribersQuery;
 import eu.opertusmundi.common.model.analytics.VendorCountQuery;
 
 public interface DataAnalysisService {
@@ -21,6 +23,22 @@ public interface DataAnalysisService {
      * @return
      */
     DataSeries<?> execute(SalesQuery query);
+    
+    /**
+     * Executes a query on sales and returns a data series per asset type
+     *
+     * @param query
+     * @return
+     */
+	DataSeries<?> execute(AssetTypeEarningsQuery query);
+    
+    /**
+     * Executes a query on subscribers data and returns a data series
+     *
+     * @param query
+     * @return
+     */
+    DataSeries<?> execute(SubscribersQuery query);
 
     /**
      * Executes a query on asset view data and returns a data series
