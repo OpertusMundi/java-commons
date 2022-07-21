@@ -21,14 +21,16 @@ import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.RestResponse;
 import eu.opertusmundi.common.model.ServiceException;
-import eu.opertusmundi.common.model.message.EnumMessageStatus;
+import eu.opertusmundi.common.model.message.EnumMessageView;
 import eu.opertusmundi.common.model.message.EnumNotificationSortField;
 import eu.opertusmundi.common.model.message.client.ClientContactDto;
 import eu.opertusmundi.common.model.message.client.ClientMessageCommandDto;
 import eu.opertusmundi.common.model.message.client.ClientMessageDto;
+import eu.opertusmundi.common.model.message.client.ClientMessageThreadDto;
 import eu.opertusmundi.common.model.message.client.ClientNotificationDto;
 import eu.opertusmundi.common.model.message.server.ServerMessageCommandDto;
 import eu.opertusmundi.common.model.message.server.ServerMessageDto;
+import eu.opertusmundi.common.model.message.server.ServerMessageThreadDto;
 import eu.opertusmundi.common.model.message.server.ServerNotificationDto;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.HelpdeskAccountRepository;
@@ -99,11 +101,11 @@ public class DefaultMessageService implements MessageService {
 
     @Override
     public PageResultDto<ClientMessageDto> findMessages(
-        UUID userKey, int page, int size, ZonedDateTime dateFrom, ZonedDateTime dateTo, EnumMessageStatus status, UUID contactKey
+        UUID userKey, int page, int size, ZonedDateTime dateFrom, ZonedDateTime dateTo, EnumMessageView view, UUID contactKey
     ) throws ServiceException {
         try {
             final ResponseEntity<RestResponse<PageResultDto<ServerMessageDto>>> e = this.messageClient.getObject().findMessages(
-                userKey, page, size, dateFrom, dateTo, status, contactKey
+                userKey, page, size, dateFrom, dateTo, view, contactKey
             );
 
             final RestResponse<PageResultDto<ServerMessageDto>> serviceResponse = e.getBody();
@@ -215,11 +217,11 @@ public class DefaultMessageService implements MessageService {
     }
 
     @Override
-    public List<ClientMessageDto> readThread(UUID ownerKey, UUID threadKey) {
+    public ClientMessageThreadDto readThread(UUID ownerKey, UUID threadKey) {
         try {
-            final ResponseEntity<RestResponse<List<ServerMessageDto>>> e = this.messageClient.getObject().readThread(ownerKey, threadKey);
+            final ResponseEntity<RestResponse<ServerMessageThreadDto>> e = this.messageClient.getObject().readThread(ownerKey, threadKey);
 
-            final RestResponse<List<ServerMessageDto>> serviceResponse = e.getBody();
+            final RestResponse<ServerMessageThreadDto> serviceResponse = e.getBody();
 
             if (!serviceResponse.getSuccess()) {
                 final String message = serviceResponse.getMessages().get(0).getDescription();
@@ -227,10 +229,7 @@ public class DefaultMessageService implements MessageService {
                 throw new ServiceException("Failed to mark thread messages as read");
             }
 
-            final List<ClientMessageDto> result = serviceResponse.getResult().stream()
-               .map(ClientMessageDto::from)
-               .collect(Collectors.toList());
-
+            final ClientMessageThreadDto result = ClientMessageThreadDto.from(serviceResponse.getResult());
             return result;
         } catch (final ServiceException ex) {
             throw ex;
@@ -305,11 +304,11 @@ public class DefaultMessageService implements MessageService {
     }
 
     @Override
-    public List<ClientMessageDto> getMessageThread(UUID ownerKey, UUID threadKey) {
+    public ClientMessageThreadDto getMessageThread(UUID ownerKey, UUID threadKey) {
         try {
-            final ResponseEntity<RestResponse<List<ServerMessageDto>>> e               = this.messageClient.getObject()
+            final ResponseEntity<RestResponse<ServerMessageThreadDto>> e               = this.messageClient.getObject()
                 .getMessageThread(ownerKey, threadKey);
-            final RestResponse<List<ServerMessageDto>>                 serviceResponse = e.getBody();
+            final RestResponse<ServerMessageThreadDto>                 serviceResponse = e.getBody();
 
             if (!serviceResponse.getSuccess()) {
                 final String message = serviceResponse.getMessages().get(0).getDescription();
@@ -317,10 +316,9 @@ public class DefaultMessageService implements MessageService {
                 throw new ServiceException("Failed to load message thread");
             }
 
-            final List<ClientMessageDto> result = serviceResponse.getResult().stream()
-               .map(ClientMessageDto::from)
-               .collect(Collectors.toList());
-
+            final ClientMessageThreadDto result = serviceResponse.getResult() == null
+                ? null
+                : ClientMessageThreadDto.from(serviceResponse.getResult());
             return result;
         } catch (final ServiceException ex) {
             throw ex;

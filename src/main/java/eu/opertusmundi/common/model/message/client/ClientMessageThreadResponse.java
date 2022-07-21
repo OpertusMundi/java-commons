@@ -13,10 +13,10 @@ import lombok.Setter;
 
 @Schema(description = "Message collection response")
 @NoArgsConstructor
-public class ClientMessageThreadResponse extends RestResponse<List<ClientMessageDto>> {
+public class ClientMessageThreadResponse extends RestResponse<ClientMessageThreadDto> {
 
-    public ClientMessageThreadResponse(List<ClientMessageDto> result, List<ClientContactDto> contacts) {
-        super(result);
+    public ClientMessageThreadResponse(ClientMessageThreadDto thread, List<ClientContactDto> contacts) {
+        super(thread);
 
         this.contacts = new HashMap<UUID, ClientContactDto>();
 

@@ -7,11 +7,12 @@ import java.util.UUID;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.ServiceException;
-import eu.opertusmundi.common.model.message.EnumMessageStatus;
+import eu.opertusmundi.common.model.message.EnumMessageView;
 import eu.opertusmundi.common.model.message.EnumNotificationSortField;
 import eu.opertusmundi.common.model.message.client.ClientContactDto;
 import eu.opertusmundi.common.model.message.client.ClientMessageCommandDto;
 import eu.opertusmundi.common.model.message.client.ClientMessageDto;
+import eu.opertusmundi.common.model.message.client.ClientMessageThreadDto;
 import eu.opertusmundi.common.model.message.client.ClientNotificationDto;
 
 public interface MessageService {
@@ -25,7 +26,7 @@ public interface MessageService {
     Long countUserNewMessages(UUID userKey);
 
     PageResultDto<ClientMessageDto> findMessages(
-        UUID userKey, int page, int size, ZonedDateTime dateFrom, ZonedDateTime dateTo, EnumMessageStatus status, UUID contactKey
+        UUID userKey, int page, int size, ZonedDateTime dateFrom, ZonedDateTime dateTo, EnumMessageView view, UUID contactKey
     ) throws ServiceException;
 
     List<ClientContactDto> findContacts(String email);
@@ -36,13 +37,13 @@ public interface MessageService {
 
     ClientMessageDto readMessage(UUID ownerKey, UUID messageKey);
 
-    List<ClientMessageDto> readThread(UUID ownerKey, UUID threadKey);
+    ClientMessageThreadDto readThread(UUID ownerKey, UUID threadKey);
 
     ClientMessageDto sendMessage(UUID senderKey, UUID recipientKey, ClientMessageCommandDto clientMessage);
 
     ClientMessageDto replyToMessage(UUID senderKey, UUID threadKey, ClientMessageCommandDto clientMessage);
 
-    List<ClientMessageDto> getMessageThread(UUID ownerKey, UUID threadKey);
+    ClientMessageThreadDto getMessageThread(UUID ownerKey, UUID threadKey);
 
     PageResultDto<ClientNotificationDto> findNotifications(
         UUID ownerKey, Integer pageIndex, Integer pageSize,

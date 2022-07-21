@@ -1,6 +1,6 @@
 package eu.opertusmundi.common.model.message;
 
-public enum EnumMessageStatus {
+public enum EnumMessageView {
     ALL,
     UNREAD,
     THREAD_ONLY,

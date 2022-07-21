@@ -33,6 +33,8 @@ public class ClientMessageDto extends ClientBaseMessageDto {
         c.setSubject(m.getSubject());
         c.setText(m.getText());
         c.setThread(m.getThread());
+        c.setThreadCount(m.getThreadCount());
+        c.setThreadCountUnread(m.getThreadCountUnread());
 
         return c;
     }
@@ -52,5 +54,14 @@ public class ClientMessageDto extends ClientBaseMessageDto {
 
     @Schema(description = "Message subject")
     private String subject;
+
+    @Schema(description = "Number of thread messages. Available only if view is `THREAD_ONLY` or `THREAD_ONLY_UNREAD`")
+    @JsonInclude(Include.NON_NULL)
+    private Integer threadCount;
+
+    @Schema(description = "Number of thread unread messages. Available only if view is `THREAD_ONLY` or `THREAD_ONLY_UNREAD`")
+    @JsonInclude(Include.NON_NULL)
+    private Integer threadCountUnread;
+
 
 }

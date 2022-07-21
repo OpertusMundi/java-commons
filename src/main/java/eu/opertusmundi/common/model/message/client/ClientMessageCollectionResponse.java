@@ -14,6 +14,8 @@ import lombok.Setter;
 
 @Schema(description = "Message collection response")
 @NoArgsConstructor
+@Getter
+@Setter
 public class ClientMessageCollectionResponse extends RestResponse<PageResultDto<ClientMessageDto>> {
 
     public ClientMessageCollectionResponse(PageResultDto<ClientMessageDto> result, List<ClientContactDto> contacts) {
@@ -29,8 +31,6 @@ public class ClientMessageCollectionResponse extends RestResponse<PageResultDto<
     }
 
     @Schema(description = "Map with all contacts (sender/recipient) for all messages in the response. The key is the contract key.")
-    @Getter
-    @Setter
     private Map<UUID, ClientContactDto> contacts;
 
 }

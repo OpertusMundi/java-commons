@@ -1,7 +1,6 @@
 package eu.opertusmundi.common.feign.client;
 
 import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.cloud.openfeign.FeignClient;
@@ -18,10 +17,11 @@ import eu.opertusmundi.common.model.BaseResponse;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.RestResponse;
-import eu.opertusmundi.common.model.message.EnumMessageStatus;
+import eu.opertusmundi.common.model.message.EnumMessageView;
 import eu.opertusmundi.common.model.message.EnumNotificationSortField;
 import eu.opertusmundi.common.model.message.server.ServerMessageCommandDto;
 import eu.opertusmundi.common.model.message.server.ServerMessageDto;
+import eu.opertusmundi.common.model.message.server.ServerMessageThreadDto;
 import eu.opertusmundi.common.model.message.server.ServerNotificationCommandDto;
 import eu.opertusmundi.common.model.message.server.ServerNotificationDto;
 
@@ -81,7 +81,7 @@ public interface MessageServiceFeignClient {
         @RequestParam(name = "size",       required = false) Integer       pageSize,
         @RequestParam(name = "date-from",  required = false) ZonedDateTime dateFrom,
         @RequestParam(name = "date-to",    required = false) ZonedDateTime dateTo,
-        @RequestParam(name = "status",      required = false, defaultValue = "ALL") EnumMessageStatus status,
+        @RequestParam(name = "view",      required = false, defaultValue = "ALL") EnumMessageView view,
         @RequestParam(name = "contactKey", required = false) UUID          contactKey
     );
 
@@ -129,7 +129,7 @@ public interface MessageServiceFeignClient {
      * @return An instance of {@link BaseResponse}
      */
     @PutMapping(value = "/v1/messages/user/{ownerKey}/thread/{threadKey}")
-    ResponseEntity<RestResponse<List<ServerMessageDto>>> readThread(
+    ResponseEntity<RestResponse<ServerMessageThreadDto>> readThread(
         @PathVariable(name = "ownerKey", required = true) UUID ownerKey,
         @PathVariable(name = "threadKey", required = true) UUID threadKey
     );
@@ -157,7 +157,7 @@ public interface MessageServiceFeignClient {
      * @return An instance of {@link BaseResponse}
      */
     @GetMapping(value = "/v1/messages/user/{ownerKey}/thread/{threadKey}")
-    ResponseEntity<RestResponse<List<ServerMessageDto>>> getMessageThread(
+    ResponseEntity<RestResponse<ServerMessageThreadDto>> getMessageThread(
         @PathVariable(name = "ownerKey", required = true) UUID ownerKey,
         @PathVariable(name = "threadKey", required = true) UUID threadKey
     );

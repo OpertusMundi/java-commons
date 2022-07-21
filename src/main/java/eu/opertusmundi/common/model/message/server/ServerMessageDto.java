@@ -17,4 +17,8 @@ public class ServerMessageDto extends ServerBaseMessageDto {
 
     private String subject;
 
+    private Integer threadCount;
+
+    private Integer threadCountUnread;
+
 }
