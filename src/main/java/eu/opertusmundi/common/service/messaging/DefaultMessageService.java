@@ -241,6 +241,27 @@ public class DefaultMessageService implements MessageService {
     }
 
     @Override
+    public void deleteAllMessages(UUID contactKey) {
+        try {
+            final ResponseEntity<BaseResponse> e = this.messageClient.getObject().deleteAllMessages(contactKey);
+
+            final BaseResponse serviceResponse = e.getBody();
+
+            if (!serviceResponse.getSuccess()) {
+                final String message = serviceResponse.getMessages().get(0).getDescription();
+                logger.error("Failed to delete messages [contactKey={}, message={}]", contactKey, message);
+                throw new ServiceException("Failed to delete messages");
+            }
+        } catch (final ServiceException ex) {
+            throw ex;
+        } catch (final Exception ex) {
+            final String message = "Failed to delete messages";
+            logger.error(message, ex);
+            throw new ServiceException(message);
+        }
+    }
+
+    @Override
     public ClientMessageDto sendMessage(UUID senderKey, UUID recipientKey, ClientMessageCommandDto clientMessage) {
         try {
             final ServerMessageCommandDto serverMessage = new ServerMessageCommandDto();
@@ -396,6 +417,27 @@ public class DefaultMessageService implements MessageService {
         } catch (final Exception ex) {
             logger.error(String.format("Failed to read notifications [recipientKey=%s]", recipientKey), ex);
             throw new ServiceException("Failed to read notifications");
+        }
+    }
+
+    @Override
+    public void deleteAllNotifications(UUID recipientKey) {
+        try {
+            final ResponseEntity<BaseResponse> e = this.messageClient.getObject().deleteAllNotifications(recipientKey);
+
+            final BaseResponse serviceResponse = e.getBody();
+
+            if (!serviceResponse.getSuccess()) {
+                final String message = serviceResponse.getMessages().get(0).getDescription();
+                logger.error("Failed to delete notifications [recipientKey={}, message={}]", recipientKey, message);
+                throw new ServiceException("Failed to delete notifications");
+            }
+        } catch (final ServiceException ex) {
+            throw ex;
+        } catch (final Exception ex) {
+            final String message = "Failed to delete notifications";
+            logger.error(message, ex);
+            throw new ServiceException(message);
         }
     }
 

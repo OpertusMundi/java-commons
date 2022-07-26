@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -135,6 +136,16 @@ public interface MessageServiceFeignClient {
     );
 
     /**
+     * Delete all messages that refer to the specified contact
+     *
+     * @param contactKey The contact key
+     *
+     * @return An instance of {@link BaseResponse}
+     */
+    @DeleteMapping(value = "/v1/messages/user/{contactKey}")
+    ResponseEntity<BaseResponse> deleteAllMessages(@PathVariable(name = "contactKey") UUID contactKey);
+
+    /**
      * Assign message to Helpdesk account
      *
      * @param messageKey The message unique key
@@ -226,5 +237,15 @@ public interface MessageServiceFeignClient {
     ResponseEntity<BaseResponse> readAllNotifications(
         @PathVariable(name = "recipientKey", required = true) UUID recipientKey
     );
+
+    /**
+     * Delete all notifications for the specified recipient
+     *
+     * @param recipientKey The key of the recipient
+     *
+     * @return An instance of {@link BaseResponse}
+     */
+    @DeleteMapping(value = "/v1/notifications/user/{recipientKey}")
+    ResponseEntity<BaseResponse> deleteAllNotifications(@PathVariable(name = "recipientKey") UUID recipientKey);
 
 }

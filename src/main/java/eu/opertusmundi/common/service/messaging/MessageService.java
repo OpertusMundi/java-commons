@@ -39,6 +39,8 @@ public interface MessageService {
 
     ClientMessageThreadDto readThread(UUID ownerKey, UUID threadKey);
 
+    void deleteAllMessages(UUID contactKey);
+
     ClientMessageDto sendMessage(UUID senderKey, UUID recipientKey, ClientMessageCommandDto clientMessage);
 
     ClientMessageDto replyToMessage(UUID senderKey, UUID threadKey, ClientMessageCommandDto clientMessage);
@@ -54,4 +56,6 @@ public interface MessageService {
     void readNotification(UUID recipientKey, UUID key);
 
     void readAllNotifications(UUID recipientKey);
+
+    void deleteAllNotifications(UUID recipientKey);
 }
