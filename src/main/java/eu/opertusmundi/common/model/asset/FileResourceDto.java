@@ -48,6 +48,7 @@ public class FileResourceDto extends ResourceDto implements Serializable {
 
         this.category   = category;
         this.crs        = crs;
+        this.encoding   = encoding;
         this.format     = format;
         this.fileName   = fileName;
         this.format     = format;

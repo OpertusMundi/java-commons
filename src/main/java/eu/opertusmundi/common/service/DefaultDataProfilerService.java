@@ -43,9 +43,11 @@ public class DefaultDataProfilerService implements DataProfilerService{
         String idempotencyKey, EnumAssetType type, String resource, DataProfilerOptions options
     ) throws DataProfilerServiceException {
         try {
+            logger.info("Received request [idempotencyKey={}, type={}, resource={}, options={}", idempotencyKey, type, resource, options);
+
             final File file = new File(resource);
 
-            if(!file.exists()) {
+            if (!file.exists()) {
                 throw new DataProfilerServiceException(
                     DataProfilerServiceMessageCode.SOURCE_NOT_FOUND,
                     String.format("Resource file [%s] was not found", resource)
