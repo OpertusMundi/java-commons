@@ -85,7 +85,7 @@ public interface UserServiceService {
     /**
      * Delete an existing service
      *
-     * The status must be {@link EnumUserServiceStatus#PROCESSING}
+     * The status must be {@link EnumUserServiceStatus#FAILED} or  {@link EnumUserServiceStatus#PROCESSING}
      *
      * @param ownerKey
      * @param parentKey

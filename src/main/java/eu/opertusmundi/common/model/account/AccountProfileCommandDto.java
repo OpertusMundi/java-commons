@@ -3,6 +3,7 @@ package eu.opertusmundi.common.model.account;
 import java.io.Serializable;
 
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -40,7 +41,7 @@ public class AccountProfileCommandDto extends AccountProfileBaseDto implements S
     private String firstName;
 
     @Schema(description = "User last name", required = true)
-    @NotEmpty
+    @NotNull
     private String lastName;
 
     @Schema(description = "User mobile", required = true)

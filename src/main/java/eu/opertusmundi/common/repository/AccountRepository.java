@@ -42,6 +42,7 @@ import eu.opertusmundi.common.model.account.AccountProfileCommandDto;
 import eu.opertusmundi.common.model.account.ConsumerCommandDto;
 import eu.opertusmundi.common.model.account.EnumActivationStatus;
 import eu.opertusmundi.common.model.account.EnumCustomerRegistrationStatus;
+import eu.opertusmundi.common.model.account.ExternalIdpAccountCommand;
 import eu.opertusmundi.common.model.account.PlatformAccountCommandDto;
 import eu.opertusmundi.common.model.account.ProviderProfessionalCommandDto;
 import eu.opertusmundi.common.model.account.ProviderProfileCommandDto;
@@ -186,13 +187,9 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     @Modifying
     @Transactional(readOnly = false)
     @Query("UPDATE Account a "
-         + "SET a.activationStatus = 'PENDING', a.processDefinition = :processDefinition, a.processInstance = :processInstance "
+         + "SET a.activationStatus = :status, a.processDefinition = :processDefinition, a.processInstance = :processInstance "
          + "WHERE a.id = :id and a.processInstance is null")
-    void setRegistrationWorkflowInstance(
-        @Param("id")                Integer id,
-        @Param("processDefinition") String  processDefinition,
-        @Param("processInstance")   String  processInstance
-    );
+    void setRegistrationWorkflowInstance(Integer id, String processDefinition, String processInstance, EnumActivationStatus status);
 
     @Transactional(readOnly = false)
     default AccountDto setVendorAccountActive(UUID parentKey, UUID userKey, boolean active) {
@@ -333,6 +330,59 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
         // Grant the default role
         if (!account.hasRole(EnumRole.ROLE_VENDOR_USER)) {
             account.grant(EnumRole.ROLE_VENDOR_USER, null);
+        }
+
+        this.saveAndFlush(account);
+
+        return account.toDto();
+    }
+
+    @Transactional(readOnly = false)
+    default AccountDto create(ExternalIdpAccountCommand command) {
+        Assert.notNull(command, "Expected a non-null command");
+        Assert.hasText(command.getPassword(), "Expected a non-empty password");
+
+        final AccountEntity        account = new AccountEntity();
+        final AccountProfileEntity profile = new AccountProfileEntity();
+
+        final ZonedDateTime createdAt = account.getRegisteredAt();
+
+        // Set account
+        account.setActivationStatus(EnumActivationStatus.PROCESSING);
+        account.setActive(true);
+        account.setBlocked(false);
+        account.setEmail(command.getEmail());
+        account.setEmailVerified(true);
+        account.setEmailVerifiedAt(createdAt);
+        account.setFirstName(command.getProfile().getFirstName());
+        account.setIdpName(command.getIdpName());
+        account.setLastName(command.getProfile().getLastName());
+        if (StringUtils.isBlank(command.getProfile().getLocale())) {
+            account.setLocale("en");
+        } else {
+            account.setLocale(command.getProfile().getLocale());
+        }
+        account.setProfile(profile);
+        account.setTermsAccepted(true);
+        account.setTermsAcceptedAt(createdAt);
+        account.setType(EnumAccountType.OPERTUSMUNDI);
+
+        // Set password
+        final PasswordEncoder encoder = new BCryptPasswordEncoder();
+        account.setPassword(encoder.encode(command.getPassword()));
+
+        // Set profile
+        profile.setAccount(account);
+        profile.setCreatedAt(createdAt);
+        profile.setImage(command.getProfile().getImage());
+        profile.setImageMimeType(command.getProfile().getImageMimeType());
+        profile.setMobile(command.getProfile().getMobile());
+        profile.setModifiedAt(createdAt);
+        profile.setPhone(command.getProfile().getPhone());
+
+        // Grant the default role
+        if (!account.hasRole(EnumRole.ROLE_USER)) {
+            account.grant(EnumRole.ROLE_USER, null);
         }
 
         this.saveAndFlush(account);
