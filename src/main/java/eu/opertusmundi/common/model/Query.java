@@ -1,6 +1,5 @@
 package eu.opertusmundi.common.model;
 
-import eu.opertusmundi.common.model.PageRequestDto;
 import lombok.Getter;
 import lombok.Setter;
 
