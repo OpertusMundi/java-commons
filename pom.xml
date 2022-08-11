@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
-<project
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
-	xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project 
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" 
+	xmlns="http://maven.apache.org/POM/4.0.0" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+>
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>eu.opertusmundi</groupId>
@@ -27,7 +28,7 @@
 		<geotools.version>26.3</geotools.version>
 		<icu4j.version>69.1</icu4j.version>
 		<io.jsonwebtoken.version>0.11.2</io.jsonwebtoken.version>
-		<org.camunda.bpm.version>7.13.0</org.camunda.bpm.version>
+		<org.camunda.bpm.version>7.17.0</org.camunda.bpm.version>
 		<org.locationtech.jts.version>1.18.2</org.locationtech.jts.version>
 		<org.locationtech.jts.spatial4j.version>0.8</org.locationtech.jts.spatial4j.version>
 		<springdoc.version>1.6.6</springdoc.version>
@@ -65,7 +66,6 @@
 	</dependencyManagement>
 
 	<dependencies>
-
 		<!-- Spring-Boot starter dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -154,7 +154,7 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-sleuth</artifactId>
 		</dependency>
-	
+
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-sleuth-zipkin</artifactId>
@@ -429,5 +429,4 @@
 		 	-->
 		</plugins>
 	</build>
-
 </project>
