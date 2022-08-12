@@ -271,7 +271,7 @@ public interface BpmServerFeignClient {
      * @see https://docs.camunda.org/manual/latest/reference/rest/task/get-query/
      */
     @GetMapping(value = "/task", consumes = "application/json")
-    List<TaskDto> getTasks(
+    List<TaskDto> getProcessInstanceTasks(
         @RequestParam("processInstanceId") String processInstanceId
     );
 
@@ -281,9 +281,9 @@ public interface BpmServerFeignClient {
      * @see https://docs.camunda.org/manual/latest/reference/rest/task/get-query/
      */
     @GetMapping(value = "/task", consumes = "application/json")
-    List<TaskDto> findTaskById(
+    List<TaskDto> getTasks(
         @RequestParam String processInstanceBusinessKey,
-        @RequestParam String taskId
+        @RequestParam String taskDefinitionKey
     );
 
     /**

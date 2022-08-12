@@ -98,8 +98,8 @@ public final class BpmEngineUtils {
         return this.bpmClient.getObject().startProcessDefinitionByKey(workflow.getKey(), options);
     }
 
-    public Optional<TaskDto> findTaskById(String businessKey, String taskId) {
-        final List<TaskDto> tasks = this.bpmClient.getObject().findTaskById(businessKey, taskId);
+    public Optional<TaskDto> findTask(String businessKey, String taskDefinitionKey) {
+        final List<TaskDto> tasks = this.bpmClient.getObject().getTasks(businessKey, taskDefinitionKey);
 
         if (tasks == null || tasks.isEmpty() || tasks.size() != 1) {
             return Optional.ofNullable(null);

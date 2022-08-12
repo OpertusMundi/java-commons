@@ -789,18 +789,17 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 : this.draftRepository.rejectHelpDesk(publisherKey, draftKey, reason);
 
             // Find workflow instance
-            final TaskDto task = this.bpmEngine.findTaskById(draftKey.toString(), TASK_REVIEW).orElse(null);
+            final TaskDto task = this.bpmEngine.findTask(draftKey.toString(), TASK_REVIEW).orElse(null);
+            Assert.notNull(task, "Expected a non-null task");
+            
+            // Complete task
+            final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
+                .variableAsBoolean("helpdeskAccept", accepted)
+                .variableAsString("helpdeskRejectReason", reason)
+                .variableAsString("status", newStatus.toString())
+                .build();
 
-            if (task != null) {
-                // Complete task
-                final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
-                    .variableAsBoolean("helpdeskAccept", accepted)
-                    .variableAsString("helpdeskRejectReason", reason)
-                    .variableAsString("status", newStatus.toString())
-                    .build();
-
-                this.bpmEngine.completeTask(task.getId(), variables);
-            }
+            this.bpmEngine.completeTask(task.getId(), variables);
         } catch (final FeignException fex) {
             logger.error("Operation has failed", fex);
 
