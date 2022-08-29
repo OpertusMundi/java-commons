@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.domain;
 
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -63,7 +64,7 @@ public class AssetResourceEntity {
 
     @NotNull
     @Column(name = "`created_on`")
-    private ZonedDateTime createdOn = ZonedDateTime.now();
+    private ZonedDateTime createdOn = ZonedDateTime.now().truncatedTo(ChronoUnit.MILLIS);
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "`uploaded_by`")

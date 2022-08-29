@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.repository;
 
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -91,7 +92,7 @@ public interface AssetResourceRepository extends JpaRepository<AssetResourceEnti
         if(resource == null ) {
             resource = new AssetResourceEntity(command.getDraftKey());
         } else {
-            resource.setCreatedOn(ZonedDateTime.now());
+            resource.setCreatedOn(ZonedDateTime.now().truncatedTo(ChronoUnit.MILLIS));
         }
 
         resource.setAccount(account);

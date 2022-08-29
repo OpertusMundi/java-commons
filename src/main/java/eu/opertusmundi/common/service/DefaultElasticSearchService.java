@@ -67,9 +67,7 @@ import org.elasticsearch.client.transform.transforms.pivot.PivotConfig;
 import org.elasticsearch.client.transform.transforms.pivot.TermsGroupSource;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.geo.ShapeRelation;
-import org.elasticsearch.common.geo.builders.EnvelopeBuilder;
 import org.elasticsearch.common.unit.Fuzziness;
-import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.geometry.Rectangle;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -97,6 +95,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.ScoreSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
+import org.elasticsearch.xcontent.XContentType;
 import org.locationtech.jts.geom.Coordinate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -858,7 +857,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
              */
 
             if (topLeft != null && bottomRight != null) {
-                final Rectangle geometry = new EnvelopeBuilder(topLeft, bottomRight).buildGeometry();
+                final Rectangle geometry = new Rectangle(topLeft.x, bottomRight.x, topLeft.y, bottomRight.y);
 
                 query.must(QueryBuilders.geoShapeQuery("properties.automated_metadata.mbr", geometry).relation(spatialOperation));
             }
@@ -1476,16 +1475,16 @@ public class DefaultElasticSearchService implements ElasticSearchService {
         Assert.hasText(entity, "Expected a non-empty entity");
 
         try {
-            RestClient client = this.client.getLowLevelClient();
+            final RestClient client = this.client.getLowLevelClient();
 
-            Request request = new Request(method.toString(), endpoint);
+            final Request request = new Request(method.toString(), endpoint);
             request.setJsonEntity(entity);
 
-            Response         response       = client.performRequest(request);
+            final Response         response       = client.performRequest(request);
             final HttpStatus responseStatus = HttpStatus.valueOf(response.getStatusLine().getStatusCode());
             final boolean    success        = responseStatus.is2xxSuccessful();
             if (!success) {
-                String responseBody = EntityUtils.toString(response.getEntity());
+                final String responseBody = EntityUtils.toString(response.getEntity());
                 logger.warn(
                     "Failed to perform request [method={}, endpoint={}, entity={}, responseBody={}]",
                     method, endpoint, entity, responseBody
