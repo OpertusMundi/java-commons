@@ -45,6 +45,7 @@ import eu.opertusmundi.common.model.file.CopyToDriveResultDto;
 import eu.opertusmundi.common.model.file.FileCopyResourceCommandDto;
 import eu.opertusmundi.common.model.file.FileCopyResourceDto;
 import eu.opertusmundi.common.model.file.FilePathCommand;
+import eu.opertusmundi.common.model.pricing.FreePricingModelCommandDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.AccountAssetRepository;
@@ -263,15 +264,6 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
     @Override
     @Transactional
     public FileResourceDto resolveResourcePath(UUID userKey, String pid, String resourceKey) throws ServiceException {
-        // Check asset ownership
-        final boolean owned = this.accountAssetRepository.checkOwnershipByAsset(userKey, pid);
-        if (!owned) {
-            logger.warn(
-                "User attempt to download resource of not purchased asset. [userKey={}, pid={}, resourceKey={}]",
-                userKey, pid, resourceKey
-            );
-            throw ServiceException.unauthorized();
-        }
         // Check asset
         final CatalogueItemDetailsDto asset = this.catalogueService.findOne(null, pid, null, false);
         if (asset == null) {
@@ -281,6 +273,8 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
             );
             throw ServiceException.notFound();
         }
+        final boolean openDataset = this.isOpenDataset(asset);
+
         // Check if asset allows resource downloading
         if (!asset.getType().isResourceDownloadAllowed()) {
             logger.warn(
@@ -288,6 +282,16 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
                 userKey, pid, resourceKey, asset.getType()
             );
             throw ServiceException.notFound();
+        }
+
+        // Check asset ownership
+        final boolean owned = openDataset || this.accountAssetRepository.checkOwnershipByAsset(userKey, pid);
+        if (!owned) {
+            logger.warn(
+                "User attempt to download resource of not purchased asset. [userKey={}, pid={}, resourceKey={}]",
+                userKey, pid, resourceKey
+            );
+            throw ServiceException.unauthorized();
         }
 
         // Check resource
@@ -407,6 +411,12 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
 
             throw new ServiceException(BasicMessageCode.InternalServerError, "Resource file copy operation has failed", ex);
         }
+    }
+
+    private boolean isOpenDataset(CatalogueItemDetailsDto item) {
+        return item.isOpenDataset() &&
+               item.getPricingModels().size() == 1 &&
+               item.getEffectivePricingModels().get(0).getModel() instanceof FreePricingModelCommandDto;
     }
 
 }

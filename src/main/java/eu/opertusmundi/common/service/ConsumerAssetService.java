@@ -76,7 +76,12 @@ public interface ConsumerAssetService {
     void cancelSubscription(UUID userKey, UUID subscriptionKey);
 
     /**
-     * Resolve the path of a resource for an asset, purchased by the specified user
+     * Resolve the path of a resource for an asset, purchased by the specified
+     * user
+     *
+     * <p>
+     * If the resource belongs to an open dataset, permission constraints are
+     * ignored
      *
      * @param userKey
      * @param pid
