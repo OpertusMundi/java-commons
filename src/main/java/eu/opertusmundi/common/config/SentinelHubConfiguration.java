@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
@@ -25,9 +24,6 @@ public class SentinelHubConfiguration {
 
     @Valid
     private List<SentinelHubDeployment> deployments = Collections.emptyList();
-
-    @NotEmpty
-    private String instanceId;
 
     public SentinelHubDeployment getDeploymentByCollection(String id) {
         return this.getDeployments().stream()
