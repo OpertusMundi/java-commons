@@ -380,12 +380,14 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 resourceCommand.setFileName(r.getFileName());
                 resourceCommand.setFormat(r.getFormat());
                 resourceCommand.setOwnerKey(command.getOwnerKey());
+                resourceCommand.setParentId(r.getKey());
                 resourceCommand.setPublisherKey(command.getPublisherKey());
                 resourceCommand.setSize(r.getSize());
+                resourceCommand.setSource(EnumResourceSource.PARENT_DATASOURCE);
 
                 final Path resourcePath = this.assetFileManager.resolveResourcePath(command.getPid(), r.getFileName());
                 try (final InputStream input = Files.newInputStream(resourcePath)) {
-                    draft = this.addFileResource(resourceCommand, input, EnumResourceSource.PARENT_DATASOURCE, null);
+                    draft = this.addFileResource(resourceCommand, input);
                 } catch(final Exception ex) {
                     throw new AssetDraftException(
                         AssetMessageCode.API_COMMAND_RESOURCE_COPY,
@@ -450,11 +452,13 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             resourceCommand.setFileName(FilenameUtils.getName(command.getPath()));
             resourceCommand.setFormat(format.getFormat());
             resourceCommand.setOwnerKey(command.getOwnerKey());
+            resourceCommand.setPath(command.getPath());
             resourceCommand.setPublisherKey(command.getPublisherKey());
             resourceCommand.setSize(resourcePath.toFile().length());
+            resourceCommand.setSource(EnumResourceSource.FILE_SYSTEM);
 
             try (final InputStream input = Files.newInputStream(resourcePath)) {
-                draft = this.addFileResource(resourceCommand, input, EnumResourceSource.FILE_SYSTEM, resourcePath.toString());
+                draft = this.addFileResource(resourceCommand, input);
             } catch(final AssetDraftException ex) {
                 throw ex;
             } catch(final Exception ex) {
@@ -791,7 +795,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             // Find workflow instance
             final TaskDto task = this.bpmEngine.findTask(draftKey.toString(), TASK_REVIEW).orElse(null);
             Assert.notNull(task, "Expected a non-null task");
-            
+
             // Complete task
             final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
                 .variableAsBoolean("helpdeskAccept", accepted)
@@ -1209,11 +1213,13 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         resourceCommand.setFileName(command.getFileName());
         resourceCommand.setFormat(command.getFormat());
         resourceCommand.setOwnerKey(command.getOwnerKey());
+        resourceCommand.setPath(command.getPath());
         resourceCommand.setPublisherKey(command.getPublisherKey());
         resourceCommand.setSize(command.getSize());
+        resourceCommand.setSource(EnumResourceSource.FILE_SYSTEM);
 
         try (final InputStream input = Files.newInputStream(path)) {
-            draft = this.addFileResource(resourceCommand, input, EnumResourceSource.FILE_SYSTEM, command.getPath());
+            draft = this.addFileResource(resourceCommand, input);
         } catch(final AssetDraftException ex) {
             throw ex;
         } catch(final Exception ex) {
@@ -1238,11 +1244,13 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     public AssetDraftDto addFileResourceFromUpload(
         FileResourceCommandDto command, InputStream input
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException {
-        return this.addFileResource(command, input, EnumResourceSource.UPLOAD, null);
+        command.setSource(EnumResourceSource.UPLOAD);
+
+        return this.addFileResource(command, input);
     }
 
-    private  AssetDraftDto addFileResource(
-        FileResourceCommandDto command, InputStream input, EnumResourceSource source, String path
+    private AssetDraftDto addFileResource(
+        FileResourceCommandDto command, InputStream input
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException {
         // The provider must have access to the selected draft and also the
         // draft must be editable
@@ -1259,7 +1267,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         }
 
         // Update database link
-        final FileResourceDto resource = assetResourceRepository.update(command, source, path);
+        final FileResourceDto resource = assetResourceRepository.update(command);
 
         // Update asset file repository
         this.draftFileManager.addResource(command, input);

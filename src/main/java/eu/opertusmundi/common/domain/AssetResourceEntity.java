@@ -96,6 +96,9 @@ public class AssetResourceEntity {
     @Enumerated(EnumType.STRING)
     private EnumResourceSource source;
 
+    @Column(name = "parent_id")
+    private String parentId;
+
     @Column(name = "`path`")
     private String path;
 

@@ -19,7 +19,6 @@ import eu.opertusmundi.common.domain.AssetResourceEntity;
 import eu.opertusmundi.common.domain.ProviderAssetDraftEntity;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
-import eu.opertusmundi.common.model.asset.EnumResourceSource;
 import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.service.AssetDraftException;
@@ -58,11 +57,11 @@ public interface AssetResourceRepository extends JpaRepository<AssetResourceEnti
     List<AssetResourceEntity> findAllResourcesByAssetPid(@Param("pid") String pid);
 
     @Transactional(readOnly = false)
-    default FileResourceDto update(FileResourceCommandDto command, EnumResourceSource source, String path) throws AssetDraftException {
-        Assert.notNull(source, "Expected a non-null source");
+    default FileResourceDto update(FileResourceCommandDto command) throws AssetDraftException {
         Assert.notNull(command, "Expected a non-null command");
         Assert.notNull(command.getDraftKey(), "Expected a non-null draft key");
         Assert.notNull(command.getPublisherKey(), "Expected a non-null publisher key");
+        Assert.notNull(command.getSource(), "Expected a non-null source");
         Assert.isTrue(!StringUtils.isBlank(command.getFileName()), "Expected a non-empty file name");
 
         // Check draft
@@ -101,9 +100,10 @@ public interface AssetResourceRepository extends JpaRepository<AssetResourceEnti
         resource.setEncoding(command.getEncoding());
         resource.setFileName(command.getFileName());
         resource.setFormat(command.getFormat());
-        resource.setPath(path);
+        resource.setPath(command.getPath());
+        resource.setParentId(command.getParentId());
         resource.setSize(command.getSize());
-        resource.setSource(source);
+        resource.setSource(command.getSource());
 
         this.saveAndFlush(resource);
 

@@ -25,6 +25,15 @@ public class FileResourceCommandDto extends ResourceCommandDto implements Serial
     @JsonIgnore
     private Long size;
 
+    @JsonIgnore
+    EnumResourceSource source;
+
+    @JsonIgnore
+    private String parentId;
+
+    @JsonIgnore
+    private String path;
+
     @Schema(description = "Geometry data CRS", example = "EPSG:4326")
     private String crs;
 
