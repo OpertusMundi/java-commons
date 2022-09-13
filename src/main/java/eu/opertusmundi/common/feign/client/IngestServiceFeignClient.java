@@ -31,9 +31,13 @@ public interface IngestServiceFeignClient {
 
     /**
      * Start a new synchronous job
-     *
-     * @param resource Resource file
-     * @param responseType Response type
+     * 
+     * @param idempotencyKey
+     * @param resource
+     * @param responseType
+     * @param shard
+     * @param workspace
+     * @param tablename
      * @return
      */
     @PostMapping(
@@ -44,17 +48,22 @@ public interface IngestServiceFeignClient {
     @Headers("Content-Type: application/x-www-form-urlencoded")
     ResponseEntity<ServerIngestPromptResponseDto> ingestSync(
         @RequestHeader("X-Idempotency-Key") String idempotencyKey,
-        @RequestPart(name = "resource", required = true) String resource,
-        @RequestPart(name = "response", required = true) String responseType,
-        @RequestPart(name = "schema", required = false) String schema,
-        @RequestPart(name = "tablename", required = false) String tablename
+        @RequestPart(name = "resource",  required = true) String resource,
+        @RequestPart(name = "response",  required = true) String responseType,
+        @RequestPart(name = "shard",     required = false) String shard,
+        @RequestPart(name = "workspace", required = false) String workspace,
+        @RequestPart(name = "tablename", required = true) String tablename
     );
 
     /**
      * Start a new asynchronous job
-     *
-     * @param resource Resource file
-     * @param responseType Response type
+     * 
+     * @param idempotencyKey
+     * @param resource
+     * @param responseType
+     * @param shard
+     * @param workspace
+     * @param tablename
      * @return
      */
     @PostMapping(
@@ -65,17 +74,18 @@ public interface IngestServiceFeignClient {
     @Headers("Content-Type: application/x-www-form-urlencoded")
     ResponseEntity<ServerIngestDeferredResponseDto> ingestAsync(
         @RequestHeader("X-Idempotency-Key") String idempotencyKey,
-        @RequestPart(name = "resource", required = true) String resource,
-        @RequestPart(name = "response", required = true) String responseType,
-        @RequestPart(name = "schema", required = false) String schema,
-        @RequestPart(name = "tablename", required = false) String tablename
+        @RequestPart(name = "resource",  required = true) String resource,
+        @RequestPart(name = "response",  required = true) String responseType,
+        @RequestPart(name = "shard",     required = false) String shard,
+        @RequestPart(name = "workspace", required = false) String workspace,
+        @RequestPart(name = "tablename", required = true) String tablename
     );
 
     /**
-     * Start a new asynchronous job
-     *
-     * @param resource Resource file
-     * @param responseType Response type
+     * Publish a layer to a Geoserver instance
+     * 
+     * @param idempotencyKey
+     * @param command
      * @return
      */
     @PostMapping(
@@ -85,10 +95,10 @@ public interface IngestServiceFeignClient {
     )
     @Headers("Content-Type: application/x-www-form-urlencoded")
     ResponseEntity<ServerIngestPublishResponseDto> publish(
-        @RequestHeader("X-Idempotency-Key") String idempotencyKey, 
+        @RequestHeader("X-Idempotency-Key") String idempotencyKey,
         @RequestBody ServerIngestPublishCommandDto command
     );
-    
+
     /**
      * Get ticket status
      *
@@ -96,7 +106,7 @@ public interface IngestServiceFeignClient {
      * @return
      */
     @GetMapping(value = "/status/{ticket}", produces = "application/json")
-    ResponseEntity<ServerIngestStatusResponseDto> getTicketStatus(@PathVariable("ticket") String ticket);
+    ResponseEntity<ServerIngestStatusResponseDto> getTicketStatus(@PathVariable String ticket);
 
     /**
      * Get result for ticket
@@ -105,7 +115,7 @@ public interface IngestServiceFeignClient {
      * @return
      */
     @GetMapping(value = "/result/{ticket}", produces = "application/json")
-    ResponseEntity<ServerIngestResultResponseDto> getTicketResult(@PathVariable("ticket") String ticket);
+    ResponseEntity<ServerIngestResultResponseDto> getTicketResult(@PathVariable String ticket);
 
     /**
      * Get ticket from idempotent key
@@ -114,21 +124,21 @@ public interface IngestServiceFeignClient {
      * @return
      */
     @GetMapping(value = "/ticket_by_key/{key}", produces = "application/json")
-    ResponseEntity<ServerIngestTicketResponseDto> getTicketFromIdempotentKey(@PathVariable("key") String key);
-    
+    ResponseEntity<ServerIngestTicketResponseDto> getTicketFromIdempotentKey(@PathVariable String key);
+
     /**
      * Remove all ingested data relative to the given table
-     * 
-     * @param table Database table name
-     * @param schema The database schema; if not present the default schema will be assumed
+     *
+     * @param shard The Geoserver shard
      * @param workspace The workspace that the layer belongs; if not present, the default workspace will be assumed
+     * @param table Database table name
      * @return
      */
     @DeleteMapping(value = "/ingest/{table}")
     ResponseEntity<Void> removeLayerAndData(
-        @PathVariable("table") String table,
-        @RequestParam(name = "schema", required = false) String schema,
-        @RequestParam(name = "workspace", required = false) String workspace
+        @RequestParam(required = false) String shard,
+        @RequestParam(required = false) String workspace,
+        @PathVariable String table
     );
-    
+
 }

@@ -14,15 +14,15 @@ import lombok.Setter;
 @Builder
 public class ServerIngestPublishCommandDto {
 
-    @Schema(description = "The database schema in which the table exists.")
-    private String schema;
-
-    @Schema(description = "The table name.")
-    private String table;
+    @Schema(description = "Geoserver shard")
+    private String shard;
 
     @Schema(description = "The GeoServer workspace in which the layer will be "
                         + "published (it will be created if does not exist). "
                         + "If not given,the default workspace will be used.")
     private String workspace;
+
+    @Schema(description = "The table name.")
+    private String table;
 
 }

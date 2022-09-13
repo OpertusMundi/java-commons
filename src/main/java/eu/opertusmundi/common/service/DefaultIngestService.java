@@ -43,7 +43,7 @@ public class DefaultIngestService implements IngestService {
 
     @Override
     public ServerIngestPromptResponseDto ingestSync(
-        String idempotencyKey, String resource, String schema, String tableName
+        String idempotencyKey, String resource, String shard, String workspace, String tablename
     ) throws IngestServiceException {
         try {
             final File file = new File(resource);
@@ -58,7 +58,7 @@ public class DefaultIngestService implements IngestService {
             final Path resolvedResourcePath = this.copyResource(idempotencyKey.toString(), resource);
 
             final ResponseEntity<ServerIngestPromptResponseDto> e = this.ingestClient.getObject().ingestSync(
-                idempotencyKey, resolvedResourcePath.toString(), EnumIngestResponse.PROMPT.getValue(), schema, tableName
+                idempotencyKey, resolvedResourcePath.toString(), EnumIngestResponse.PROMPT.getValue(), shard, workspace, tablename
             );
 
             final ServerIngestPromptResponseDto serviceResponse = e.getBody();
@@ -73,7 +73,7 @@ public class DefaultIngestService implements IngestService {
 
     @Override
     public ServerIngestDeferredResponseDto ingestAsync(
-        String idempotencyKey, String resource, String schema, String tableName
+        String idempotencyKey, String resource, String shard, String workspace, String tablename
     ) throws IngestServiceException {
         try {
             final File file = new File(resource);
@@ -88,7 +88,7 @@ public class DefaultIngestService implements IngestService {
             final Path resolvedResourcePath = this.copyResource(idempotencyKey.toString(), resource);
 
             final ResponseEntity<ServerIngestDeferredResponseDto> e = this.ingestClient.getObject().ingestAsync(
-                idempotencyKey, resolvedResourcePath.toString(), EnumIngestResponse.DEFERRED.getValue(), schema, tableName
+                idempotencyKey, resolvedResourcePath.toString(), EnumIngestResponse.DEFERRED.getValue(), shard, workspace, tablename
             );
 
             final ServerIngestDeferredResponseDto serviceResponse = e.getBody();
@@ -103,13 +103,13 @@ public class DefaultIngestService implements IngestService {
 
     @Override
     public ServerIngestPublishResponseDto publish(
-        String idempotencyKey, String schema, String table, String workspace
+        String idempotencyKey, String shard, String workspace, String table
     ) throws IngestServiceException {
         try {
             final ServerIngestPublishCommandDto command = ServerIngestPublishCommandDto.builder()
-                .schema(schema)
-                .table(table)
+                .shard(shard)
                 .workspace(workspace)
+                .table(table)
                 .build();
 
             final ResponseEntity<ServerIngestPublishResponseDto> e = this.ingestClient.getObject().publish(
@@ -190,9 +190,9 @@ public class DefaultIngestService implements IngestService {
     }
 
     @Override
-    public void removeLayerAndData(String table, String schema, String workspace) throws IngestServiceException {
+    public void removeLayerAndData(String shard, String workspace, String table) throws IngestServiceException {
         try {
-            final ResponseEntity<Void> e = this.ingestClient.getObject().removeLayerAndData(table, schema, workspace);
+            final ResponseEntity<Void> e = this.ingestClient.getObject().removeLayerAndData(shard, workspace, table);
 
             if (e.getStatusCode() != HttpStatus.NO_CONTENT) {
                 throw new IngestServiceException(

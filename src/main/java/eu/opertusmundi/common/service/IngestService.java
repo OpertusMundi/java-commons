@@ -10,32 +10,16 @@ import eu.opertusmundi.common.model.ingest.ServerIngestTicketResponseDto;
 
 public interface IngestService {
 
-    default ServerIngestPromptResponseDto ingestSync(
-        String idempotencyKey, String resource, String tablename
-    ) {
-        return this.ingestSync(idempotencyKey, resource, null, tablename);
-    }
-
     ServerIngestPromptResponseDto ingestSync(
-        String idempotencyKey, String resource, String schema, String tablename
+        String idempotencyKey, String resource, String shard, String workspace, String tablename
     ) throws IngestServiceException;
-
-    default ServerIngestDeferredResponseDto ingestAsync(
-        String idempotencyKey, String resource, String tablename
-    ) {
-        return this.ingestAsync(idempotencyKey, resource, null, tablename);
-    }
 
     ServerIngestDeferredResponseDto ingestAsync(
-        String idempotencyKey, String resource, String schema, String tablename
+        String idempotencyKey, String resource, String shard, String workspace, String tablename
     ) throws IngestServiceException;
 
-    default ServerIngestPublishResponseDto publish(String idempotencyKey, String table) {
-        return this.publish(idempotencyKey, null, table, null);
-    }
-
     ServerIngestPublishResponseDto publish(
-        String idempotencyKey, String schema, String table, String workspace
+        String idempotencyKey, String shard, String workspace, String table
     ) throws IngestServiceException;
 
     ServerIngestStatusResponseDto getStatus(String ticket) throws IngestServiceException;
@@ -47,11 +31,11 @@ public interface IngestService {
     /**
      * Remove all ingested data relative to the given table
      *
+     * @param shard The Geoserver shard where the layer belongs to
+     * @param workspace The workspace that the layer belongs
      * @param table Database table name
-     * @param schema The database schema; if not present the default schema will be assumed
-     * @param workspace The workspace that the layer belongs; if not present, the default workspace will be assumed
      * @throws IngestServiceException
      */
-    void removeLayerAndData(String table, String schema, String workspace) throws IngestServiceException;
+    void removeLayerAndData(String shard, String workspace, String table) throws IngestServiceException;
 
 }
