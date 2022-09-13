@@ -110,6 +110,11 @@ public class AccountProfileEntity {
     @Setter
     private ZonedDateTime modifiedAt;
 
+    @Column(name = "`geodata_shard`")
+    @Getter
+    @Setter
+    private String geodataShard;
+
     /**
      * Update from a command DTO object
      *

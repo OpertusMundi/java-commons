@@ -55,6 +55,9 @@ public class AccountProfileDto extends AccountProfileBaseDto implements Serializ
     private QuotaDto quota;
 
     @JsonIgnore
+    private String geodataShard;
+
+    @JsonIgnore
     public String getFullName() {
         if (!StringUtils.isBlank(this.firstName)) {
             if (!StringUtils.isBlank(this.lastName)) {
