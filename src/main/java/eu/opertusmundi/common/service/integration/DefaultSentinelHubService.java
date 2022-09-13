@@ -405,10 +405,13 @@ public class DefaultSentinelHubService implements SentinelHubService {
         return result;
     }
 
-
     @Override
     public List<SentinelHubOpenDataCollection> getOpenDataCollections() {
         return this.config.getDeployments().stream()
+            .map(d -> {
+                d.getCollections().stream().forEach(c -> c.setEndpoint(d.getUrl()));
+                return d;
+            })
             .flatMap(d -> d.getCollections().stream())
             .collect(Collectors.toList());
     }

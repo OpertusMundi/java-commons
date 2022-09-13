@@ -18,4 +18,6 @@ public class SentinelHubOpenDataCollection {
     @NotEmpty
     private String instanceId;
 
+    private String endpoint;
+
 }
