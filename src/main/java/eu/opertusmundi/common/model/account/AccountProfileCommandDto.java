@@ -36,15 +36,15 @@ public class AccountProfileCommandDto extends AccountProfileBaseDto implements S
     @JsonIgnore
     private Integer id;
 
-    @Schema(description = "User first name", required = true)
+    @Schema(description = "First name", required = true)
     @NotEmpty
     private String firstName;
 
-    @Schema(description = "User last name", required = true)
+    @Schema(description = "Last name", required = true)
     @NotNull
     private String lastName;
 
-    @Schema(description = "User mobile", required = true)
+    @Schema(description = "Mobile")
     private String mobile;
 
 }
