@@ -80,6 +80,12 @@ public class ProviderTemplateContractDto implements Serializable {
     @JsonInclude(Include.NON_NULL)
     private MasterContractHistoryDto masterContract;
 
+    @Schema(description = "True if this is the default contract")
+    private boolean defaultContract;
+    
+    @Schema(description = "True if the provider has read and accepted the default contract")
+    private boolean defaultContractAccepted;
+    
     public void removeHelpdeskData() {
         this.owner = null;
     }

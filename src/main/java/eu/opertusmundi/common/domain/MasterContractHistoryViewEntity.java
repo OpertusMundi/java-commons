@@ -16,6 +16,7 @@ public class MasterContractHistoryViewEntity extends MasterContractHistoryBaseEn
         final MasterContractHistoryDto c = new MasterContractHistoryDto();
 
         c.setCreatedAt(createdAt);
+        c.setDefaultContract(defaultContract);
         c.setId(id);
         c.setKey(key);
         c.setModifiedAt(modifiedAt);

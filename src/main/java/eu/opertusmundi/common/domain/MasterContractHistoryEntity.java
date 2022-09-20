@@ -49,6 +49,7 @@ public class MasterContractHistoryEntity extends MasterContractHistoryBaseEntity
         final MasterContractHistoryDto c = new MasterContractHistoryDto();
 
         c.setCreatedAt(createdAt);
+        c.setDefaultContract(defaultContract);
         c.setId(id);
         c.setKey(key);
         c.setModifiedAt(modifiedAt);
@@ -77,6 +78,7 @@ public class MasterContractHistoryEntity extends MasterContractHistoryBaseEntity
         e.setContractParent(d.getParent());
         e.setContractRoot(d.getParent() == null ? null : d.getParent().getContractRoot());
         e.setCreatedAt(ZonedDateTime.now());
+        e.setDefaultContract(false);
         e.setModifiedAt(e.getCreatedAt());
         e.setOwner(d.getOwner());
         e.setSections(d.getSections().stream().map(MasterSectionHistoryEntity::from).collect(Collectors.toList()));

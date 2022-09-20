@@ -97,6 +97,8 @@ public class ProviderTemplateContractHistoryEntity extends ProviderTemplateContr
     	final ProviderTemplateContractHistoryDto c = new ProviderTemplateContractHistoryDto();
 
     	c.setCreatedAt(createdAt);
+    	c.setDefaultContract(defaultContract);
+    	c.setDefaultContractAccepted(defaultContractAccepted);
     	c.setId(id);
     	c.setKey(key);
     	c.setModifiedAt(modifiedAt);
@@ -126,6 +128,8 @@ public class ProviderTemplateContractHistoryEntity extends ProviderTemplateContr
         e.setContractParent(d.getParent());
         e.setContractRoot(d.getParent() == null ? null : d.getParent().getContractRoot());
         e.setCreatedAt(ZonedDateTime.now());
+        e.setDefaultContract(d.isDefaultContract());
+        e.setDefaultContractAccepted(false);
         e.setModifiedAt(e.getCreatedAt());
         e.setOwner(d.getOwner());
         e.setSections(d.getSections().stream().map(ProviderTemplateSectionHistoryEntity::from).collect(Collectors.toList()));

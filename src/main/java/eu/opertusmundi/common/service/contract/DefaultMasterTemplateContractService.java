@@ -14,8 +14,10 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import eu.opertusmundi.common.domain.MasterContractHistoryEntity;
 import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.EnumSortingOrder;
+import eu.opertusmundi.common.model.PageRequestDto;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.contract.ContractParametersDto;
 import eu.opertusmundi.common.model.contract.helpdesk.DeactivateContractResult;
@@ -23,42 +25,58 @@ import eu.opertusmundi.common.model.contract.helpdesk.EnumMasterContractSortFiel
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractCommandDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryDto;
+import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryResult;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractQueryDto;
 import eu.opertusmundi.common.model.contract.helpdesk.PublishContractResult;
 import eu.opertusmundi.common.repository.contract.MasterContractDraftRepository;
 import eu.opertusmundi.common.repository.contract.MasterContractHistoryRepository;
 import eu.opertusmundi.common.repository.contract.MasterContractRepository;
+import eu.opertusmundi.common.validation.DefaultMasterTemplateContractValidator;
 
 @Service
 public class DefaultMasterTemplateContractService implements MasterTemplateContractService {
 
-    @Autowired
-    private MasterContractDraftRepository draftRepository;
+    private final ContractParametersFactory              contractParametersFactory;
+    private final DefaultMasterTemplateContractValidator contractValidator;
+    private final MasterContractDraftRepository          draftRepository;
+    private final MasterContractHistoryRepository        historyRepository;
+    private final MasterContractRepository               contractRepository;
+    private final PdfContractGeneratorService            pdfService;
 
     @Autowired
-    private MasterContractHistoryRepository historyRepository;
-
-    @Autowired
-    private MasterContractRepository contractRepository;
-    
-    @Autowired
-    private PdfContractGeneratorService pdfService;
-
-    @Autowired
-    private ContractParametersFactory contractParametersFactory;
+    public DefaultMasterTemplateContractService(
+         ContractParametersFactory              contractParametersFactory,
+         DefaultMasterTemplateContractValidator contractValidator,
+         MasterContractDraftRepository          draftRepository,
+         MasterContractHistoryRepository        historyRepository,
+         MasterContractRepository               contractRepository,
+         PdfContractGeneratorService            pdfService
+    ) {
+        this.contractParametersFactory = contractParametersFactory;
+        this.contractValidator         = contractValidator;
+        this.draftRepository           = draftRepository;
+        this.historyRepository         = historyRepository;
+        this.contractRepository        = contractRepository;
+        this.pdfService                = pdfService;
+    }
 
     @Override
-    public PageResultDto<MasterContractHistoryDto> findAllHistory(MasterContractQueryDto query) {
+    public MasterContractHistoryResult findAllHistory(MasterContractQueryDto query) {
         final Direction   direction   = query.getOrder() == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
-        final PageRequest pageRequest = PageRequest.of(query.getPage(), query.getSize(), Sort.by(direction, query.getOrderBy().getValue()));
+        final Sort        sort        = Sort.by(direction, query.getOrderBy().getValue());
+        final PageRequest pageRequest = PageRequest.of(query.getPage(), query.getSize(), sort);
 
         final Page<MasterContractHistoryDto> p = this.historyRepository.findHistoryObjects(
             query.getTitle(), query.getStatus(), pageRequest
         );
 
-        final long                                    count   = p.getTotalElements();
-        final List<MasterContractHistoryDto>          records = p.stream().collect(Collectors.toList());
-        final PageResultDto<MasterContractHistoryDto> result  = PageResultDto.of(query.getPage(), query.getSize(), records, count);
+        final MasterContractHistoryEntity defaultContract = this.historyRepository.findDefaultContract().orElse(null);
+
+        final long                           count   = p.getTotalElements();
+        final List<MasterContractHistoryDto> records = p.stream().collect(Collectors.toList());
+        final MasterContractHistoryResult    result  = new MasterContractHistoryResult(
+            PageRequestDto.of(query.getPage(), query.getSize()), count, records, defaultContract != null
+        );
 
         return result;
     }
@@ -170,10 +188,19 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
 
     @Override
     public byte[] print(int masterContractId) throws IOException {
-
         final ContractParametersDto parameters = contractParametersFactory.createWithPlaceholderData();
         
         return pdfService.renderMasterPDF(parameters, masterContractId);
+    }
+
+    @Override
+    @Transactional
+    public MasterContractDto setDefaultContract(int id) throws ApplicationException {
+        contractValidator.validateHistory(id);
+
+        final MasterContractDto result = this.historyRepository.setDefaultContract(id);
+
+        return result;
     }
 
 }

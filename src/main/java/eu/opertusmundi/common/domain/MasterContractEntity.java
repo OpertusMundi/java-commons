@@ -24,6 +24,7 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractDto;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -31,6 +32,8 @@ import lombok.Setter;
 @Table(
     schema = "contract", name = "`master_contract`"
 )
+@Getter
+@Setter
 public class MasterContractEntity {
 
     @Id
@@ -39,21 +42,17 @@ public class MasterContractEntity {
         sequenceName = "contract.master_contract_id_seq", name = "master_contract_id_seq", allocationSize = 1
     )
     @GeneratedValue(generator = "master_contract_id_seq", strategy = GenerationType.SEQUENCE)
-    @Getter
-    private Integer id ;
+    @Setter(AccessLevel.PRIVATE)
+    private Integer id;
 
     @NotNull
     @NaturalId
     @Column(name = "key", updatable = false, columnDefinition = "uuid")
-    @Getter
-    @Setter
     private UUID key;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "`owner`", nullable = false)
-    @Getter
-    @Setter
     private HelpdeskAccountEntity owner;
 
     @NotNull
@@ -61,46 +60,37 @@ public class MasterContractEntity {
         optional = false, fetch = FetchType.LAZY
     )
     @JoinColumn(name = "`parent`")
-    @Getter
-    @Setter
     private MasterContractHistoryEntity parent;
 
     @OneToMany(
         mappedBy = "contract", fetch = FetchType.EAGER, cascade = CascadeType.ALL
     )
-    @Getter
-    @Setter
     private List<MasterSectionEntity> sections = new ArrayList<>();
 
     @Column(name = "`title`")
-    @Getter
-    @Setter
     private String title;
 
     @Column(name = "`subtitle`")
-    @Getter
-    @Setter
     private String subtitle;
 
     @Column(name = "`version`")
-    @Getter
-    @Setter
     private String version;
 
     @Column(name = "`created_at`")
-    @Getter
-    @Setter
     private ZonedDateTime createdAt;
 
     @Column(name = "`modified_at`")
-    @Getter
-    @Setter
     private ZonedDateTime modifiedAt;
+    
+    @NotNull
+    @Column(name = "`default_contract`")
+    private boolean defaultContract;
 
     public MasterContractDto toDto(boolean includeDetails) {
         final MasterContractDto c = new MasterContractDto();
 
         c.setCreatedAt(createdAt);
+        c.setDefaultContract(defaultContract);
         c.setId(id);
         c.setKey(key);
         c.setModifiedAt(modifiedAt);
@@ -125,6 +115,7 @@ public class MasterContractEntity {
         final MasterContractEntity e = new MasterContractEntity();
 
         e.setCreatedAt(h.getCreatedAt());
+        e.setDefaultContract(h.isDefaultContract());
         e.setKey(h.getKey());
         e.setModifiedAt(h.getModifiedAt());
         e.setOwner(h.getOwner());

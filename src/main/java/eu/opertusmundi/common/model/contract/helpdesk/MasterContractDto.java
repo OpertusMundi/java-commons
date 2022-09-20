@@ -67,6 +67,9 @@ public class MasterContractDto implements Serializable {
     @JsonInclude(Include.NON_EMPTY)
     protected List<MasterSectionDto> sections;
 
+    @Schema(description = "True if this is the default contract")
+    protected boolean defaultContract;
+    
     public void removeHelpdeskData() {
         this.id    = null;
         this.owner = null;

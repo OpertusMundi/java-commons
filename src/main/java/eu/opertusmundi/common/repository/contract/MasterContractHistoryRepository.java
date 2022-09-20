@@ -21,6 +21,7 @@ import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.contract.ContractMessageCode;
 import eu.opertusmundi.common.model.contract.EnumContractStatus;
 import eu.opertusmundi.common.model.contract.helpdesk.DeactivateContractResult;
+import eu.opertusmundi.common.model.contract.helpdesk.MasterContractDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryDto;
 import eu.opertusmundi.common.model.contract.helpdesk.PublishContractResult;
 
@@ -28,19 +29,23 @@ import eu.opertusmundi.common.model.contract.helpdesk.PublishContractResult;
 @Transactional(readOnly = true)
 public interface MasterContractHistoryRepository extends JpaRepository<MasterContractHistoryEntity, Integer> {
 
-    @Query("SELECT c FROM ContractHistory c WHERE c.key = :key")
-    Optional<MasterContractHistoryEntity> findByKey(UUID key);
-
     @Query("SELECT c FROM ContractDraft c JOIN FETCH c.sections WHERE c.id = :id")
-    Optional<MasterContractDraftEntity> findDraftById(int id);
+    Optional<MasterContractDraftEntity> findOneDraftById(int id);
+
+    @Query("SELECT c FROM ContractHistory c WHERE c.key = :key")
+    Optional<MasterContractHistoryEntity> findOneByKey(UUID key);
 
     @Query("SELECT c FROM ContractHistory c WHERE c.status = 'ACTIVE' and c.published.id = :id")
-    Optional<MasterContractHistoryEntity> findHistoryByPublishedContractId(int id);
+    Optional<MasterContractHistoryEntity> findOneByActiveAndId(int id);
+    
+    @Query("SELECT c FROM ContractHistory c WHERE c.status = 'ACTIVE' and c.defaultContract = true")
+    Optional<MasterContractHistoryEntity> findDefaultContract();
 
     @Query("SELECT c FROM ContractHistoryView c WHERE "
          + "(c.status in ('ACTIVE', 'INACTIVE', 'DRAFT')) and "
          + "(c.status in :status or :status is null) and "
          + "(c.title like :title or :title is null) "
+         + "ORDER BY defaultContract DESC"
     )
     Page<MasterContractHistoryViewEntity> findHistory(String title, Set<EnumContractStatus> status, Pageable pageable);
 
@@ -92,7 +97,7 @@ public interface MasterContractHistoryRepository extends JpaRepository<MasterCon
     @Transactional(readOnly = false)
     default PublishContractResult publishDraft(int id) throws ApplicationException {
         // Get draft
-        final MasterContractDraftEntity draft = this.findDraftById(id).orElse(null);
+        final MasterContractDraftEntity draft = this.findOneDraftById(id).orElse(null);
 
         if (draft == null) {
             throw ApplicationException.fromMessage(
@@ -130,4 +135,20 @@ public interface MasterContractHistoryRepository extends JpaRepository<MasterCon
         return PublishContractResult.of(parentContract == null ? null : parentContract.getId(), published.toDto(true));
     }
 
+    default MasterContractDto setDefaultContract(int id) throws ApplicationException {
+        final MasterContractHistoryEntity defaultContract = this.findDefaultContract().orElse(null);
+
+        if (defaultContract != null) {
+            if (defaultContract.getId() != id) {
+                throw ApplicationException.fromMessage(ContractMessageCode.DEFAULT_CONTRACT_ALREADY_SET, "Default contract is already set");
+            }
+            return defaultContract.toDto(false);
+        }
+
+        final MasterContractHistoryEntity contract = this.findOneByActiveAndId(id).get();
+        contract.setDefaultContract(true);
+        this.saveAndFlush(contract);
+
+        return contract.toDto(true);
+    }
 }

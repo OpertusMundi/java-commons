@@ -1702,7 +1702,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     @Override
     public byte[] renderMasterPDF(ContractParametersDto contractParametersDto, int masterContractId)
             throws IOException {
-        final MasterContractHistoryEntity masterContract = masterContractRepository.findHistoryByPublishedContractId(masterContractId).orElse(null);
+        final MasterContractHistoryEntity masterContract = masterContractRepository.findOneByActiveAndId(masterContractId).orElse(null);
         System.out.println("Master contract id " + masterContractId);
         final byte[] result = renderPDF(contractParametersDto, false, null, masterContract, null);
 

@@ -24,6 +24,7 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractDto;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -31,6 +32,8 @@ import lombok.Setter;
 @Table(
     schema = "contract", name = "`provider_contract`"
 )
+@Getter
+@Setter
 public class ProviderTemplateContractEntity {
 
     @Id
@@ -39,21 +42,17 @@ public class ProviderTemplateContractEntity {
         sequenceName = "contract.provider_contract_id_seq", name = "provider_contract_id_seq", allocationSize = 1
     )
     @GeneratedValue(generator = "provider_contract_id_seq", strategy = GenerationType.SEQUENCE)
-    @Getter
+    @Setter(AccessLevel.PRIVATE)
     private Integer id ;
 
     @NotNull
     @NaturalId
     @Column(name = "key", updatable = false, columnDefinition = "uuid")
-    @Getter
-    @Setter
     private UUID key;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "`owner`", nullable = false)
-    @Getter
-    @Setter
     private AccountEntity owner;
 
     @NotNull
@@ -61,46 +60,42 @@ public class ProviderTemplateContractEntity {
         optional = true, fetch = FetchType.LAZY, orphanRemoval = false
     )
     @JoinColumn(name = "`parent`")
-    @Getter
-    @Setter
     private ProviderTemplateContractHistoryEntity parent;
 
     @OneToMany(
         mappedBy = "contract", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true
     )
-    @Getter
-    @Setter
     private List<ProviderTemplateSectionEntity> sections = new ArrayList<>();
 
     @Column(name = "`title`")
-    @Getter
-    @Setter
     private String title;
 
     @Column(name = "`subtitle`")
-    @Getter
-    @Setter
     private String subtitle;
 
     @Column(name = "`version`")
-    @Getter
-    @Setter
     private String version;
 
     @Column(name = "`created_at`")
-    @Getter
-    @Setter
     private ZonedDateTime createdAt;
 
     @Column(name = "`modified_at`")
-    @Getter
-    @Setter
     ZonedDateTime modifiedAt;
 
+    @NotNull
+    @Column(name = "`default_contract`")
+    private boolean defaultContract;
+        
+    @NotNull
+    @Column(name = "`default_contract_accepted`")
+    private boolean defaultContractAccepted;
+    
     public ProviderTemplateContractDto toDto(boolean includeDetails) {
         final ProviderTemplateContractDto c = new ProviderTemplateContractDto();
 
         c.setCreatedAt(createdAt);
+        c.setDefaultContract(defaultContract);
+        c.setDefaultContractAccepted(defaultContractAccepted);
         c.setId(id);
         c.setKey(key);
         c.setModifiedAt(modifiedAt);
@@ -129,6 +124,8 @@ public class ProviderTemplateContractEntity {
         final ProviderTemplateContractEntity e = new ProviderTemplateContractEntity();
 
         e.setCreatedAt(h.getCreatedAt());
+        e.setDefaultContract(h.isDefaultContract());
+        e.setDefaultContractAccepted(h.isDefaultContractAccepted());
         e.setKey(h.getKey());
         e.setModifiedAt(h.getModifiedAt());
         e.setOwner(h.getOwner());

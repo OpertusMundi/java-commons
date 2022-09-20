@@ -11,6 +11,7 @@ import eu.opertusmundi.common.model.contract.helpdesk.EnumMasterContractSortFiel
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractCommandDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryDto;
+import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryResult;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractQueryDto;
 
 /**
@@ -24,7 +25,7 @@ public interface MasterTemplateContractService {
      * @param query
      * @return
      */
-    PageResultDto<MasterContractHistoryDto> findAllHistory(MasterContractQueryDto query);
+    MasterContractHistoryResult findAllHistory(MasterContractQueryDto query);
 
     /**
      * Get all contracts
@@ -129,5 +130,17 @@ public interface MasterTemplateContractService {
      * @return
      */
     byte[] print(int masterContractId) throws IOException;
+    
+    /**
+     * Set history contract as the default template.
+     * 
+     * <p>
+     * A contract must be <code>ACTIVE</code> to become the default contract.
+     * 
+     * @param id
+     * @return
+     * @throws ApplicationException
+     */
+    MasterContractDto setDefaultContract(int id) throws ApplicationException;
 
 }

@@ -24,6 +24,7 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractDto;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -31,6 +32,8 @@ import lombok.Setter;
 @Table(
     schema = "contract", name = "`provider_contract_draft`"
 )
+@Getter
+@Setter
 public class ProviderTemplateContractDraftEntity {
 
     @Id
@@ -39,74 +42,61 @@ public class ProviderTemplateContractDraftEntity {
         sequenceName = "contract.provider_contract_draft_id_seq", name = "provider_contract_draft_id_seq", allocationSize = 1
     )
     @GeneratedValue(generator = "provider_contract_draft_id_seq", strategy = GenerationType.SEQUENCE)
-    @Getter
+    @Setter(AccessLevel.PRIVATE)
     private Integer id ;
 
     @NotNull
     @NaturalId
     @Column(name = "key", updatable = false, columnDefinition = "uuid")
-    @Getter
-    private final UUID key = UUID.randomUUID();
+    @Setter(AccessLevel.PRIVATE)
+    private UUID key = UUID.randomUUID();
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "`owner`", nullable = false)
-    @Getter
-    @Setter
     private AccountEntity owner;
 
     @OneToOne(
         optional = true, fetch = FetchType.LAZY, orphanRemoval = false
     )
     @JoinColumn(name = "`parent`")
-    @Getter
-    @Setter
     private ProviderTemplateContractHistoryEntity parent;
 
     @OneToOne(
         optional = true, fetch = FetchType.LAZY, orphanRemoval = false
     )
     @JoinColumn(name = "`template`")
-    @Getter
-    @Setter
     private MasterContractHistoryEntity template;
 
     @OneToMany(
         mappedBy = "contract", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true
     )
-    @Getter
-    @Setter
     private List<ProviderTemplateSectionDraftEntity> sections = new ArrayList<>();
 
     @Column(name = "`title`")
-    @Getter
-    @Setter
     private String title;
 
     @Column(name = "`subtitle`")
-    @Getter
-    @Setter
     private String subtitle;
 
     @Column(name = "`version`")
-    @Getter
-    @Setter
     private String version;
 
     @Column(name = "`created_at`")
-    @Getter
-    @Setter
     private ZonedDateTime createdAt;
 
     @Column(name = "`modified_at`")
-    @Getter
-    @Setter
     private ZonedDateTime modifiedAt;
 
+    @NotNull
+    @Column(name = "`default_contract`")
+    private boolean defaultContract;
+    
     public ProviderTemplateContractDto toDto(boolean includeDetails) {
         final ProviderTemplateContractDto c = new ProviderTemplateContractDto();
 
         c.setCreatedAt(createdAt);
+        c.setDefaultContract(defaultContract);
         c.setId(id);
         c.setKey(key);
         c.setModifiedAt(modifiedAt);
@@ -137,6 +127,7 @@ public class ProviderTemplateContractDraftEntity {
         final Integer version = Integer.parseInt(h.getVersion()) + 1;
 
         e.setCreatedAt(ZonedDateTime.now());
+        e.setDefaultContract(h.isDefaultContract());
         e.setModifiedAt(e.getCreatedAt());
         e.setOwner(h.getOwner());
         e.setParent(h);
