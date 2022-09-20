@@ -122,13 +122,7 @@ public class PerCallPricingModelCommandDto extends BasePricingModelCommandDto {
         final PerCallQuotationParametersDto typedParams = (PerCallQuotationParametersDto) params;
         final Integer                       tier        = typedParams.getPrePaidTier();
 
-        if (tier == null && ignoreMissing) {
-            return;
-        }
-        if (tier == null) {
-            throw new QuotationException(QuotationMessageCode.PRE_PAID_TIER_NOT_SET, "Prepaid tier is required");
-        }
-        if (this.prePaidTiers == null || tier < 0 || tier >= this.prePaidTiers.size()) {
+        if (tier != null && (this.prePaidTiers == null || tier < 0 || tier >= this.prePaidTiers.size())) {
             throw new QuotationException(QuotationMessageCode.PRE_PAID_TIER_NOT_FOUND, "Prepaid tier was not found");
         }
     }
@@ -209,6 +203,4 @@ public class PerCallPricingModelCommandDto extends BasePricingModelCommandDto {
 
         return quotation;
     }
-
-
 }
