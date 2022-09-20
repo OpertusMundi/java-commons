@@ -27,7 +27,19 @@ public enum EnumAssetType {
     /**
      * OGC/Topio service
      */
-    SERVICE                         (false, "service",  EnumOrderItemType.SUBSCRIPTION, "OGC/Topio service", false),
+    SERVICE (
+        false,
+        false,
+        "service",
+        EnumOrderItemType.SUBSCRIPTION,
+        "OGC/Topio service",
+        false,
+        null,
+        Arrays.asList(EnumPricingModel.FREE, EnumPricingModel.PER_CALL, EnumPricingModel.PER_ROW),
+        Arrays.asList(EnumDeliveryMethod.DIGITAL_PLATFORM),
+        true,
+        false
+    ),
     /**
      * Tabular dataset
      */
@@ -140,27 +152,16 @@ public enum EnumAssetType {
     @Getter
     private final boolean dynamicPricingModels;
 
-    private EnumAssetType(
+    EnumAssetType(
         boolean primary,
         String value,
         EnumOrderItemType orderItemType,
         String description
     ) {
-        this(primary, value, orderItemType, description, true);
+        this(primary, false, value, orderItemType, description, true, null, Collections.emptyList(), Collections.emptyList(), true, true);
     }
 
-
-    private EnumAssetType(
-        boolean primary,
-        String value,
-        EnumOrderItemType orderItemType,
-        String description,
-        boolean resourceDownloadAllowed
-    ) {
-        this(primary, false, value, orderItemType, description, true, null, Collections.emptyList(), Collections.emptyList(), true, resourceDownloadAllowed);
-    }
-
-    private EnumAssetType(
+    EnumAssetType(
         boolean primary,
         boolean dynamicPricingModels,
         String value,
