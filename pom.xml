@@ -27,7 +27,7 @@
 
 		<spring-cloud.version>2021.0.3</spring-cloud.version>
 
-		<com.mangopay.version>2.25.0</com.mangopay.version>
+		<com.mangopay.version>2.25.1</com.mangopay.version>
 		<com.github.spotbugs.spotbugs.version>4.7.1</com.github.spotbugs.spotbugs.version>
 		<com.github.spotbugs.spotbugs-maven-plugin.version>4.7.1.1</com.github.spotbugs.spotbugs-maven-plugin.version>
 		<com.vladmihalcea.hibernate-types-55.version>2.18.0</com.vladmihalcea.hibernate-types-55.version>

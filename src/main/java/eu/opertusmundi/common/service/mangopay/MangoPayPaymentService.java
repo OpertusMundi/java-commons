@@ -2007,7 +2007,17 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             u.setLegalRepresentativeAddress(this.createAddress(representative.getAddress()));
         }
         u.setTag(account.getKey().toString());
-        u.setTermsAndConditionsAccepted(true);
+        // See: https://github.com/Mangopay/mangopay2-java-sdk/issues/285
+        //
+        // Set terms and conditions acceptance only for new users. If the
+        // property `termsAndConditionsAccepted` is set to true for an existing
+        // user, the error "The user already accepted our terms and conditions"
+        // will be returned
+        if (StringUtils.isBlank(id)) {
+            u.setTermsAndConditionsAccepted(true);
+        } else {
+            u.setTermsAndConditionsAccepted(null);
+        }
         u.setUserCategory(type == EnumCustomerType.CONSUMER ? UserCategory.PAYER : UserCategory.OWNER);
 
         // Owner fields
