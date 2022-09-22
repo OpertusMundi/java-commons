@@ -302,7 +302,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 final CatalogueItemCommandDto draftCommand = new CatalogueItemCommandDto(feature);
 
                 draftCommand.setAutomatedMetadata(null);
-                draftCommand.setIngested(false);
+                draftCommand.setDataProfilingEnabled(true);
                 draftCommand.setIngestionInfo(null);
                 draftCommand.setPublisherKey(command.getPublisherKey());
                 draftCommand.setTitle(feature.getProperties().getTitle());
@@ -353,8 +353,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             final CatalogueItemCommandDto draftCommand = new CatalogueItemCommandDto(feature);
 
             draftCommand.setAutomatedMetadata(null);
+            draftCommand.setDataProfilingEnabled(true);
             draftCommand.setDeliveryMethod(EnumDeliveryMethod.DIGITAL_PLATFORM);
-            draftCommand.setIngested(true);
             draftCommand.setIngestionInfo(null);
             draftCommand.setOpenDataset(false);
             draftCommand.setOwnerKey(command.getOwnerKey());
@@ -425,9 +425,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             // Create draft
             final CatalogueItemCommandDto draftCommand = new CatalogueItemCommandDto();
 
+            draftCommand.setDataProfilingEnabled(true);
             draftCommand.setDeliveryMethod(EnumDeliveryMethod.DIGITAL_PLATFORM);
             draftCommand.setFormat(command.getFormat());
-            draftCommand.setIngested(true);
             draftCommand.setOwnerKey(command.getOwnerKey());
             draftCommand.setPublisherKey(command.getPublisherKey());
             draftCommand.setSpatialDataServiceType(command.getServiceType());
@@ -735,7 +735,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                     .variableAsString("draftKey", command.getDraftKey().toString())
                     .variableAsString("publisherKey", command.getPublisherKey().toString())
                     .variableAsString("type", command.getType().toString())
-                    .variableAsBoolean("ingested", command.isIngested())
+                    .variableAsBoolean("dataProfilingEnabled", command.isDataProfilingEnabled())
                     .variableAsString("status", newStatus.toString())
                     .variableAsString("assetTitle", draft.getTitle())
                     .variableAsString("assetVersion", draft.getVersion())
@@ -1710,6 +1710,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     public void updateMetadataPropertyLinks(
         String id, List<ResourceDto> resources, JsonNode metadata, EnumProviderAssetDraftStatus status
     ) throws AssetDraftException {
+        if (metadata == null) {
+            return;
+        }
         String urlTemplate = "";
 
         switch (status) {

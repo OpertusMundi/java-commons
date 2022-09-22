@@ -28,7 +28,6 @@ import eu.opertusmundi.common.model.catalogue.integration.Extensions;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
-import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -126,16 +125,10 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
     private Extensions extensions;
 
     @Schema(
-        description = "True if the resource files should be imported into PostGIS database and published using WMS/WFS "
-                    + "endpoints. Ingest operation is only supported for formats of category `VECTOR`",
-        required = false,
-        defaultValue = "false",
-        externalDocs = @ExternalDocumentation(
-            description = "See configuration endpoint for asset file types details",
-            url   = "#operation/configuration-01"
-        )
+        description = "`true` if the data profiling task should be executed during the asset publish workflow",
+        defaultValue = "true"
     )
-    private boolean ingested = false;
+    private boolean dataProfilingEnabled = true;
 
     @ArraySchema(
         arraySchema = @Schema(

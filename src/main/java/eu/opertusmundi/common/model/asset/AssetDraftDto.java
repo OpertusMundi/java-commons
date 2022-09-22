@@ -68,10 +68,8 @@ public class AssetDraftDto {
     @Schema(description = "Rejection reason if the draft has been rejected by the provider")
     private String providerRejectionReason;
 
-    @Schema(
-        description = "True if the file should be imported into PostGIS database and published using WMS/WFS endpoints"
-    )
-    private boolean ingested = false;
+    @Schema(description = "`true` if the data profiling task should be executed during the asset publish workflow")
+    private boolean dataProfilingEnabled;
 
     @Schema(description = "`True` if the geometry has been set by automated metadata")
     private boolean computedGeometry;

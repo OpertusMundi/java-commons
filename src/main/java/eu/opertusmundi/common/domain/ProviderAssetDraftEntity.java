@@ -140,10 +140,10 @@ public class ProviderAssetDraftEntity {
     @Setter
     private String providerRejectionReason;
 
-    @Column(name = "`ingested`")
+    @Column(name = "`data_profiling_enabled`")
     @Getter
     @Setter
-    private boolean ingested;
+    private boolean dataProfilingEnabled;
 
     @Column(name = "`created_on`", nullable = false)
     @Getter
@@ -187,10 +187,10 @@ public class ProviderAssetDraftEntity {
         a.setCreatedOn(this.createdOn);
         a.setCommand(this.command);
         a.setComputedGeometry(this.computedGeometry);
+        a.setDataProfilingEnabled(this.dataProfilingEnabled);
         a.setHelpdeskErrorMessage(helpdeskErrorMessage);
         a.setHelpdeskRejectionReason(this.helpdeskRejectionReason);
         a.setId(id);
-        a.setIngested(this.ingested);
         a.setKey(this.key);
         a.setModifiedOn(this.modifiedOn);
         a.setOwner(this.getVendorAccount() == null ? this.getAccount().getKey() : this.getVendorAccount().getKey());
