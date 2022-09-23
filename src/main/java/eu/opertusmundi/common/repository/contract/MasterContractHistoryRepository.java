@@ -37,7 +37,7 @@ public interface MasterContractHistoryRepository extends JpaRepository<MasterCon
 
     @Query("SELECT c FROM ContractHistory c WHERE c.status = 'ACTIVE' and c.published.id = :id")
     Optional<MasterContractHistoryEntity> findOneByActiveAndId(int id);
-    
+
     @Query("SELECT c FROM ContractHistory c WHERE c.status = 'ACTIVE' and c.defaultContract = true")
     Optional<MasterContractHistoryEntity> findDefaultContract();
 
@@ -109,12 +109,12 @@ public interface MasterContractHistoryRepository extends JpaRepository<MasterCon
         final MasterContractHistoryEntity history = MasterContractHistoryEntity.from(draft);
         history.setStatus(EnumContractStatus.ACTIVE);
         this.saveAndFlush(history);
-        
+
         // Archive parent contract
         if (history.getContractParent() != null && history.getContractParent() != history) {
             history.getContractParent().setStatus(EnumContractStatus.HISTORY);
         }
-        
+
         // Get parent published contract identifier to delete
         final MasterContractEntity parentContract = history.getContractParent() != null ? history.getContractParent().getPublished() : null;
 
@@ -140,13 +140,14 @@ public interface MasterContractHistoryRepository extends JpaRepository<MasterCon
 
         if (defaultContract != null) {
             if (defaultContract.getId() != id) {
-                throw ApplicationException.fromMessage(ContractMessageCode.DEFAULT_CONTRACT_ALREADY_SET, "Default contract is already set");
+                throw ApplicationException.fromMessage(ContractMessageCode.DEFAULT_MASTER_CONTRACT_ALREADY_SET, "Default contract is already set");
             }
             return defaultContract.toDto(false);
         }
 
         final MasterContractHistoryEntity contract = this.findOneByActiveAndId(id).get();
         contract.setDefaultContract(true);
+        contract.getPublished().setDefaultContract(true);
         this.saveAndFlush(contract);
 
         return contract.toDto(true);

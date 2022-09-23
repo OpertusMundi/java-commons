@@ -23,7 +23,7 @@ public interface ProviderTemplateContractRepository extends JpaRepository<Provid
     @Query("SELECT c FROM ProviderContract c WHERE c.owner.key = :providerKey and c.key = :contractKey")
     Optional<ProviderTemplateContractEntity> findOneByKey(UUID providerKey, UUID contractKey);
 
-    @Query("SELECT c FROM ProviderContract c INNER JOIN c.parent p WHERE c.owner.key = :providerKey")
+    @Query("SELECT c FROM ProviderContract c INNER JOIN c.parent p WHERE c.owner.key = :providerKey ORDER BY c.defaultContract DESC")
     Page<ProviderTemplateContractEntity> findAll(UUID providerKey, Pageable pageable);
 
     default Page<ProviderTemplateContractDto> findAllObjects(UUID providerKey, Pageable pageable) {

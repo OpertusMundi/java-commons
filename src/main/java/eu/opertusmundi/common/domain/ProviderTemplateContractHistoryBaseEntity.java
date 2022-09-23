@@ -91,9 +91,12 @@ public class ProviderTemplateContractHistoryBaseEntity {
     @NotNull
     @Column(name = "`default_contract`")
     protected boolean defaultContract;
-    
+
     @NotNull
     @Column(name = "`default_contract_accepted`")
     protected boolean defaultContractAccepted;
+
+    @Column(name = "`default_contract_accepted_at`")
+    protected ZonedDateTime defaultContractAcceptedAt;
 
 }

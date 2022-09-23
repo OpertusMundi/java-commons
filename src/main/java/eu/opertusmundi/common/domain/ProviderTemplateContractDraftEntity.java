@@ -91,7 +91,7 @@ public class ProviderTemplateContractDraftEntity {
     @NotNull
     @Column(name = "`default_contract`")
     private boolean defaultContract;
-    
+
     public ProviderTemplateContractDto toDto(boolean includeDetails) {
         final ProviderTemplateContractDto c = new ProviderTemplateContractDto();
 
@@ -127,7 +127,7 @@ public class ProviderTemplateContractDraftEntity {
         final Integer version = Integer.parseInt(h.getVersion()) + 1;
 
         e.setCreatedAt(ZonedDateTime.now());
-        e.setDefaultContract(h.isDefaultContract());
+        e.setDefaultContract(false);
         e.setModifiedAt(e.getCreatedAt());
         e.setOwner(h.getOwner());
         e.setParent(h);

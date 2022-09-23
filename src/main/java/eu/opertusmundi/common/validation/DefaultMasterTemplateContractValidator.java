@@ -27,18 +27,18 @@ public class DefaultMasterTemplateContractValidator {
         for (final MasterSectionHistoryEntity s : sections) {
             var dynamic  = s.isDynamic();
             var optional = s.isOptional();
-            
+
             if (dynamic && optional) {
                 throw ApplicationException.fromMessage(
-                    ContractMessageCode.DEFAULT_CONTRACT_SECTION_INVALID_CONFIG,
+                    ContractMessageCode.DEFAULT_MASTER_CONTRACT_SECTION_INVALID_CONFIG,
                     "A section can be either dynamic or optional"
-                );                    
+                );
             }
             if (optional && s.getOptions().size() != 1) {
                 throw ApplicationException.fromMessage(
-                    ContractMessageCode.DEFAULT_CONTRACT_OPTIONAL_SECTION_OPTION_COUNT,
+                    ContractMessageCode.DEFAULT_MASTER_CONTRACT_SECTION_INVALID_CONFIG,
                     "An optional section must have exactly one option"
-                );                    
+                );
             }
         }
     }

@@ -3,12 +3,13 @@ package eu.opertusmundi.common.repository.contract;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,9 +30,13 @@ import eu.opertusmundi.common.model.contract.provider.ProviderTemplateSectionDto
 public interface ProviderTemplateContractDraftRepository extends JpaRepository<ProviderTemplateContractDraftEntity, Integer> {
 
     @Query("SELECT a FROM Account a WHERE a.id = :id")
-    Optional<AccountEntity> findAccountById(
-        @Param("id") int id
-    );
+    Optional<AccountEntity> findAccountById(int id);
+
+    @Query("SELECT a FROM Account a WHERE a.key = :key")
+    Optional<AccountEntity> findAccountByKey(UUID key);
+
+    @Query("SELECT c FROM ContractHistory c WHERE c.status = 'ACTIVE' and c.defaultContract = true")
+    Optional<MasterContractHistoryEntity> findDefaultMasterContract();
 
     @Query("SELECT c FROM ContractHistory c WHERE c.key = :contractKey and status = 'ACTIVE'")
     Optional<MasterContractHistoryEntity> findActiveMasterContractByKey(UUID contractKey);
@@ -80,7 +85,7 @@ public interface ProviderTemplateContractDraftRepository extends JpaRepository<P
     }
 
     @Transactional(readOnly = false)
-    default ProviderTemplateContractDto createFromHistory(int ownerId, UUID providerKey, UUID templateKey) throws ApplicationException {
+    default ProviderTemplateContractDto createFromHistory(UUID providerKey, UUID templateKey) throws ApplicationException {
         final ProviderTemplateContractHistoryEntity parent = this.findProviderTemplateContractHistoryByKey(
             providerKey, templateKey
         ).orElse(null);
@@ -104,7 +109,7 @@ public interface ProviderTemplateContractDraftRepository extends JpaRepository<P
 
         final ProviderTemplateContractDraftEntity e = ProviderTemplateContractDraftEntity.from(parent);
 
-        final AccountEntity owner = this.findAccountById(ownerId).orElse(null);
+        final AccountEntity owner = this.findAccountByKey(providerKey).orElse(null);
         if (owner == null) {
             throw ApplicationException.fromMessage(
                 ContractMessageCode.ACCOUNT_NOT_FOUND, "Record not found"
@@ -140,7 +145,7 @@ public interface ProviderTemplateContractDraftRepository extends JpaRepository<P
                 );
             }
             e.setOwner(owner);
-            
+
             final MasterContractHistoryEntity template = this.findActiveMasterContractByKey(c.getTemplateKey()).orElse(null);
             if (template == null) {
                 throw ApplicationException.fromMessage(
@@ -186,4 +191,47 @@ public interface ProviderTemplateContractDraftRepository extends JpaRepository<P
         this.deleteById(e.getId());
     }
 
+    @Transactional(readOnly = false)
+    default ProviderTemplateContractDto createDefaultContractDraft(UUID providerKey) throws ApplicationException {
+        final var masterDefaultContract = this.findDefaultMasterContract().orElse(null);
+        if (masterDefaultContract == null) {
+            throw ApplicationException.fromMessage(
+                ContractMessageCode.DEFAULT_MASTER_CONTRACT_NOT_FOUND,
+                "Default master contract is not set"
+            );
+        }
+        final AccountEntity owner = this.findAccountByKey(providerKey).orElse(null);
+        if (owner == null) {
+            throw ApplicationException.fromMessage(ContractMessageCode.ACCOUNT_NOT_FOUND, "Record not found");
+        }
+
+        final var draft = new ProviderTemplateContractDraftEntity();
+        draft.setCreatedAt(ZonedDateTime.now());
+        draft.setDefaultContract(true);
+        draft.setModifiedAt(draft.getCreatedAt());
+        draft.setVersion(masterDefaultContract.getVersion());
+        draft.setOwner(owner);
+        draft.setParent(null);
+        draft.setSubtitle(masterDefaultContract.getSubtitle());
+        draft.setTemplate(masterDefaultContract);
+        draft.setTitle(masterDefaultContract.getTitle());
+
+        // Add sections
+        draft.getSections().clear();
+        for (final var mSection : masterDefaultContract.getSections()) {
+            final var pSection = new ProviderTemplateSectionDraftEntity();
+
+            pSection.setContract(draft);
+            pSection.setMasterSection(mSection);
+            if (mSection.getOptions().size() > 0) {
+                pSection.setOption(0);
+                pSection.setOptional(false);
+                pSection.setSubOption(IntStream.range(0, mSection.getOptions().size()).boxed().collect(Collectors.toList()));
+            }
+
+            draft.getSections().add(pSection);
+        }
+
+        return saveAndFlush(draft).toDto(true);
+    }
 }

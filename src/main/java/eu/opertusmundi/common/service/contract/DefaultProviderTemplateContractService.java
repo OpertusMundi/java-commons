@@ -24,6 +24,7 @@ import eu.opertusmundi.common.model.contract.provider.ProviderContractCommand;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractCommandDto;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractDto;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractQuery;
+import eu.opertusmundi.common.repository.contract.MasterContractHistoryRepository;
 import eu.opertusmundi.common.repository.contract.ProviderTemplateContractDraftRepository;
 import eu.opertusmundi.common.repository.contract.ProviderTemplateContractHistoryRepository;
 import eu.opertusmundi.common.repository.contract.ProviderTemplateContractRepository;
@@ -32,20 +33,30 @@ import eu.opertusmundi.common.repository.contract.ProviderTemplateContractReposi
 @Transactional
 public class DefaultProviderTemplateContractService implements ProviderTemplateContractService {
 
-	@Autowired
-	private PdfContractGeneratorService pdfService;
-
-	@Autowired
-	private ContractParametersFactory contractParametersFactory;
-
-    @Autowired
-    private ProviderTemplateContractDraftRepository draftRepository;
+    private final ContractParametersFactory                 contractParametersFactory;
+    private final ProviderTemplateContractRepository        providerContractRepository;
+    private final ProviderTemplateContractDraftRepository   providerContractDraftRepository;
+    private final ProviderTemplateContractHistoryRepository historyRepository;
+    private final PdfContractGeneratorService               pdfService;
+    private final MasterContractHistoryRepository           masterContractHistoryRepository;
 
     @Autowired
-    private  ProviderTemplateContractHistoryRepository historyRepository;
+    public DefaultProviderTemplateContractService(
+        ContractParametersFactory                 contractParametersFactory,
+        ProviderTemplateContractRepository        providerContractRepository,
+        ProviderTemplateContractDraftRepository   providerContractDraftRepository,
+        ProviderTemplateContractHistoryRepository historyRepository,
+        PdfContractGeneratorService               pdfService,
+        MasterContractHistoryRepository           masterContractHistoryRepository
+    ) {
+        this.contractParametersFactory       = contractParametersFactory;
+        this.providerContractRepository      = providerContractRepository;
+        this.providerContractDraftRepository = providerContractDraftRepository;
+        this.historyRepository               = historyRepository;
+        this.pdfService                      = pdfService;
+        this.masterContractHistoryRepository = masterContractHistoryRepository;
+    }
 
-    @Autowired
-    private  ProviderTemplateContractRepository contractRepository;
 
     @Override
     public PageResultDto<ProviderTemplateContractDto> findAllDrafts(
@@ -58,7 +69,7 @@ public class DefaultProviderTemplateContractService implements ProviderTemplateC
         final Direction   direction   = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
         final PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, orderBy.getValue()));
 
-        final Page<ProviderTemplateContractDto> p = this.draftRepository.findAllObjects(providerKey, pageRequest);
+        final Page<ProviderTemplateContractDto> p = this.providerContractDraftRepository.findAllObjects(providerKey, pageRequest);
 
         final long count = p.getTotalElements();
         final List<ProviderTemplateContractDto> records = p.stream().collect(Collectors.toList());
@@ -69,28 +80,28 @@ public class DefaultProviderTemplateContractService implements ProviderTemplateC
 
     @Override
     public ProviderTemplateContractDto findOneDraft(UUID providerKey, UUID draftKey) throws ApplicationException {
-        final ProviderTemplateContractDto result = this.draftRepository.findOneObject(providerKey, draftKey).orElse(null);
+        final ProviderTemplateContractDto result = this.providerContractDraftRepository.findOneObject(providerKey, draftKey).orElse(null);
 
         return result;
     }
 
     @Override
     public ProviderTemplateContractDto updateDraft(ProviderTemplateContractCommandDto command) {
-        final ProviderTemplateContractDto result = this.draftRepository.saveFrom(command);
+        final ProviderTemplateContractDto result = this.providerContractDraftRepository.saveFrom(command);
 
         return result;
     }
 
     @Override
     public ProviderTemplateContractDto deleteDraft(Integer providerId, UUID draftKey) {
-        final ProviderTemplateContractDto result = draftRepository.deleteByKey(providerId, draftKey);
+        final ProviderTemplateContractDto result = providerContractDraftRepository.deleteByKey(providerId, draftKey);
 
         return result;
     }
 
     @Override
-    public ProviderTemplateContractDto publishDraft(Integer providerId, UUID draftKey) throws ApplicationException {
-        final ProviderTemplateContractDto result = this.historyRepository.publishDraft(providerId, draftKey);
+    public ProviderTemplateContractDto publishDraft(UUID providerKey, UUID draftKey) throws ApplicationException {
+        final ProviderTemplateContractDto result = this.historyRepository.publishDraft(providerKey, draftKey);
 
         return result;
     }
@@ -100,7 +111,7 @@ public class DefaultProviderTemplateContractService implements ProviderTemplateC
         final Direction   direction   = query.getOrder() == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
         final PageRequest pageRequest = PageRequest.of(query.getPage(), query.getSize(), Sort.by(direction, query.getOrderBy().getValue()));
 
-        final Page<ProviderTemplateContractDto> p = this.contractRepository.findAllObjects(
+        final Page<ProviderTemplateContractDto> p = this.providerContractRepository.findAllObjects(
             query.getProviderKey(), pageRequest
         );
 
@@ -113,23 +124,21 @@ public class DefaultProviderTemplateContractService implements ProviderTemplateC
 
     @Override
     public Optional<ProviderTemplateContractDto> findOneByKey(Integer providerId, UUID templateKey) {
-        final ProviderTemplateContractDto result = this.contractRepository.findOneObject(providerId, templateKey).orElse(null);
+        final ProviderTemplateContractDto result = this.providerContractRepository.findOneObject(providerId, templateKey).orElse(null);
 
         return Optional.ofNullable(result);
     }
 
     @Override
-    public ProviderTemplateContractDto createFromMasterContract(int userId, UUID providerKey, UUID templateKey) throws ApplicationException {
-        final ProviderTemplateContractDto result = this.draftRepository.createFromHistory(
-            userId, providerKey, templateKey
-        );
+    public ProviderTemplateContractDto createFromMasterContract(UUID providerKey, UUID templateKey) throws ApplicationException {
+        final ProviderTemplateContractDto result = this.providerContractDraftRepository.createFromHistory(providerKey, templateKey);
 
         return result;
     }
 
     @Override
-    public ProviderTemplateContractDto deactivate(Integer providerId, UUID templateKey) {
-        final ProviderTemplateContractDto result = this.historyRepository.deactivate(providerId, templateKey);
+    public ProviderTemplateContractDto deactivate(UUID providerKey, UUID templateKey, boolean force) {
+        final ProviderTemplateContractDto result = this.historyRepository.deactivate(providerKey, templateKey, force);
 
         return result;
     }
@@ -149,4 +158,33 @@ public class DefaultProviderTemplateContractService implements ProviderTemplateC
         return contractByteArray;
     }
 
+    @Override
+    public void createDefaultContract(UUID providerKey) {
+        final var defaultMasterContract = masterContractHistoryRepository.findDefaultContract().orElse(null);
+        if (defaultMasterContract == null) {
+            // Master contract may not exist
+            return;
+        }
+
+        final var providerDefaultContract = this.historyRepository.findDefaultProviderContract(providerKey).orElse(null);
+        if (providerDefaultContract != null) {
+            // If provider contract template has not changed, do not update
+            // contract
+            if (defaultMasterContract.getId() == providerDefaultContract.getTemplate().getId()) {
+                return;
+            }
+            // Deactivate existing default contract
+            this.deactivate(providerKey, providerDefaultContract.getKey(), true);
+        }
+
+        // Stage new provider default contract as a draft and then publish
+        final var providerDefaultContractDraft = this.providerContractDraftRepository.createDefaultContractDraft(providerKey);
+
+        this.publishDraft(providerKey, providerDefaultContractDraft.getKey());
+    }
+
+    @Override
+    public ProviderTemplateContractDto acceptDefaultContract(UUID providerKey) {
+        return this.historyRepository.acceptDefaultContract(providerKey);
+    }
 }

@@ -82,10 +82,13 @@ public class ProviderTemplateContractDto implements Serializable {
 
     @Schema(description = "True if this is the default contract")
     private boolean defaultContract;
-    
+
     @Schema(description = "True if the provider has read and accepted the default contract")
     private boolean defaultContractAccepted;
-    
+
+    @Schema(description = "Date of contract acceptance in ISO format")
+    private ZonedDateTime defaultContractAcceptedAt;
+
     public void removeHelpdeskData() {
         this.owner = null;
     }

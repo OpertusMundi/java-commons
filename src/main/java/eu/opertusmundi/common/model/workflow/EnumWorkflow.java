@@ -14,6 +14,7 @@ public enum EnumWorkflow {
     PROVIDER_PUBLISH_ASSET               ("provider-publish-asset"                  , EnumProcessInstanceResource.DRAFT),
     PROVIDER_REGISTRATION                ("provider-registration"                   , EnumProcessInstanceResource.PROVIDER),
     PROVIDER_REMOVE_ASSET                ("provider-remove-asset"                   , EnumProcessInstanceResource.ASSET),
+    PROVIDER_SET_DEFAULT_CONTRACT        ("provider-set-default-contract"),
     PUBLISH_USER_SERVICE                 ("user-publish-service"                    , EnumProcessInstanceResource.USER_SERVICE),
     REMOVE_USER_SERVICE                  ("user-remove-service"                     , EnumProcessInstanceResource.USER_SERVICE),
     SUBSCRIPTION_BILLING                 ("workflow-subscription-billing"),
@@ -26,7 +27,7 @@ public enum EnumWorkflow {
 
     @Getter
     private final String key;
-    
+
     @Getter
     private final EnumProcessInstanceResource resourceType;
 

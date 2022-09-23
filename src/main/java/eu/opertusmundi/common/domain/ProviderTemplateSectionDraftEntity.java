@@ -78,7 +78,6 @@ public class ProviderTemplateSectionDraftEntity{
     @Getter
     @Setter
     private List<Integer> subOption;
-   
 
     public ProviderTemplateSectionDto toDto() {
         final ProviderTemplateSectionDto s = new ProviderTemplateSectionDto();

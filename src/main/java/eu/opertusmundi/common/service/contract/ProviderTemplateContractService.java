@@ -6,8 +6,8 @@ import java.util.UUID;
 import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
-import eu.opertusmundi.common.model.contract.provider.ProviderContractCommand;
 import eu.opertusmundi.common.model.contract.provider.EnumProviderContractSortField;
+import eu.opertusmundi.common.model.contract.provider.ProviderContractCommand;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractCommandDto;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractDto;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractQuery;
@@ -64,12 +64,12 @@ public interface ProviderTemplateContractService {
     /**
      * Publish draft
      *
-     * @param providerId
+     * @param providerKey
      * @param draftKey
      * @return
      * @throws ApplicationException
      */
-    ProviderTemplateContractDto publishDraft(Integer providerId, UUID draftKey) throws ApplicationException;
+    ProviderTemplateContractDto publishDraft(UUID providerKey, UUID draftKey) throws ApplicationException;
 
     /**
      * Get all active contract templates
@@ -93,21 +93,35 @@ public interface ProviderTemplateContractService {
      * After a template becomes inactive, providers can not assign it to an
      * asset.
      *
-     * @param providerId
-     * @param templateKey
-     * @return
-     */
-    ProviderTemplateContractDto deactivate(Integer providerId, UUID templateKey);
-
-    /**
-     * Create a new draft from an existing template contract
-     *
-     * @param userId
      * @param providerKey
      * @param templateKey
      * @return
      */
-    ProviderTemplateContractDto createFromMasterContract(int userId, UUID providerKey, UUID templateKey) throws ApplicationException;
+    default ProviderTemplateContractDto deactivate(UUID providerKey, UUID templateKey) {
+        return this.deactivate(providerKey, templateKey, false);
+    }
+
+    /**
+     * Mark a contract as inactive
+     *
+     * After a template becomes inactive, providers can not assign it to an
+     * asset.
+     *
+     * @param providerKey
+     * @param templateKey
+     * @param force
+     * @return
+     */
+    ProviderTemplateContractDto deactivate(UUID providerKey, UUID templateKey, boolean force);
+
+    /**
+     * Create a new draft from an existing template contract
+     *
+     * @param providerKey
+     * @param templateKey
+     * @return
+     */
+    ProviderTemplateContractDto createFromMasterContract(UUID providerKey, UUID templateKey) throws ApplicationException;
 
     /**
      * Print contract
@@ -117,4 +131,18 @@ public interface ProviderTemplateContractService {
      */
     byte[] print(ProviderContractCommand command);
 
+    /**
+     * Create provider default contract
+     *
+     * @param providerKey
+     */
+    void createDefaultContract(UUID providerKey);
+
+    /**
+     * Accept provider default contract
+     *
+     * @param providerKey
+     * @return
+     */
+    ProviderTemplateContractDto acceptDefaultContract(UUID providerKey);
 }

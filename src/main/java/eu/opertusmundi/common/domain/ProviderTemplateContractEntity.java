@@ -80,22 +80,26 @@ public class ProviderTemplateContractEntity {
     private ZonedDateTime createdAt;
 
     @Column(name = "`modified_at`")
-    ZonedDateTime modifiedAt;
+    private ZonedDateTime modifiedAt;
 
     @NotNull
     @Column(name = "`default_contract`")
     private boolean defaultContract;
-        
+
     @NotNull
     @Column(name = "`default_contract_accepted`")
     private boolean defaultContractAccepted;
-    
+
+    @Column(name = "`default_contract_accepted_at`")
+    private ZonedDateTime defaultContractAcceptedAt;
+
     public ProviderTemplateContractDto toDto(boolean includeDetails) {
         final ProviderTemplateContractDto c = new ProviderTemplateContractDto();
 
         c.setCreatedAt(createdAt);
         c.setDefaultContract(defaultContract);
         c.setDefaultContractAccepted(defaultContractAccepted);
+        c.setDefaultContractAcceptedAt(defaultContractAcceptedAt);
         c.setId(id);
         c.setKey(key);
         c.setModifiedAt(modifiedAt);
@@ -125,7 +129,8 @@ public class ProviderTemplateContractEntity {
 
         e.setCreatedAt(h.getCreatedAt());
         e.setDefaultContract(h.isDefaultContract());
-        e.setDefaultContractAccepted(h.isDefaultContractAccepted());
+        e.setDefaultContractAccepted(false);
+        e.setDefaultContractAcceptedAt(null);
         e.setKey(h.getKey());
         e.setModifiedAt(h.getModifiedAt());
         e.setOwner(h.getOwner());

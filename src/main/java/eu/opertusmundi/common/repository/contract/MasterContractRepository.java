@@ -27,11 +27,13 @@ public interface MasterContractRepository extends JpaRepository<MasterContractEn
     @Query("SELECT c FROM Contract c WHERE c.id = :id")
     Optional<MasterContractEntity> findOneById(@Param("id") Integer id);
 
-    @Query("SELECT c FROM Contract c INNER JOIN c.parent p WHERE "
-         + "(c.title like :title or :title is null) "
+    @Query("SELECT c FROM Contract c INNER JOIN c.parent p "
+         + "WHERE (c.title like :title or :title is null) "
+         + "ORDER BY c.defaultContract DESC"
     )
     Page<MasterContractEntity> findAll(String title, Pageable pageable);
 
+    @Override
     @Transactional(readOnly = false)
     default void deleteById(Integer id) throws ApplicationException {
         final MasterContractEntity e = this.findOneById(id).orElse(null);
@@ -50,7 +52,7 @@ public interface MasterContractRepository extends JpaRepository<MasterContractEn
 
         this.delete(e);
     }
-    
+
     default Page<MasterContractDto> findAllObjects(String title, Pageable pageable) {
         if (StringUtils.isBlank(title)) {
             title = null;

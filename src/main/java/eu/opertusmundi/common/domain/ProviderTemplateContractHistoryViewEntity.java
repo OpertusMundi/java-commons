@@ -16,6 +16,9 @@ public class ProviderTemplateContractHistoryViewEntity extends ProviderTemplateC
     	final ProviderTemplateContractHistoryDto c = new ProviderTemplateContractHistoryDto();
 
         c.setCreatedAt(createdAt);
+        c.setDefaultContract(defaultContract);
+        c.setDefaultContractAccepted(defaultContractAccepted);
+        c.setDefaultContractAcceptedAt(getDefaultContractAcceptedAt());
         c.setId(id);
         c.setKey(key);
         c.setModifiedAt(modifiedAt);

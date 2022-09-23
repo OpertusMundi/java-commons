@@ -30,6 +30,9 @@ import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractHi
 @Transactional(readOnly = true)
 public interface ProviderTemplateContractHistoryRepository extends JpaRepository<ProviderTemplateContractHistoryEntity, Integer> {
 
+    @Query("SELECT c FROM ProviderContractHistory c WHERE c.owner.key = :providerKey and c.status = 'ACTIVE' and c.defaultContract = true")
+    Optional<ProviderTemplateContractHistoryEntity> findDefaultProviderContract(UUID providerKey);
+
     @Query("SELECT c FROM ProviderContractHistory c WHERE c.owner.id = :providerId and c.key = :contractKey")
     Optional<ProviderTemplateContractHistoryEntity> findByKey(Integer providerId, UUID contractKey);
 
@@ -44,10 +47,10 @@ public interface ProviderTemplateContractHistoryRepository extends JpaRepository
     Optional<ProviderTemplateContractHistoryEntity> findByIdAndVersion(UUID providerKey, Integer contractId, String contractVersion);
 
     @Query("SELECT c FROM ProviderContractDraft c WHERE c.owner.key = :providerKey and c.key = :draftKey")
-    Optional<ProviderTemplateContractDraftEntity> findDraftbyKey(UUID providerKey, UUID draftKey);
+    Optional<ProviderTemplateContractDraftEntity> findDraftByKey(UUID providerKey, UUID draftKey);
 
     @Query("SELECT c FROM ProviderContractDraft c WHERE c.owner.id = :providerId and c.key = :draftKey")
-    Optional<ProviderTemplateContractDraftEntity> findDraftbyKey(Integer providerId, UUID draftKey);
+    Optional<ProviderTemplateContractDraftEntity> findDraftByKey(Integer providerId, UUID draftKey);
 
     @Query("SELECT c FROM ContractHistory c WHERE c.key = :contractKey and status = 'ACTIVE'")
     Optional<MasterContractHistoryEntity> findActiveMasterContractByKey(UUID contractKey);
@@ -60,8 +63,8 @@ public interface ProviderTemplateContractHistoryRepository extends JpaRepository
     Optional<ProviderTemplateContractHistoryEntity> findHistoryByPublishedContractKey(UUID providerKey, UUID contractKey);
 
     @Modifying
-    @Query("DELETE ProviderContractDraft c WHERE c.owner.id = :providerId and c.id = :id")
-    int deleteDraftbyId(Integer providerId, Integer id);
+    @Query("DELETE ProviderContractDraft c WHERE c.id = :id")
+    int deleteDraftById(Integer id);
 
     @Query("SELECT c FROM ProviderContractHistoryView c WHERE "
          + "(c.owner.key = :providerKey) and "
@@ -103,9 +106,9 @@ public interface ProviderTemplateContractHistoryRepository extends JpaRepository
     }
 
     @Transactional(readOnly = false)
-    default ProviderTemplateContractHistoryDto deactivate(Integer providerId, UUID contractKey) throws ApplicationException {
+    default ProviderTemplateContractHistoryDto deactivate(UUID providerKey, UUID contractKey, boolean force) throws ApplicationException {
         // Get published contract
-        final ProviderTemplateContractHistoryEntity history = this.findByKey(providerId, contractKey).orElse(null);
+        final ProviderTemplateContractHistoryEntity history = this.findByKey(providerKey, contractKey).orElse(null);
 
         if (history == null) {
             throw ApplicationException.fromMessage(
@@ -117,6 +120,13 @@ public interface ProviderTemplateContractHistoryRepository extends JpaRepository
             throw ApplicationException.fromMessage(
                 ContractMessageCode.INVALID_STATUS,
                 String.format("Invalid status [%s] found. Expected status to be [ACTIVE]", history.getStatus())
+            );
+        }
+
+        if (history.isDefaultContract() && !force) {
+            throw ApplicationException.fromMessage(
+                ContractMessageCode.DEFAULT_PROVIDER_CONTRACT_DEACTIVATE,
+                String.format("Cannot deactivate the default contract", history.getStatus())
             );
         }
 
@@ -132,9 +142,9 @@ public interface ProviderTemplateContractHistoryRepository extends JpaRepository
     }
 
     @Transactional(readOnly = false)
-    default ProviderTemplateContractDto publishDraft(Integer providerId, UUID draftKey) throws ApplicationException {
+    default ProviderTemplateContractDto publishDraft(UUID providerKey, UUID draftKey) throws ApplicationException {
         // Get draft
-        final ProviderTemplateContractDraftEntity draft = this.findDraftbyKey(providerId, draftKey).orElse(null);
+        final ProviderTemplateContractDraftEntity draft = this.findDraftByKey(providerKey, draftKey).orElse(null);
 
         if (draft == null) {
             throw ApplicationException.fromMessage(
@@ -161,7 +171,7 @@ public interface ProviderTemplateContractHistoryRepository extends JpaRepository
         }
 
         // Delete draft
-        this.deleteDraftbyId(providerId, draft.getId());
+        this.deleteDraftById(draft.getId());
 
         // Delete parent published contract
         if (history.getContractParent().getPublished() != null) {
@@ -177,6 +187,26 @@ public interface ProviderTemplateContractHistoryRepository extends JpaRepository
         this.saveAndFlush(history);
 
         return history.getPublished().toDto(true);
+    }
+
+    default ProviderTemplateContractDto acceptDefaultContract(UUID providerKey) {
+        final var defaultContract = this.findDefaultProviderContract(providerKey).orElse(null);
+        if (defaultContract == null) {
+            return null;
+        }
+
+        if (!defaultContract.isDefaultContractAccepted()) {
+            final var now = ZonedDateTime.now();
+            defaultContract.setDefaultContractAccepted(true);
+            defaultContract.setDefaultContractAcceptedAt(now);
+
+            defaultContract.getPublished().setDefaultContractAccepted(true);
+            defaultContract.getPublished().setDefaultContractAcceptedAt(now);
+
+            this.saveAndFlush(defaultContract);
+        }
+
+        return defaultContract.toDto(true);
     }
 
 }

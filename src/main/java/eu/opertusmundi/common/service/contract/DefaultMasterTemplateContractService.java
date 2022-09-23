@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,6 +20,7 @@ import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageRequestDto;
 import eu.opertusmundi.common.model.PageResultDto;
+import eu.opertusmundi.common.model.contract.ContractMessageCode;
 import eu.opertusmundi.common.model.contract.ContractParametersDto;
 import eu.opertusmundi.common.model.contract.helpdesk.DeactivateContractResult;
 import eu.opertusmundi.common.model.contract.helpdesk.EnumMasterContractSortField;
@@ -28,14 +30,18 @@ import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryResult;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractQueryDto;
 import eu.opertusmundi.common.model.contract.helpdesk.PublishContractResult;
+import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.contract.MasterContractDraftRepository;
 import eu.opertusmundi.common.repository.contract.MasterContractHistoryRepository;
 import eu.opertusmundi.common.repository.contract.MasterContractRepository;
+import eu.opertusmundi.common.util.BpmEngineUtils;
+import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
 import eu.opertusmundi.common.validation.DefaultMasterTemplateContractValidator;
 
 @Service
 public class DefaultMasterTemplateContractService implements MasterTemplateContractService {
 
+    private final BpmEngineUtils bpmEngineUtils;
     private final ContractParametersFactory              contractParametersFactory;
     private final DefaultMasterTemplateContractValidator contractValidator;
     private final MasterContractDraftRepository          draftRepository;
@@ -45,13 +51,15 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
 
     @Autowired
     public DefaultMasterTemplateContractService(
-         ContractParametersFactory              contractParametersFactory,
-         DefaultMasterTemplateContractValidator contractValidator,
-         MasterContractDraftRepository          draftRepository,
-         MasterContractHistoryRepository        historyRepository,
-         MasterContractRepository               contractRepository,
-         PdfContractGeneratorService            pdfService
+        BpmEngineUtils bpmEngineUtils,
+        ContractParametersFactory contractParametersFactory,
+        DefaultMasterTemplateContractValidator contractValidator,
+        MasterContractDraftRepository          draftRepository,
+        MasterContractHistoryRepository        historyRepository,
+        MasterContractRepository               contractRepository,
+        PdfContractGeneratorService            pdfService
     ) {
+        this.bpmEngineUtils            = bpmEngineUtils;
         this.contractParametersFactory = contractParametersFactory;
         this.contractValidator         = contractValidator;
         this.draftRepository           = draftRepository;
@@ -117,7 +125,7 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
 
         return result;
     }
-    
+
     @Override
     public MasterContractDto cloneFromTemplate(int userId, int templateId) throws ApplicationException {
         final MasterContractDto result = this.draftRepository.cloneFromHistory(userId, templateId);
@@ -131,7 +139,7 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
         final DeactivateContractResult result = this.historyRepository.deactivate(id);
 
         this.contractRepository.deleteById(result.getContractId());
-        
+
         return result.getContract();
     }
 
@@ -189,16 +197,35 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
     @Override
     public byte[] print(int masterContractId) throws IOException {
         final ContractParametersDto parameters = contractParametersFactory.createWithPlaceholderData();
-        
+
         return pdfService.renderMasterPDF(parameters, masterContractId);
     }
 
     @Override
     @Transactional
     public MasterContractDto setDefaultContract(int id) throws ApplicationException {
+        final List<ProcessInstanceDto> instances = bpmEngineUtils.findInstancesByProcessDefinitionKey(
+            EnumWorkflow.PROVIDER_SET_DEFAULT_CONTRACT.getKey()
+        );
+
+        if(!instances.isEmpty()) {
+            throw ApplicationException.fromMessage(
+                ContractMessageCode.WORKFLOW_INSTANCE_EXISTS,
+                "Previous set contract operation is still pending"
+            );
+        }
+
         contractValidator.validateHistory(id);
 
         final MasterContractDto result = this.historyRepository.setDefaultContract(id);
+
+        var variables = BpmInstanceVariablesBuilder.builder()
+            .variableAsString("template", result.getKey().toString())
+            .variableAsString("templateTitle", result.getTitle())
+            .variableAsString("templateVersion", result.getVersion())
+            .build();
+
+        bpmEngineUtils.startProcessDefinitionByKey(EnumWorkflow.PROVIDER_SET_DEFAULT_CONTRACT, result.getKey().toString(), variables);
 
         return result;
     }
