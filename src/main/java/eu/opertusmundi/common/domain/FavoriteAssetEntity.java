@@ -1,11 +1,16 @@
 package eu.opertusmundi.common.domain;
 
+import java.time.ZonedDateTime;
+
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
+import eu.opertusmundi.common.model.favorite.EnumAssetFavoriteAction;
 import eu.opertusmundi.common.model.favorite.EnumFavoriteType;
 import eu.opertusmundi.common.model.favorite.FavoriteAssetDto;
 import eu.opertusmundi.common.model.favorite.FavoriteDto;
@@ -15,6 +20,8 @@ import lombok.Setter;
 @Entity(name = "FavoriteAsset")
 @Table(schema = "web", name = "`favorite_asset`")
 @DiscriminatorValue(value = "ASSET")
+@Getter
+@Setter
 public class FavoriteAssetEntity extends FavoriteEntity {
 
     public FavoriteAssetEntity() {
@@ -23,24 +30,35 @@ public class FavoriteAssetEntity extends FavoriteEntity {
 
     @NotNull
     @Column(name = "`asset_id`")
-    @Getter
-    @Setter
-    protected String assetId;
+    private String assetId;
 
     @NotNull
     @Column(name = "`asset_version`")
-    @Getter
-    @Setter
-    protected String assetVersion;
+    private String assetVersion;
+
+    @NotNull
+    @Column(name ="`action`")
+    @Enumerated(EnumType.STRING)
+    private EnumAssetFavoriteAction action;
+
+    @NotNull
+    @Column(name ="`notification_sent`")
+    private boolean notificationSent;
+
+    @Column(name = "`notification_sent_at`")
+    private ZonedDateTime notificationSentAt;
 
     @Override
     public FavoriteDto toDto(boolean includeDetails) {
         final FavoriteAssetDto f = new FavoriteAssetDto();
 
+        f.setAction(action);
         f.setAssetId(assetId);
         f.setAssetVersion(assetVersion);
         f.setId(id);
         f.setKey(key);
+        f.setNotificationSent(notificationSent);
+        f.setNotificationSentAt(notificationSentAt);
         f.setTitle(title);
         f.setType(type);
 

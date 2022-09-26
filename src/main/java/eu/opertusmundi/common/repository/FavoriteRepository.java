@@ -66,10 +66,13 @@ public interface FavoriteRepository extends JpaRepository<FavoriteEntity, Intege
         favorite = new FavoriteAssetEntity();
 
         favorite.setAccount(owner);
+        favorite.setAction(command.getAction());
         favorite.setAssetId(item.getId());
         favorite.setAssetVersion(item.getVersion());
         favorite.setCreatedOn(ZonedDateTime.now());
         favorite.setKey(UUID.randomUUID());
+        favorite.setNotificationSent(false);
+        favorite.setNotificationSentAt(null);
         favorite.setTitle(item.getTitle());
 
         return this.save(favorite).toDto(true);

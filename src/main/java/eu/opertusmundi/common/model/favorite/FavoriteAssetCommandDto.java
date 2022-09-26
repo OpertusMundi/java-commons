@@ -21,11 +21,14 @@ public final class FavoriteAssetCommandDto extends FavoriteCommandDto implements
         super(EnumFavoriteType.ASSET);
     }
 
+    @JsonIgnore
+    private transient CatalogueItemDetailsDto item;
+
     @Schema(description = "Published asset unique PID", required = true)
     @NotEmpty
     private String pid;
 
-    @JsonIgnore
-    private transient CatalogueItemDetailsDto item;
+    @Schema(description = "Favorite action", defaultValue = "FAVORITE")
+    private EnumAssetFavoriteAction action = EnumAssetFavoriteAction.FAVORITE;
 
 }
