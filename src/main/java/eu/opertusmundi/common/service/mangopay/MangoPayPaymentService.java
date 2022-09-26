@@ -773,9 +773,12 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             final CartItemDto cartItem = cart.getItems().get(0);
 
             // Cart item must be a catalogue published item
-            final CatalogueItemDetailsDto asset = this.catalogueService.findOne(null, cartItem.getAssetId(), null,  false);
+            final CatalogueItemDetailsDto asset = this.catalogueService.findOne(null, cartItem.getAssetId(), null, false);
             if (asset == null) {
                 throw new PaymentException(PaymentMessageCode.ASSET_NOT_FOUND, "Asset not found");
+            }
+            if (!asset.isAvailableToPurchase()) {
+                throw new PaymentException(PaymentMessageCode.ASSET_PROVIDER_NOT_KYC_VALIDATED, "Asset not available to purchase");
             }
             final boolean vettingRequired           = BooleanUtils.isTrue(asset.getVettingRequired());
             final boolean contractUploadingRequired = asset.getContractTemplateType() == EnumContractType.UPLOADED_CONTRACT;

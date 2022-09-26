@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -39,6 +40,9 @@ public class ProviderDto implements Serializable {
 
     @Schema(description = "Date of registration")
     private ZonedDateTime joinedAt;
+
+    @JsonIgnore
+    private EnumKycLevel KycLevel;
 
     @Schema(description = "Company image")
     private byte[] logoImage;

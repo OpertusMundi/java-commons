@@ -7,6 +7,7 @@ public enum CartMessageCode implements MessageCode {
     PRICING_MODEL,
     CATALOGUE,
     QUOTATION,
+    PROVIDER_NOT_KYC_VALIDATED,
     ;
 
     @Override

@@ -35,6 +35,7 @@ import eu.opertusmundi.common.feign.client.CatalogueFeignClient;
 import eu.opertusmundi.common.model.PageRequestDto;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.RequestContext;
+import eu.opertusmundi.common.model.account.EnumKycLevel;
 import eu.opertusmundi.common.model.account.ProviderDto;
 import eu.opertusmundi.common.model.analytics.AssetViewRecord;
 import eu.opertusmundi.common.model.analytics.EnumAssetViewSource;
@@ -484,6 +485,7 @@ public class DefaultCatalogueService implements CatalogueService {
         final AccountEntity account   = this.providerRepository.findOneByKey(item.getPublisherId());
         final ProviderDto   publisher = account == null ? null : account.getProvider().toProviderDto(true);
         item.setPublisher(publisher);
+        item.setAvailableToPurchase(publisher != null && publisher.getKycLevel() == EnumKycLevel.REGULAR);
 
         // Inject contract details
         catalogueItemUtils.setContract(item, feature);
@@ -816,6 +818,10 @@ public class DefaultCatalogueService implements CatalogueService {
             } finally {
                 span.end();
             }
+        }
+        for (final var i : result.getItems()) {
+            final ProviderDto publisher = publishers.stream().filter(p -> p.getKey().equals(i.getPublisherId())).findFirst().orElse(null);
+            i.setAvailableToPurchase(publisher != null && publisher.getKycLevel() == EnumKycLevel.REGULAR);
         }
 
         // Get statistics

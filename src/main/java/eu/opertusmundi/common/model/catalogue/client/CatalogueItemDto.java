@@ -56,6 +56,11 @@ public class CatalogueItemDto extends BaseCatalogueItemDto implements Serializab
         }
     }
 
+    @Schema(description = "`true` if the asset is available to purchase")
+    @Getter
+    @Setter
+    private boolean availableToPurchase;
+
     @Schema(description = "Collection of custom properties required for external data provider integration")
     @Getter
     @Setter

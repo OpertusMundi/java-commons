@@ -45,9 +45,15 @@ public class DefaultCartService implements CartService {
             final UUID effectiveCartKey = this.ensureCart(command.getCartKey());
             command.setCartKey(effectiveCartKey);
 
-            // Check asset and pricing model
             final CatalogueItemDetailsDto asset = catalogueService.findOne(null, command.getAssetId(), null, false);
 
+            // Asset must be available to purchase (provider must be KYC
+            // validated)
+            if(!asset.isAvailableToPurchase()) {
+                throw new CartException(CartMessageCode.PROVIDER_NOT_KYC_VALIDATED, "Asset is not available to purchase");
+            }
+
+            // Check asset and pricing model
             final BasePricingModelCommandDto pricingModel = asset.getPricingModels().stream()
                 .filter(p -> p.getKey().equals(command.getPricingModelKey()))
                 .findFirst()

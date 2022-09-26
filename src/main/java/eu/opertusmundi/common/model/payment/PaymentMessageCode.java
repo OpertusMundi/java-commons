@@ -8,6 +8,7 @@ public enum PaymentMessageCode implements MessageCode {
     SUBSCRIPTION_NOT_FOUND,
     API_ERROR,
     ASSET_NOT_FOUND,
+    ASSET_PROVIDER_NOT_KYC_VALIDATED,
     CART_IS_EMPTY,
     CART_MAX_SIZE,
     ENUM_MEMBER_NOT_SUPPORTED,

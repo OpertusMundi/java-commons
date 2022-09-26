@@ -237,7 +237,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
     @Getter
     @Setter
     private ZonedDateTime pendingPayoutFundsUpdatedOn;
-    
+
     @Transient
     public Double getRating() {
         if (this.ratingCount == 0) {
@@ -344,6 +344,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         p.setCountry(headquartersAddress.getCountry());
         p.setJoinedAt(createdAt);
         p.setKey(this.account.getKey());
+        p.setKycLevel(this.kycLevel);
         p.setName(name);
         p.setRating(getRating());
 
