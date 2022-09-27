@@ -45,9 +45,12 @@ import eu.opertusmundi.common.model.kyc.UboDeclarationDto;
 import eu.opertusmundi.common.model.kyc.UboDto;
 import eu.opertusmundi.common.model.kyc.UboQueryCommand;
 import eu.opertusmundi.common.model.kyc.UpdateKycLevelCommand;
+import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.CustomerRepository;
 import eu.opertusmundi.common.repository.KycDocumentPageRepository;
+import eu.opertusmundi.common.util.BpmEngineUtils;
+import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
 import io.jsonwebtoken.lang.Assert;
 
 @Service
@@ -56,14 +59,23 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultCustomerVerificationService.class);
 
-    @Autowired
-    private AccountRepository accountRepository;
+    private final AccountRepository         accountRepository;
+    private final BpmEngineUtils            bpmEngineUtils;
+    private final CustomerRepository        customerRepository;
+    private final KycDocumentPageRepository kycDocumentPageRepository;
 
     @Autowired
-    private CustomerRepository customerRepository;
-
-    @Autowired
-    private KycDocumentPageRepository kycDocumentPageRepository;
+    public DefaultCustomerVerificationService(
+        AccountRepository         accountRepository,
+        BpmEngineUtils            bpmEngineUtils,
+        CustomerRepository        customerRepository,
+        KycDocumentPageRepository kycDocumentPageRepository
+    ) {
+        this.accountRepository         = accountRepository;
+        this.bpmEngineUtils            = bpmEngineUtils;
+        this.customerRepository        = customerRepository;
+        this.kycDocumentPageRepository = kycDocumentPageRepository;
+    }
 
     @Override
     public PageResultDto<KycDocumentDto> findAllKycDocuments(KycQueryCommand command) throws CustomerVerificationException {
@@ -310,11 +322,11 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
         final CustomerProfessionalEntity provider = account.getProfile().getProvider();
 
         if (consumer != null) {
-            UpdateKycLevelCommand consumerCommand = UpdateKycLevelCommand.of(consumer.getPaymentProviderUser(), ZonedDateTime.now());
+            final UpdateKycLevelCommand consumerCommand = UpdateKycLevelCommand.of(consumer.getPaymentProviderUser(), ZonedDateTime.now());
             this.updateCustomerKycLevel(consumerCommand);
         }
         if (provider != null) {
-            UpdateKycLevelCommand providerCommand = UpdateKycLevelCommand.of(provider.getPaymentProviderUser(), ZonedDateTime.now());
+            final UpdateKycLevelCommand providerCommand = UpdateKycLevelCommand.of(provider.getPaymentProviderUser(), ZonedDateTime.now());
             this.updateCustomerKycLevel(providerCommand);
         }
 
@@ -325,6 +337,10 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
 
     @Override
     public CustomerDto updateCustomerKycLevel(UpdateKycLevelCommand command) throws CustomerVerificationException {
+        CustomerDto result     = null;
+        UUID        accountKey = null;
+        boolean     isProvider = false;
+
         try {
             // Check customer
             final CustomerEntity customerEntity = this.customerRepository
@@ -337,6 +353,11 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
                     String.format("[OpertusMundi] Customer for provider user [%s] was not found", command.getProviderUserId())
                 );
             }
+            final AccountEntity  account  = customerEntity.getAccount();
+            final CustomerEntity provider = account.getProvider();
+
+            accountKey = customerEntity.getAccount().getKey();
+            isProvider = provider != null && provider.getPaymentProviderUser().equals(command.getProviderUserId());
 
             // Fetch payment provider user
             final User userObject = this.api.getUserApi().get(command.getProviderUserId());
@@ -348,14 +369,14 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
                 );
             }
 
-            final EnumKycLevel kycLevel = EnumKycLevel.from(userObject.getKycLevel());
+            final EnumKycLevel newKycLevel = EnumKycLevel.from(userObject.getKycLevel());
 
             // Ignore redundant updates
-            if (customerEntity.getKycLevel() == kycLevel) {
+            if (customerEntity.getKycLevel() == newKycLevel) {
                 return customerEntity.toDto();
             }
 
-            customerEntity.setKycLevel(kycLevel);
+            customerEntity.setKycLevel(newKycLevel);
 
             final CustomerKycLevelEntity level = new CustomerKycLevelEntity();
             level.setCustomer(customerEntity);
@@ -365,10 +386,17 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
 
             this.customerRepository.saveAndFlush(customerEntity);
 
-            return customerEntity.toDto();
+            result = customerEntity.toDto();
         } catch (final Exception ex) {
             throw this.wrapException("Update KYC Level", ex, command);
         }
+
+        // Send notifications
+        if (isProvider) {
+            this.sendNotificationsOnKycLevelChange(accountKey, command);
+        }
+
+        return result;
     }
 
     private AccountEntity getAccount(UUID key) throws CustomerVerificationException {
@@ -414,6 +442,16 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
         this.ensureCustomer(customer, customerKey, userType);
 
         return customer.getPaymentProviderUser();
+    }
+
+    private void sendNotificationsOnKycLevelChange(UUID accountKey, UpdateKycLevelCommand command) {
+        final var businessKey = UUID.randomUUID().toString();
+        final var variables   = BpmInstanceVariablesBuilder.builder()
+            .variableAsString("accountKey", accountKey.toString())
+            .variableAsString("providerUserId", command.getProviderUserId())
+            .build();
+
+        bpmEngineUtils.startProcessDefinitionByKey(EnumWorkflow.PROVIDER_UPDATE_KYC_LEVEL, businessKey, variables);
     }
 
     /**

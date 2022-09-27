@@ -79,6 +79,7 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
             case ASSET_PUBLISHING_REJECTED :
             case ASSET_PUBLISHING_CANCELLED :
             case ASSET_PUBLISHED :
+            case ASSET_AVAILABLE_TO_PURCHASE:
             case COPY_FILE_TO_TOPIO_DRIVE_SUCCESS :
             case COPY_FILE_TO_TOPIO_DRIVE_ERROR :
             case USER_SERVICE_PUBLISH_SUCCESS :
@@ -158,6 +159,10 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
 
             case ASSET_PUBLISHED :
                 return populateAssetPublishedModel(variables, data);
+
+            case ASSET_AVAILABLE_TO_PURCHASE:
+                data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
+                return data;
 
             case COPY_FILE_TO_TOPIO_DRIVE_SUCCESS:
             case COPY_FILE_TO_TOPIO_DRIVE_ERROR:

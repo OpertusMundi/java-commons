@@ -63,7 +63,7 @@ public abstract class FavoriteEntity {
      * Reference to the owning account
      */
     @NotNull
-    @ManyToOne(targetEntity = AccountEntity.class, fetch = FetchType.LAZY)
+    @ManyToOne(targetEntity = AccountEntity.class, fetch = FetchType.EAGER)
     @JoinColumn(name = "account", nullable = false)
     @Getter
     @Setter

@@ -20,6 +20,9 @@ public class ProviderDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @JsonIgnore
+    private Integer id;
+
     @Schema(description = "Publisher unique key")
     @JsonProperty("id")
     private UUID key;

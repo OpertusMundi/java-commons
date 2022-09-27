@@ -13,7 +13,6 @@ import javax.validation.constraints.NotNull;
 import eu.opertusmundi.common.model.favorite.EnumAssetFavoriteAction;
 import eu.opertusmundi.common.model.favorite.EnumFavoriteType;
 import eu.opertusmundi.common.model.favorite.FavoriteAssetDto;
-import eu.opertusmundi.common.model.favorite.FavoriteDto;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -36,6 +35,9 @@ public class FavoriteAssetEntity extends FavoriteEntity {
     @Column(name = "`asset_version`")
     private String assetVersion;
 
+    @Column(name = "`asset_provider`")
+    private Integer assetProvider;
+
     @NotNull
     @Column(name ="`action`")
     @Enumerated(EnumType.STRING)
@@ -49,11 +51,13 @@ public class FavoriteAssetEntity extends FavoriteEntity {
     private ZonedDateTime notificationSentAt;
 
     @Override
-    public FavoriteDto toDto(boolean includeDetails) {
+    public FavoriteAssetDto toDto(boolean includeDetails) {
         final FavoriteAssetDto f = new FavoriteAssetDto();
 
+        f.setAccountKey(account.getKey());
         f.setAction(action);
         f.setAssetId(assetId);
+        f.setAssetProvider(assetProvider);
         f.setAssetVersion(assetVersion);
         f.setId(id);
         f.setKey(key);

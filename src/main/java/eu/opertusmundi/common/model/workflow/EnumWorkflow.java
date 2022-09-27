@@ -14,6 +14,7 @@ public enum EnumWorkflow {
     PROVIDER_PUBLISH_ASSET               ("provider-publish-asset"                  , EnumProcessInstanceResource.DRAFT),
     PROVIDER_REGISTRATION                ("provider-registration"                   , EnumProcessInstanceResource.PROVIDER),
     PROVIDER_REMOVE_ASSET                ("provider-remove-asset"                   , EnumProcessInstanceResource.ASSET),
+    PROVIDER_UPDATE_KYC_LEVEL            ("provider-update-kyc-level"),
     PROVIDER_SET_DEFAULT_CONTRACT        ("provider-set-default-contract"),
     PUBLISH_USER_SERVICE                 ("user-publish-service"                    , EnumProcessInstanceResource.USER_SERVICE),
     REMOVE_USER_SERVICE                  ("user-remove-service"                     , EnumProcessInstanceResource.USER_SERVICE),
@@ -31,17 +32,17 @@ public enum EnumWorkflow {
     @Getter
     private final EnumProcessInstanceResource resourceType;
 
-    private EnumWorkflow(String key) {
+    EnumWorkflow(String key) {
         this(key, null);
     }
 
-    private EnumWorkflow(String key, EnumProcessInstanceResource resourceType) {
+    EnumWorkflow(String key, EnumProcessInstanceResource resourceType) {
         this.key          = key;
         this.resourceType = resourceType;
     }
 
     public static EnumWorkflow fromKey(String key) {
-        for (EnumWorkflow e : EnumWorkflow.values()) {
+        for (final EnumWorkflow e : EnumWorkflow.values()) {
             if (e.key.equalsIgnoreCase(key)) {
                 return e;
             }

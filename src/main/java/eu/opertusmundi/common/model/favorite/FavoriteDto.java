@@ -37,6 +37,9 @@ public class FavoriteDto {
     @JsonIgnore
     protected Integer id;
 
+    @JsonIgnore
+    protected UUID accountKey;
+
     @Schema(description = "Favorite unique identifier")
     protected UUID key;
 

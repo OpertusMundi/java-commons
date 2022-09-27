@@ -19,6 +19,7 @@ import eu.opertusmundi.common.domain.FavoriteProviderEntity;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.favorite.EnumFavoriteType;
 import eu.opertusmundi.common.model.favorite.FavoriteAssetCommandDto;
+import eu.opertusmundi.common.model.favorite.FavoriteAssetDto;
 import eu.opertusmundi.common.model.favorite.FavoriteDto;
 import eu.opertusmundi.common.model.favorite.FavoriteException;
 import eu.opertusmundi.common.model.favorite.FavoriteMessageCode;
@@ -40,6 +41,14 @@ public interface FavoriteRepository extends JpaRepository<FavoriteEntity, Intege
 
     @Query("SELECT f FROM FavoriteAsset f WHERE f.account.id = :accountId")
     Page<FavoriteAssetEntity> findAllAsset(Integer accountId, Pageable page);
+
+    @Query("SELECT f FROM FavoriteAsset f WHERE f.assetProvider = :assetProviderId")
+    Page<FavoriteAssetEntity> findAllAssetByAssetProvider(Integer assetProviderId, Pageable page);
+
+    @Query("SELECT f FROM FavoriteAsset f WHERE f.assetProvider = :assetProviderId")
+    default Page<FavoriteAssetDto> findAllAssetByAssetProviderObjects(Integer assetProviderId, Pageable page) {
+        return this.findAllAssetByAssetProvider(assetProviderId, page).map(e -> e.toDto(false));
+    }
 
     @Query("SELECT f FROM FavoriteProvider f WHERE f.account.id = :accountId")
     Page<FavoriteProviderEntity> findAllProvider(Integer accountId, Pageable page);
@@ -69,6 +78,7 @@ public interface FavoriteRepository extends JpaRepository<FavoriteEntity, Intege
         favorite.setAction(command.getAction());
         favorite.setAssetId(item.getId());
         favorite.setAssetVersion(item.getVersion());
+        favorite.setAssetProvider(item.getPublisher().getId());
         favorite.setCreatedOn(ZonedDateTime.now());
         favorite.setKey(UUID.randomUUID());
         favorite.setNotificationSent(false);

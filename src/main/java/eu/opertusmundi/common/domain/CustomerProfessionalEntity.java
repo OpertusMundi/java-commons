@@ -340,6 +340,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
     public ProviderDto toProviderDto(boolean includeProviderDetails) {
         final ProviderDto p = new ProviderDto();
 
+        p.setId(id);
         p.setCity(headquartersAddress.getCity());
         p.setCountry(headquartersAddress.getCountry());
         p.setJoinedAt(createdAt);

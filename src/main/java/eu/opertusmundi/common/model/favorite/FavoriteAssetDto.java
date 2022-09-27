@@ -23,6 +23,9 @@ public class FavoriteAssetDto extends FavoriteDto {
     private String assetVersion;
 
     @JsonIgnore
+    private Integer assetProvider;
+
+    @JsonIgnore
     private boolean notificationSent;
 
     @JsonIgnore
