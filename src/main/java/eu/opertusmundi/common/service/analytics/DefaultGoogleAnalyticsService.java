@@ -57,6 +57,9 @@ public class DefaultGoogleAnalyticsService implements GoogleAnalyticsService{
     @Value("${opertusmundi.google-analytics.view-id}")
     private String viewId;
 
+    @Value("${opertusmundi.google-analytics.application-name:Topio}")
+    private String applicationName;
+
     private AnalyticsReporting service;
 
     /**
@@ -72,7 +75,9 @@ public class DefaultGoogleAnalyticsService implements GoogleAnalyticsService{
         final GoogleCredential credential    = GoogleCredential.fromStream(new FileInputStream(keyFileLocation)).createScoped(AnalyticsReportingScopes.all());
 
         // Construct the Analytics Reporting service object.
-        this.service = new AnalyticsReporting.Builder(httpTransport, jsonFactory, credential).build();
+        this.service = new AnalyticsReporting.Builder(httpTransport, jsonFactory, credential)
+            .setApplicationName(applicationName)
+            .build();
     }
 
     /**
