@@ -29,6 +29,7 @@ public class CustomerProfessionalDto extends CustomerDto implements Serializable
     private String                    phone;
     private Double                    rating;
     private CustomerRepresentativeDto representative;
+    private int                       saleLeadCount;
     private String                    siteUrl;
 
     @JsonIgnore

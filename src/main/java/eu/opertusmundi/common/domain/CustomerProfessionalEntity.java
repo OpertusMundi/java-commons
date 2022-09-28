@@ -238,6 +238,12 @@ public class CustomerProfessionalEntity extends CustomerEntity {
     @Setter
     private ZonedDateTime pendingPayoutFundsUpdatedOn;
 
+    @NotNull
+    @Column(name = "`sale_lead_count`")
+    @Getter
+    @Setter
+    private int saleLeadCount = 0;
+
     @Transient
     public Double getRating() {
         if (this.ratingCount == 0) {
@@ -340,12 +346,12 @@ public class CustomerProfessionalEntity extends CustomerEntity {
     public ProviderDto toProviderDto(boolean includeProviderDetails) {
         final ProviderDto p = new ProviderDto();
 
-        p.setId(id);
+        p.setId(account.getId());
         p.setCity(headquartersAddress.getCity());
         p.setCountry(headquartersAddress.getCountry());
         p.setJoinedAt(createdAt);
-        p.setKey(this.account.getKey());
-        p.setKycLevel(this.kycLevel);
+        p.setKey(account.getKey());
+        p.setKycLevel(kycLevel);
         p.setName(name);
         p.setRating(getRating());
 
@@ -399,6 +405,7 @@ public class CustomerProfessionalEntity extends CustomerEntity {
         p.setPidServiceUserId(this.pidServiceUserId);
         p.setRating(this.getRating());
         p.setRepresentative(this.representative.toDto());
+        p.setSaleLeadCount(this.saleLeadCount);
         p.setSiteUrl(this.siteUrl);
         p.setTermsAccepted(this.termsAccepted);
         p.setTermsAcceptedAt(this.termsAcceptedAt);
