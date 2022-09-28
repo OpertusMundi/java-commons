@@ -17,6 +17,7 @@ import eu.opertusmundi.common.domain.FavoriteAssetEntity;
 import eu.opertusmundi.common.domain.FavoriteEntity;
 import eu.opertusmundi.common.domain.FavoriteProviderEntity;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
+import eu.opertusmundi.common.model.favorite.EnumAssetFavoriteAction;
 import eu.opertusmundi.common.model.favorite.EnumFavoriteType;
 import eu.opertusmundi.common.model.favorite.FavoriteAssetCommandDto;
 import eu.opertusmundi.common.model.favorite.FavoriteAssetDto;
@@ -53,11 +54,17 @@ public interface FavoriteRepository extends JpaRepository<FavoriteEntity, Intege
     @Query("SELECT f FROM FavoriteProvider f WHERE f.account.id = :accountId")
     Page<FavoriteProviderEntity> findAllProvider(Integer accountId, Pageable page);
 
+    @Query("SELECT f FROM Favorite f WHERE f.key = :key")
+    Optional<FavoriteEntity> findOneByKey(UUID key);
+
     @Query("SELECT f FROM FavoriteAsset f WHERE f.account.id = :accountId and f.assetId = :assetId")
     Optional<FavoriteAssetEntity> findOneAsset(Integer accountId, String assetId);
 
     @Query("SELECT f FROM FavoriteProvider f WHERE f.account.id = :accountId and f.provider.key = :providerKey")
     Optional<FavoriteProviderEntity> findOneProvider(Integer accountId, UUID providerKey);
+
+    @Query("SELECT count(f) FROM FavoriteAsset f WHERE (f.action = :action) and (f.assetProvider = :providerId)")
+    int countAssetFavoriteByActionAndProvider(EnumAssetFavoriteAction action, int providerId);
 
     @Transactional(readOnly = false)
     default FavoriteDto create(FavoriteAssetCommandDto command) {

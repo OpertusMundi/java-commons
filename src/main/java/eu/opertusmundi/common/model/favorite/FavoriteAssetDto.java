@@ -14,9 +14,6 @@ import lombok.Setter;
 public class FavoriteAssetDto extends FavoriteDto {
 
     @JsonIgnore
-    private EnumAssetFavoriteAction action;
-
-    @JsonIgnore
     private String assetId;
 
     @JsonIgnore
@@ -30,6 +27,9 @@ public class FavoriteAssetDto extends FavoriteDto {
 
     @JsonIgnore
     private ZonedDateTime notificationSentAt;
+
+    @Schema(description = "User action that created the asset favorite record")
+    private EnumAssetFavoriteAction action;
 
     @Schema(description =
         "Asset details. Property `automatedMetadata` is not returned, even if the user is "

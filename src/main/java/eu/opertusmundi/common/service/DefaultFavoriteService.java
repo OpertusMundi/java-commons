@@ -10,10 +10,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import eu.opertusmundi.common.domain.FavoriteAssetEntity;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
+import eu.opertusmundi.common.model.favorite.EnumAssetFavoriteAction;
 import eu.opertusmundi.common.model.favorite.EnumFavoriteSortField;
 import eu.opertusmundi.common.model.favorite.EnumFavoriteType;
 import eu.opertusmundi.common.model.favorite.FavoriteAssetCommandDto;
@@ -23,10 +26,14 @@ import eu.opertusmundi.common.model.favorite.FavoriteDto;
 import eu.opertusmundi.common.model.favorite.FavoriteException;
 import eu.opertusmundi.common.model.favorite.FavoriteMessageCode;
 import eu.opertusmundi.common.model.favorite.FavoriteProviderCommandDto;
+import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.FavoriteRepository;
 
 @Service
 public class DefaultFavoriteService implements FavoriteService {
+
+    @Autowired
+    private AccountRepository accountRepository;
 
     @Autowired
     private FavoriteRepository favoriteRepository;
@@ -92,6 +99,7 @@ public class DefaultFavoriteService implements FavoriteService {
     }
 
     @Override
+    @Transactional
     public FavoriteDto addFavorite(FavoriteCommandDto command) {
         switch (command.getType()) {
             case ASSET :
@@ -107,12 +115,23 @@ public class DefaultFavoriteService implements FavoriteService {
     }
 
     @Override
+    @Transactional
     public void removeFavorite(Integer accountId, UUID key) {
+        final var favorite = this.favoriteRepository.findOneByKey(key).orElse(null);
+        if (favorite == null) {
+            return;
+        }
         this.favoriteRepository.delete(accountId, key);
+        if (favorite instanceof final FavoriteAssetEntity assetFavorite &&
+            assetFavorite.getAction() == EnumAssetFavoriteAction.PURCHASE
+        ) {
+            this.refreshProviderSaleLeadCount(assetFavorite.getAssetProvider());
+        }
     }
 
     private FavoriteDto addFavorite(FavoriteAssetCommandDto command) {
-        final List<CatalogueItemDetailsDto> items = this.catalogueService.findAllById(new String[]{command.getPid()});
+        final var action = command.getAction();
+        final var items  = this.catalogueService.findAllById(new String[]{command.getPid()});
 
         if (items.isEmpty()) {
             throw new FavoriteException(
@@ -125,6 +144,11 @@ public class DefaultFavoriteService implements FavoriteService {
         final FavoriteAssetDto result = (FavoriteAssetDto) this.favoriteRepository.create(command);
         result.setAsset(items.get(0));
 
+        if (action == EnumAssetFavoriteAction.PURCHASE) {
+            final var providerId = items.get(0).getPublisher().getId();
+            this.refreshProviderSaleLeadCount(providerId);
+        }
+
         return result;
     }
 
@@ -132,4 +156,11 @@ public class DefaultFavoriteService implements FavoriteService {
         return this.favoriteRepository.create(command);
     }
 
+    private void refreshProviderSaleLeadCount(int id) {
+        final var provider = this.accountRepository.findById(id).get();
+        final var count    = this.favoriteRepository.countAssetFavoriteByActionAndProvider(EnumAssetFavoriteAction.PURCHASE, id);
+
+        provider.getProvider().setSaleLeadCount(count);
+        this.accountRepository.saveAndFlush(provider);
+    }
 }
