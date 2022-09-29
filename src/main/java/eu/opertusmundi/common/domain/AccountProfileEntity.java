@@ -143,7 +143,7 @@ public class AccountProfileEntity {
         }
 
         if (this.providerRegistration != null && !this.getProviderRegistration().isProcessed()) {
-            final CustomerDraftProfessionalDto p = this.providerRegistration.toDto();
+            final CustomerDraftProfessionalDto p = this.providerRegistration.toDto(false);
 
             profile.getProvider().setDraft(p);
         }

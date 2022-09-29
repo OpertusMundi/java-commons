@@ -139,11 +139,21 @@ public abstract class CustomerDraftEntity {
     @Setter
     protected EnumCustomerRegistrationStatus status = EnumCustomerRegistrationStatus.DRAFT;
 
-    @Type(type = "jsonb")
-    @Column(name = "`error_details`", columnDefinition = "jsonb")
+    @Column(name = "`workflow_error_details`")
     @Getter
     @Setter
-    protected List<Message> errorDetails;
+    protected String workflowErrorDetails;
+
+    @Type(type = "jsonb")
+    @Column(name = "`workflow_error_messages`", columnDefinition = "jsonb")
+    @Getter
+    @Setter
+    protected List<Message> workflowErrorMessages;
+
+    @Column(name = "`helpdesk_error_message`")
+    @Getter
+    @Setter
+    protected String helpdeskErrorMessage;
 
     @Transient
     public boolean isProcessed() {
@@ -151,7 +161,11 @@ public abstract class CustomerDraftEntity {
                this.status == EnumCustomerRegistrationStatus.COMPLETED;
     }
 
-    public abstract CustomerDraftDto toDto();
+    public CustomerDraftDto toDto() {
+        return this.toDto(false);
+    }
+
+    public abstract CustomerDraftDto toDto(boolean includeHelpdeskDetails);
 
     public abstract void update(CustomerCommandDto command);
 

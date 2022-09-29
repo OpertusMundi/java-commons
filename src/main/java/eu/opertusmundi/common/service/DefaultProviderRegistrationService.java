@@ -1,10 +1,12 @@
 package eu.opertusmundi.common.service;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
+import org.camunda.bpm.engine.rest.dto.history.HistoricProcessInstanceDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,8 @@ import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.CustomerDraftProfessionalEntity;
 import eu.opertusmundi.common.model.account.AccountDto;
 import eu.opertusmundi.common.model.account.ActivationTokenDto;
+import eu.opertusmundi.common.model.account.CustomerDraftDto;
+import eu.opertusmundi.common.model.account.CustomerDto;
 import eu.opertusmundi.common.model.account.CustomerProfessionalDto;
 import eu.opertusmundi.common.model.account.EnumActivationTokenType;
 import eu.opertusmundi.common.model.account.ProviderProfessionalCommandDto;
@@ -65,12 +69,23 @@ public class DefaultProviderRegistrationService extends AbstractCustomerRegistra
 
         command.setLogoImage(imageUtils.resizeImage(command.getLogoImage(), command.getLogoImageMimeType()));
 
-        final AccountDto account         = this.accountRepository.submitProviderRegistration(command);
-        final boolean    isUpdate        = account.getProfile().getProvider().getCurrent() != null;
-        final UUID       registrationKey = account.getProfile().getProvider().getDraft().getKey();
+        final AccountDto       account         = this.accountRepository.submitProviderRegistration(command);
+        final CustomerDto      customer        = account.getProfile().getProvider().getCurrent();
+        final CustomerDraftDto draft           = account.getProfile().getProvider().getDraft();
+        final boolean          isUpdate        = customer != null;
+        final UUID             registrationKey = draft.getKey();
 
         // Check if workflow exists
-        final ProcessInstanceDto instance = this.bpmEngine.findInstance(registrationKey);
+        final ProcessInstanceDto               instance         = this.bpmEngine.findInstance(registrationKey);
+        final List<HistoricProcessInstanceDto> historyInstances = this.bpmEngine.findHistoryInstances(registrationKey);
+
+        // Delete failed workflow instances
+        if (instance == null && !StringUtils.isBlank(draft.getHelpdeskErrorMessage()) && !historyInstances.isEmpty()) {
+            historyInstances.stream().forEach(i -> this.bpmEngine.deleteHistoryProcessInstance(i.getId()));
+        }
+
+        // Reset errors AFTER deleting failed workflow historic instances
+        this.accountRepository.resetCustomerRegistrationErrors(command);
 
         if (instance == null) {
             final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()

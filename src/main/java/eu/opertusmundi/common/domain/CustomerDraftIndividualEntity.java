@@ -113,7 +113,7 @@ public class CustomerDraftIndividualEntity extends CustomerDraftEntity {
     }
 
     @Override
-    public CustomerDraftDto toDto() {
+    public CustomerDraftDto toDto(boolean includeHelpdeskDetails) {
         final CustomerDraftIndividualDto c = new CustomerDraftIndividualDto();
 
         if (this.address != null) {
@@ -124,8 +124,8 @@ public class CustomerDraftIndividualEntity extends CustomerDraftEntity {
         c.setCountryOfResidence(this.countryOfResidence);
         c.setCreatedAt(this.createdAt);
         c.setEmail(this.email);
-        c.setErrorDetails(this.errorDetails);
         c.setFirstName(this.firstName);
+        c.setHelpdeskErrorMessage(this.helpdeskErrorMessage);
         c.setId(this.id);
         c.setKey(this.key);
         c.setLastName(this.lastName);
@@ -136,6 +136,11 @@ public class CustomerDraftIndividualEntity extends CustomerDraftEntity {
         c.setType(this.type);
         c.setUserIdempotentKey(this.userIdempotentKey);
         c.setWalletIdempotentKey(this.walletIdempotentKey);
+
+        if (includeHelpdeskDetails) {
+            c.setWorkflowErrorDetails(workflowErrorDetails);
+            c.setWorkflowErrorMessages(workflowErrorMessages);
+        }
 
         return c;
     }

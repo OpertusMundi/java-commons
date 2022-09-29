@@ -252,7 +252,7 @@ public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
     }
 
     @Override
-    public CustomerDraftProfessionalDto toDto() {
+    public CustomerDraftProfessionalDto toDto(boolean includeHelpdeskDetails) {
         final CustomerDraftProfessionalDto p = new CustomerDraftProfessionalDto();
 
         p.setAdditionalInfo(this.additionalInfo);
@@ -264,11 +264,11 @@ public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
         p.setCompanyType(this.companyType);
         p.setCreatedAt(this.createdAt);
         p.setEmail(this.email);
-        p.setErrorDetails(this.errorDetails);
         if (this.headquartersAddress != null) {
             p.setHeadquartersAddress(this.headquartersAddress.toDto());
         }
         p.setId(this.id);
+        p.setHelpdeskErrorMessage(this.helpdeskErrorMessage);
         p.setKey(this.key);
         p.setLegalPersonType(this.legalPersonType);
         p.setLogoImage(this.logoImage);
@@ -282,6 +282,11 @@ public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
         p.setType(this.type);
         p.setUserIdempotentKey(this.userIdempotentKey);
         p.setWalletIdempotentKey(this.walletIdempotentKey);
+
+        if (includeHelpdeskDetails) {
+            p.setWorkflowErrorDetails(workflowErrorDetails);
+            p.setWorkflowErrorMessages(workflowErrorMessages);
+        }
 
         return p;
     }

@@ -63,27 +63,29 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
         }
 
         switch (type) {
+            case ASSET_AVAILABLE_TO_PURCHASE :
+            case ASSET_PUBLISHED :
+            case ASSET_PUBLISHING_ACCEPTED :
+            case ASSET_PUBLISHING_CANCELLED :
+            case ASSET_PUBLISHING_REJECTED :
             case CATALOGUE_ASSET_UNPUBLISHED :
             case CATALOGUE_HARVEST_COMPLETED :
-            case ORDER_CONFIRMATION :
+            case CONSUMER_REGISTRATION_CANCELLED :
+            case COPY_FILE_TO_TOPIO_DRIVE_ERROR :
+            case COPY_FILE_TO_TOPIO_DRIVE_SUCCESS :
             case DELIVERY_REQUEST :
             case DIGITAL_DELIVERY :
-            case PURCHASE_REMINDER :
-            case DIGITAL_DELIVERY_BY_SUPPLIER :
-            case PHYSICAL_DELIVERY_BY_SUPPLIER :
             case DIGITAL_DELIVERY_BY_PLATFORM :
+            case DIGITAL_DELIVERY_BY_SUPPLIER :
+            case FILES_UPLOAD_COMPLETED :
+            case ORDER_CONFIRMATION :
+            case PHYSICAL_DELIVERY_BY_SUPPLIER :
+            case PROVIDER_REGISTRATION_CANCELLED :
             case PURCHASE_APPROVED :
             case PURCHASE_REJECTED :
-            case FILES_UPLOAD_COMPLETED :
-            case ASSET_PUBLISHING_ACCEPTED :
-            case ASSET_PUBLISHING_REJECTED :
-            case ASSET_PUBLISHING_CANCELLED :
-            case ASSET_PUBLISHED :
-            case ASSET_AVAILABLE_TO_PURCHASE:
-            case COPY_FILE_TO_TOPIO_DRIVE_SUCCESS :
-            case COPY_FILE_TO_TOPIO_DRIVE_ERROR :
-            case USER_SERVICE_PUBLISH_SUCCESS :
+            case PURCHASE_REMINDER :
             case USER_SERVICE_PUBLISH_FAILURE :
+            case USER_SERVICE_PUBLISH_SUCCESS :
             case USER_SERVICE_REMOVE :
                 return MessageFormat.format(template.getText(), this.jsonToMap(data));
         }
@@ -99,20 +101,46 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
         data.put("type", type.toString());
 
         switch (type) {
-            case CATALOGUE_ASSET_UNPUBLISHED :
-                data.put("assetId", this.checkAndGetVariable(variables, "assetId"));
+            case ASSET_AVAILABLE_TO_PURCHASE :
                 data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
-                data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
-                data.put("publisherKey", this.checkAndGetVariable(variables, "publisherKey"));
                 return data;
+
+            case ASSET_PUBLISHED :
+                return populateAssetPublishedModel(variables, data);
+
+            case ASSET_PUBLISHING_ACCEPTED :
+                return populatePublishingAcceptedModel(variables, data);
+
+            case ASSET_PUBLISHING_CANCELLED :
+                return populatePublishingCancelledModel(variables, data);
+
+            case ASSET_PUBLISHING_REJECTED :
+                return populatePublishingRejectedModel(variables, data);
 
             case CATALOGUE_HARVEST_COMPLETED :
                 data.put("catalogueUrl", this.checkAndGetVariable(variables, "catalogueUrl"));
                 data.put("catalogueType", this.checkAndGetVariable(variables, "catalogueType"));
                 return data;
 
-            case ORDER_CONFIRMATION :
-                return populateOrderConfirmationModel(variables, data);
+            case CONSUMER_REGISTRATION_CANCELLED :
+                data.put("errorMessage", this.checkAndGetVariable(variables, "helpdeskErrorMessage"));
+                return data;
+
+            case COPY_FILE_TO_TOPIO_DRIVE_ERROR :
+            case COPY_FILE_TO_TOPIO_DRIVE_SUCCESS :
+                data.put("assetId", this.checkAndGetVariable(variables, "assetId"));
+                data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
+                data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+                data.put("resourceKey", this.checkAndGetVariable(variables, "resourceKey"));
+                data.put("resourceFileName", this.checkAndGetVariable(variables, "resourceFileName"));
+                return data;
+
+            case CATALOGUE_ASSET_UNPUBLISHED :
+                data.put("assetId", this.checkAndGetVariable(variables, "assetId"));
+                data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
+                data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+                data.put("publisherKey", this.checkAndGetVariable(variables, "publisherKey"));
+                return data;
 
             case DELIVERY_REQUEST :
                 data.put("orderKey", this.checkAndGetVariable(variables, "orderKey"));
@@ -125,56 +153,37 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
                 data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
                 return data;
 
+            case DIGITAL_DELIVERY_BY_PLATFORM :
+                return populateDigitalDeliveryByPlatformModel(variables, data);
+
+            case DIGITAL_DELIVERY_BY_SUPPLIER :
+                return populateDigitalDeliveryBySupplierModel(variables, data);
+
+            case FILES_UPLOAD_COMPLETED :
+                return data;
+
+            case ORDER_CONFIRMATION :
+                return populateOrderConfirmationModel(variables, data);
+
+            case PHYSICAL_DELIVERY_BY_SUPPLIER :
+                return populatePhysicalDeliveryBySupplierModel(variables, data);
+
+            case PROVIDER_REGISTRATION_CANCELLED :
+                data.put("errorMessage", this.checkAndGetVariable(variables, "helpdeskErrorMessage"));
+                return data;
+
+            case PURCHASE_APPROVED :
+            case PURCHASE_REJECTED :
+                return populatePurchaseApprovedBySupplierModel(variables, data);
+
             case PURCHASE_REMINDER :
                 data.put("orderKey", this.checkAndGetVariable(variables, "orderKey"));
                 data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
                 data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
                 return data;
 
-            case DIGITAL_DELIVERY_BY_SUPPLIER :
-                return populateDigitalDeliveryBySupplierModel(variables, data);
-
-            case PHYSICAL_DELIVERY_BY_SUPPLIER :
-                return populatePhysicalDeliveryBySupplierModel(variables, data);
-
-            case DIGITAL_DELIVERY_BY_PLATFORM :
-                return populateDigitalDeliveryByPlatformModel(variables, data);
-
-            case PURCHASE_APPROVED :
-            case PURCHASE_REJECTED :
-                return populatePurchaseApprovedBySupplierModel(variables, data);
-
-            case FILES_UPLOAD_COMPLETED :
-                // No parameters needed
-                return data;
-
-            case ASSET_PUBLISHING_ACCEPTED :
-                return populatePublishingAcceptedModel(variables, data);
-
-            case ASSET_PUBLISHING_REJECTED :
-                return populatePublishingRejectedModel(variables, data);
-
-            case ASSET_PUBLISHING_CANCELLED:
-                return populatePublishingCancelledModel(variables, data);
-
-            case ASSET_PUBLISHED :
-                return populateAssetPublishedModel(variables, data);
-
-            case ASSET_AVAILABLE_TO_PURCHASE:
-                data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
-                return data;
-
-            case COPY_FILE_TO_TOPIO_DRIVE_SUCCESS:
-            case COPY_FILE_TO_TOPIO_DRIVE_ERROR:
-                data.put("assetId", this.checkAndGetVariable(variables, "assetId"));
-                data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
-                data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
-                data.put("resourceKey", this.checkAndGetVariable(variables, "resourceKey"));
-                data.put("resourceFileName", this.checkAndGetVariable(variables, "resourceFileName"));
-                return data;
-
-            case USER_SERVICE_PUBLISH_SUCCESS :
             case USER_SERVICE_PUBLISH_FAILURE :
+            case USER_SERVICE_PUBLISH_SUCCESS :
             case USER_SERVICE_REMOVE :
                 data.put("serviceKey", this.checkAndGetVariable(variables, "serviceKey"));
                 data.put("serviceTitle", this.checkAndGetVariable(variables, "serviceTitle"));

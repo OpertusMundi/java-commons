@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.externaltask.SetRetriesForExternalTasksDto;
+import org.camunda.bpm.engine.rest.dto.history.HistoricProcessInstanceDto;
 import org.camunda.bpm.engine.rest.dto.message.CorrelationMessageDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
 import org.camunda.bpm.engine.rest.dto.runtime.StartProcessInstanceDto;
@@ -61,6 +62,29 @@ public final class BpmEngineUtils {
         }
     }
 
+    public List<HistoricProcessInstanceDto> findHistoryInstances(UUID businessKey) throws ApplicationException {
+        return this.findHistoryInstances(businessKey.toString());
+    }
+
+    public List<HistoricProcessInstanceDto> findHistoryInstances(String businessKey) throws ApplicationException {
+        try {
+            final List<HistoricProcessInstanceDto> instances = this.bpmClient.getObject().getHistoryProcessInstances(null, businessKey, null);
+
+            return instances.stream()
+                .filter(i -> i.getEndTime() != null)
+                .collect(Collectors.toList());
+        } catch (final FeignException fex) {
+            logger.error("[Feign Client] Operation has failed", fex);
+
+            // Handle 404 errors as valid responses
+            if (fex.status() == HttpStatus.NOT_FOUND.value()) {
+                return null;
+            }
+
+            throw ApplicationException.fromMessage(fex, BasicMessageCode.BpmServiceError, "Operation on BPM server failed");
+        }
+    }
+
     public List<ProcessInstanceDto> findInstancesByProcessDefinitionKey(String processDefinitionKey) throws ApplicationException {
         try {
             final List<ProcessInstanceDto> instances = this.bpmClient.getObject().getProcessInstances(processDefinitionKey, null);
@@ -79,7 +103,7 @@ public final class BpmEngineUtils {
             throw ApplicationException.fromMessage(fex, BasicMessageCode.BpmServiceError, "Operation on BPM server failed");
         }
     }
-    
+
     public ProcessInstanceDto startProcessDefinitionByKey(
         EnumWorkflow workflow, String businessKey, Map<String, VariableValueDto> variables
     ) {
@@ -142,12 +166,12 @@ public final class BpmEngineUtils {
     public List<VariableInstanceDto> getHistoryVariables(String variableName, String variableValue) {
         return this.bpmClient.getObject().getHistoryVariables(variableName, variableValue);
     }
-    
+
     public List<VariableInstanceDto> getVariables(String variableName, String variableValue) {
         final String variableValues = variableName + "_eq_" + variableValue;
         return this.bpmClient.getObject().getVariables(variableValues);
     }
-    
+
     public void deleteProcessInstance(String processInstanceId) {
         this.bpmClient.getObject().deleteProcessInstance(processInstanceId);
     }

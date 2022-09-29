@@ -3,7 +3,6 @@ package eu.opertusmundi.common.repository;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,6 +39,7 @@ import eu.opertusmundi.common.model.Message;
 import eu.opertusmundi.common.model.account.AccountDto;
 import eu.opertusmundi.common.model.account.AccountProfileCommandDto;
 import eu.opertusmundi.common.model.account.ConsumerCommandDto;
+import eu.opertusmundi.common.model.account.CustomerCommandDto;
 import eu.opertusmundi.common.model.account.EnumActivationStatus;
 import eu.opertusmundi.common.model.account.EnumCustomerRegistrationStatus;
 import eu.opertusmundi.common.model.account.ExternalIdpAccountCommand;
@@ -50,6 +50,7 @@ import eu.opertusmundi.common.model.account.VendorAccountCommandDto;
 import eu.opertusmundi.common.model.account.helpdesk.ExternalProviderCommandDto;
 import eu.opertusmundi.common.model.analytics.BigDecimalDataPoint;
 import eu.opertusmundi.common.model.integration.EnumDataProvider;
+import eu.opertusmundi.common.service.AssetDraftException;
 import eu.opertusmundi.common.util.TextUtils;
 
 @Repository
@@ -495,10 +496,6 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
             }
         }
 
-        // Reset error details on each submit request
-        if (status == EnumCustomerRegistrationStatus.SUBMITTED) {
-            registration.setErrorDetails(Collections.emptyList());
-        }
         // Update registration status
         registration.setStatus(status);
 
@@ -531,7 +528,24 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     }
 
     @Transactional(readOnly = false)
-    default AccountDto failConsumerRegistration(UUID userKey, List<Message> errorDetails) throws IllegalArgumentException {
+    default void setConsumerRegistrationErrorMessage(UUID userKey, String message) throws AssetDraftException {
+        final AccountEntity        account      = this.findOneByKey(userKey).orElse(null);
+        final AccountProfileEntity profile      = account.getProfile();
+        final CustomerDraftEntity  registration = profile.getConsumerRegistration();
+
+        // A registration must exist and have status [SUBMITTED]
+        if (registration == null || registration.getStatus() != EnumCustomerRegistrationStatus.SUBMITTED) {
+            throw new IllegalArgumentException("Expected a non-null registration with status [SUBMITTED]");
+        }
+
+        registration.setModifiedAt(ZonedDateTime.now());
+        registration.setHelpdeskErrorMessage(message);
+
+        this.saveAndFlush(account);
+    }
+
+    @Transactional(readOnly = false)
+    default AccountDto failConsumerRegistration(UUID userKey, String errorDetails, List<Message> errorMessages) throws IllegalArgumentException {
         final AccountEntity        account      = this.findOneByKey(userKey).orElse(null);
         final AccountProfileEntity profile      = account.getProfile();
         final CustomerDraftEntity  registration = profile.getConsumerRegistration();
@@ -542,9 +556,11 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
         }
 
         // Update registration
-        registration.setStatus(EnumCustomerRegistrationStatus.DRAFT);
         registration.setModifiedAt(ZonedDateTime.now());
-        registration.setErrorDetails(errorDetails);
+        registration.setStatus(EnumCustomerRegistrationStatus.DRAFT);
+        registration.setWorkflowErrorDetails(errorDetails);
+        registration.setWorkflowErrorMessages(errorMessages);
+
         registration.resetIdempotencyKeys();
 
         this.saveAndFlush(account);
@@ -638,10 +654,6 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
             registration.update(command);
         }
 
-        // Reset error details on each submit request
-        if (status == EnumCustomerRegistrationStatus.SUBMITTED) {
-            registration.setErrorDetails(Collections.emptyList());
-        }
         // Update registration status
         registration.setStatus(status);
 
@@ -674,7 +686,24 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     }
 
     @Transactional(readOnly = false)
-    default AccountDto failProviderRegistration(UUID userKey, List<Message> errorDetails) throws IllegalArgumentException {
+    default void setProviderRegistrationErrorMessage(UUID userKey, String message) throws AssetDraftException {
+        final AccountEntity                   account      = this.findOneByKey(userKey).orElse(null);
+        final AccountProfileEntity            profile      = account.getProfile();
+        final CustomerDraftProfessionalEntity registration = profile.getProviderRegistration();
+
+        // A registration must exist and have status [SUBMITTED]
+        if (registration == null || registration.getStatus() != EnumCustomerRegistrationStatus.SUBMITTED) {
+            throw new IllegalArgumentException("Expected a non-null registration with status [SUBMITTED]");
+        }
+
+        registration.setModifiedAt(ZonedDateTime.now());
+        registration.setHelpdeskErrorMessage(message);
+
+        this.saveAndFlush(account);
+    }
+
+    @Transactional(readOnly = false)
+    default AccountDto failProviderRegistration(UUID userKey, String errorDetails, List<Message> errorMessages) throws IllegalArgumentException {
         final AccountEntity        account      = this.findOneByKey(userKey).orElse(null);
         final AccountProfileEntity profile      = account.getProfile();
         final CustomerDraftEntity  registration = profile.getProviderRegistration();
@@ -685,9 +714,11 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
         }
 
         // Update registration
-        registration.setStatus(EnumCustomerRegistrationStatus.DRAFT);
         registration.setModifiedAt(ZonedDateTime.now());
-        registration.setErrorDetails(errorDetails);
+        registration.setStatus(EnumCustomerRegistrationStatus.DRAFT);
+        registration.setWorkflowErrorDetails(errorDetails);
+        registration.setWorkflowErrorMessages(errorMessages);
+
         registration.resetIdempotencyKeys();
 
         this.saveAndFlush(account);
@@ -741,6 +772,27 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
         this.saveAndFlush(account);
 
         return account.toDto();
+    }
+
+    @Transactional(readOnly = false)
+    default void resetCustomerRegistrationErrors(CustomerCommandDto command) throws IllegalArgumentException {
+        // Get registration
+        final AccountEntity        account      = this.findById(command.getUserId()).orElse(null);
+        final AccountProfileEntity profile      = account.getProfile();
+        final CustomerDraftEntity  registration = switch (command.getCustomerType()) {
+            case CONSUMER -> profile.getConsumerRegistration();
+            case PROVIDER -> profile.getProviderRegistration();
+        };
+
+        if (registration != null && registration.getStatus() == EnumCustomerRegistrationStatus.SUBMITTED) {
+            registration.setWorkflowErrorDetails(null);
+            registration.setWorkflowErrorMessages(null);
+            registration.setHelpdeskErrorMessage(null);
+        } else {
+            throw new IllegalArgumentException("Errors can be reset only for submitted registrations");
+        }
+
+        this.saveAndFlush(account);
     }
 
     @Transactional(readOnly = false)
