@@ -9,7 +9,6 @@ import org.locationtech.jts.geom.Geometry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -25,44 +24,44 @@ public class GeoServerUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(GeoServerUtils.class);
 
-    @Value("${opertusmundi.geoserver.endpoint:}")
-    private String geoServerEndpoint;
-
-    @Value("${opertusmundi.geoserver.workspace:opertusmundi}")
-    private String workspace;
-
     @Autowired
     private WmsClient wmsClient;
 
     @Autowired
     private WfsClient wfsClient;
 
-    public ServiceResourceDto getCapabilities(EnumSpatialDataServiceType type, String serviceEndpoint, String layerName) {
+    public ServiceResourceDto getCapabilities(
+        EnumSpatialDataServiceType type,
+        String geoserverEndpoint,
+        String relativeEndpoint,
+        String workspace,
+        String layer
+    ) {
         try {
-            final String endpoint = this.appendRelativePath(this.geoServerEndpoint, serviceEndpoint);
+            final String endpoint = this.appendRelativePath(geoserverEndpoint, relativeEndpoint);
             final URI    uri      = new URI(endpoint);
 
             switch (type) {
                 case WMS :
-                    return this.wmsClient.getMetadata(uri.toURL(), layerName);
+                    return this.wmsClient.getMetadata(uri.toURL(), layer);
                 case WFS:
-                    return this.wfsClient.getMetadata(uri.toString(), workspace, layerName);
+                    return this.wfsClient.getMetadata(uri.toString(), workspace, layer);
 
                 default :
                     return null;
             }
         } catch (final Exception ex) {
-            logger.error(String.format("Failed to execute GetCapabilities. [url=%s]", serviceEndpoint), ex);
+            logger.error(String.format("Failed to execute GetCapabilities. [url=%s]", geoserverEndpoint), ex);
         }
         return null;
     }
 
-    public List<WmsLayerSample> getWmsSamples(ResourceIngestionDataDto config, List<Geometry> boundaries) {
+    public List<WmsLayerSample> getWmsSamples(String geoserverEndpoint, ResourceIngestionDataDto config, List<Geometry> boundaries) {
         final ResourceIngestionDataDto.ServiceEndpoint endpoint  = config.getEndpointByServiceType(EnumSpatialDataServiceType.WMS);
         final String                                   layerName = config.getTableName();
 
         try {
-            final String path = this.appendRelativePath(this.geoServerEndpoint, endpoint.getUri());
+            final String path = this.appendRelativePath(geoserverEndpoint, endpoint.getUri());
             final URI    uri  = new URI(path);
 
             return this.wmsClient.getSamples(uri.toURL(), layerName, boundaries);
@@ -75,12 +74,12 @@ public class GeoServerUtils {
         return null;
     }
 
-    public List<WfsLayerSample> getWfsSamples(ResourceIngestionDataDto config, List<Geometry> boundaries) {
+    public List<WfsLayerSample> getWfsSamples(String geoserverEndpoint, String workspace, ResourceIngestionDataDto config, List<Geometry> boundaries) {
         final ResourceIngestionDataDto.ServiceEndpoint endpoint  = config.getEndpointByServiceType(EnumSpatialDataServiceType.WFS);
         final String                                   layerName = config.getTableName();
 
         try {
-            final String path = this.appendRelativePath(this.geoServerEndpoint, endpoint.getUri());
+            final String path = this.appendRelativePath(geoserverEndpoint, endpoint.getUri());
             final URI    uri  = new URI(path);
 
             final List<WfsLayerSample> result = this.wfsClient.getSamples(uri.toURL(), workspace, layerName, boundaries);
@@ -101,9 +100,9 @@ public class GeoServerUtils {
     }
 
     public byte[] getWmsMap(
-        String serviceEndpoint, String layerName, String bbox, int width, int height
+        String geoserverEndpoint, String relativeEndpoint, String layerName, String bbox, int width, int height
     ) throws OgcServiceClientException, MalformedURLException, URISyntaxException {
-        final String endpoint = this.appendRelativePath(this.geoServerEndpoint, serviceEndpoint);
+        final String endpoint = this.appendRelativePath(geoserverEndpoint, relativeEndpoint);
         final URI    uri      = new URI(endpoint);
 
         return this.wmsClient.getMap(uri.toURL(), layerName, bbox, width, height);

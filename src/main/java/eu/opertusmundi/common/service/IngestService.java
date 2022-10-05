@@ -2,7 +2,6 @@ package eu.opertusmundi.common.service;
 
 import eu.opertusmundi.common.model.ingest.IngestServiceException;
 import eu.opertusmundi.common.model.ingest.ServerIngestDeferredResponseDto;
-import eu.opertusmundi.common.model.ingest.ServerIngestPromptResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestResultResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestStatusResponseDto;
@@ -10,12 +9,8 @@ import eu.opertusmundi.common.model.ingest.ServerIngestTicketResponseDto;
 
 public interface IngestService {
 
-    ServerIngestPromptResponseDto ingestSync(
-        String idempotencyKey, String resource, String shard, String workspace, String tablename
-    ) throws IngestServiceException;
-
     ServerIngestDeferredResponseDto ingestAsync(
-        String idempotencyKey, String resource, String shard, String workspace, String tablename
+        String idempotencyKey, String resource, String shard, String workspace, String table, String encoding, String crs
     ) throws IngestServiceException;
 
     ServerIngestPublishResponseDto publish(
@@ -36,6 +31,6 @@ public interface IngestService {
      * @param table Database table name
      * @throws IngestServiceException
      */
-    void removeLayerAndData(String shard, String workspace, String table) throws IngestServiceException;
+    void removeDataAndLayer(String shard, String workspace, String table) throws IngestServiceException;
 
 }

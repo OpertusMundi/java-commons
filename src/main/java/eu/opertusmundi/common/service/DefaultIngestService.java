@@ -22,7 +22,6 @@ import eu.opertusmundi.common.model.ingest.EnumIngestResponse;
 import eu.opertusmundi.common.model.ingest.IngestServiceException;
 import eu.opertusmundi.common.model.ingest.IngestServiceMessageCode;
 import eu.opertusmundi.common.model.ingest.ServerIngestDeferredResponseDto;
-import eu.opertusmundi.common.model.ingest.ServerIngestPromptResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishCommandDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestResultResponseDto;
@@ -42,38 +41,8 @@ public class DefaultIngestService implements IngestService {
     private ObjectProvider<IngestServiceFeignClient> ingestClient;
 
     @Override
-    public ServerIngestPromptResponseDto ingestSync(
-        String idempotencyKey, String resource, String shard, String workspace, String tablename
-    ) throws IngestServiceException {
-        try {
-            final File file = new File(resource);
-
-            if(!file.exists()) {
-                throw new IngestServiceException(
-                    IngestServiceMessageCode.SOURCE_NOT_FOUND,
-                    String.format("Resource file [%s] was not found", resource)
-                );
-            }
-
-            final Path resolvedResourcePath = this.copyResource(idempotencyKey.toString(), resource);
-
-            final ResponseEntity<ServerIngestPromptResponseDto> e = this.ingestClient.getObject().ingestSync(
-                idempotencyKey, resolvedResourcePath.toString(), EnumIngestResponse.PROMPT.getValue(), shard, workspace, tablename
-            );
-
-            final ServerIngestPromptResponseDto serviceResponse = e.getBody();
-
-            return serviceResponse;
-        } catch (final Exception ex) {
-            logger.error("Operation has failed", ex);
-
-            throw new IngestServiceException(IngestServiceMessageCode.UNKNOWN, ex);
-        }
-    }
-
-    @Override
     public ServerIngestDeferredResponseDto ingestAsync(
-        String idempotencyKey, String resource, String shard, String workspace, String tablename
+        String idempotencyKey, String resource, String shard, String workspace, String table, String encoding, String crs
     ) throws IngestServiceException {
         try {
             final File file = new File(resource);
@@ -88,7 +57,15 @@ public class DefaultIngestService implements IngestService {
             final Path resolvedResourcePath = this.copyResource(idempotencyKey.toString(), resource);
 
             final ResponseEntity<ServerIngestDeferredResponseDto> e = this.ingestClient.getObject().ingestAsync(
-                idempotencyKey, resolvedResourcePath.toString(), EnumIngestResponse.DEFERRED.getValue(), shard, workspace, tablename
+                idempotencyKey,
+                resolvedResourcePath.toString(),
+                EnumIngestResponse.DEFERRED.getValue(),
+                table,
+                workspace,
+                shard,
+                false,
+                encoding,
+                crs
             );
 
             final ServerIngestDeferredResponseDto serviceResponse = e.getBody();
@@ -190,9 +167,10 @@ public class DefaultIngestService implements IngestService {
     }
 
     @Override
-    public void removeLayerAndData(String shard, String workspace, String table) throws IngestServiceException {
+    public void removeDataAndLayer(String shard, String workspace, String table) throws IngestServiceException {
+        // Delete GeoServer layer
         try {
-            final ResponseEntity<Void> e = this.ingestClient.getObject().removeLayerAndData(shard, workspace, table);
+            final ResponseEntity<Void> e = this.ingestClient.getObject().removeLayer(table, workspace, shard);
 
             if (e.getStatusCode() != HttpStatus.NO_CONTENT) {
                 throw new IngestServiceException(
@@ -204,6 +182,32 @@ public class DefaultIngestService implements IngestService {
             logger.error("Operation has failed", fex);
 
             throw new IngestServiceException(IngestServiceMessageCode.SERVICE_ERROR, fex.getMessage(), fex);
+        } catch (final Exception ex) {
+            logger.error("Operation has failed", ex);
+
+            throw new IngestServiceException(IngestServiceMessageCode.UNKNOWN, ex);
+        }
+        // Drop database table. If another layer depends on this table, a 400
+        // status code will be returned. We handle this response as a successful
+        // operation.
+        try {
+            final ResponseEntity<Void> e = this.ingestClient.getObject().removeTable(table, workspace, shard);
+
+            if (e.getStatusCode() != HttpStatus.NO_CONTENT) {
+                throw new IngestServiceException(
+                    IngestServiceMessageCode.SERVICE_ERROR,
+                    String.format("Invalid status code. [expected=%s, received=%]", HttpStatus.NO_CONTENT, e.getStatusCode())
+                );
+            }
+        } catch (final FeignException fex) {
+            if (fex.status() != HttpStatus.BAD_REQUEST.value()) {
+                logger.error("Operation has failed", fex);
+                throw new IngestServiceException(IngestServiceMessageCode.SERVICE_ERROR, fex.getMessage(), fex);
+            }
+            logger.info(String.format(
+                "[Ingest Service]: Deletion of table was skipped. Other layers depend on it [shard=%s, workspace=%s, table=%s]",
+                shard, workspace, table
+            ));
         } catch (final Exception ex) {
             logger.error("Operation has failed", ex);
 

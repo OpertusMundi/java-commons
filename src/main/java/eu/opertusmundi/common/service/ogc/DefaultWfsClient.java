@@ -255,7 +255,6 @@ public class DefaultWfsClient extends AbstractOgcClient implements WfsClient {
             new Coordinate(minX, maxY),
             new Coordinate(minX, minY)
         });
-
     }
 
     private void handleException(Exception ex) {

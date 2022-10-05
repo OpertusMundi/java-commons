@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestPart;
 
 import eu.opertusmundi.common.feign.client.config.IngestServiceClientConfiguration;
 import eu.opertusmundi.common.model.ingest.ServerIngestDeferredResponseDto;
-import eu.opertusmundi.common.model.ingest.ServerIngestPromptResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishCommandDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestResultResponseDto;
@@ -30,40 +29,17 @@ import feign.Headers;
 public interface IngestServiceFeignClient {
 
     /**
-     * Start a new synchronous job
-     * 
-     * @param idempotencyKey
-     * @param resource
-     * @param responseType
-     * @param shard
-     * @param workspace
-     * @param tablename
-     * @return
-     */
-    @PostMapping(
-        value   = "/ingest",
-        consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
-        produces = MediaType.APPLICATION_JSON_VALUE
-    )
-    @Headers("Content-Type: application/x-www-form-urlencoded")
-    ResponseEntity<ServerIngestPromptResponseDto> ingestSync(
-        @RequestHeader("X-Idempotency-Key") String idempotencyKey,
-        @RequestPart(name = "resource",  required = true) String resource,
-        @RequestPart(name = "response",  required = true) String responseType,
-        @RequestPart(name = "shard",     required = false) String shard,
-        @RequestPart(name = "workspace", required = false) String workspace,
-        @RequestPart(name = "tablename", required = true) String tablename
-    );
-
-    /**
      * Start a new asynchronous job
-     * 
+     *
      * @param idempotencyKey
      * @param resource
      * @param responseType
-     * @param shard
+     * @param table
      * @param workspace
-     * @param tablename
+     * @param shard
+     * @param replace
+     * @param encoding
+     * @param crs
      * @return
      */
     @PostMapping(
@@ -74,16 +50,20 @@ public interface IngestServiceFeignClient {
     @Headers("Content-Type: application/x-www-form-urlencoded")
     ResponseEntity<ServerIngestDeferredResponseDto> ingestAsync(
         @RequestHeader("X-Idempotency-Key") String idempotencyKey,
-        @RequestPart(name = "resource",  required = true) String resource,
-        @RequestPart(name = "response",  required = true) String responseType,
+        @RequestPart(name = "resource",  required = true)  String resource,
+        @RequestPart(name = "response",  required = true)  String responseType,
+        @RequestPart(name = "table",     required = true)  String table,
+        @RequestPart(name = "workspace", required = true)  String workspace,
         @RequestPart(name = "shard",     required = false) String shard,
-        @RequestPart(name = "workspace", required = false) String workspace,
-        @RequestPart(name = "tablename", required = true) String tablename
+        @RequestPart(name = "replace",   required = false) boolean replace,
+        @RequestPart(name = "encoding",  required = false) String encoding,
+        @RequestPart(name = "crs",       required = false) String crs
+
     );
 
     /**
      * Publish a layer to a Geoserver instance
-     * 
+     *
      * @param idempotencyKey
      * @param command
      * @return
@@ -127,18 +107,34 @@ public interface IngestServiceFeignClient {
     ResponseEntity<ServerIngestTicketResponseDto> getTicketFromIdempotentKey(@PathVariable String key);
 
     /**
-     * Remove all ingested data relative to the given table
+     * Drop PostGis table created from a previous ingest operation
      *
-     * @param shard The Geoserver shard
-     * @param workspace The workspace that the layer belongs; if not present, the default workspace will be assumed
      * @param table Database table name
+     * @param workspace The workspace that the layer belongs; if not present, the default workspace will be assumed
+     * @param shard The Geoserver shard
      * @return
      */
-    @DeleteMapping(value = "/ingest/{table}")
-    ResponseEntity<Void> removeLayerAndData(
-        @RequestParam(required = false) String shard,
-        @RequestParam(required = false) String workspace,
-        @PathVariable String table
+    @DeleteMapping(value = "/ingest")
+    ResponseEntity<Void> removeTable(
+        @RequestParam(required = true)  String table,
+        @RequestParam(required = true)  String workspace,
+        @RequestParam(required = false) String shard
     );
+
+    /**
+     * Remove both the layer and feature type from GeoServer.
+     *
+     * @param table Database table name
+     * @param workspace The workspace that the layer belongs; if not present, the default workspace will be assumed
+     * @param shard The Geoserver shard
+     * @return
+     */
+    @DeleteMapping(value = "/publish")
+    ResponseEntity<Void> removeLayer(
+        @RequestParam(required = true)  String table,
+        @RequestParam(required = true)  String workspace,
+        @RequestParam(required = false) String shard
+    );
+
 
 }

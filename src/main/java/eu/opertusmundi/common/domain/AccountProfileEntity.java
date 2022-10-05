@@ -74,7 +74,7 @@ public class AccountProfileEntity {
     @OneToOne(
         optional = true, fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = false
     )
-    @JoinColumn(name = "`provider_registration`", foreignKey = @ForeignKey(name = "fk_account_profile_provider_registartion"))
+    @JoinColumn(name = "`provider_registration`", foreignKey = @ForeignKey(name = "fk_account_profile_provider_registration"))
     @Getter
     @Setter
     private CustomerDraftProfessionalEntity providerRegistration;
@@ -164,6 +164,7 @@ public class AccountProfileEntity {
         // Set profile data
         profile.setCreatedOn(this.createdAt);
         profile.setFirstName(this.account.getFirstName());
+        profile.setGeodataShard(this.geodataShard);
         profile.setImage(this.image);
         profile.setImageMimeType(this.imageMimeType);
         profile.setLastName(this.account.getLastName());
