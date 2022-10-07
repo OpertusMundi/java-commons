@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.validation.annotation.Validated;
 
 import eu.opertusmundi.common.model.geodata.Shard;
@@ -13,6 +14,7 @@ import lombok.Setter;
 
 @Configuration
 @ConfigurationProperties(prefix = "opertusmundi.geodata", ignoreUnknownFields = true)
+@PropertySource(value = "${opertusmundi.geodata.config:config/geodata.properties}", ignoreResourceNotFound = true)
 @Getter
 @Setter
 @Validated
