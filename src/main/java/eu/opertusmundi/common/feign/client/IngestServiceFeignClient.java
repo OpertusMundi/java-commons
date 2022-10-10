@@ -136,5 +136,4 @@ public interface IngestServiceFeignClient {
         @RequestParam(required = false) String shard
     );
 
-
 }

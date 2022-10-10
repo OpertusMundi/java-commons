@@ -84,8 +84,11 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
 			 + "GROUP BY YEAR(grantedAt), MONTH(r.grantedAt), DAY(r.grantedAt)")
 	List<BigDecimalDataPoint> countUsersWithRolePerDay(EnumRole role);
 
-    @Query("SELECT a FROM Account a LEFT OUTER JOIN FETCH a.profile p WHERE a.key in :keys")
-    List<AccountEntity> findAllByKey(@Param("keys") List<UUID> keys);
+    @Query("SELECT distinct a FROM Account a LEFT OUTER JOIN FETCH a.profile p WHERE a.key in :keys")
+    List<AccountEntity> findAllByKey(List<UUID> keys);
+
+    @Query("SELECT distinct a FROM Account a LEFT OUTER JOIN FETCH a.profile p WHERE a.key in :keys")
+    List<AccountEntity> findAllByKey(UUID[] keys);
 
     @Query("SELECT a FROM Account a WHERE a.email like :email")
     Page<AccountEntity> findAllByEmailContains(String email, Pageable pageable);
@@ -93,7 +96,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
     @Query("SELECT a FROM Account a "
          + "LEFT OUTER JOIN FETCH a.profile p "
          + "WHERE a.key = :key")
-    Optional<AccountEntity> findOneByKey(@Param("key") UUID key);
+    Optional<AccountEntity> findOneByKey(UUID key);
 
     default Optional<AccountDto> findOneByKeyObject(UUID key) {
         return this.findOneByKey(key).map(a -> a.toDto(true));

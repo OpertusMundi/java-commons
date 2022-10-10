@@ -28,4 +28,19 @@ public class UserGeodataConfiguration {
      */
     private final String workspace;
 
+    /**
+     * WMS service endpoint
+     */
+    private final String wmsEndpoint;
+
+    /**
+     * WFS service endpoint
+     */
+    private final String wfsEndpoint;
+
+    /**
+     * WMTS service endpoint
+     */
+    private final String wmtsEndpoint;
+
 }

@@ -336,11 +336,11 @@ public interface UserServiceRepository extends JpaRepository<UserServiceEntity, 
         // Get ingestion data for the specified resource
         final ResourceIngestionDataDto ingestionData = service.getIngestData();
 
-        if (!StringUtils.isBlank(data.getWms())) {
-            ingestionData.addEndpoint(EnumSpatialDataServiceType.WMS, data.getWms());
+        if (!StringUtils.isBlank(data.getWmsDescribeLayer())) {
+            ingestionData.addEndpoint(EnumSpatialDataServiceType.WMS, data.getWmsDescribeLayer());
         }
-        if (!StringUtils.isBlank(data.getWfs())) {
-            ingestionData.addEndpoint(EnumSpatialDataServiceType.WFS, data.getWfs());
+        if (!StringUtils.isBlank(data.getWfsDescribeFeatureType())) {
+            ingestionData.addEndpoint(EnumSpatialDataServiceType.WFS, data.getWfsDescribeFeatureType());
         }
 
         service.setUpdatedOn(ZonedDateTime.now());

@@ -375,11 +375,11 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
             .findFirst()
             .get();
 
-        if (!StringUtils.isBlank(data.getWms())) {
-            ingestionData.addEndpoint(EnumSpatialDataServiceType.WMS, data.getWms());
+        if (!StringUtils.isBlank(data.getWmsDescribeLayer())) {
+            ingestionData.addEndpoint(EnumSpatialDataServiceType.WMS, data.getWmsDescribeLayer());
         }
-        if (!StringUtils.isBlank(data.getWfs())) {
-            ingestionData.addEndpoint(EnumSpatialDataServiceType.WFS, data.getWfs());
+        if (!StringUtils.isBlank(data.getWfsDescribeFeatureType())) {
+            ingestionData.addEndpoint(EnumSpatialDataServiceType.WFS, data.getWfsDescribeFeatureType());
         }
 
         // NOTE: Workaround for updating ingestion data. Property command of entity

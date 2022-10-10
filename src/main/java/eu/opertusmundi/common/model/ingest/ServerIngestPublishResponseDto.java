@@ -12,10 +12,25 @@ import lombok.ToString;
 @ToString
 public class ServerIngestPublishResponseDto {
 
-    @Schema(description = "WFS endpoint.")
-    private String wfs;
+    @Schema(description = "")
+    private String wmsBase;
 
-    @Schema(description = "WMS endpoint.")
-    private String wms;
+    @Schema(description = "The WMS URL for a DescribeLayer request")
+    private String wmsDescribeLayer;
+
+    @Schema(description =
+        "An example WMS URL for a GetMap request. Note that this is not a valid request as it lacks several "
+      + "required query parameters (as bbox, width and height)"
+    )
+    private String wmsGetMap;
+
+    @Schema(description = "The WFS endpoint")
+    private String wfsBase;
+
+    @Schema(description = "The WFS URL for a DescribeFeatureType request")
+    private String wfsDescribeFeatureType;
+
+    @Schema(description = "The WFS URL for a GetFeature request for all contained features (records)")
+    private String wfsGetFeature;
 
 }
