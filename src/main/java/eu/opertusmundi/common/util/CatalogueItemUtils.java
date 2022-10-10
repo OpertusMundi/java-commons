@@ -18,9 +18,12 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.AssetContractAnnexEntity;
 import eu.opertusmundi.common.domain.MasterSectionHistoryEntity;
 import eu.opertusmundi.common.domain.ProviderTemplateContractHistoryEntity;
+import eu.opertusmundi.common.model.account.EnumKycLevel;
+import eu.opertusmundi.common.model.account.ProviderDto;
 import eu.opertusmundi.common.model.asset.AssetContractAnnexDto;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
@@ -33,12 +36,17 @@ import eu.opertusmundi.common.model.contract.TemplateContractDto;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
+import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.AssetContractAnnexRepository;
 import eu.opertusmundi.common.repository.contract.ProviderTemplateContractHistoryRepository;
 import eu.opertusmundi.common.service.DraftFileManager;
 import eu.opertusmundi.common.service.QuotationService;
 import eu.opertusmundi.common.service.integration.DataProviderManager;
 
+/**
+ * Utility service that provides methods to set computed properties of a
+ * marketplace catalogue item
+ */
 @Service
 public class CatalogueItemUtils {
 
@@ -47,20 +55,17 @@ public class CatalogueItemUtils {
     @Value("${opertusmundi.contract.icons}")
     private String iconFolder;
 
-    private final DataProviderManager dataProviderManager;
-
-    private final QuotationService quotationService;
-
-    private final ResourceLoader resourceLoader;
-
-    private final AssetContractAnnexRepository assetContractAnnexRepository;
-
+    private final AccountRepository                         accountRepository;
+    private final DataProviderManager                       dataProviderManager;
+    private final QuotationService                          quotationService;
+    private final ResourceLoader                            resourceLoader;
+    private final AssetContractAnnexRepository              assetContractAnnexRepository;
     private final ProviderTemplateContractHistoryRepository providerContractRepository;
-
-    private final DraftFileManager draftFileManager;
+    private final DraftFileManager                          draftFileManager;
 
     @Autowired
     public CatalogueItemUtils(
+        AccountRepository accountRepository,
         AssetContractAnnexRepository assetContractAnnexRepository,
         DataProviderManager dataProviderManager,
         DraftFileManager draftFileManager,
@@ -68,6 +73,7 @@ public class CatalogueItemUtils {
         QuotationService quotationService,
         ResourceLoader resourceLoader
     ) {
+        this.accountRepository            = accountRepository;
         this.assetContractAnnexRepository = assetContractAnnexRepository;
         this.dataProviderManager          = dataProviderManager;
         this.draftFileManager             = draftFileManager;
@@ -98,6 +104,12 @@ public class CatalogueItemUtils {
         item.setEffectivePricingModels(quotations);
     }
 
+    /**
+     * Set the contract from a published asset
+     *
+     * @param item
+     * @param feature
+     */
     public void setContract(CatalogueItemDetailsDto item, CatalogueFeature feature) {
         switch (item.getContractTemplateType()) {
             case MASTER_CONTRACT :
@@ -151,6 +163,12 @@ public class CatalogueItemUtils {
         item.setContract(contract);
     }
 
+    /**
+     * Set the contract from an asset draft
+     *
+     * @param item
+     * @param draft
+     */
     public void setContract(CatalogueItemDetailsDto item, AssetDraftDto draft) {
         switch (item.getContractTemplateType()) {
             case MASTER_CONTRACT :
@@ -230,6 +248,19 @@ public class CatalogueItemUtils {
                 return ContractTermDto.of(s.getIcon(), s.getIcon().getCategory(), null, s.getShortDescription());
             })
             .forEach(contract.getTerms()::add);
+    }
+
+    /**
+     * Set publisher information to a catalogue item
+     *
+     * @param item
+     */
+    public void setPublisher(CatalogueItemDetailsDto item) {
+        final AccountEntity account   = this.accountRepository.findOneByKey(item.getPublisherId()).orElse(null);
+        final ProviderDto   publisher = account == null ? null : account.getProvider().toProviderDto(true);
+
+        item.setPublisher(publisher);
+        item.setAvailableToPurchase(publisher != null && publisher.getKycLevel() == EnumKycLevel.REGULAR);
     }
 
 }

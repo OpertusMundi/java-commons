@@ -27,7 +27,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.AssetAdditionalResourceEntity;
 import eu.opertusmundi.common.domain.AssetResourceEntity;
 import eu.opertusmundi.common.domain.FavoriteEntity;
@@ -40,6 +39,7 @@ import eu.opertusmundi.common.model.account.ProviderDto;
 import eu.opertusmundi.common.model.analytics.AssetViewRecord;
 import eu.opertusmundi.common.model.analytics.EnumAssetViewSource;
 import eu.opertusmundi.common.model.asset.ResourceDto;
+import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.CatalogueResult;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceMessageCode;
@@ -52,24 +52,28 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemStatistics;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumCatalogueType;
+import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQuery;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQueryResult;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticServiceException;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueCollection;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueResponse;
+import eu.opertusmundi.common.model.geodata.UserGeodataConfiguration;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.AccountAssetRepository;
 import eu.opertusmundi.common.repository.AccountRecentSearchRepository;
+import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.AccountSubscriptionRepository;
 import eu.opertusmundi.common.repository.AssetAdditionalResourceRepository;
 import eu.opertusmundi.common.repository.AssetResourceRepository;
 import eu.opertusmundi.common.repository.FavoriteRepository;
-import eu.opertusmundi.common.repository.ProviderRepository;
+import eu.opertusmundi.common.service.ogc.UserGeodataConfigurationResolver;
 import eu.opertusmundi.common.util.BpmEngineUtils;
 import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
 import eu.opertusmundi.common.util.CatalogueItemUtils;
+import eu.opertusmundi.common.util.StreamUtils;
 import feign.FeignException;
 
 @Service
@@ -88,10 +92,13 @@ public class DefaultCatalogueService implements CatalogueService {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private FavoriteRepository favoriteRepository;
+    private UserGeodataConfigurationResolver userGeodataConfigurationResolver;
 
     @Autowired
-    private ProviderRepository providerRepository;
+    private AccountRepository accountRepository;
+
+    @Autowired
+    private FavoriteRepository favoriteRepository;
 
     @Autowired
     private AccountRecentSearchRepository recentSearchRepository;
@@ -173,8 +180,10 @@ public class DefaultCatalogueService implements CatalogueService {
 
             // Process response
             final CatalogueResult<CatalogueItemDto> response = this.featureCollectionToCatalogueResult(
-                request.getPage(), request.getSize(),
-                catalogueResponse.getResult().getItems(), catalogueResponse.getResult().getTotal(),
+                request.getPage(),
+                request.getSize(),
+                catalogueResponse.getResult().getItems(),
+                catalogueResponse.getResult().getTotal(),
                 (item) -> new CatalogueItemDto(item),
                 true
             );
@@ -385,7 +394,7 @@ public class DefaultCatalogueService implements CatalogueService {
             final CatalogueItemDetailsDto item    = this.featureToItem(ctx, feature, publisherKey, includeAutomatedMetadata);
 
             // Check ownership
-            this.checkOwnership(ctx, id, item);
+            this.checkAssetOwnership(ctx, id, item);
 
             return item;
         } catch (final FeignException fex) {
@@ -422,7 +431,7 @@ public class DefaultCatalogueService implements CatalogueService {
             final CatalogueItemDetailsDto item    = this.featureToItem(ctx, feature, publisherKey, includeAutomatedMetadata);
 
             // Check ownership
-            this.checkOwnership(ctx, id, item);
+            this.checkAssetOwnership(ctx, id, item);
 
             return item;
         } catch (final FeignException fex) {
@@ -441,8 +450,15 @@ public class DefaultCatalogueService implements CatalogueService {
         }
     }
 
-    private void checkOwnership(RequestContext ctx, String id, CatalogueItemDetailsDto item) {
-        // Check ownership
+    /**
+     * Check if the asset with the specified identifier has been purchased by
+     * the account set in the context object
+     *
+     * @param ctx
+     * @param id
+     * @param item
+     */
+    private void checkAssetOwnership(RequestContext ctx, String id, CatalogueItemDetailsDto item) {
         if (ctx != null && ctx.getUserKey() != null) {
             final boolean owned;
             switch (item.getType()) {
@@ -457,13 +473,48 @@ public class DefaultCatalogueService implements CatalogueService {
         }
     }
 
+    /**
+     * Converts a catalogue feature to a marketplace catalogue item
+     *
+     * @param ctx
+     * @param feature
+     * @param publisherKey
+     * @param includeAutomatedMetadata
+     * @return
+     */
     private CatalogueItemDetailsDto featureToItem(
         RequestContext ctx, CatalogueFeature feature, UUID publisherKey, boolean includeAutomatedMetadata
     ) {
         final CatalogueItemDetailsDto item = new CatalogueItemDetailsDto(feature);
 
-        // Filter automated metadata
-        if (!includeAutomatedMetadata) {
+        this.consolidateResources(ctx, item);
+        this.filterAutomatedMetadata(ctx, item, includeAutomatedMetadata);
+        this.filterIngestionInfo(ctx, item, publisherKey);
+        this.setFavorite(ctx, item);
+
+        catalogueItemUtils.setContract(item, feature);
+        catalogueItemUtils.setPublisher(item);
+        catalogueItemUtils.refreshPricingModels(item);
+
+        // Get statistics
+        final CatalogueItemStatistics statistics = this.statisticsService.findOne(feature.getId());
+        item.setStatistics(statistics);
+
+        // Log asset views
+        this.logView(ctx,  item, null, EnumAssetViewSource.VIEW);
+
+        return item;
+    }
+
+    /**
+     * Filter automated metadata based on the request context
+     *
+     * @param ctx
+     * @param item
+     * @param include
+     */
+    private void filterAutomatedMetadata(RequestContext ctx, CatalogueItemDetailsDto item, boolean include) {
+        if (!include) {
             item.setAutomatedMetadata(null);
             item.setVisibility(null);
         } else if (item.getVisibility() != null && !item.getAutomatedMetadata().isNull()) {
@@ -475,22 +526,72 @@ public class DefaultCatalogueService implements CatalogueService {
                 }
             }
         }
+    }
 
-        // Filter ingestion information
-        if (!item.getPublisherId().equals(publisherKey)) {
+    /**
+     * Filter ingestion information and transform service endpoints based on the
+     * request user and context
+     *
+     * @param ctx
+     * @param item
+     * @param publisherKey
+     */
+    private void filterIngestionInfo(RequestContext ctx, CatalogueItemDetailsDto item, UUID publisherKey) {
+        final var geodataConfig = this.userGeodataConfigurationResolver.resolveFromUserKey(item.getPublisherId());
+
+        item.getResources().stream().forEach(r -> {
+            if (r instanceof final ServiceResourceDto s) {
+                s.setEndpoint(this.getEndpointAbsoluteUrl(geodataConfig, s.getServiceType(), s.getEndpoint()));
+            }
+        });
+
+        if (item.getPublisherId().equals(publisherKey)) {
+            StreamUtils.from(item.getIngestionInfo()).flatMap(i -> i.getEndpoints().stream()).forEach(e -> {
+                e.setUri(this.getEndpointAbsoluteUrl(geodataConfig, e.getType(), e.getUri()));
+            });
+        } else {
             item.setIngestionInfo(null);
         }
+    }
 
-        // Inject publisher details
-        final AccountEntity account   = this.providerRepository.findOneByKey(item.getPublisherId());
-        final ProviderDto   publisher = account == null ? null : account.getProvider().toProviderDto(true);
-        item.setPublisher(publisher);
-        item.setAvailableToPurchase(publisher != null && publisher.getKycLevel() == EnumKycLevel.REGULAR);
+    private String getEndpointAbsoluteUrl(UserGeodataConfiguration config, EnumSpatialDataServiceType type, String endpoint) {
+        return switch (type) {
+            case WMS -> config.getWmsEndpoint() + "?" + endpoint.split("\\?")[1];
+            case WFS -> config.getWfsEndpoint() + "?" + endpoint.split("\\?")[1];
+            default -> null;
+        };
+    }
 
-        // Inject contract details
-        catalogueItemUtils.setContract(item, feature);
+    /**
+     * Sets the favorite status for a catalogue item and its publisher
+     *
+     * @param ctx
+     * @param item
+     */
+    private void setFavorite(RequestContext ctx, CatalogueItemDetailsDto item) {
+        final Integer userId = ctx == null || ctx.getAccount() == null ? null : ctx.getAccount().getId();
 
-        // Consolidate data from asset repository
+        if (userId != null) {
+            final FavoriteEntity assetFavorite    = this.favoriteRepository.findOneAsset(userId, item.getId()).orElse(null);
+            final FavoriteEntity providerFavorite = this.favoriteRepository.findOneProvider(userId, item.getPublisherId()).orElse(null);
+            if (assetFavorite != null) {
+                item.setFavorite(assetFavorite.getKey());
+            }
+
+            if (providerFavorite != null) {
+                item.getPublisher().setFavorite(providerFavorite.getKey());
+            }
+        }
+    }
+
+    /**
+     * Consolidate data from asset resource repositories with a marketplace
+     * catalogue item
+     *
+     * @param ctx
+     * @param item
+     */
+    private void consolidateResources(RequestContext ctx, CatalogueItemDetailsDto item) {
         final List<AssetResourceEntity> resources = this.assetResourceRepository
             .findAllResourcesByAssetPid(item.getId());
 
@@ -521,32 +622,6 @@ public class DefaultCatalogueService implements CatalogueService {
                 }
             });
 
-        // Compute effective pricing models
-        catalogueItemUtils.refreshPricingModels(item);
-
-        // Set favorite flag for asset and provider
-        final Integer userId = ctx == null || ctx.getAccount() == null ? null : ctx.getAccount().getId();
-
-        if (userId != null) {
-            final FavoriteEntity assetFavorite    = this.favoriteRepository.findOneAsset(userId, item.getId()).orElse(null);
-            final FavoriteEntity providerFavorite = this.favoriteRepository.findOneProvider(userId, item.getPublisherId()).orElse(null);
-            if (assetFavorite != null) {
-                item.setFavorite(assetFavorite.getKey());
-            }
-
-            if (providerFavorite != null) {
-                item.getPublisher().setFavorite(providerFavorite.getKey());
-            }
-        }
-
-        // Get statistics
-        final CatalogueItemStatistics statistics = this.statisticsService.findOne(feature.getId());
-        item.setStatistics(statistics);
-
-        // Log asset views
-        this.logView(ctx,  item, null, EnumAssetViewSource.VIEW);
-
-        return item;
     }
 
     @Override
@@ -804,7 +879,7 @@ public class DefaultCatalogueService implements CatalogueService {
             try {
                 final UUID[] publisherKeys = items.stream().map(i -> i.getPublisherId()).distinct().toArray(UUID[]::new);
 
-                publishers = this.providerRepository.findAllByKey(publisherKeys).stream()
+                publishers = this.accountRepository.findAllByKey(publisherKeys).stream()
                     .map(a -> a.getProvider().toProviderDto(true))
                     .filter(p -> p != null)
                     .collect(Collectors.toList());
