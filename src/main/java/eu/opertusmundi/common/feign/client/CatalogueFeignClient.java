@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import eu.opertusmundi.common.feign.client.config.CatalogueFeignClientConfiguration;
+import eu.opertusmundi.common.model.EnumSortingOrder;
+import eu.opertusmundi.common.model.catalogue.EnumCatalogueSortField;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueCollection;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueResponse;
@@ -40,7 +42,9 @@ public interface CatalogueFeignClient {
         @RequestParam("q") String query,
         @RequestParam(name = "publisher_id", required = false) String publisher,
         @RequestParam("page") int pageIndex,
-        @RequestParam("per_page") int pageSize
+        @RequestParam("per_page") int pageSize,
+        @RequestParam("orderBy") EnumCatalogueSortField orderBy,
+        @RequestParam("order") EnumSortingOrder order
     );
 
     /**

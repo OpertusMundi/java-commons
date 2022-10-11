@@ -137,7 +137,7 @@ public class DefaultCatalogueService implements CatalogueService {
         try {
             // Catalogue service data page index is 1-based
             final ResponseEntity<CatalogueResponse<CatalogueCollection>> e = this.catalogueClient.getObject().findAll(
-                request.getQuery(), request.getPublisherKey(), request.getPage() + 1, request.getSize()
+                request.getQuery(), request.getPublisherKey(), request.getPage() + 1, request.getSize(), request.getOrderBy(), request.getOrder()
             );
 
             final CatalogueResponse<CatalogueCollection> catalogueResponse = e.getBody();
@@ -169,7 +169,7 @@ public class DefaultCatalogueService implements CatalogueService {
         try {
             // Catalogue service data page index is 1-based
             final ResponseEntity<CatalogueResponse<CatalogueCollection>> e = this.catalogueClient.getObject().findAll(
-                request.getQuery(), request.getPublisherKey(), request.getPage() + 1, request.getSize()
+                request.getQuery(), request.getPublisherKey(), request.getPage() + 1, request.getSize(), request.getOrderBy(), request.getOrder()
             );
 
             final CatalogueResponse<CatalogueCollection> catalogueResponse = e.getBody();
@@ -546,6 +546,16 @@ public class DefaultCatalogueService implements CatalogueService {
         });
 
         if (item.getPublisherId().equals(publisherKey)) {
+            StreamUtils.from(item.getIngestionInfo()).forEach(i -> {
+                final var endpoints = i.getEndpoints().stream()
+                    .filter(e -> e.getType() == item.getSpatialDataServiceType())
+                    .collect(Collectors.toList());
+
+                i.setEndpoints(endpoints);
+                i.setSchema(null);
+                i.setTableName(null);
+            });
+
             StreamUtils.from(item.getIngestionInfo()).flatMap(i -> i.getEndpoints().stream()).forEach(e -> {
                 e.setUri(this.getEndpointAbsoluteUrl(geodataConfig, e.getType(), e.getUri()));
             });

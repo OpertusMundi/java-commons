@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -30,10 +31,14 @@ public class ResourceIngestionDataDto implements Serializable {
     @Schema(description = "The number of features stored in the table.")
     private long features;
 
+    @Hidden
     @Schema(description = "The schema of the created table.")
+    @JsonInclude(Include.NON_EMPTY)
     private String schema;
 
+    @Hidden
     @Schema(description = "The name of the created table. The table name is equal to the resource unique identifier")
+    @JsonInclude(Include.NON_EMPTY)
     private String tableName;
 
     @ArraySchema(
