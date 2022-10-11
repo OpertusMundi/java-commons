@@ -8,7 +8,7 @@
 
 	<groupId>eu.opertusmundi</groupId>
 	<artifactId>opertus-mundi-common</artifactId>
-	<version>1.0.98</version>
+	<version>1.1.0</version>
 	<name>[opertus-mundi] Common</name>
 
 	<packaging>jar</packaging>
@@ -28,19 +28,29 @@
 		<spring-cloud.version>2021.0.3</spring-cloud.version>
 
 		<com.mangopay.version>2.25.1</com.mangopay.version>
-		<com.github.spotbugs.spotbugs.version>4.7.1</com.github.spotbugs.spotbugs.version>
-		<com.github.spotbugs.spotbugs-maven-plugin.version>4.7.1.1</com.github.spotbugs.spotbugs-maven-plugin.version>
-		<com.vladmihalcea.hibernate-types-55.version>2.18.0</com.vladmihalcea.hibernate-types-55.version>
+		<com.github.spotbugs.spotbugs.version>4.7.2</com.github.spotbugs.spotbugs.version>
+		<com.github.spotbugs.spotbugs-maven-plugin.version>4.7.2.1</com.github.spotbugs.spotbugs-maven-plugin.version>
+		<com.google.apis.analyticsreporting>v4-rev174-1.25.0</com.google.apis.analyticsreporting>
+		<com.sun.xml.bind.jaxb-impl>4.0.1</com.sun.xml.bind.jaxb-impl>
+		<com.sun.xml.ws.jaxws-ri>4.0.0</com.sun.xml.ws.jaxws-ri>
+		<com.vladmihalcea.hibernate-types-55.version>2.19.2</com.vladmihalcea.hibernate-types-55.version>
 		<commons-io.version>2.11.0</commons-io.version>
 		<feign-form.version>3.8.0</feign-form.version>
 		<geotools.version>27.1</geotools.version>
 		<icu4j.version>71.1</icu4j.version>
 		<io.jsonwebtoken.version>0.11.5</io.jsonwebtoken.version>
+    <javax.jws.javax.jws-api>1.1</javax.jws.javax.jws-api>
+		<org.apache.pdfbox.pdfbox>2.0.27</org.apache.pdfbox.pdfbox>
+		<org.apache.pdfbox.fontbox>2.0.27</org.apache.pdfbox.fontbox>
+		<org.apache.pdfbox.jempbox>1.8.17</org.apache.pdfbox.jempbox>
+		<org.apache.pdfbox.pdfbox-tools>2.0.27</org.apache.pdfbox.pdfbox-tools>
+		<org.apache.pdfbox.preflight>2.0.27</org.apache.pdfbox.preflight>
+		<org.apache.pdfbox.xmpbox>2.0.27</org.apache.pdfbox.xmpbox>
 		<org.camunda.bpm.version>7.17.0</org.camunda.bpm.version>
 		<org.locationtech.jts.spatial4j.version>0.8</org.locationtech.jts.spatial4j.version>
 		<passay.version>1.6.2</passay.version>
 		<slugify.version>3.0.2</slugify.version>
-		<springdoc.version>1.6.10</springdoc.version>
+		<springdoc.version>1.6.11</springdoc.version>
 		<thumbnailator.version>0.4.17</thumbnailator.version>
 
 		<spotbugs.skip>false</spotbugs.skip>
@@ -327,44 +337,44 @@
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>pdfbox</artifactId>
-			<version>2.0.24</version>
+			<version>${org.apache.pdfbox.pdfbox}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>fontbox</artifactId>
-			<version>2.0.24</version>
+			<version>${org.apache.pdfbox.fontbox}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>jempbox</artifactId>
-			<version>1.8.16</version>
+			<version>${org.apache.pdfbox.jempbox}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>xmpbox</artifactId>
-			<version>2.0.0</version>
+			<version>${org.apache.pdfbox.xmpbox}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>preflight</artifactId>
-			<version>2.0.0</version>
+			<version>${org.apache.pdfbox.preflight}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>pdfbox-tools</artifactId>
-			<version>2.0.0</version>
+			<version>${org.apache.pdfbox.pdfbox-tools}</version>
 		</dependency>
 
 		<!-- Google Clients -->
 		<dependency>
 			<groupId>com.google.apis</groupId>
 			<artifactId>google-api-services-analyticsreporting</artifactId>
-			<version>v4-rev174-1.25.0</version>
+			<version>${com.google.apis.analyticsreporting}</version>
 		</dependency>
 
 		<!-- JDBC drivers -->
@@ -377,21 +387,27 @@
 		<dependency>
 			<groupId>com.sun.xml.ws</groupId>
 			<artifactId>jaxws-ri</artifactId>
-			<version>2.3.3</version>
+			<version>${com.sun.xml.ws.jaxws-ri}</version>
 			<type>pom</type>
+		</dependency>
+
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-impl</artifactId>
+			<version>${com.sun.xml.bind.jaxb-impl}</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>javax.jws</groupId>
+			<artifactId>javax.jws-api</artifactId>
+			<version>${javax.jws.javax.jws-api}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>jakarta.xml.bind</groupId>
 			<artifactId>jakarta.xml.bind-api</artifactId>
 			<scope>provided</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>com.sun.xml.bind</groupId>
-			<artifactId>jaxb-impl</artifactId>
-			<version>2.3.3</version>
-			<scope>runtime</scope>
 		</dependency>
 	</dependencies>
 
