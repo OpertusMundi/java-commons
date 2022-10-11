@@ -487,14 +487,14 @@ public class DefaultCatalogueService implements CatalogueService {
     ) {
         final CatalogueItemDetailsDto item = new CatalogueItemDetailsDto(feature);
 
+        catalogueItemUtils.setContract(item, feature);
+        catalogueItemUtils.setPublisher(item);
+        catalogueItemUtils.refreshPricingModels(item);
+
         this.consolidateResources(ctx, item);
         this.filterAutomatedMetadata(ctx, item, includeAutomatedMetadata);
         this.filterIngestionInfo(ctx, item, publisherKey);
         this.setFavorite(ctx, item);
-
-        catalogueItemUtils.setContract(item, feature);
-        catalogueItemUtils.setPublisher(item);
-        catalogueItemUtils.refreshPricingModels(item);
 
         // Get statistics
         final CatalogueItemStatistics statistics = this.statisticsService.findOne(feature.getId());
