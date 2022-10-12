@@ -43,12 +43,14 @@ public class DefaultFavoriteService implements FavoriteService {
 
     @Override
     public PageResultDto<FavoriteDto> findAll(
-        Integer userId, EnumFavoriteType type, int pageIndex, int pageSize, EnumFavoriteSortField orderBy, EnumSortingOrder order
+        Integer userId, EnumFavoriteType type, EnumAssetFavoriteAction action, int pageIndex, int pageSize, EnumFavoriteSortField orderBy, EnumSortingOrder order
     ) {
         final Direction   direction   = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
         final PageRequest pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
 
-        final Page<FavoriteDto> page    = favoriteRepository.findAll(userId, type, pageRequest).map(f -> f.toDto(true));
+        final Page<FavoriteDto> page    = action == null
+            ? favoriteRepository.findAll(userId, type, pageRequest).map(f -> f.toDto(true))
+            : favoriteRepository.findAllAsset(userId, action, pageRequest).map(f -> f.toDto(true));
         final List<FavoriteDto> records = page.getContent();
 
         if (records.isEmpty()) {

@@ -40,6 +40,9 @@ public interface FavoriteRepository extends JpaRepository<FavoriteEntity, Intege
     @Query("SELECT f FROM Favorite f WHERE (f.account.id = :accountId) and (:type is null or f.type = :type)")
     Page<FavoriteEntity> findAll(Integer accountId, EnumFavoriteType type, Pageable page);
 
+    @Query("SELECT f FROM FavoriteAsset f WHERE (f.account.id = :accountId) and (:action is null or f.action = :action)")
+    Page<FavoriteEntity> findAllAsset(Integer accountId, EnumAssetFavoriteAction action, Pageable page);
+
     @Query("SELECT f FROM FavoriteAsset f WHERE f.account.id = :accountId")
     Page<FavoriteAssetEntity> findAllAsset(Integer accountId, Pageable page);
 

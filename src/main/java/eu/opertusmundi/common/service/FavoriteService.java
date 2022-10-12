@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageResultDto;
+import eu.opertusmundi.common.model.favorite.EnumAssetFavoriteAction;
 import eu.opertusmundi.common.model.favorite.EnumFavoriteSortField;
 import eu.opertusmundi.common.model.favorite.EnumFavoriteType;
 import eu.opertusmundi.common.model.favorite.FavoriteCommandDto;
@@ -17,6 +18,7 @@ public interface FavoriteService {
      *
      * @param userId
      * @param type
+     * @param action
      * @param pageIndex
      * @param pageSize
      * @param orderBy
@@ -24,7 +26,7 @@ public interface FavoriteService {
      * @return
      */
     PageResultDto<FavoriteDto> findAll(
-        Integer userId, EnumFavoriteType type, int pageIndex, int pageSize, EnumFavoriteSortField orderBy, EnumSortingOrder order
+        Integer userId, EnumFavoriteType type, EnumAssetFavoriteAction action, int pageIndex, int pageSize, EnumFavoriteSortField orderBy, EnumSortingOrder order
     );
 
     /**
