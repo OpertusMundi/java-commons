@@ -20,13 +20,13 @@ public class MasterContractHistoryResult extends PageResultDto<MasterContractHis
     }
 
     public MasterContractHistoryResult(
-        PageRequestDto pageRequest, long count, List<MasterContractHistoryDto> items, boolean defaultContract
+        PageRequestDto pageRequest, long count, List<MasterContractHistoryDto> items, int defaultContractCount
     ) {
         super(pageRequest, count, items);
 
-        this.defaultContract = defaultContract;
+        this.defaultContractCount = defaultContractCount;
     }
 
-    private boolean defaultContract = false;
+    private int defaultContractCount = 0;
 
 }

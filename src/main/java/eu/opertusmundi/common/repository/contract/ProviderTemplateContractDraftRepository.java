@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.repository.contract;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -35,8 +36,11 @@ public interface ProviderTemplateContractDraftRepository extends JpaRepository<P
     @Query("SELECT a FROM Account a WHERE a.key = :key")
     Optional<AccountEntity> findAccountByKey(UUID key);
 
+    @Query("SELECT c FROM ContractHistory c WHERE c.status = 'ACTIVE' and c.defaultContract = true and c.key = :key")
+    Optional<MasterContractHistoryEntity> findDefaultMasterContract(UUID key);
+
     @Query("SELECT c FROM ContractHistory c WHERE c.status = 'ACTIVE' and c.defaultContract = true")
-    Optional<MasterContractHistoryEntity> findDefaultMasterContract();
+    List<MasterContractHistoryEntity> findDefaultMasterContracts();
 
     @Query("SELECT c FROM ContractHistory c WHERE c.key = :contractKey and status = 'ACTIVE'")
     Optional<MasterContractHistoryEntity> findActiveMasterContractByKey(UUID contractKey);
@@ -192,12 +196,12 @@ public interface ProviderTemplateContractDraftRepository extends JpaRepository<P
     }
 
     @Transactional(readOnly = false)
-    default ProviderTemplateContractDto createDefaultContractDraft(UUID providerKey) throws ApplicationException {
-        final var masterDefaultContract = this.findDefaultMasterContract().orElse(null);
+    default ProviderTemplateContractDto createDefaultContractDraft(UUID providerKey, UUID contractKey) throws ApplicationException {
+        final var masterDefaultContract = this.findDefaultMasterContract(contractKey).orElse(null);
         if (masterDefaultContract == null) {
             throw ApplicationException.fromMessage(
                 ContractMessageCode.DEFAULT_MASTER_CONTRACT_NOT_FOUND,
-                "Default master contract is not set"
+                "Default master contract was not found"
             );
         }
         final AccountEntity owner = this.findAccountByKey(providerKey).orElse(null);

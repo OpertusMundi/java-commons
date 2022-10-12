@@ -158,33 +158,51 @@ public class DefaultProviderTemplateContractService implements ProviderTemplateC
         return contractByteArray;
     }
 
+    /**
+     * Update default contracts for the provider with the given key
+     *
+     * <p>
+     * The method will initially select all active master and provider default
+     * contracts.
+     * <p>
+     * The provider contracts for which the template id is not present in the
+     * master contract collection will be deactivated.
+     * <p>
+     * Finally, a new provider contract will be created for every master
+     * contract whose identifier is not assigned as a template id to any
+     * of the existing provider contracts.
+     */
     @Override
-    public void createDefaultContract(UUID providerKey) {
-        final var defaultMasterContract = masterContractHistoryRepository.findDefaultContract().orElse(null);
-        if (defaultMasterContract == null) {
-            // Master contract may not exist
-            return;
-        }
+    public void updateDefaultContracts(UUID providerKey) {
+        final var masterContracts   = masterContractHistoryRepository.findDefaultContracts();
+        final var masterContractId  = masterContracts.stream().map(c -> c.getId()).toList();
+        final var providerContracts = this.historyRepository.findDefaultProviderContracts(providerKey);
 
-        final var providerDefaultContract = this.historyRepository.findDefaultProviderContract(providerKey).orElse(null);
-        if (providerDefaultContract != null) {
-            // If provider contract template has not changed, do not update
-            // contract
-            if (defaultMasterContract.getId() == providerDefaultContract.getTemplate().getId()) {
-                return;
+        final var deactivatedContracts = providerContracts.stream()
+            .filter(providerContract -> !masterContractId.contains(providerContract.getTemplate().getId()))
+            .toList();
+
+        deactivatedContracts.stream().forEach(c -> {
+            this.deactivate(providerKey, c.getKey(), true);
+        });
+
+        for (var masterContract : masterContracts) {
+            var existingContract = providerContracts.stream()
+                .filter(c -> c.getTemplate().getId() == masterContract.getId()).findFirst()
+                .orElse(null);
+            if (existingContract != null) {
+                continue;
             }
-            // Deactivate existing default contract
-            this.deactivate(providerKey, providerDefaultContract.getKey(), true);
+
+            // Stage new provider default contract as a draft and then publish
+            final var providerDefaultContractDraft = this.providerContractDraftRepository.createDefaultContractDraft(providerKey, masterContract.getKey());
+
+            this.publishDraft(providerKey, providerDefaultContractDraft.getKey());
         }
-
-        // Stage new provider default contract as a draft and then publish
-        final var providerDefaultContractDraft = this.providerContractDraftRepository.createDefaultContractDraft(providerKey);
-
-        this.publishDraft(providerKey, providerDefaultContractDraft.getKey());
     }
 
     @Override
-    public ProviderTemplateContractDto acceptDefaultContract(UUID providerKey) {
-        return this.historyRepository.acceptDefaultContract(providerKey);
+    public ProviderTemplateContractDto acceptDefaultContract(UUID providerKey, UUID contractKey) {
+        return this.historyRepository.acceptDefaultContract(providerKey, contractKey);
     }
 }

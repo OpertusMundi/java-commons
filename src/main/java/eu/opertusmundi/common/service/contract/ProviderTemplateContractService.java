@@ -132,17 +132,18 @@ public interface ProviderTemplateContractService {
     byte[] print(ProviderContractCommand command);
 
     /**
-     * Create provider default contract
+     * Update default contracts for the provider with the given key
      *
      * @param providerKey
      */
-    void createDefaultContract(UUID providerKey);
+    void updateDefaultContracts(UUID providerKey);
 
     /**
      * Accept provider default contract
      *
      * @param providerKey
+     * @param contractKey
      * @return
      */
-    ProviderTemplateContractDto acceptDefaultContract(UUID providerKey);
+    ProviderTemplateContractDto acceptDefaultContract(UUID providerKey, UUID contractKey);
 }

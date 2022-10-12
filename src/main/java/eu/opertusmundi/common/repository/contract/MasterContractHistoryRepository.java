@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.repository.contract;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -39,7 +40,7 @@ public interface MasterContractHistoryRepository extends JpaRepository<MasterCon
     Optional<MasterContractHistoryEntity> findOneByActiveAndId(int id);
 
     @Query("SELECT c FROM ContractHistory c WHERE c.status = 'ACTIVE' and c.defaultContract = true")
-    Optional<MasterContractHistoryEntity> findDefaultContract();
+    List<MasterContractHistoryEntity> findDefaultContracts();
 
     @Query("SELECT c FROM ContractHistoryView c WHERE "
          + "(c.status in ('ACTIVE', 'INACTIVE', 'DRAFT')) and "
@@ -135,16 +136,14 @@ public interface MasterContractHistoryRepository extends JpaRepository<MasterCon
         return PublishContractResult.of(parentContract == null ? null : parentContract.getId(), published.toDto(true));
     }
 
+    /**
+     * Mark a master contract as default
+     *
+     * @param id
+     * @return
+     * @throws ApplicationException
+     */
     default MasterContractDto setDefaultContract(int id) throws ApplicationException {
-        final MasterContractHistoryEntity defaultContract = this.findDefaultContract().orElse(null);
-
-        if (defaultContract != null) {
-            if (defaultContract.getId() != id) {
-                throw ApplicationException.fromMessage(ContractMessageCode.DEFAULT_MASTER_CONTRACT_ALREADY_SET, "Default contract is already set");
-            }
-            return defaultContract.toDto(false);
-        }
-
         final MasterContractHistoryEntity contract = this.findOneByActiveAndId(id).get();
         contract.setDefaultContract(true);
         contract.getPublished().setDefaultContract(true);

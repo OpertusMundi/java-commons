@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.repository.contract;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -30,8 +31,12 @@ import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractHi
 @Transactional(readOnly = true)
 public interface ProviderTemplateContractHistoryRepository extends JpaRepository<ProviderTemplateContractHistoryEntity, Integer> {
 
+    @Query("SELECT c FROM ProviderContractHistory c "
+         + "WHERE c.key = :contractKey and c.owner.key = :providerKey and c.status = 'ACTIVE' and c.defaultContract = true")
+    Optional<ProviderTemplateContractHistoryEntity> findDefaultProviderContract(UUID providerKey, UUID contractKey);
+
     @Query("SELECT c FROM ProviderContractHistory c WHERE c.owner.key = :providerKey and c.status = 'ACTIVE' and c.defaultContract = true")
-    Optional<ProviderTemplateContractHistoryEntity> findDefaultProviderContract(UUID providerKey);
+    List<ProviderTemplateContractHistoryEntity> findDefaultProviderContracts(UUID providerKey);
 
     @Query("SELECT c FROM ProviderContractHistory c WHERE c.owner.id = :providerId and c.key = :contractKey")
     Optional<ProviderTemplateContractHistoryEntity> findByKey(Integer providerId, UUID contractKey);
@@ -189,8 +194,8 @@ public interface ProviderTemplateContractHistoryRepository extends JpaRepository
         return history.getPublished().toDto(true);
     }
 
-    default ProviderTemplateContractDto acceptDefaultContract(UUID providerKey) {
-        final var defaultContract = this.findDefaultProviderContract(providerKey).orElse(null);
+    default ProviderTemplateContractDto acceptDefaultContract(UUID providerKey, UUID contractKey) {
+        final var defaultContract = this.findDefaultProviderContract(providerKey, contractKey).orElse(null);
         if (defaultContract == null) {
             return null;
         }
