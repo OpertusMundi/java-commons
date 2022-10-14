@@ -19,8 +19,10 @@ public class MasterContractQueryDto {
 
     private int size;
 
+    private Boolean defaultContract;
+
     private Set<EnumContractStatus> status;
-    
+
     private String title;
 
     private EnumMasterContractSortField orderBy;

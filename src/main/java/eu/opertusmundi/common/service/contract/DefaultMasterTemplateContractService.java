@@ -75,7 +75,7 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
         final PageRequest pageRequest = PageRequest.of(query.getPage(), query.getSize(), sort);
 
         final Page<MasterContractHistoryDto> p = this.historyRepository.findHistoryObjects(
-            query.getTitle(), query.getStatus(), pageRequest
+            query.getDefaultContract(), query.getTitle(), query.getStatus(), pageRequest
         );
 
         final List<MasterContractHistoryEntity> defaultContracts = this.historyRepository.findDefaultContracts();

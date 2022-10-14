@@ -45,13 +45,14 @@ public interface MasterContractHistoryRepository extends JpaRepository<MasterCon
     @Query("SELECT c FROM ContractHistoryView c WHERE "
          + "(c.status in ('ACTIVE', 'INACTIVE', 'DRAFT')) and "
          + "(c.status in :status or :status is null) and "
-         + "(c.title like :title or :title is null) "
+         + "(c.title like :title or :title is null) and "
+         + "(:defaultContract is null or c.defaultContract = :defaultContract) "
          + "ORDER BY defaultContract DESC"
     )
-    Page<MasterContractHistoryViewEntity> findHistory(String title, Set<EnumContractStatus> status, Pageable pageable);
+    Page<MasterContractHistoryViewEntity> findHistory(Boolean defaultContract, String title, Set<EnumContractStatus> status, Pageable pageable);
 
     default Page<MasterContractHistoryDto> findHistoryObjects(
-        String title, Set<EnumContractStatus> status, Pageable pageable
+        Boolean defaultContract, String title, Set<EnumContractStatus> status, Pageable pageable
     ) {
         if (StringUtils.isBlank(title)) {
             title = null;
@@ -66,7 +67,7 @@ public interface MasterContractHistoryRepository extends JpaRepository<MasterCon
         if (status != null && status.isEmpty()) {
             status = null;
         }
-        return this.findHistory(title, status, pageable).map(c -> c.toDto(false));
+        return this.findHistory(defaultContract, title, status, pageable).map(c -> c.toDto(false));
     }
 
     @Transactional(readOnly = false)
