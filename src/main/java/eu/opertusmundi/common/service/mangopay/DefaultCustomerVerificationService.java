@@ -337,9 +337,10 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
 
     @Override
     public CustomerDto updateCustomerKycLevel(UpdateKycLevelCommand command) throws CustomerVerificationException {
-        CustomerDto result     = null;
-        UUID        accountKey = null;
-        boolean     isProvider = false;
+        UUID         accountKey = null;
+        boolean      isProvider = false;
+        EnumKycLevel newKycLevel;
+        CustomerDto  result     = null;
 
         try {
             // Check customer
@@ -369,7 +370,7 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
                 );
             }
 
-            final EnumKycLevel newKycLevel = EnumKycLevel.from(userObject.getKycLevel());
+            newKycLevel = EnumKycLevel.from(userObject.getKycLevel());
 
             // Ignore redundant updates
             if (customerEntity.getKycLevel() == newKycLevel) {
@@ -392,7 +393,7 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
         }
 
         // Send notifications
-        if (isProvider) {
+        if (isProvider && newKycLevel == EnumKycLevel.REGULAR) {
             this.sendNotificationsOnKycLevelChange(accountKey, command);
         }
 
