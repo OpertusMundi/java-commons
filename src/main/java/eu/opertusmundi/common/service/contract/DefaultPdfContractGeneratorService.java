@@ -1939,7 +1939,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
             final List<Block> allBlocks = getOptionSuboptionBody(blocks);
 
             /* Add sub option block separately if any exists */
-            if (!CollectionUtils.isEmpty(section.getSubOption())) {
+            if (!CollectionUtils.isEmpty(suboptions) && !CollectionUtils.isEmpty(section.getSubOption())) {
                 for (int i = 0; i < section.getSubOption().size(); i++) {
                     subOptionJson = suboptions.get(section.getSubOption().get(i)).getBody();
                     obj = objectMapper.readTree(subOptionJson);
