@@ -31,6 +31,7 @@ public enum PaymentMessageCode implements MessageCode {
     QUOTATION_INTERVAL_YEAR,
     QUOTATION_INTERVAL_MONTH,
     USE_STATS_NOT_READY,
+    SUBSCRIPTION_BILLING_RUNNING,
     ;
 
     @Override

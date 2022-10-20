@@ -104,6 +104,11 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
 
         final SubscriptionBillingBatchEntity batch = subscriptionBillingBatchRepository.findOneOrCreate(command, dates);
 
+        var runningInstances = this.bpmEngine.findInstancesByProcessDefinitionKey(EnumWorkflow.SUBSCRIPTION_BILLING.getKey());
+        if (!runningInstances.isEmpty()) {
+            throw new PaymentException(PaymentMessageCode.SUBSCRIPTION_BILLING_RUNNING, "A subscription billing task is already running");
+        }
+
         ProcessInstanceDto instance = this.bpmEngine.findInstance(batch.getKey());
 
         if (instance == null) {
@@ -113,6 +118,8 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
             // Set variables
             final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
                 .variableAsString(EnumProcessInstanceVariable.START_USER_KEY.getValue(), batch.getCreatedBy().getKey().toString())
+                .variableAsString("batchId", batch.getId().toString())
+                .variableAsString("batchKey", businessKey.toString())
                 .variableAsString("dateDue", dates.getDateDue().toString())
                 .variableAsString("dateFrom", dates.getDateFrom().toString())
                 .variableAsString("dateTo", dates.getDateTo().toString())
@@ -121,7 +128,8 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
                 .build();
 
             instance = this.bpmEngine.startProcessDefinitionByKey(EnumWorkflow.SUBSCRIPTION_BILLING, businessKey, variables);
-
+        }
+        if (!batch.isWorkflowInitialized()) {
             batch.setProcessDefinition(instance.getDefinitionId());
             batch.setProcessInstance(instance.getId());
 

@@ -16,8 +16,10 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.payment.EnumSubscriptionBillingBatchStatus;
@@ -98,6 +100,11 @@ public class SubscriptionBillingBatchEntity {
 
     @Column(name = "`process_instance`")
     private String processInstance;
+
+    @Transient
+    public boolean isWorkflowInitialized() {
+        return !StringUtils.isBlank(this.processInstance);
+    }
 
     public SubscriptionBillingBatchDto toDto() {
         final SubscriptionBillingBatchDto s = new SubscriptionBillingBatchDto();
