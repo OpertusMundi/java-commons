@@ -32,6 +32,8 @@ import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
@@ -47,6 +49,8 @@ import eu.opertusmundi.common.model.catalogue.client.WmsLayerSample;
 
 @Service
 public class DefaultWmsClient extends AbstractOgcClient implements WmsClient {
+
+    private static final Logger logger = LoggerFactory.getLogger(DefaultWmsClient.class);
 
     @Value("${opertusmundi.wms-client.parameters.width:800}")
     private int imageWidth;
@@ -81,14 +85,22 @@ public class DefaultWmsClient extends AbstractOgcClient implements WmsClient {
                 final List<LayerStyle.LegendUrl> legendUrls = new ArrayList<>();
 
                 for (final Object legendUrl : s.getLegendURLs()) {
-                    final String styleUrl         = (String) legendUrl;
-                    final String styleRelativeUrl = styleUrl.startsWith(prefix) ? StringUtils.removeStart(styleUrl, prefix) : styleUrl;
+                    final URIBuilder legendUriBuilder = new URIBuilder((String) legendUrl);
+                    final String     privateLegendUrl = new URIBuilder(url.toString())
+                        .setParameters(legendUriBuilder.getQueryParams())
+                        .build()
+                        .toString();
 
-                    final byte[] image = this.getImage(styleUrl);
+                    logger.info("Fetching legend image [public url={}, private url={}]", legendUrl.toString(), privateLegendUrl);
+
+                    final String legendRelativeUrl = privateLegendUrl.startsWith(prefix)
+                        ? StringUtils.removeStart(privateLegendUrl, prefix)
+                        : privateLegendUrl;
+                    final byte[] image             = this.getImage(privateLegendUrl);
 
                     legendUrls.add(LayerStyle.LegendUrl.builder()
                         .image(image)
-                        .url(styleRelativeUrl)
+                        .url(legendRelativeUrl)
                         .build()
                     );
                 }
