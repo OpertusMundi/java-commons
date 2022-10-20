@@ -11,12 +11,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.elasticsearch.core.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -955,7 +955,9 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         final Direction direction = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
 
         final PageRequest           pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
-        final Page<PayInItemEntity> page        = this.payInRepository.findAllProviderPayInItems(userKey, null, Set.of(status), pageRequest);
+        final Page<PayInItemEntity> page        = this.payInRepository.findAllProviderPayInItems(
+            userKey, null, status == null ? null : Set.of(status), pageRequest
+        );
 
         final long                       count   = page.getTotalElements();
         final List<ProviderPayInItemDto> records = page.getContent().stream()
