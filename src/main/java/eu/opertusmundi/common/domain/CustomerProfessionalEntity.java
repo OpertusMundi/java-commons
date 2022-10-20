@@ -135,7 +135,6 @@ public class CustomerProfessionalEntity extends CustomerEntity {
     @Setter
     private Integer pidServiceUserId;
 
-    @NotNull
     @Column(name = "`pid_namespace`")
     @Getter
     @Setter
