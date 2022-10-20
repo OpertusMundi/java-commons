@@ -6,14 +6,13 @@ public enum EnumProviderSubSortField {
 
     ADDED_ON("addedOn"),
     UPDATED_ON("updatedOn"),
-    TITLE("service"),
     CONSUMER("consumer.email"),
     ;
 
     @Getter
     private String value;
 
-    private EnumProviderSubSortField(String value) {
+    EnumProviderSubSortField(String value) {
         this.value = value;
     }
 
