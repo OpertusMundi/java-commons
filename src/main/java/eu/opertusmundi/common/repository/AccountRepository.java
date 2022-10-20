@@ -188,6 +188,9 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
         return this.findAllVendor(parentKey, active, email, pageable).map(AccountEntity::toDto);
     }
 
+    @Query("SELECT a FROM Account a WHERE  (a.parent is null) and (a.type = 'VENDOR')")
+    List<AccountEntity> findAllOrphanVendor();
+    
     @Modifying
     @Transactional(readOnly = false)
     @Query("UPDATE Account a "
