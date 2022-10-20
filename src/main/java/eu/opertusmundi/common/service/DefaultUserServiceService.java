@@ -255,7 +255,7 @@ public class DefaultUserServiceService implements UserServiceService {
             }
 
             // Update service status
-            this.userServiceRepository.publish(parentKey, serviceKey);
+            this.userServiceRepository.publish(ownerKey, serviceKey);
         } catch (final UserServiceException ex) {
             throw ex;
         } catch (final Exception ex) {
