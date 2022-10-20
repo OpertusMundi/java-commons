@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import eu.opertusmundi.common.domain.AccountClientEntity;
 import eu.opertusmundi.common.model.PageResultDto;
@@ -28,16 +29,16 @@ public class DefaultAccountClientService implements AccountClientService {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultAccountClientService.class);
 
-    static final String DEFAULT_BASE_URL = "http://localhost:8080";
-    
+    static final String DEFAULT_BASE_URL = "http://localhost:8080/";
+
     private final URL defaultBaseUrl;
-    
+
     @Value("${opertusmundi.account-client-service.default-access-token-lifespan:10800}")
     private int defaultAccessTokenLifespanSeconds;
-    
+
     @Value("${opertusmundi.account-client-service.keycloak.realm:Services}")
     private String realm;
-    
+
     private final AccountClientRepository accountClientRepository;
 
     private final KeycloakAdminService keycloakAdminService;
@@ -69,7 +70,6 @@ public class DefaultAccountClientService implements AccountClientService {
             }
 
             // Create Keycloak client and retrieve the client secret
-            
             final UUID clientId = UUID.randomUUID();
             String clientSecret = "";
 
@@ -88,8 +88,7 @@ public class DefaultAccountClientService implements AccountClientService {
             }
 
             // Create local account client
-            
-            final AccountClientDto result = 
+            final AccountClientDto result =
                 this.accountClientRepository.create(command.getAccountId(), command.getAlias(), clientId);
             result.setSecret(clientSecret);
 
@@ -109,6 +108,7 @@ public class DefaultAccountClientService implements AccountClientService {
     }
 
     @Override
+    @Transactional
     public void revoke(Integer accountId, UUID clientId) throws ServiceException {
         try {
             final AccountClientEntity e = this.accountClientRepository.findOneByAccountIdAndClientId(accountId, clientId).orElse(null);
@@ -116,21 +116,24 @@ public class DefaultAccountClientService implements AccountClientService {
                 throw new ServiceException(AccountMessageCode.ACCOUNT_CLIENT_NOT_FOUND, "Client was not found");
             }
 
-            // Revoke local client
-            
-            this.accountClientRepository.revoke(accountId, clientId);
+            if (e.getRevokedOn() == null) {
+                // Revoke local client
+                this.accountClientRepository.revoke(accountId, clientId);
 
-            // Delete Keycloak client
-            
-            if (keycloakAdminService != null) {
-                final UUID clientUuid = keycloakAdminService.getClientById(realm, clientId.toString())
-                    .map(ClientDto::getId).get();
-                keycloakAdminService.deleteClient(realm, clientUuid);
+                // Delete Keycloak client
+                if (keycloakAdminService != null) {
+                    final UUID clientUuid = keycloakAdminService.getClientById(realm, clientId.toString())
+                        .map(ClientDto::getId)
+                        .orElse(null);
+                    if (clientUuid != null) {
+                        keycloakAdminService.deleteClient(realm, clientUuid);
+                    }
+                }
             }
         } catch (final ServiceException ex) {
             throw ex;
         } catch (final Exception ex) {
-            final String message = String.format("Failed to revoke account client. [accountId=%d, clientId=%s]", 
+            final String message = String.format("Failed to revoke account client. [accountId=%d, clientId=%s]",
                 accountId, clientId);
 
             logger.error(message,  ex);
