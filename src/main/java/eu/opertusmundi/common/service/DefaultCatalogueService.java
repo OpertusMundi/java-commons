@@ -552,8 +552,6 @@ public class DefaultCatalogueService implements CatalogueService {
                     .collect(Collectors.toList());
 
                 i.setEndpoints(endpoints);
-                i.setSchema(null);
-                i.setTableName(null);
             });
 
             StreamUtils.from(item.getIngestionInfo()).flatMap(i -> i.getEndpoints().stream()).forEach(e -> {
