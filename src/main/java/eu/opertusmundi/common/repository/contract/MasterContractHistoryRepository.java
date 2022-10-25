@@ -39,8 +39,11 @@ public interface MasterContractHistoryRepository extends JpaRepository<MasterCon
     @Query("SELECT c FROM ContractHistory c WHERE c.status = 'ACTIVE' and c.published.id = :id")
     Optional<MasterContractHistoryEntity> findOneByActiveAndId(int id);
 
+    @Query("SELECT count(c) FROM ContractHistory c WHERE c.status = 'ACTIVE' and c.defaultContract = true")
+    int countActiveDefaultContracts();
+
     @Query("SELECT c FROM ContractHistory c WHERE c.status = 'ACTIVE' and c.defaultContract = true")
-    List<MasterContractHistoryEntity> findDefaultContracts();
+    List<MasterContractHistoryEntity> findActiveDefaultContracts();
 
     @Query("SELECT c FROM ContractHistoryView c WHERE "
          + "(c.status in ('ACTIVE', 'INACTIVE', 'DRAFT')) and "

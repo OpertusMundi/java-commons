@@ -15,7 +15,6 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import eu.opertusmundi.common.domain.MasterContractHistoryEntity;
 import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.PageRequestDto;
@@ -78,12 +77,13 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
             query.getDefaultContract(), query.getTitle(), query.getStatus(), pageRequest
         );
 
-        final List<MasterContractHistoryEntity> defaultContracts = this.historyRepository.findDefaultContracts();
+        final int defaultContractCount = this.historyRepository.countActiveDefaultContracts();
+        final boolean operationPending = this.ensureNotRunningInstance(EnumWorkflow.PROVIDER_UPDATE_DEFAULT_CONTRACTS, false);
 
         final long                           count   = p.getTotalElements();
         final List<MasterContractHistoryDto> records = p.stream().collect(Collectors.toList());
         final MasterContractHistoryResult    result  = new MasterContractHistoryResult(
-            PageRequestDto.of(query.getPage(), query.getSize()), count, records, defaultContracts.size()
+            PageRequestDto.of(query.getPage(), query.getSize()), count, records, defaultContractCount, operationPending
         );
 
         return result;
@@ -136,9 +136,27 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
     @Override
     @Transactional
     public MasterContractHistoryDto deactivate(int id) throws ApplicationException {
-        final DeactivateContractResult result = this.historyRepository.deactivate(id);
+        this.ensureNotRunningInstance(EnumWorkflow.PROVIDER_UPDATE_DEFAULT_CONTRACTS);
+
+        // History contract must be deactivated before deleting published one
+        final DeactivateContractResult result   = this.historyRepository.deactivate(id);
+        final MasterContractHistoryDto contract = result.getContract();
 
         this.contractRepository.deleteById(result.getContractId());
+
+        // Update all providers only when a default contract is being
+        // deactivated
+        if (contract.isDefaultContract()) {
+            var variables = BpmInstanceVariablesBuilder.builder()
+                .variableAsString("template", contract.getKey().toString())
+                .variableAsString("templateTitle", contract.getTitle())
+                .variableAsString("templateVersion", contract.getVersion())
+                .build();
+
+            bpmEngineUtils.startProcessDefinitionByKey(
+                EnumWorkflow.PROVIDER_UPDATE_DEFAULT_CONTRACTS, contract.getKey().toString(), variables
+            );
+        }
 
         return result.getContract();
     }
@@ -204,16 +222,7 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
     @Override
     @Transactional
     public MasterContractDto setDefaultContract(int id) throws ApplicationException {
-        final List<ProcessInstanceDto> instances = bpmEngineUtils.findInstancesByProcessDefinitionKey(
-            EnumWorkflow.PROVIDER_SET_DEFAULT_CONTRACT.getKey()
-        );
-
-        if(!instances.isEmpty()) {
-            throw ApplicationException.fromMessage(
-                ContractMessageCode.WORKFLOW_INSTANCE_EXISTS,
-                "Previous set contract operation is still pending"
-            );
-        }
+        this.ensureNotRunningInstance(EnumWorkflow.PROVIDER_UPDATE_DEFAULT_CONTRACTS);
 
         contractValidator.validateHistory(id);
 
@@ -225,9 +234,25 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
             .variableAsString("templateVersion", result.getVersion())
             .build();
 
-        bpmEngineUtils.startProcessDefinitionByKey(EnumWorkflow.PROVIDER_SET_DEFAULT_CONTRACT, result.getKey().toString(), variables);
+        bpmEngineUtils.startProcessDefinitionByKey(EnumWorkflow.PROVIDER_UPDATE_DEFAULT_CONTRACTS, result.getKey().toString(), variables);
 
         return result;
     }
 
+    private boolean ensureNotRunningInstance(EnumWorkflow workflow) {
+        return this.ensureNotRunningInstance(workflow, true);
+    }
+
+    private boolean ensureNotRunningInstance(EnumWorkflow workflow, boolean throwIfNotEmpty) {
+        final List<ProcessInstanceDto> instances = bpmEngineUtils.findInstancesByProcessDefinitionKey(workflow.getKey());
+
+        if (throwIfNotEmpty && !instances.isEmpty()) {
+            throw ApplicationException.fromMessage(
+                ContractMessageCode.WORKFLOW_INSTANCE_EXISTS,
+                "Previous set contract operation is still pending"
+            );
+        }
+
+        return !instances.isEmpty();
+    }
 }

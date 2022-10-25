@@ -51,6 +51,7 @@ public interface MasterContractRepository extends JpaRepository<MasterContractEn
         }
 
         this.delete(e);
+        this.flush();
     }
 
     default Page<MasterContractDto> findAllObjects(String title, Pageable pageable) {

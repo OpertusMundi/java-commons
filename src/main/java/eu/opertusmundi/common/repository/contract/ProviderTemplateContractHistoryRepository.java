@@ -196,8 +196,24 @@ public interface ProviderTemplateContractHistoryRepository extends JpaRepository
 
     default ProviderTemplateContractDto acceptDefaultContract(UUID providerKey, UUID contractKey) {
         final var defaultContract = this.findDefaultProviderContract(providerKey, contractKey).orElse(null);
+
         if (defaultContract == null) {
-            return null;
+            throw ApplicationException.fromMessage(
+                ContractMessageCode.DEFAULT_PROVIDER_CONTRACT_NOT_FOUND, "Contract was not found"
+            );
+        }
+
+        if (defaultContract.getStatus() != EnumContractStatus.ACTIVE) {
+            throw ApplicationException.fromMessage(
+                ContractMessageCode.INVALID_STATUS,
+                String.format("Invalid status [%s] found. Expected status to be [ACTIVE]", defaultContract.getStatus())
+            );
+        }
+        if (!defaultContract.isDefaultContract()) {
+            throw ApplicationException.fromMessage(
+                ContractMessageCode.PROVIDER_CONTRACT_IS_NOT_DEFAULT,
+                "Only a default contract can be accepted"
+            );
         }
 
         if (!defaultContract.isDefaultContractAccepted()) {

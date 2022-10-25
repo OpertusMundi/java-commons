@@ -174,7 +174,7 @@ public class DefaultProviderTemplateContractService implements ProviderTemplateC
      */
     @Override
     public void updateDefaultContracts(UUID providerKey) {
-        final var masterContracts   = masterContractHistoryRepository.findDefaultContracts();
+        final var masterContracts   = masterContractHistoryRepository.findActiveDefaultContracts();
         final var masterContractId  = masterContracts.stream().map(c -> c.getId()).toList();
         final var providerContracts = this.historyRepository.findDefaultProviderContracts(providerKey);
 

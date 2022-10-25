@@ -100,6 +100,12 @@ public interface ProviderTemplateContractDraftRepository extends JpaRepository<P
             );
         }
 
+        if(parent.isDefaultContract()) {
+            throw ApplicationException.fromMessage(
+                ContractMessageCode.HISTORY_CONTRACT_IS_DEFAULT, "Cannot create new version of default contract"
+            );
+        }
+
         if (parent.getStatus() == EnumContractStatus.HISTORY) {
             throw ApplicationException.fromMessage(
                 ContractMessageCode.INVALID_STATUS,

@@ -15,7 +15,7 @@ public enum EnumWorkflow {
     PROVIDER_REGISTRATION                ("provider-registration"                   , EnumProcessInstanceResource.PROVIDER),
     PROVIDER_REMOVE_ASSET                ("provider-remove-asset"                   , EnumProcessInstanceResource.ASSET),
     PROVIDER_UPDATE_KYC_LEVEL            ("provider-update-kyc-level"),
-    PROVIDER_SET_DEFAULT_CONTRACT        ("provider-set-default-contract"),
+    PROVIDER_UPDATE_DEFAULT_CONTRACTS    ("provider-update-default-contracts"),
     PUBLISH_USER_SERVICE                 ("user-publish-service"                    , EnumProcessInstanceResource.USER_SERVICE),
     REMOVE_USER_SERVICE                  ("user-remove-service"                     , EnumProcessInstanceResource.USER_SERVICE),
     SUBSCRIPTION_BILLING                 ("workflow-subscription-billing"),
