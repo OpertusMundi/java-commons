@@ -20,6 +20,7 @@ import eu.opertusmundi.common.model.ServiceException;
 import eu.opertusmundi.common.model.account.AccountClientCommandDto;
 import eu.opertusmundi.common.model.account.AccountClientDto;
 import eu.opertusmundi.common.model.account.AccountMessageCode;
+import eu.opertusmundi.common.model.account.EnumAccountClientStatus;
 import eu.opertusmundi.common.model.keycloak.server.ClientDto;
 import eu.opertusmundi.common.model.keycloak.server.CredentialDto;
 import eu.opertusmundi.common.repository.AccountClientRepository;
@@ -54,9 +55,12 @@ public class DefaultAccountClientService implements AccountClientService {
     }
 
     @Override
-    public PageResultDto<AccountClientDto> findAll(UUID accountKey, Pageable pageable) {
-        final Page<AccountClientDto> page = this.accountClientRepository.findAllByAccountKey(accountKey, pageable)
-            .map(AccountClientEntity::toDto);
+    public PageResultDto<AccountClientDto> findAll(UUID accountKey, EnumAccountClientStatus status, Pageable pageable) {
+        final Page<AccountClientDto> page = (switch (status) {
+            case ACTIVE -> this.accountClientRepository.findAllActiveByAccountKey(accountKey, pageable);
+            case REVOKED -> this.accountClientRepository.findAllRevokedByAccountKey(accountKey, pageable);
+            default -> this.accountClientRepository.findAllByAccountKey(accountKey, pageable);
+        }).map(AccountClientEntity::toDto);
 
         return PageResultDto.of(pageable.getPageNumber(), pageable.getPageSize(), page.getContent(), page.getTotalElements());
     }

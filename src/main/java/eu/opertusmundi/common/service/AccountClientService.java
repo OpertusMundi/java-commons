@@ -11,18 +11,19 @@ import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.ServiceException;
 import eu.opertusmundi.common.model.account.AccountClientCommandDto;
 import eu.opertusmundi.common.model.account.AccountClientDto;
+import eu.opertusmundi.common.model.account.EnumAccountClientStatus;
 
 public interface AccountClientService {
 
     default PageResultDto<AccountClientDto> findAll(UUID key) {
-        return this.findAll(key, 0, 10);
+        return this.findAll(key, 0, 10, EnumAccountClientStatus.ALL);
     }
 
-    default PageResultDto<AccountClientDto> findAll(UUID key, int page, int size) {
+    default PageResultDto<AccountClientDto> findAll(UUID key, int page, int size, EnumAccountClientStatus status) {
         final Direction   direction   = Direction.ASC;
         final PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, "alias"));
 
-        return this.findAll(key, pageRequest);
+        return this.findAll(key, status, pageRequest);
     }
 
     /**
@@ -32,7 +33,19 @@ public interface AccountClientService {
      * @param pageable
      * @return
      */
-    PageResultDto<AccountClientDto> findAll(UUID accountKey, Pageable pageable);
+    default PageResultDto<AccountClientDto> findAll(UUID accountKey, Pageable pageable) {
+        return this.findAll(accountKey, EnumAccountClientStatus.ALL, pageable);
+    }
+
+    /**
+     * Find all clients for the specified account key
+     *
+     * @param accountKey
+     * @param status
+     * @param pageable
+     * @return
+     */
+    PageResultDto<AccountClientDto> findAll(UUID accountKey, EnumAccountClientStatus status, Pageable pageable);
 
     /**
      * Create new client and return the new client with its secret

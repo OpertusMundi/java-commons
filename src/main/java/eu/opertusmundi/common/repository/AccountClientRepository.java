@@ -45,6 +45,12 @@ public interface AccountClientRepository extends JpaRepository<AccountClientEnti
     @Query("SELECT c FROM AccountClient c WHERE c.account.key = :key")
     Page<AccountClientEntity> findAllByAccountKey(UUID key, Pageable pageable);
 
+    @Query("SELECT c FROM AccountClient c WHERE c.account.key = :key and c.revokedOn is null")
+    Page<AccountClientEntity> findAllActiveByAccountKey(UUID key, Pageable pageable);
+
+    @Query("SELECT c FROM AccountClient c WHERE c.account.key = :key and c.revokedOn is not null")
+    Page<AccountClientEntity> findAllRevokedByAccountKey(UUID key, Pageable pageable);
+
     @Transactional(readOnly = false)
     default AccountClientDto create(Integer accountId, String clientAlias, UUID clientId) {
         Assert.notNull(accountId, "Expected a non-null account identifier");
