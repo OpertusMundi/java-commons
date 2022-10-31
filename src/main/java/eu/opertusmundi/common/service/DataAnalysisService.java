@@ -8,6 +8,7 @@ import eu.opertusmundi.common.model.analytics.AssetCountQuery;
 import eu.opertusmundi.common.model.analytics.AssetTotalValueQuery;
 import eu.opertusmundi.common.model.analytics.AssetTypeEarningsQuery;
 import eu.opertusmundi.common.model.analytics.AssetViewQuery;
+import eu.opertusmundi.common.model.analytics.BaseQuery;
 import eu.opertusmundi.common.model.analytics.CoverageQuery;
 import eu.opertusmundi.common.model.analytics.DataSeries;
 import eu.opertusmundi.common.model.analytics.SalesQuery;
@@ -86,7 +87,7 @@ public interface DataAnalysisService {
      * @param
      * @return
      */
-    List<ImmutablePair<String, Integer>> executePopularTerms();
+    List<ImmutablePair<String, Integer>> executePopularTerms(BaseQuery query);
     
     /**
      * Executes a query and returns the count of active vendors

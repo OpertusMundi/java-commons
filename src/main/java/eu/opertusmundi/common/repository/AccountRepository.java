@@ -64,25 +64,29 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
 	Optional<BigDecimal> countUsersWithRole(EnumRole role);
 
 	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(YEAR(r.grantedAt), CAST(COUNT(DISTINCT r.account) AS java.math.BigDecimal)) "
-		 + "FROM AccountRole r WHERE r.role = :role "
-		 + "GROUP BY YEAR(grantedAt)")
-	List<BigDecimalDataPoint> countUsersWithRolePerYear(EnumRole role);
+			 + "FROM AccountRole r WHERE r.role = :role "
+			 + "AND to_char(r.grantedAt, 'yyyy-mm-dd') >= :start AND to_char(r.grantedAt, 'yyyy-mm-dd') <= :end "
+			 + "GROUP BY YEAR(grantedAt)")
+	List<BigDecimalDataPoint> countUsersWithRolePerYear(EnumRole role, String start, String end);
 
 	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(YEAR(grantedAt), MONTH(r.grantedAt), CAST(COUNT(DISTINCT r.account) AS java.math.BigDecimal)) "
-			 + "FROM AccountRole r WHERE r.role = :role "
-			 + "GROUP BY YEAR(grantedAt), MONTH(r.grantedAt)")
-	List<BigDecimalDataPoint> countUsersWithRolePerMonth(EnumRole role);
+				 + "FROM AccountRole r WHERE r.role = :role "
+				 + "AND to_char(r.grantedAt, 'yyyy-mm-dd') >= :start AND to_char(r.grantedAt, 'yyyy-mm-dd') <= :end "
+				 + "GROUP BY YEAR(grantedAt), MONTH(r.grantedAt)")
+	List<BigDecimalDataPoint> countUsersWithRolePerMonth(EnumRole role, String start, String end);
 
-	// TODO: WEEK(r.grantedAt) does not exist in HQL
-//	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(YEAR(grantedAt), MONTH(r.grantedAt), CAST(COUNT(DISTINCT r.account) AS java.math.BigDecimal)) "
-//			 + "FROM AccountRole r WHERE r.role = :role "
-//			 + "GROUP BY YEAR(grantedAt), MONTH(r.grantedAt)")
-//	List<BigDecimalDataPoint> countUsersWithRolePerWeek(EnumRole role);
+		// TODO: WEEK(r.grantedAt) does not exist in HQL
+//		@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(YEAR(grantedAt), MONTH(r.grantedAt), CAST(COUNT(DISTINCT r.account) AS java.math.BigDecimal)) "
+//				 + "FROM AccountRole r WHERE r.role = :role "
+//				 + "AND to_char(r.grantedAt, 'yyyy-mm-dd') >= :start AND to_char(r.grantedAt, 'yyyy-mm-dd') <= :end "
+//				 + "GROUP BY YEAR(grantedAt), MONTH(r.grantedAt)")
+//		List<BigDecimalDataPoint> countUsersWithRolePerWeek(EnumRole role, String start, String end);
 
 	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(YEAR(grantedAt), MONTH(r.grantedAt), DAY(r.grantedAt), CAST(COUNT(DISTINCT r.account) AS java.math.BigDecimal)) "
-			 + "FROM AccountRole r WHERE r.role = :role "
-			 + "GROUP BY YEAR(grantedAt), MONTH(r.grantedAt), DAY(r.grantedAt)")
-	List<BigDecimalDataPoint> countUsersWithRolePerDay(EnumRole role);
+				 + "FROM AccountRole r WHERE r.role = :role "
+				 + "AND to_char(r.grantedAt, 'yyyy-mm-dd') >= :start AND to_char(r.grantedAt, 'yyyy-mm-dd') <= :end "
+				 + "GROUP BY YEAR(grantedAt), MONTH(r.grantedAt), DAY(r.grantedAt)")
+	List<BigDecimalDataPoint> countUsersWithRolePerDay(EnumRole role, String start, String end);
 
     @Query("SELECT distinct a FROM Account a LEFT OUTER JOIN FETCH a.profile p WHERE a.key in :keys")
     List<AccountEntity> findAllByKey(List<UUID> keys);

@@ -114,6 +114,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.opertusmundi.common.config.ElasticConfiguration;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.analytics.AssetViewQuery;
+import eu.opertusmundi.common.model.analytics.BaseQuery;
 import eu.opertusmundi.common.model.analytics.DataPoint;
 import eu.opertusmundi.common.model.analytics.DataSeries;
 import eu.opertusmundi.common.model.analytics.EnumAssetViewSource;
@@ -1347,8 +1348,43 @@ public class DefaultElasticSearchService implements ElasticSearchService {
         try {
 
         	final List<ImmutablePair<String, Integer>> 	result 			= new ArrayList<ImmutablePair<String, Integer>>();
-            final SearchSourceBuilder                   sourceBuilder   = new SearchSourceBuilder();
+        	final TemporalDimension                     time            = query.getTime();
+        	final BoolQueryBuilder                      filterQuery     = QueryBuilders.boolQuery();
             final EnumAssetViewSource                   source          = query.getSource();
+            
+            if (time != null) {
+
+                int minYear  = 0, maxYear = 0;
+                int minMonth = 0, maxMonth = 0;
+                int minWeek  = 0, maxWeek = 0;
+                int minDay   = 0, maxDay = 0;
+
+                // Apply temporal dimension filtering
+                if (time.getMin() != null && time.getMax() != null) {
+                    minYear  = time.getMin().getYear();
+                    minMonth = time.getMin().getMonthValue();
+                    minWeek  = time.getMin().get(WeekFields.of(Locale.getDefault()).weekOfYear());
+                    minDay   = time.getMin().getDayOfMonth();
+
+                    maxYear  = time.getMax().getYear();
+                    maxMonth = time.getMax().getMonthValue();
+                    maxWeek  = time.getMax().get(WeekFields.of(Locale.getDefault()).weekOfYear());
+                    maxDay   = time.getMax().getDayOfMonth();
+
+                    if (time.getUnit().ordinal() >= EnumTemporalUnit.YEAR.ordinal()) {
+                        filterQuery.must(QueryBuilders.rangeQuery("year").gte(minYear).lte(maxYear));
+                    }
+                    if (time.getUnit().ordinal() >= EnumTemporalUnit.MONTH.ordinal()) {
+                        filterQuery.must(QueryBuilders.rangeQuery("month").gte(minMonth).lte(maxMonth));
+                    }
+                    if (time.getUnit().ordinal() >= EnumTemporalUnit.WEEK.ordinal()) {
+                        filterQuery.must(QueryBuilders.rangeQuery("week").gte(minWeek).lte(maxWeek));
+                    }
+                    if (time.getUnit().ordinal() >= EnumTemporalUnit.DAY.ordinal()) {
+                        filterQuery.must(QueryBuilders.rangeQuery("day").gte(minDay).lte(maxDay));
+                    }
+                }
+            }
 
             String field = null;
             // Popular views or popular searches
@@ -1365,14 +1401,13 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             															order(BucketOrder.aggregation(field, false)).
             															subAggregation(sumOfView);
             termsAggregationBuilder.size(maxBucketCount);
-            sourceBuilder.aggregation(termsAggregationBuilder);
 
             // Define index
             final SearchRequest       searchRequest       = new SearchRequest(this.configuration.getAssetViewAggregateIndex().getName());
             final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
 
             // Aggregate
-            searchSourceBuilder.aggregation(termsAggregationBuilder).size(0);
+            searchSourceBuilder.query(filterQuery).aggregation(termsAggregationBuilder).size(0);
             searchRequest.source(searchSourceBuilder);
 
             final SearchResponse	searchResponse 	= client.search(searchRequest, RequestOptions.DEFAULT);
@@ -1389,12 +1424,47 @@ public class DefaultElasticSearchService implements ElasticSearchService {
     }
 
     @Override
-    public List<ImmutablePair<String, Integer>> findPopularTerms() {
+    public List<ImmutablePair<String, Integer>> findPopularTerms(BaseQuery query) {
         try {
-        	final List<ImmutablePair<String, Integer>> 	result 			= new ArrayList<ImmutablePair<String, Integer>>();
+        	final List<ImmutablePair<String, Integer>> 	result 					= new ArrayList<ImmutablePair<String, Integer>>();
+        	final BoolQueryBuilder                      filterQuery            	= QueryBuilders.boolQuery();
+        	final TemporalDimension                     time                   	= query.getTime();
             TermsValuesSourceBuilder                    aggregationByTerm   	= null;
             final List<CompositeValuesSourceBuilder<?>> sources                	= new ArrayList<CompositeValuesSourceBuilder<?>>();
-            final SearchSourceBuilder                   sourceBuilder          	= new SearchSourceBuilder();
+            
+            if (time != null) {
+
+                int minYear  = 0, maxYear = 0;
+                int minMonth = 0, maxMonth = 0;
+                int minWeek  = 0, maxWeek = 0;
+                int minDay   = 0, maxDay = 0;
+
+                // Apply temporal dimension filtering
+                if (time.getMin() != null && time.getMax() != null) {
+                    minYear  = time.getMin().getYear();
+                    minMonth = time.getMin().getMonthValue();
+                    minWeek  = time.getMin().get(WeekFields.of(Locale.getDefault()).weekOfYear());
+                    minDay   = time.getMin().getDayOfMonth();
+
+                    maxYear  = time.getMax().getYear();
+                    maxMonth = time.getMax().getMonthValue();
+                    maxWeek  = time.getMax().get(WeekFields.of(Locale.getDefault()).weekOfYear());
+                    maxDay   = time.getMax().getDayOfMonth();
+
+                    if (time.getUnit().ordinal() >= EnumTemporalUnit.YEAR.ordinal()) {
+                        filterQuery.must(QueryBuilders.rangeQuery("year").gte(minYear).lte(maxYear));
+                    }
+                    if (time.getUnit().ordinal() >= EnumTemporalUnit.MONTH.ordinal()) {
+                        filterQuery.must(QueryBuilders.rangeQuery("month").gte(minMonth).lte(maxMonth));
+                    }
+                    if (time.getUnit().ordinal() >= EnumTemporalUnit.WEEK.ordinal()) {
+                        filterQuery.must(QueryBuilders.rangeQuery("week").gte(minWeek).lte(maxWeek));
+                    }
+                    if (time.getUnit().ordinal() >= EnumTemporalUnit.DAY.ordinal()) {
+                        filterQuery.must(QueryBuilders.rangeQuery("day").gte(minDay).lte(maxDay));
+                    }
+                }
+            }
 
             // Create the GROUP BY query statement
             aggregationByTerm = new TermsValuesSourceBuilder("query").field("query.keyword");
@@ -1403,14 +1473,13 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             // Count
             final CompositeAggregationBuilder compositeAggregationBuilder = new CompositeAggregationBuilder("groupby", sources);
             compositeAggregationBuilder.size(maxBucketCount);
-            sourceBuilder.aggregation(compositeAggregationBuilder);
 
             // Define index
             final SearchRequest       searchRequest       = new SearchRequest(this.configuration.getAssetViewIndex().getName());
             final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
 
             // Aggregate
-            searchSourceBuilder.aggregation(compositeAggregationBuilder).size(0);
+            searchSourceBuilder.query(filterQuery).aggregation(compositeAggregationBuilder).size(0);
 
             searchRequest.source(searchSourceBuilder);
 

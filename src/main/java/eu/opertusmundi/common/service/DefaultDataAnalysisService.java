@@ -24,13 +24,14 @@ import org.springframework.stereotype.Service;
 import eu.opertusmundi.common.model.EnumRole;
 import eu.opertusmundi.common.model.analytics.AssetCountQuery;
 import eu.opertusmundi.common.model.analytics.AssetTotalValueQuery;
+import eu.opertusmundi.common.model.analytics.AssetTypeEarningsQuery;
+import eu.opertusmundi.common.model.analytics.AssetTypeEarningsQuery.EnumDimension;
 import eu.opertusmundi.common.model.analytics.AssetViewQuery;
+import eu.opertusmundi.common.model.analytics.BaseQuery;
 import eu.opertusmundi.common.model.analytics.BigDecimalDataPoint;
 import eu.opertusmundi.common.model.analytics.CoverageQuery;
 import eu.opertusmundi.common.model.analytics.DataPoint;
 import eu.opertusmundi.common.model.analytics.DataSeries;
-import eu.opertusmundi.common.model.analytics.AssetTypeEarningsQuery;
-import eu.opertusmundi.common.model.analytics.AssetTypeEarningsQuery.EnumDimension;
 import eu.opertusmundi.common.model.analytics.EnumTemporalUnit;
 import eu.opertusmundi.common.model.analytics.SalesQuery;
 import eu.opertusmundi.common.model.analytics.SegmentDimension;
@@ -357,6 +358,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
         final List<String>           groupByFields = new ArrayList<>();
         final List<String>           selectFields  = new ArrayList<>();
         final TemporalDimension      time          = query.getTime();
+        final List<String>           assets        = query.getAssets();
         final List<String>           filters       = new ArrayList<>();
         final List<Object>           args          = new ArrayList<>();
 
@@ -423,6 +425,23 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 	                filters.add("added_on <= ?");
 	                args.add(time.getMax().atTime(0, 0, 0).atZone(ZoneId.of("UTC")));
 	            }
+            }
+        }
+        
+        if (assets != null) {
+            // Apply asset filtering
+            if (!assets.isEmpty()) {
+            	
+                if (query.getMetric() == EnumMetric.EARNINGS) {      
+                    filters.add("asset_pid in (" + StringUtils.repeat("?", ", ", assets.size()) + ")");
+                    args.addAll(assets);
+                } else {
+                    filters.add("asset in (" + StringUtils.repeat("?", ", ", assets.size()) + ")");
+                    args.addAll(assets);
+                }
+            	
+            	
+
             }
         }
 
@@ -782,19 +801,19 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
             result.setTimeUnit(time.getUnit());
 
             switch (time.getUnit()) {
-                case YEAR :
-                    assetStatistics = this.assetStatisticsRepository.findTotalFileAssetValuePerYear();
-                    break;
-                case MONTH :
-                    assetStatistics = this.assetStatisticsRepository.findTotalFileAssetValuePerMonth();
-                    break;
-                case WEEK :
-                    assetStatistics = this.assetStatisticsRepository.findTotalFileAssetValuePerWeek();
-                    break;
-                case DAY :
-                    assetStatistics = this.assetStatisticsRepository.findTotalFileAssetValuePerDay();
-                    break;
-            }
+	            case YEAR :
+	                assetStatistics = this.assetStatisticsRepository.findTotalFileAssetValuePerYear(time.getMin().toString(), time.getMax().toString());
+	                break;
+	            case MONTH :
+	                assetStatistics = this.assetStatisticsRepository.findTotalFileAssetValuePerMonth(time.getMin().toString(), time.getMax().toString());
+	                break;
+	            case WEEK :
+	                assetStatistics = this.assetStatisticsRepository.findTotalFileAssetValuePerWeek(time.getMin().toString(), time.getMax().toString());
+	                break;
+	            case DAY :
+	                assetStatistics = this.assetStatisticsRepository.findTotalFileAssetValuePerDay(time.getMin().toString(), time.getMax().toString());
+	                break;
+	        }
             StreamUtils.from(assetStatistics).forEach(result.getPoints()::add);
         } else {
             final BigDecimal            value = this.assetStatisticsRepository.findTotalFileAssetValue().orElse(BigDecimal.ZERO);
@@ -823,19 +842,19 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
             result.setTimeUnit(time.getUnit());
 
             switch (time.getUnit()) {
-                case YEAR :
-                    assetStatistics = this.assetStatisticsRepository.countAssetsPerYear();
-                    break;
-                case MONTH :
-                    assetStatistics = this.assetStatisticsRepository.countAssetsPerMonth();
-                    break;
-                case WEEK :
-                    assetStatistics = this.assetStatisticsRepository.countAssetsPerWeek();
-                    break;
-                case DAY :
-                    assetStatistics = this.assetStatisticsRepository.countAssetsPerDay();
-                    break;
-            }
+	            case YEAR :
+	                assetStatistics = this.assetStatisticsRepository.countAssetsPerYear(time.getMin().toString(), time.getMax().toString());
+	                break;
+	            case MONTH :
+	                assetStatistics = this.assetStatisticsRepository.countAssetsPerMonth(time.getMin().toString(), time.getMax().toString());
+	                break;
+	            case WEEK :
+	                assetStatistics = this.assetStatisticsRepository.countAssetsPerWeek(time.getMin().toString(), time.getMax().toString());
+	                break;
+	            case DAY :
+	                assetStatistics = this.assetStatisticsRepository.countAssetsPerDay(time.getMin().toString(), time.getMax().toString());
+	                break;
+	        }
             StreamUtils.from(assetStatistics).forEach(result.getPoints()::add);
         } else {
             final BigDecimal            value = this.assetStatisticsRepository.countAssets().orElse(BigDecimal.ZERO);
@@ -859,12 +878,12 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
     }
 
     @Override
-    public List<ImmutablePair<String, Integer>> executePopularTerms() {
+    public List<ImmutablePair<String, Integer>> executePopularTerms(BaseQuery query) {
         if (elasticSearchService == null) {
             return Collections.emptyList();
         }
 
-        return this.elasticSearchService.findPopularTerms();
+        return this.elasticSearchService.findPopularTerms(query);
     }
     
     @Override
@@ -882,20 +901,20 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
             result.setTimeUnit(time.getUnit());
 
             switch (time.getUnit()) {
-                case YEAR :
-                    assetStatistics = this.accountRepository.countUsersWithRolePerYear(EnumRole.ROLE_PROVIDER);
-                    break;
-                case MONTH :
-                    assetStatistics = this.accountRepository.countUsersWithRolePerMonth(EnumRole.ROLE_PROVIDER);
-                    break;
-                case WEEK :
-                	// TODO: Should be replaced with countUsersWithRolePerWeek (See AccountRepository.countUsersWithRolePerWeel comment)
-                	assetStatistics = this.accountRepository.countUsersWithRolePerMonth(EnumRole.ROLE_PROVIDER);
-                    break;
-                case DAY :
-                    assetStatistics = this.accountRepository.countUsersWithRolePerDay(EnumRole.ROLE_PROVIDER);
-                    break;
-            }
+	            case YEAR :
+	                assetStatistics = this.accountRepository.countUsersWithRolePerYear(EnumRole.ROLE_PROVIDER, time.getMin().toString(), time.getMax().toString());
+	                break;
+	            case MONTH :
+	                assetStatistics = this.accountRepository.countUsersWithRolePerMonth(EnumRole.ROLE_PROVIDER, time.getMin().toString(), time.getMax().toString());
+	                break;
+	            case WEEK :
+	            	// TODO: Should be replaced with countUsersWithRolePerWeek (See AccountRepository.countUsersWithRolePerWeel comment)
+	            	assetStatistics = this.accountRepository.countUsersWithRolePerMonth(EnumRole.ROLE_PROVIDER, time.getMin().toString(), time.getMax().toString());
+	                break;
+	            case DAY :
+	                assetStatistics = this.accountRepository.countUsersWithRolePerDay(EnumRole.ROLE_PROVIDER, time.getMin().toString(), time.getMax().toString());
+	                break;
+            }	
             StreamUtils.from(assetStatistics).forEach(result.getPoints()::add);
         } else {
             final BigDecimal            value = this.accountRepository.countUsersWithRole(EnumRole.ROLE_PROVIDER).orElse(BigDecimal.ZERO);

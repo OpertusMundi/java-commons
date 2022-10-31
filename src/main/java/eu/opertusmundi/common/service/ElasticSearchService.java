@@ -8,6 +8,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.http.HttpMethod;
 
 import eu.opertusmundi.common.model.analytics.AssetViewQuery;
+import eu.opertusmundi.common.model.analytics.BaseQuery;
 import eu.opertusmundi.common.model.analytics.DataSeries;
 import eu.opertusmundi.common.model.analytics.EnumCountCategory;
 import eu.opertusmundi.common.model.analytics.ProfileRecord;
@@ -236,7 +237,7 @@ public interface ElasticSearchService {
      * @return
      * @throws ElasticServiceException
      */
-    List<ImmutablePair<String, Integer>> findPopularTerms() throws ElasticServiceException;
+    List<ImmutablePair<String, Integer>> findPopularTerms(BaseQuery query) throws ElasticServiceException;
 
     /**
      * Find count of vendors/assets

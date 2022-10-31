@@ -41,51 +41,59 @@ public interface AssetStatisticsRepository extends JpaRepository<AssetStatistics
     Optional<BigDecimal> findTotalFileAssetValue();
 
     @Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, SUM(a.maxPrice)) "
-         + "FROM AssetStatistics a "
-    	 + "WHERE a.active is true "
-         + "GROUP BY a.year")
-    List<BigDecimalDataPoint> findTotalFileAssetValuePerYear();
+            + "FROM AssetStatistics a "
+       	 + "WHERE a.active is true "
+       	 + "AND to_char(a.publicationDate, 'yyyy-mm-dd') >= :start AND to_char(a.publicationDate, 'yyyy-mm-dd') <= :end "
+            + "GROUP BY a.year ORDER BY a.year")
+       List<BigDecimalDataPoint> findTotalFileAssetValuePerYear(String start, String end);
 
-    @Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, a.month, SUM(a.maxPrice)) "
-         + "FROM AssetStatistics a "
-    	 + "WHERE a.active is true "
-         + "GROUP BY a.year, a.month")
-    List<BigDecimalDataPoint> findTotalFileAssetValuePerMonth();
+       @Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, a.month, SUM(a.maxPrice)) "
+            + "FROM AssetStatistics a "
+       	 + "WHERE a.active is true "
+       	 + "AND to_char(a.publicationDate, 'yyyy-mm-dd') >= :start AND to_char(a.publicationDate, 'yyyy-mm-dd') <= :end "
+            + "GROUP BY a.year, a.month ORDER BY a.year, a.month")
+       List<BigDecimalDataPoint> findTotalFileAssetValuePerMonth(String start, String end);
 
-    @Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, a.month, a.week, SUM(a.maxPrice)) "
-         + "FROM AssetStatistics a "
-    	 + "WHERE a.active is true "
-         + "GROUP BY a.year, a.month, a.week")
-    List<BigDecimalDataPoint> findTotalFileAssetValuePerWeek();
+       @Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, a.month, a.week, SUM(a.maxPrice)) "
+            + "FROM AssetStatistics a "
+       	 + "WHERE a.active is true "
+       	 + "AND to_char(a.publicationDate, 'yyyy-mm-dd') >= :start AND to_char(a.publicationDate, 'yyyy-mm-dd') <= :end "
+            + "GROUP BY a.year, a.month, a.week ORDER BY a.year, a.month, a.week")
+       List<BigDecimalDataPoint> findTotalFileAssetValuePerWeek(String start, String end);
 
-    @Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, a.month, a.week, a.day, SUM(a.maxPrice)) "
-         + "FROM AssetStatistics a "
-    	 + "WHERE a.active is true "
-         + "GROUP BY a.year, a.month, a.week, a.day")
-    List<BigDecimalDataPoint> findTotalFileAssetValuePerDay();
-    
-	@Query("SELECT CAST(COUNT(DISTINCT a.pid) as java.math.BigDecimal) FROM AssetStatistics a WHERE a.active is true")
-	Optional<BigDecimal> countAssets();
-	
-	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, CAST(COUNT(DISTINCT a.pid) AS java.math.BigDecimal)) "
-		+  "FROM AssetStatistics a WHERE a.active is true "
-		+  "GROUP BY a.year")
-	List<BigDecimalDataPoint> countAssetsPerYear();
-	
-	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, a.month, CAST(COUNT(DISTINCT a.pid) AS java.math.BigDecimal)) "
-		+  "FROM AssetStatistics a WHERE a.active is true "
-		+  "GROUP BY a.year, a.month")
-	List<BigDecimalDataPoint> countAssetsPerMonth();
-	
-	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, a.month, a.week, CAST(COUNT(DISTINCT a.pid) AS java.math.BigDecimal)) "
-			+  "FROM AssetStatistics a WHERE a.active is true "
-			+  "GROUP BY a.year, a.month, a.week")
-	List<BigDecimalDataPoint> countAssetsPerWeek();
-	
-	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, a.month, a.week, a.day, CAST(COUNT(DISTINCT a.pid) AS java.math.BigDecimal)) "
-			+  "FROM AssetStatistics a WHERE a.active is true "
-			+  "GROUP BY a.year, a.month, a.week, a.day")
-	List<BigDecimalDataPoint> countAssetsPerDay();
+       @Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, a.month, a.week, a.day, SUM(a.maxPrice)) "
+            + "FROM AssetStatistics a "
+       	 + "WHERE a.active is true "
+       	 + "AND to_char(a.publicationDate, 'yyyy-mm-dd') >= :start AND to_char(a.publicationDate, 'yyyy-mm-dd') <= :end "
+            + "GROUP BY a.year, a.month, a.week, a.day ORDER BY a.year, a.month, a.week, a.day")
+       List<BigDecimalDataPoint> findTotalFileAssetValuePerDay(String start, String end);
+       
+   	@Query("SELECT CAST(COUNT(DISTINCT a.pid) as java.math.BigDecimal) FROM AssetStatistics a WHERE a.active is true")
+   	Optional<BigDecimal> countAssets();
+   	
+   	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, CAST(COUNT(DISTINCT a.pid) AS java.math.BigDecimal)) "
+   		+  "FROM AssetStatistics a WHERE a.active is true "
+   		+  "AND to_char(a.publicationDate, 'yyyy-mm-dd') >= :start AND to_char(a.publicationDate, 'yyyy-mm-dd') <= :end "
+   		+  "GROUP BY a.year")
+   	List<BigDecimalDataPoint> countAssetsPerYear(String start, String end);
+   	
+   	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, a.month, CAST(COUNT(DISTINCT a.pid) AS java.math.BigDecimal)) "
+   		+  "FROM AssetStatistics a WHERE a.active is true "
+   		+  "AND to_char(a.publicationDate, 'yyyy-mm-dd') >= :start AND to_char(a.publicationDate, 'yyyy-mm-dd') <= :end "
+   		+  "GROUP BY a.year, a.month")
+   	List<BigDecimalDataPoint> countAssetsPerMonth(String start, String end);
+   	
+   	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, a.month, a.week, CAST(COUNT(DISTINCT a.pid) AS java.math.BigDecimal)) "
+   			+  "FROM AssetStatistics a WHERE a.active is true "
+   			+  "AND to_char(a.publicationDate, 'yyyy-mm-dd') >= :start AND to_char(a.publicationDate, 'yyyy-mm-dd') <= :end "
+   			+  "GROUP BY a.year, a.month, a.week")
+   	List<BigDecimalDataPoint> countAssetsPerWeek(String start, String end);
+   	
+   	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(a.year, a.month, a.week, a.day, CAST(COUNT(DISTINCT a.pid) AS java.math.BigDecimal)) "
+   			+  "FROM AssetStatistics a WHERE a.active is true "
+   			+  "AND to_char(a.publicationDate, 'yyyy-mm-dd') >= :start AND to_char(a.publicationDate, 'yyyy-mm-dd') <= :end "
+   			+  "GROUP BY a.year, a.month, a.week, a.day")
+   	List<BigDecimalDataPoint> countAssetsPerDay(String start, String end);
 
     @Transactional(readOnly = false)
     default AssetStatisticsDto create(AssetStatisticsCommandDto command) {
