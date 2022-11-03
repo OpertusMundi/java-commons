@@ -14,7 +14,6 @@ import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.hibernate.validator.constraints.Length;
@@ -45,14 +44,12 @@ public class CardDirectPayInEntity extends PayInEntity {
     @Setter
     private String alias;
 
-    @NotEmpty
     @Column(name = "`card`")
     @Getter
     @Setter
     private String card;
 
     @Length(max = 10)
-    @NotEmpty
     @Column(name = "`statement_descriptor`", length = 10)
     @Getter
     @Setter
@@ -113,7 +110,6 @@ public class CardDirectPayInEntity extends PayInEntity {
     @Setter
     private String applied3dsVersion;
 
-    @NotEmpty
     @Column(name = "`ip_address`")
     @Getter
     @Setter

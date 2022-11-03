@@ -25,7 +25,6 @@ import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.hibernate.annotations.NaturalId;
@@ -173,13 +172,11 @@ public abstract class PayInEntity {
     @Getter
     protected EnumPaymentMethod paymentMethod;
 
-    @NotEmpty
     @Column(name = "`provider_payin`")
     @Getter
     @Setter
     protected String payIn;
 
-    @NotEmpty
     @Column(name = "`reference_number`")
     @Getter
     @Setter
