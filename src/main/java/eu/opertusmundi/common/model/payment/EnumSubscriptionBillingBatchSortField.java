@@ -7,6 +7,7 @@ public enum EnumSubscriptionBillingBatchSortField {
     DUE_DATE("dueDate"),
     FROM_DATE("fromDate"),
     STATUS("status"),
+    TOTAL_PRICE("totalPrice"),
     UPDATED_ON("updatedOn"),
     ;
 

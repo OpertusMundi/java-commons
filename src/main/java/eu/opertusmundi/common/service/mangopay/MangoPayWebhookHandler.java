@@ -39,7 +39,7 @@ public class MangoPayWebhookHandler {
             case PAYIN_NORMAL_SUCCEEDED :
             case PAYIN_NORMAL_FAILED :
                 // Update PayIn status
-                this.paymentService.sendPayInStatusUpdateMessage(resourceId);
+                this.paymentService.updateWorkflowInstancePayInStatus(resourceId);
                 break;
 
             case PAYIN_REFUND_SUCCEEDED :

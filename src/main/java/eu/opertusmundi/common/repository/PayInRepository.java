@@ -2,6 +2,7 @@ package eu.opertusmundi.common.repository;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -15,11 +16,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import eu.opertusmundi.common.domain.AccountEntity;
+import eu.opertusmundi.common.domain.AccountRoleEntity;
 import eu.opertusmundi.common.domain.BankAccountEmbeddable;
 import eu.opertusmundi.common.domain.BankWirePayInEntity;
 import eu.opertusmundi.common.domain.BillingAddressEmbeddable;
@@ -33,11 +34,20 @@ import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
 import eu.opertusmundi.common.domain.PayInRecurringRegistrationEntity;
 import eu.opertusmundi.common.domain.PayInStatusEntity;
+import eu.opertusmundi.common.domain.PayInSubscriptionBillingItemEntity;
 import eu.opertusmundi.common.domain.ShippingAddressEmbeddable;
+import eu.opertusmundi.common.domain.SubscriptionBillingEntity;
+import eu.opertusmundi.common.model.EnumReferenceType;
+import eu.opertusmundi.common.model.EnumRole;
 import eu.opertusmundi.common.model.payment.BankwirePayInCommand;
+import eu.opertusmundi.common.model.payment.BankwirePayInExecutionContext;
 import eu.opertusmundi.common.model.payment.CardDirectPayInCommand;
+import eu.opertusmundi.common.model.payment.CardDirectPayInExecutionContext;
+import eu.opertusmundi.common.model.payment.CheckoutSubscriptionBillingCommandDto;
+import eu.opertusmundi.common.model.payment.EnumRecurringPaymentType;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.FreePayInCommand;
+import eu.opertusmundi.common.model.payment.FreePayInExecutionContext;
 import eu.opertusmundi.common.model.payment.PayInDto;
 import eu.opertusmundi.common.model.payment.PayInItemDto;
 import eu.opertusmundi.common.model.payment.PayInStatusUpdateCommand;
@@ -45,11 +55,15 @@ import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.consumer.ConsumerPayInDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInItemDto;
+import eu.opertusmundi.common.util.MangopayUtils;
 import io.jsonwebtoken.lang.Assert;
 
 @Repository
 @Transactional(readOnly = true)
 public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
+
+    @Query("SELECT b FROM SubscriptionBilling b WHERE (b.key in :keys)")
+    List<SubscriptionBillingEntity> findSubscriptionBillingRecords(List<UUID> keys);
 
     @Query("SELECT c FROM Cart c WHERE c.id = : id")
     Optional<CartEntity> findCartById(Integer id);
@@ -57,15 +71,18 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     @Query("SELECT o FROM Order o WHERE o.key = :key")
     Optional<OrderEntity> findOrderByKey(UUID key);
 
+    @Query("SELECT a FROM Account a WHERE a.key = :key")
+    Optional<AccountEntity> findAccountByKey(UUID key);
+
     @Query("SELECT p FROM PayIn p WHERE p.key = :key")
-    Optional<PayInEntity> findOneEntityByKey(@Param("key") UUID key);
+    Optional<PayInEntity> findOneEntityByKey(UUID key);
 
     default Optional<HelpdeskPayInDto> findOneObjectByKey(UUID key) {
-        return this.findOneEntityByKey(key).map(o -> o.toHelpdeskDto(true));
+        return this.findOneEntityByKey(key).map(p -> p.toHelpdeskDto(true));
     }
 
     @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE i.order.key = :key")
-    Optional<PayInEntity> findOneByOrderKey(@Param("key") UUID key);
+    Optional<PayInEntity> findOneByOrderKey(UUID key);
 
     @Query("SELECT r FROM PayInRecurringRegistration r WHERE r.providerRegistration = :id")
     Optional<PayInRecurringRegistrationEntity> findRecurringRegistrationById(String id);
@@ -85,19 +102,36 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
          + "       p.consumer.id = :userId and "
          + "       (p.status <> 'CREATED' or p.paymentMethod <> 'CARD_DIRECT')"
     )
-    Optional<PayInEntity> findOneByConsumerIdAndKey(@Param("userId") Integer userId, @Param("payInKey") UUID payInKey);
+    Optional<PayInEntity> findOneByConsumerIdAndKey(Integer userId, UUID payInKey);
+
+    /**
+     * Find a prepared PayIn
+     *
+     * <p>
+     * This method returns only prepared PayIn records with payment method
+     * <b>CARD_DIRECT</b> and status <b>NotSpecified</b>.
+     *
+     * @param userId
+     * @param payInKey
+     * @return
+     */
+    @Query("SELECT p FROM PayIn p JOIN FETCH p.items i "
+         + "WHERE  p.key = :payInKey and "
+         + "       p.consumer.key = :userKey and "
+         + "       p.status = 'NotSpecified' and "
+         + "       p.paymentMethod = 'CARD_DIRECT'"
+    )
+    Optional<CardDirectPayInEntity> findOnePrepared(UUID userKey, UUID payInKey);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE p.payIn = :payIn")
-    Optional<PayInEntity> findOneByPayInId(@Param("payIn") String payIn);
+    Optional<PayInEntity> findOneByPayInId(String payIn);
 
     @Query("SELECT i FROM PayInItem i WHERE i.payin.key = :payInKey and i.provider.id = :userId and i.index = :index")
-    Optional<PayInItemEntity> findOnePayInItemByProvider(
-        @Param("userId") Integer userId, @Param("payInKey") UUID payInKey, @Param("index") Integer index
-    );
+    Optional<PayInItemEntity> findOnePayInItemByProvider(Integer userId, UUID payInKey, Integer index);
 
     @Query("SELECT i FROM PayInItem i WHERE i.transfer = :transferId")
-    Optional<PayInItemEntity> findOnePayInItemByTransferId(@Param("transferId") String transferId);
+    Optional<PayInItemEntity> findOnePayInItemByTransferId(String transferId);
 
     /**
      * Query consumer PayIns
@@ -224,18 +258,17 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     @Modifying
     @Transactional(readOnly = false)
     @Query("UPDATE PayIn p SET p.processDefinition = :processDefinition, p.processInstance = :processInstance WHERE p.id = :id")
-    void setPayInWorkflowInstance(
-        @Param("id")                Integer id,
-        @Param("processDefinition") String processDefinition,
-        @Param("processInstance")   String processInstance
-    );
+    void setPayInWorkflowInstance(Integer id, String processDefinition, String processInstance);
 
     @Transactional(readOnly = false)
-    default PayInDto createFreePayInForOrder(FreePayInCommand command) throws Exception {
-        Assert.notNull(command, "Expected a non-null command");
-        Assert.notNull(command.getOrderKey(), "Expected a non-null order key");
+    default PayInDto createFreePayInForOrder(FreePayInExecutionContext ctx) throws Exception {
+        Assert.notNull(ctx, "Expected a non-null context");
 
-        final OrderEntity order = this.findOrderByKey(command.getOrderKey()).orElse(null);
+        final FreePayInCommand command = ctx.getCommand();
+        Assert.notNull(command, "Expected a non-null command");
+        Assert.notNull(command.getKey(), "Expected a non-null order key");
+
+        final OrderEntity order = this.findOrderByKey(command.getKey()).orElse(null);
 
         Assert.notNull(order, "Expected a non-null order");
         Assert.notNull(order.getItems().size() == 1, "Expected a single order item");
@@ -249,9 +282,9 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         payin.setCreatedOn(now);
         payin.setCurrency(order.getCurrency());
         payin.setExecutedOn(now);
-        payin.setKey(command.getPayInKey());
+        payin.setKey(command.getKey());
         payin.setPayIn(UUID.randomUUID().toString());
-        payin.setReferenceNumber(command.getReferenceNumber());
+        payin.setReferenceNumber(ctx.getReferenceNumber());
         payin.setStatus(EnumTransactionStatus.SUCCEEDED);
         payin.setStatusUpdatedOn(now);
         payin.setTotalPrice(order.getTotalPrice());
@@ -279,11 +312,14 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     }
 
     @Transactional(readOnly = false)
-    default PayInDto createBankwirePayInForOrder(BankwirePayInCommand command) throws Exception {
-        Assert.notNull(command, "Expected a non-null command");
-        Assert.notNull(command.getOrderKey(), "Expected a non-null order key");
+    default PayInDto createBankwirePayInForOrder(BankwirePayInExecutionContext ctx) throws Exception {
+        Assert.notNull(ctx, "Expected a non-null context");
 
-        final OrderEntity order = this.findOrderByKey(command.getOrderKey()).orElse(null);
+        final BankwirePayInCommand command = ctx.getCommand();
+        Assert.notNull(command, "Expected a non-null command");
+        Assert.notNull(command.getKey(), "Expected a non-null payin key");
+
+        final OrderEntity order = this.findOrderByKey(command.getKey()).orElse(null);
 
         Assert.notNull(order, "Expected a non-null order");
         Assert.notNull(order.getItems().size() == 1, "Expected a single order item");
@@ -291,22 +327,22 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         final AccountEntity       consumer = order.getConsumer();
         final BankWirePayInEntity payin    = new BankWirePayInEntity();
 
-        payin.setBankAccount(BankAccountEmbeddable.from(command.getBankAccount()));
+        payin.setBankAccount(BankAccountEmbeddable.from(ctx.getBankAccount()));
         payin.setConsumer(consumer);
-        payin.setCreatedOn(command.getCreatedOn());
+        payin.setCreatedOn(ctx.getCreatedOn());
         payin.setCurrency(order.getCurrency());
-        payin.setExecutedOn(command.getExecutedOn());
-        payin.setKey(command.getPayInKey());
-        payin.setPayIn(command.getPayIn());
-        payin.setReferenceNumber(command.getReferenceNumber());
-        payin.setResultCode(command.getResultCode());
-        payin.setResultMessage(command.getResultMessage());
+        payin.setExecutedOn(ctx.getExecutedOn());
+        payin.setKey(command.getKey());
+        payin.setPayIn(ctx.getPayIn());
+        payin.setReferenceNumber(ctx.getReferenceNumber());
+        payin.setResultCode(ctx.getResultCode());
+        payin.setResultMessage(ctx.getResultMessage());
         payin.setStatus(EnumTransactionStatus.CREATED);
         payin.setStatusUpdatedOn(payin.getCreatedOn());
         payin.setTotalPrice(order.getTotalPrice());
         payin.setTotalPriceExcludingTax(order.getTotalPriceExcludingTax());
         payin.setTotalTax(order.getTotalTax());
-        payin.setWireReference(command.getWireReference());
+        payin.setWireReference(ctx.getWireReference());
 
         final PayInStatusEntity status = new PayInStatusEntity();
         status.setPayin(payin);
@@ -329,42 +365,45 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     }
 
     @Transactional(readOnly = false)
-    default ConsumerPayInDto createCardDirectPayInForOrder(CardDirectPayInCommand command) throws Exception {
-        Assert.notNull(command, "Expected a non-null command");
-        Assert.notNull(command.getOrderKey(), "Expected a non-null order key");
+    default ConsumerPayInDto createCardDirectPayInForOrder(CardDirectPayInExecutionContext ctx) throws Exception {
+        Assert.notNull(ctx, "Expected a non-null context");
 
-        final OrderEntity order = this.findOrderByKey(command.getOrderKey()).orElse(null);
+        final CardDirectPayInCommand command = ctx.getCommand();
+        Assert.notNull(command, "Expected a non-null command");
+        Assert.notNull(command.getKey(), "Expected a non-null order key");
+
+        final OrderEntity order = this.findOrderByKey(command.getKey()).orElse(null);
 
         Assert.notNull(order, "Expected a non-null order");
         Assert.notNull(order.getItems().size() == 1, "Expected a single order item");
 
-        final PayInRecurringRegistrationEntity registration = this.findRecurringRegistrationById(command.getRecurringPayinRegistrationId())
+        final PayInRecurringRegistrationEntity registration = this.findRecurringRegistrationById(ctx.getRecurringPayinRegistrationId())
             .orElse(null);
 
         final AccountEntity         consumer = order.getConsumer();
         final CardDirectPayInEntity payin    = new CardDirectPayInEntity();
 
         // Do not save card alias to our database!
-        payin.setApplied3dsVersion(command.getApplied3dsVersion());
+        payin.setApplied3dsVersion(ctx.getApplied3dsVersion());
         payin.setCard(command.getCardId());
         payin.setConsumer(consumer);
-        payin.setCreatedOn(command.getCreatedOn());
+        payin.setCreatedOn(ctx.getCreatedOn());
         payin.setCurrency(order.getCurrency());
-        payin.setExecutedOn(command.getExecutedOn());
+        payin.setExecutedOn(ctx.getExecutedOn());
         payin.setIpAddress(command.getIpAddress());
-        payin.setKey(command.getPayInKey());
-        payin.setPayIn(command.getPayIn());
-        payin.setReferenceNumber(command.getReferenceNumber());
-        payin.setRequested3dsVersion(command.getRequested3dsVersion());
-        payin.setResultCode(command.getResultCode());
-        payin.setResultMessage(command.getResultMessage());
-        payin.setStatementDescriptor(command.getStatementDescriptor());
-        payin.setStatus(command.getStatus());
+        payin.setKey(command.getKey());
+        payin.setPayIn(ctx.getPayIn());
+        payin.setReferenceNumber(ctx.getReferenceNumber());
+        payin.setRequested3dsVersion(ctx.getRequested3dsVersion());
+        payin.setResultCode(ctx.getResultCode());
+        payin.setResultMessage(ctx.getResultMessage());
+        payin.setStatementDescriptor(ctx.getStatementDescriptor());
+        payin.setStatus(ctx.getStatus());
         payin.setStatusUpdatedOn(payin.getExecutedOn() == null ? payin.getCreatedOn() : payin.getExecutedOn());
         payin.setTotalPrice(order.getTotalPrice());
         payin.setTotalPriceExcludingTax(order.getTotalPriceExcludingTax());
         payin.setTotalTax(order.getTotalTax());
-        payin.setRecurringPaymentType(command.getRecurringTransactionType());
+        payin.setRecurringPaymentType(ctx.getRecurringTransactionType());
         payin.setRecurringPayment(registration);
 
         if (command.getBilling() != null) {
@@ -391,6 +430,119 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         item.setProvider(order.getItems().get(0).getProvider());
 
         payin.getItems().add(item);
+
+        this.saveAndFlush(payin);
+
+        return payin.toConsumerDto(true);
+    }
+
+    /**
+     * Creates a new PayIn with status
+     * {@link EnumTransactionStatus#NotSpecified} from a collection of
+     * subscription billing record keys
+     *
+     * @param command
+     * @return
+     * @throws Exception
+     */
+    @Transactional(readOnly = false)
+    default ConsumerPayInDto prepareCardDirectPayInForSubscriptionBilling(
+        CheckoutSubscriptionBillingCommandDto command
+    ) throws Exception {
+        Assert.notNull(command, "Expected a non-null command");
+        Assert.notEmpty(command.getKeys(), "Expected a non-empty subscription billing list");
+
+        final AccountEntity consumer = this.findAccountByKey(command.getUserKey()).orElse(null);
+        Assert.notNull(consumer, "Expected a non-null user account");
+
+        final AccountRoleEntity role = consumer.getRoles().stream()
+            .filter(r -> r.getRole() == EnumRole.ROLE_CONSUMER)
+            .findFirst()
+            .orElse(null);
+        Assert.notNull(role, "Expected user to be a registered consumer");
+
+        // Do not save card alias to our database!
+        final CardDirectPayInEntity payin = new CardDirectPayInEntity();
+        payin.setConsumer(consumer);
+        payin.setCreatedOn(ZonedDateTime.now());
+        payin.setCurrency("EUR");
+        payin.setKey(UUID.randomUUID());
+        payin.setStatus(EnumTransactionStatus.NotSpecified);
+        payin.setStatusUpdatedOn(payin.getCreatedOn());
+        payin.setTotalPrice(command.getTotalPrice());
+        payin.setTotalPriceExcludingTax(command.getTotalPriceExcludingTax());
+        payin.setTotalTax(command.getTotalTax());
+        payin.setRecurringPaymentType(EnumRecurringPaymentType.NONE);
+
+        final PayInStatusEntity status = new PayInStatusEntity();
+        status.setPayin(payin);
+        status.setStatus(payin.getStatus());
+        status.setStatusUpdatedOn(payin.getStatusUpdatedOn());
+
+        payin.getStatusHistory().add(status);
+
+        final var records = this.findSubscriptionBillingRecords(command.getKeys());
+        for (int index = 0; index < records.size(); index++) {
+            final var record = records.get(index);
+            final var item   = new PayInSubscriptionBillingItemEntity();
+            item.setIndex(index + 1);
+            item.setPayin(payin);
+            item.setProvider(record.getSubscription().getProvider());
+            item.setSubscriptionBilling(record);
+
+            //record.setStatus(EnumSubscriptionBillingStatus.PROCESSING);
+
+            payin.getItems().add(item);
+        }
+
+        this.saveAndFlush(payin);
+
+        // Compute reference number from database key
+        payin.setReferenceNumber(MangopayUtils.createReferenceNumber(EnumReferenceType.PAYIN, payin.getId()));
+        payin.setStatementDescriptor(payin.getReferenceNumber());
+
+        this.saveAndFlush(payin);
+
+        return payin.toConsumerDto(true);
+    }
+
+    default ConsumerPayInDto updateCardDirectPayInForSubscriptionBilling(CardDirectPayInExecutionContext ctx) {
+        Assert.notNull(ctx, "Expected a non-null context");
+
+        final CardDirectPayInCommand command = ctx.getCommand();
+        Assert.notNull(command, "Expected a non-null command");
+        Assert.notNull(command.getKey(), "Expected a non-null PayIn key");
+
+        final CardDirectPayInEntity payin = this.findOnePrepared(command.getUserKey(), command.getKey()).orElse(null);
+        Assert.notNull(payin, "Expected a non-null payin");
+
+        // Do not save card alias to our database!
+        payin.setApplied3dsVersion(ctx.getApplied3dsVersion());
+        payin.setCard(command.getCardId());
+        payin.setExecutedOn(ctx.getExecutedOn());
+        payin.setIpAddress(command.getIpAddress());
+        payin.setPayIn(ctx.getPayIn());
+        payin.setRequested3dsVersion(ctx.getRequested3dsVersion());
+        payin.setResultCode(ctx.getResultCode());
+        payin.setResultMessage(ctx.getResultMessage());
+        payin.setStatus(ctx.getStatus());
+        payin.setStatusUpdatedOn(payin.getExecutedOn() == null ? ZonedDateTime.now() : payin.getExecutedOn());
+
+        if (command.getBilling() != null) {
+            payin.setBillingAddress(BillingAddressEmbeddable.from(command.getBilling()));
+        }
+        if (command.getShipping() != null) {
+            payin.setShippingAddress(ShippingAddressEmbeddable.from(command.getShipping()));
+        }
+        if (command.getBrowserInfo() != null) {
+            payin.setBrowserInfo(BrowserInfoEmbeddable.from(command.getBrowserInfo()));
+        }
+
+        final PayInStatusEntity status = new PayInStatusEntity();
+        status.setPayin(payin);
+        status.setStatus(payin.getStatus());
+        status.setStatusUpdatedOn(payin.getStatusUpdatedOn());
+        payin.getStatusHistory().add(status);
 
         this.saveAndFlush(payin);
 

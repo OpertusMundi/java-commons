@@ -3,6 +3,7 @@ package eu.opertusmundi.common.model.payment;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -26,6 +27,8 @@ public abstract class SubscriptionBillingDto {
 
     @JsonIgnore
     private Integer subscriptionId;
+
+    private UUID key;
 
     private ZonedDateTime createdOn;
 
@@ -70,9 +73,18 @@ public abstract class SubscriptionBillingDto {
     private EnumSubscriptionBillingStatus status;
 
     @JsonInclude(Include.NON_NULL)
-    private PayInDto payin;
+    private PayInDto payIn;
 
-        @JsonInclude(Include.NON_NULL)
+    @JsonInclude(Include.NON_NULL)
+    private UUID subscriptionKey;
+
+    @JsonInclude(Include.NON_NULL)
+    private UUID providerKey;
+
+    @JsonInclude(Include.NON_NULL)
+    private UUID consumerKey;
+
+    @JsonInclude(Include.NON_NULL)
     private AccountSubscriptionDto subscription;
 
 }

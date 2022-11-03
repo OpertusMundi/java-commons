@@ -62,9 +62,16 @@ public interface SubscriptionBillingBatchRepository extends JpaRepository<Subscr
 
     @Transactional(readOnly = false)
     default SubscriptionBillingBatchEntity findOneOrCreate(SubscriptionBillingBatchCommandDto command, BillingSubscriptionDates dates) {
-        final Optional<SubscriptionBillingBatchEntity> e = this.findOneByInterval(dates.getDateFrom(), dates.getDateTo());
+        final SubscriptionBillingBatchEntity e = this.findOneByInterval(dates.getDateFrom(), dates.getDateTo()).orElse(null);
 
-        return e.isPresent() ? e.get() : this.create(command, dates);
+        if (e != null) {
+            e.setUpdatedOn(ZonedDateTime.now());
+            e.setStatus(EnumSubscriptionBillingBatchStatus.RUNNING);
+            e.setProcessInstance(null);
+            e.setProcessDefinition(null);
+        }
+
+        return e == null ? this.create(command, dates) : e;
     }
 
     @Transactional(readOnly = false)

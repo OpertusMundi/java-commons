@@ -6,7 +6,7 @@ import org.springframework.util.Assert;
 import com.mangopay.core.enumerations.CountryIso;
 
 import eu.opertusmundi.common.model.EnumReferenceType;
-import eu.opertusmundi.common.model.payment.CardDirectPayInCommand;
+import eu.opertusmundi.common.model.payment.CardDirectPayInExecutionContext;
 
 public final class MangopayUtils {
 
@@ -47,12 +47,13 @@ public final class MangopayUtils {
         return reference;
     }
 
-    public static String createStatementDescriptor(CardDirectPayInCommand command) {
-        Assert.notNull(command, "Expected a non-null command");
-        Assert.hasText(command.getReferenceNumber(), "Expected a non-null reference number");
+    public static String createStatementDescriptor(CardDirectPayInExecutionContext ctx) {
+        Assert.notNull(ctx, "Expected a non-null context");
+
+        Assert.hasText(ctx.getReferenceNumber(), "Expected a non-null reference number");
 
         // Use reference number as the statement descriptor
-        final String result = command.getReferenceNumber();
+        final String result = ctx.getReferenceNumber();
 
         Assert.isTrue(result.length() < 11, "Statement descriptor can be up to 10 characters long");
 

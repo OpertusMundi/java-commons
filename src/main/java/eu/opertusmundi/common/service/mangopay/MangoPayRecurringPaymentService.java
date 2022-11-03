@@ -27,7 +27,7 @@ import com.mangopay.entities.subentities.PayInExecutionDetailsDirect;
 import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInRecurringRegistrationEntity;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
-import eu.opertusmundi.common.model.payment.CardDirectPayInCommand;
+import eu.opertusmundi.common.model.payment.CardDirectPayInExecutionContext;
 import eu.opertusmundi.common.model.payment.EnumRecurringPaymentStatus;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PayInDto;
@@ -127,38 +127,36 @@ public class MangoPayRecurringPaymentService extends BaseMangoPayService impleme
     }
 
     @Override
-    public PayInDto createConsumerPayIn(CardDirectPayInCommand command) {
+    public PayInDto createConsumerPayIn(CardDirectPayInExecutionContext ctx) {
         try {
+            final var command = ctx.getCommand();
+
             // Check if this is a retry operation
-            RecurringPayIn apiResponse = this.<RecurringPayIn>getResponse(command.getIdempotencyKey());
+            RecurringPayIn apiResponse = this.<RecurringPayIn>getResponse(ctx.getIdempotencyKey());
 
             // Create a new PayIn if needed
             if (apiResponse == null) {
-                final RecurringPayInCIT payInRequest = this.createCardDirectPayInCIT(command);
+                final RecurringPayInCIT payInRequest = this.createCardDirectPayInCIT(ctx);
 
-                apiResponse = this.api.getPayInApi().createRecurringPayInCIT(command.getIdempotencyKey(), payInRequest);
-            } else {
-                // Override PayIn key with existing one from the payment
-                // provider
-                command.setPayInKey(UUID.fromString(apiResponse.getTag()));
+                apiResponse = this.api.getPayInApi().createRecurringPayInCIT(ctx.getIdempotencyKey(), payInRequest);
             }
 
             // Update command with payment information
             final PayInExecutionDetailsDirect executionDetails = (PayInExecutionDetailsDirect) apiResponse.getExecutionDetails();
 
-            command.setApplied3dsVersion(executionDetails.getApplied3DSVersion());
-            command.setPayIn(apiResponse.getId());
-            command.setRequested3dsVersion(executionDetails.getRequested3DSVersion());
-            command.setResultCode(apiResponse.getResultCode());
-            command.setResultMessage(apiResponse.getResultMessage());
-            command.setStatus(EnumTransactionStatus.from(apiResponse.getStatus()));
+            ctx.setApplied3dsVersion(executionDetails.getApplied3DSVersion());
+            ctx.setPayIn(apiResponse.getId());
+            ctx.setRequested3dsVersion(executionDetails.getRequested3DSVersion());
+            ctx.setResultCode(apiResponse.getResultCode());
+            ctx.setResultMessage(apiResponse.getResultMessage());
+            ctx.setStatus(EnumTransactionStatus.from(apiResponse.getStatus()));
             // MANGOPAY returns dates as integer numbers that represent the
             // number of seconds since the Unix Epoch
-            command.setCreatedOn(ZonedDateTime.ofInstant(Instant.ofEpochSecond(apiResponse.getCreationDate()), ZoneOffset.UTC));
+            ctx.setCreatedOn(ZonedDateTime.ofInstant(Instant.ofEpochSecond(apiResponse.getCreationDate()), ZoneOffset.UTC));
             // For Card Direct PayIns, if no 3-D Secure validation is required,
             // the transaction may be executed immediately
             if (apiResponse.getExecutionDate() != null) {
-                command.setExecutedOn(ZonedDateTime.ofInstant(Instant.ofEpochSecond(apiResponse.getExecutionDate()), ZoneOffset.UTC));
+                ctx.setExecutedOn(ZonedDateTime.ofInstant(Instant.ofEpochSecond(apiResponse.getExecutionDate()), ZoneOffset.UTC));
             }
 
             // Create database record
@@ -167,21 +165,21 @@ public class MangoPayRecurringPaymentService extends BaseMangoPayService impleme
             if (payIn != null) {
                 result = (ConsumerCardDirectPayInDto) payIn.toConsumerDto(true);
             } else {
-                result = (ConsumerCardDirectPayInDto) this.payInRepository.createCardDirectPayInForOrder(command);
+                result = (ConsumerCardDirectPayInDto) this.payInRepository.createCardDirectPayInForOrder(ctx);
 
                 // Link PayIn record to order
-                this.orderRepository.setPayIn(command.getOrderKey(), result.getPayIn(), command.getUserKey());
+                this.orderRepository.setPayIn(command.getKey(), result.getPayIn(), command.getUserKey());
 
                 // Update order status if we have a valid response i.e.
                 // 3D-Secure validation was skipped
                 if (result.getStatus() != EnumTransactionStatus.CREATED) {
                     switch (result.getStatus()) {
                         case FAILED :
-                            this.orderRepository.setStatus(command.getOrderKey(), EnumOrderStatus.CANCELLED);
+                            this.orderRepository.setStatus(command.getKey(), EnumOrderStatus.CANCELLED);
                             break;
 
                         case SUCCEEDED :
-                            this.orderRepository.setStatus(command.getOrderKey(), EnumOrderStatus.ASSET_REGISTRATION);
+                            this.orderRepository.setStatus(command.getKey(), EnumOrderStatus.ASSET_REGISTRATION);
                             break;
 
                         default :
@@ -195,7 +193,7 @@ public class MangoPayRecurringPaymentService extends BaseMangoPayService impleme
 
             // Add client-only information (card alias is never saved in our
             // database)
-            result.setAlias(command.getCardAlias());
+            result.setAlias(ctx.getCardAlias());
 
             /*
              * Since we have set SecureMode=FORCE, we expect SecureModeNeeded to
@@ -210,46 +208,42 @@ public class MangoPayRecurringPaymentService extends BaseMangoPayService impleme
         } catch(final PaymentException ex) {
             throw ex;
         } catch(final Exception ex) {
-            throw this.wrapException("Create CIT PayIn", ex, command, logger);
+            throw this.wrapException("Create CIT PayIn", ex, ctx, logger);
         }
     }
 
     @Override
-    public PayInDto createMerchantPayIn(CardDirectPayInCommand command) throws PaymentException {
-        Assert.isTrue(command.isRecurring(), "Merchant initiated transactions are supported only for recurring payments");
-        Assert.hasText(command.getRecurringPayinRegistrationId(), "Expected an non-empty recurring registration identifier");
+    public PayInDto createMerchantPayIn(CardDirectPayInExecutionContext ctx) throws PaymentException {
+        Assert.isTrue(ctx.isRecurring(), "Merchant initiated transactions are supported only for recurring payments");
+        Assert.hasText(ctx.getRecurringPayinRegistrationId(), "Expected an non-empty recurring registration identifier");
 
         try {
             // Check if this is a retry operation
-            RecurringPayIn apiResponse = this.<RecurringPayIn>getResponse(command.getIdempotencyKey());
+            RecurringPayIn apiResponse = this.<RecurringPayIn>getResponse(ctx.getIdempotencyKey());
 
             // Create a new PayIn if needed
             if (apiResponse == null) {
-                final RecurringPayInMIT payInRequest = this.createCardDirectPayInMIT(command);
+                final RecurringPayInMIT payInRequest = this.createCardDirectPayInMIT(ctx);
 
-                apiResponse = this.api.getPayInApi().createRecurringPayInMIT(command.getIdempotencyKey(), payInRequest);
-            } else {
-                // Override PayIn key with existing one from the payment
-                // provider
-                command.setPayInKey(UUID.fromString(apiResponse.getTag()));
+                apiResponse = this.api.getPayInApi().createRecurringPayInMIT(ctx.getIdempotencyKey(), payInRequest);
             }
 
             // Update command with payment information
             final PayInExecutionDetailsDirect executionDetails = (PayInExecutionDetailsDirect) apiResponse.getExecutionDetails();
 
-            command.setApplied3dsVersion(executionDetails.getApplied3DSVersion());
-            command.setPayIn(apiResponse.getId());
-            command.setRequested3dsVersion(executionDetails.getRequested3DSVersion());
-            command.setResultCode(apiResponse.getResultCode());
-            command.setResultMessage(apiResponse.getResultMessage());
-            command.setStatus(EnumTransactionStatus.from(apiResponse.getStatus()));
+            ctx.setApplied3dsVersion(executionDetails.getApplied3DSVersion());
+            ctx.setPayIn(apiResponse.getId());
+            ctx.setRequested3dsVersion(executionDetails.getRequested3DSVersion());
+            ctx.setResultCode(apiResponse.getResultCode());
+            ctx.setResultMessage(apiResponse.getResultMessage());
+            ctx.setStatus(EnumTransactionStatus.from(apiResponse.getStatus()));
             // MANGOPAY returns dates as integer numbers that represent the
             // number of seconds since the Unix Epoch
-            command.setCreatedOn(ZonedDateTime.ofInstant(Instant.ofEpochSecond(apiResponse.getCreationDate()), ZoneOffset.UTC));
+            ctx.setCreatedOn(ZonedDateTime.ofInstant(Instant.ofEpochSecond(apiResponse.getCreationDate()), ZoneOffset.UTC));
             // For Card Direct PayIns, if no 3-D Secure validation is required,
             // the transaction may be executed immediately
             if (apiResponse.getExecutionDate() != null) {
-                command.setExecutedOn(ZonedDateTime.ofInstant(Instant.ofEpochSecond(apiResponse.getExecutionDate()), ZoneOffset.UTC));
+                ctx.setExecutedOn(ZonedDateTime.ofInstant(Instant.ofEpochSecond(apiResponse.getExecutionDate()), ZoneOffset.UTC));
             }
 
             // Create database record
@@ -258,7 +252,7 @@ public class MangoPayRecurringPaymentService extends BaseMangoPayService impleme
             if (payIn != null) {
                 result = (ConsumerCardDirectPayInDto) payIn.toConsumerDto(true);
             } else {
-                result = (ConsumerCardDirectPayInDto) this.payInRepository.createCardDirectPayInForOrder(command);
+                result = (ConsumerCardDirectPayInDto) this.payInRepository.createCardDirectPayInForOrder(ctx);
 
                 // Update order status if we have a valid response i.e.
                 // 3D-Secure validation was skipped
@@ -269,13 +263,13 @@ public class MangoPayRecurringPaymentService extends BaseMangoPayService impleme
 
             // Add client-only information (card alias is never saved in our
             // database)
-            result.setAlias(command.getCardAlias());
+            result.setAlias(ctx.getCardAlias());
 
             return result;
         } catch(final PaymentException ex) {
             throw ex;
         } catch(final Exception ex) {
-            throw this.wrapException("Create MIT PayIn", ex, command, logger);
+            throw this.wrapException("Create MIT PayIn", ex, ctx, logger);
         }
     }
 
@@ -332,15 +326,16 @@ public class MangoPayRecurringPaymentService extends BaseMangoPayService impleme
      * @param command
      * @return
      */
-    private RecurringPayInCIT createCardDirectPayInCIT(CardDirectPayInCommand command) {
-        final RecurringPayInCIT result = new RecurringPayInCIT();
+    private RecurringPayInCIT createCardDirectPayInCIT(CardDirectPayInExecutionContext ctx) {
+        final var command = ctx.getCommand();
+        final var result  = new RecurringPayInCIT();
 
         result.setBrowserInfo(command.getBrowserInfo().toMangoPayBrowserInfo());
         result.setIpAddress(command.getIpAddress());
-        result.setRecurringPayInRegistrationId(command.getRecurringPayinRegistrationId());
+        result.setRecurringPayInRegistrationId(ctx.getRecurringPayinRegistrationId());
         result.setSecureModeReturnURL(this.buildSecureModeReturnUrl(command));
-        result.setStatementDescriptor(command.getStatementDescriptor());
-        result.setTag(command.getPayInKey().toString());
+        result.setStatementDescriptor(ctx.getStatementDescriptor());
+        result.setTag(command.getKey().toString());
 
         return result;
     }
@@ -351,12 +346,12 @@ public class MangoPayRecurringPaymentService extends BaseMangoPayService impleme
      * @param command
      * @return
      */
-    private RecurringPayInMIT createCardDirectPayInMIT(CardDirectPayInCommand command) {
+    private RecurringPayInMIT createCardDirectPayInMIT(CardDirectPayInExecutionContext ctx) {
         final RecurringPayInMIT result = new RecurringPayInMIT();
 
-        result.setRecurringPayInRegistrationId(command.getRecurringPayinRegistrationId());
-        result.setStatementDescriptor(command.getStatementDescriptor());
-        result.setTag(command.getPayInKey().toString());
+        result.setRecurringPayInRegistrationId(ctx.getRecurringPayinRegistrationId());
+        result.setStatementDescriptor(ctx.getStatementDescriptor());
+        result.setTag(ctx.getCommand().getKey().toString());
 
         return result;
     }

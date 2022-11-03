@@ -3,6 +3,7 @@ package eu.opertusmundi.common.domain;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -17,6 +18,7 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
+import org.hibernate.annotations.NaturalId;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 
@@ -52,6 +54,13 @@ public class SubscriptionBillingEntity {
     @GeneratedValue(generator = "subscription_billing_id_seq", strategy = GenerationType.SEQUENCE)
     @Setter(AccessLevel.PRIVATE)
     private Integer id;
+
+    @Builder.Default
+    @NotNull
+    @NaturalId
+    @Column(name = "key", updatable = false, columnDefinition = "uuid")
+    @Setter(AccessLevel.PRIVATE)
+    private UUID key = UUID.randomUUID();
 
     @NotNull
     @ManyToOne(targetEntity = AccountSubscriptionEntity.class)
@@ -126,17 +135,20 @@ public class SubscriptionBillingEntity {
     private EnumSubscriptionBillingStatus status;
 
     private void updateDto(SubscriptionBillingDto s) {
+        s.setConsumerKey(this.getSubscription().getConsumer().getKey());
         s.setCreatedOn(createdOn);
         s.setDueDate(dueDate);
         s.setFromDate(fromDate);
         s.setId(id);
+        s.setKey(key);
         s.setPricingModel(pricingModel);
+        s.setProviderKey(subscription.getProvider().getKey());
         s.setSubscriptionId(this.getSubscription().getId());
         s.setSkuTotalCalls(skuTotalCalls);
         s.setSkuTotalRows(skuTotalRows);
         s.setStats(stats);
         s.setStatus(status);
-        s.setSubscription(this.subscription.toHelpdeskDto());
+        s.setSubscriptionKey(subscription.getKey());
         s.setToDate(toDate);
         s.setTotalCalls(totalCalls);
         s.setTotalPrice(totalPrice);
@@ -144,31 +156,31 @@ public class SubscriptionBillingEntity {
         s.setTotalRows(totalRows);
         s.setTotalTax(totalTax);
         s.setUpdatedOn(updatedOn);
-
-        if (this.payin != null) {
-            s.setPayin(payin.toHelpdeskDto(false));
-        }
     }
 
     public ConsumerSubscriptionBillingDto toConsumerDto(boolean includeProviderDetails) {
         final ConsumerSubscriptionBillingDto s = new ConsumerSubscriptionBillingDto();
-
         this.updateDto(s);
 
-        s.setSubscription(this.getSubscription().toConsumerDto(includeProviderDetails));
-
+        if (includeProviderDetails) {
+            s.setSubscription(this.subscription.toConsumerDto(includeProviderDetails));
+            if (this.payin != null) {
+                s.setPayIn(payin.toConsumerDto(false));
+            }
+        }
         return s;
     }
 
     public ProviderSubscriptionBillingDto toProviderDto(boolean includeDetails) {
         final ProviderSubscriptionBillingDto s = new ProviderSubscriptionBillingDto();
-
         this.updateDto(s);
 
         if (includeDetails) {
-            s.setSubscription(this.getSubscription().toProviderDto());
+            s.setSubscription(this.subscription.toProviderDto());
+            if (this.payin != null) {
+                s.setPayIn(payin.toProviderDto(false));
+            }
         }
-
         return s;
     }
 
@@ -178,13 +190,14 @@ public class SubscriptionBillingEntity {
 
     public HelpdeskSubscriptionBillingDto toHelpdeskDto(boolean includeDetails) {
         final HelpdeskSubscriptionBillingDto s = new HelpdeskSubscriptionBillingDto();
-
         this.updateDto(s);
 
         if (includeDetails) {
-            s.setSubscription(this.getSubscription().toHelpdeskDto());
+            s.setSubscription(this.subscription.toHelpdeskDto());
+            if (this.getPayin() != null) {
+                s.setPayIn(this.getPayin().toProviderDto(false));
+            }
         }
-
         return s;
     }
 

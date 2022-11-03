@@ -7,6 +7,7 @@ public enum EnumSubscriptionBillingSortField {
     DUE_DATE("dueDate"),
     FROM_DATE("fromDate"),
     STATUS("status"),
+    TITLE("title"),
     TO_DATE("toDate"),
     TOTAL_PRICE("totalPrice"),
     UPDATED_ON("updatedOn"),
@@ -15,7 +16,7 @@ public enum EnumSubscriptionBillingSortField {
     @Getter
     private String value;
 
-    private EnumSubscriptionBillingSortField(String value) {
+    EnumSubscriptionBillingSortField(String value) {
         this.value = value;
     }
 

@@ -18,6 +18,7 @@ import eu.opertusmundi.common.model.payment.CardDirectPayInCommand;
 import eu.opertusmundi.common.model.payment.CardDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationCommandDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationDto;
+import eu.opertusmundi.common.model.payment.CheckoutSubscriptionBillingCommandDto;
 import eu.opertusmundi.common.model.payment.ClientDto;
 import eu.opertusmundi.common.model.payment.ClientWalletDto;
 import eu.opertusmundi.common.model.payment.EnumPayInItemSortField;
@@ -50,6 +51,15 @@ public interface  PaymentService {
      * @throws PaymentException
      */
     OrderDto createOrderFromCart(CartDto cart, Location location) throws PaymentException;
+
+    /**
+     * Initializes a new PayIn from a list of subscription billing record keys
+     *
+     * @param command
+     * @return
+     * @throws PaymentException
+     */
+    PayInDto preparePayInFromSubscriptionBillingRecords(CheckoutSubscriptionBillingCommandDto command) throws PaymentException;
 
     /**
      * Get client registration information
@@ -279,7 +289,7 @@ public interface  PaymentService {
     PayInDto createPayInBankwireForOrder(BankwirePayInCommand command) throws PaymentException;
 
     /**
-     * Crate direct PayIn with a registered card for the specified order
+     * Create a direct card PayIn with a registered card for the specified order
      *
      * @param command
      * @return
@@ -288,25 +298,33 @@ public interface  PaymentService {
     PayInDto createPayInCardDirectForOrder(CardDirectPayInCommand command) throws PaymentException;
 
     /**
-     * Sends a message to an order fulfillment process instance to update the
-     * PayIn status
+     * Updates a direct card PayIn with a registered card for a collection of
+     * subscription billing records
+     *
+     * @param command
+     * @return
+     * @throws PaymentException
+     */
+    PayInDto updatePayInCardDirectForSubscriptions(CardDirectPayInCommand command) throws PaymentException;
+
+    /**
+     * Updates the PayIn status in a PayIn workflow instance
      *
      * @param payInId
      * @throws PaymentException
      */
-    default void sendPayInStatusUpdateMessage(String payInId) throws PaymentException {
-        this.sendPayInStatusUpdateMessage(null, payInId);
+    default void updateWorkflowInstancePayInStatus(String payInId) throws PaymentException {
+        this.updateWorkflowInstancePayInStatus(null, payInId);
     }
 
     /**
-     * Sends a message to an order fulfillment process instance to update the
-     * PayIn status
+     * Updates the PayIn status in a PayIn workflow instance
      *
      * @param payInKey
      * @param payInId
      * @throws PaymentException
      */
-    void sendPayInStatusUpdateMessage(UUID payInKey, String payInId) throws PaymentException;
+    void updateWorkflowInstancePayInStatus(UUID payInKey, String payInId) throws PaymentException;
 
     /**
      * Update PayIn

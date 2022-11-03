@@ -22,13 +22,14 @@ import com.mangopay.entities.subentities.PayInExecutionDetailsDirect;
 import com.mangopay.entities.subentities.PayInPaymentDetailsCard;
 
 import eu.opertusmundi.common.model.payment.CardDirectPayInCommand;
+import eu.opertusmundi.common.model.payment.CardDirectPayInExecutionContext;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.PaymentMessageCode;
 
 public abstract class BaseMangoPayService {
 
     private static final Logger logger = LoggerFactory.getLogger(BaseMangoPayService.class);
-    
+
     @Value("${opertusmundi.payments.mangopay.base-url:}")
     private String baseUrl;
 
@@ -65,7 +66,7 @@ public abstract class BaseMangoPayService {
             baseUrl += "/";
         }
 
-        return baseUrl + "webhooks/payins/" + command.getPayInKey().toString();
+        return baseUrl + "webhooks/payins/" + command.getKey().toString();
     }
 
     /**
@@ -74,13 +75,15 @@ public abstract class BaseMangoPayService {
      * @param command
      * @return
      */
-    protected PayIn createCardDirectPayIn(CardDirectPayInCommand command) {
-        final PayInPaymentDetailsCard paymentDetails = new PayInPaymentDetailsCard();
+    protected PayIn createCardDirectPayIn(CardDirectPayInExecutionContext ctx) {
+        final var command        = ctx.getCommand();
+        final var paymentDetails = new PayInPaymentDetailsCard();
+
         paymentDetails.setBrowserInfo(command.getBrowserInfo().toMangoPayBrowserInfo());
         paymentDetails.setCardType(CardType.CB_VISA_MASTERCARD);
         paymentDetails.setCardId(command.getCardId());
         paymentDetails.setIpAddress(command.getIpAddress());
-        paymentDetails.setStatementDescriptor(command.getStatementDescriptor());
+        paymentDetails.setStatementDescriptor(ctx.getStatementDescriptor());
         if (command.getShipping() != null) {
             paymentDetails.setShipping(command.getShipping().toMangoPayShipping());
         }
@@ -116,17 +119,17 @@ public abstract class BaseMangoPayService {
         executionDetails.setRequested3DSVersion("V2_1");
 
         final PayIn result = new PayIn();
-        result.setAuthorId(command.getCreditedUserId());
-        result.setCreditedUserId(command.getCreditedUserId());
-        result.setCreditedWalletId(command.getCreditedWalletId());
+        result.setAuthorId(ctx.getCreditedUserId());
+        result.setCreditedUserId(ctx.getCreditedUserId());
+        result.setCreditedWalletId(ctx.getCreditedWalletId());
         result.setDebitedFunds(new Money(
-            CurrencyIso.EUR, command.getDebitedFunds().multiply(BigDecimal.valueOf(100L)).intValue()
+            CurrencyIso.EUR, ctx.getDebitedFunds().multiply(BigDecimal.valueOf(100L)).intValue()
         ));
         result.setExecutionDetails(executionDetails);
         result.setExecutionType(PayInExecutionType.DIRECT);
         result.setFees(new Money(CurrencyIso.EUR, 0));
         result.setPaymentDetails(paymentDetails);
-        result.setTag(command.getPayInKey().toString());
+        result.setTag(command.getKey().toString());
         result.setPaymentType(PayInPaymentType.CARD);
 
         return result;
@@ -142,13 +145,13 @@ public abstract class BaseMangoPayService {
     protected PaymentException wrapException(String operation, Exception ex, Object command, Logger logger) {
         PaymentException pEx         = null;
         final String     commandText = command == null ? "-" : command.toString();
-        
+
 
         if (ex instanceof PaymentException) {
             // No action is required for payment exceptions
             pEx = (PaymentException) ex;
         } else if (ex instanceof ResponseException) {
-            // Wrap MANGOPAY exceptions with a Payment exception 
+            // Wrap MANGOPAY exceptions with a Payment exception
             final ResponseException rEx     = (ResponseException) ex;
             final String            message = String.format(
                 "MANGOPAY operation has failed. [operation=%s, apiMessage=%s, command=[%s]]",
@@ -166,9 +169,9 @@ public abstract class BaseMangoPayService {
 
             pEx = new PaymentException(PaymentMessageCode.SERVER_ERROR, message, ex);
         }
-               
+
         return pEx;
-    }   
+    }
 
     /**
      * Get existing response for an idempotency key

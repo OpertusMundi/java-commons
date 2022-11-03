@@ -18,7 +18,8 @@ public enum EnumWorkflow {
     PROVIDER_UPDATE_DEFAULT_CONTRACTS    ("provider-update-default-contracts"),
     PUBLISH_USER_SERVICE                 ("user-publish-service"                    , EnumProcessInstanceResource.USER_SERVICE),
     REMOVE_USER_SERVICE                  ("user-remove-service"                     , EnumProcessInstanceResource.USER_SERVICE),
-    SUBSCRIPTION_BILLING                 ("workflow-subscription-billing"),
+    SUBSCRIPTION_BILLING                 ("subscription-billing"),
+    SUBSCRIPTION_BILLING_CONSUMER_PAYIN  ("subscription-billing-consumer-payin"     , EnumProcessInstanceResource.PAYIN),
     VENDOR_ACCOUNT_REGISTRATION          ("vendor-account-registration"             , EnumProcessInstanceResource.ACCOUNT),
 
     // System Maintenance workflows

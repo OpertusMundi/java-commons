@@ -3,7 +3,7 @@ package eu.opertusmundi.common.service.mangopay;
 import java.util.Optional;
 import java.util.UUID;
 
-import eu.opertusmundi.common.model.payment.CardDirectPayInCommand;
+import eu.opertusmundi.common.model.payment.CardDirectPayInExecutionContext;
 import eu.opertusmundi.common.model.payment.PayInDto;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.RecurringRegistrationCreateCommand;
@@ -57,21 +57,21 @@ public interface RecurringPaymentService {
      * Create a customer initiated transaction (CIT) for a recurring
      * registration
      *
-     * @param command
+     * @param ctx
      * @return
      * @throws PaymentException
      */
-    PayInDto createConsumerPayIn(CardDirectPayInCommand command) throws PaymentException;
+    PayInDto createConsumerPayIn(CardDirectPayInExecutionContext ctx) throws PaymentException;
 
     /**
      * Create a merchant initiated transaction (MIT) for a recurring
      * registration
      *
-     * @param command
+     * @param ctx
      * @return
      * @throws PaymentException
      */
-    PayInDto createMerchantPayIn(CardDirectPayInCommand command) throws PaymentException;
+    PayInDto createMerchantPayIn(CardDirectPayInExecutionContext ctx) throws PaymentException;
 
     /**
      * Update registration status

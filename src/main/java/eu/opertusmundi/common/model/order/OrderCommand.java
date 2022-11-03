@@ -12,32 +12,22 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Setter
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Builder
 @JsonIgnoreType
 public class OrderCommand {
 
-    private Integer userId;
-
-    private Integer cartId;
-
-    private CatalogueItemDetailsDto asset;
-
+    private CatalogueItemDetailsDto  asset;
+    private Integer                  cartId;
+    private EnumContractType         contractType;
+    private boolean                  contractUploadingRequired;
+    private EnumDeliveryMethod       deliveryMethod;
+    private Location                 location;
     private EffectivePricingModelDto quotation;
-
-    private EnumDeliveryMethod deliveryMethod;
-
-    private Location location;
-
-    private boolean contractUploadingRequired;
-
-    private boolean vettingRequired;
-
-    private EnumContractType contractType;
+    private Integer                  userId;
+    private boolean                  vettingRequired;
 
 }
