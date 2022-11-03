@@ -90,16 +90,18 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     /**
      * Find a consumer PayIn
      *
-     * This method does not return PayIn records with payment method
-     * <b>CARD_DIRECT</b> which have status <b>CREATED</b>.
+     * This method does not return PayIn records with (a) status
+     * <b>NotSpecified</> and (b) payment method <b>CARD_DIRECT</b> with status
+     * <b>CREATED</b>.
      *
      * @param userId
      * @param payInKey
      * @return
      */
     @Query("SELECT p FROM PayIn p JOIN FETCH p.items i "
-         + "WHERE  p.key = :payInKey and "
-         + "       p.consumer.id = :userId and "
+         + "WHERE  (p.key = :payInKey) and "
+         + "       (p.consumer.id = :userId) and "
+         + "       (p.status <> 'NotSpecified') and "
          + "       (p.status <> 'CREATED' or p.paymentMethod <> 'CARD_DIRECT')"
     )
     Optional<PayInEntity> findOneByConsumerIdAndKey(Integer userId, UUID payInKey);
@@ -139,8 +141,9 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
      * <br />
      * <br />
      *
-     * This method does not return PayIn records with payment method
-     * <b>CARD_DIRECT</b> which have status <b>CREATED</b>.
+     * This method does not return PayIn records with (a) status
+     * <b>NotSpecified</> and (b) payment method <b>CARD_DIRECT</b> with status
+     * <b>CREATED</b>.
      *
      * @param userKey
      * @param status
@@ -150,6 +153,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     @Query("SELECT p FROM PayIn p "
          + "WHERE (:status IS NULL or p.status = :status) and "
          + "      (p.consumer.key = :consumerKey) and "
+         + "      (p.status <> 'NotSpecified') and "
          + "      (p.status <> 'CREATED' or p.paymentMethod <> 'CARD_DIRECT') and "
          + "      (:referenceNumber IS NULL or p.referenceNumber = :referenceNumber) "
     )
