@@ -84,6 +84,9 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
             case PURCHASE_APPROVED :
             case PURCHASE_REJECTED :
             case PURCHASE_REMINDER :
+            case SUBSCRIPTION_BILLING_SINGLE_CHARGE :
+            case SUBSCRIPTION_BILLING_TOTAL_CHARGE :
+            case SUBSCRIPTION_BILLING_PAYOFF :
             case USER_SERVICE_PUBLISH_FAILURE :
             case USER_SERVICE_PUBLISH_SUCCESS :
             case USER_SERVICE_REMOVE :
@@ -181,6 +184,12 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
                 data.put("orderKey", this.checkAndGetVariable(variables, "orderKey"));
                 data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
                 data.put("assetVersion", this.checkAndGetVariable(variables, "assetVersion"));
+                return data;
+
+            case SUBSCRIPTION_BILLING_SINGLE_CHARGE :
+            case SUBSCRIPTION_BILLING_TOTAL_CHARGE :
+            case SUBSCRIPTION_BILLING_PAYOFF :
+                variables.keySet().forEach(key -> data.put(key, variables.get(key).toString()));
                 return data;
 
             case USER_SERVICE_PUBLISH_FAILURE :
