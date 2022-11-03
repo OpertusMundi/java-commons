@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
+import java.util.Locale;
 import java.util.UUID;
 
 import org.apache.commons.io.IOUtils;
@@ -22,12 +23,16 @@ import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.apache.pdfbox.util.Matrix;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
+
+import com.ibm.icu.text.NumberFormat;
 
 import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.OrderEntity;
@@ -36,6 +41,7 @@ import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
 import eu.opertusmundi.common.model.account.CustomerDto;
 import eu.opertusmundi.common.model.account.CustomerIndividualDto;
+import eu.opertusmundi.common.model.payment.EnumInvoiceType;
 import eu.opertusmundi.common.repository.PayInRepository;
 import lombok.Getter;
 import lombok.NonNull;
@@ -46,8 +52,7 @@ import lombok.Setter;
 @Transactional
 public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
 
-    @Autowired
-    private InvoiceFileManager invoiceFileManager;
+    private static final Logger logger = LoggerFactory.getLogger(DefaultInvoiceGeneratorService.class);
 
     private static float headerFontSize = 12.0f;
     private static float footerFontSize = 7.0f;
@@ -71,11 +76,20 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
     @Value("${opertusmundi.contract.font-bold-italic}")
     private String boldItalicFont;
 
-    @Autowired
-    private ResourceLoader resourceLoader;
+    private final InvoiceFileManager invoiceFileManager;
+    private final PayInRepository    payInRepository;
+    private final ResourceLoader     resourceLoader;
 
     @Autowired
-    private PayInRepository payInRepository;
+    public DefaultInvoiceGeneratorService(
+        InvoiceFileManager invoiceFileManager,
+        PayInRepository payInRepository,
+        ResourceLoader resourceLoader
+    ) {
+        this.invoiceFileManager = invoiceFileManager;
+        this.payInRepository    = payInRepository;
+        this.resourceLoader     = resourceLoader;
+    }
 
     @Getter
     private static class Fonts {
@@ -143,7 +157,7 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
                     this.content.close();
                 }
             } catch (final Exception ex) {
-                // TODO: Handle error ...
+                logger.warn("Failed to close PDF page", ex);
             }
         }
 
@@ -253,15 +267,19 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
         pdd.setKeywords("topio, contract, pdf document");
     }
 
-    /**
-     * Create invoice PDF
-     *
-     * @param payinKey
-     * @return
-     * @throws IOException
-     */
     @Override
-    public String generateInvoicePdf(UUID payinKey) throws IOException {
+    public String generateInvoicePdf(EnumInvoiceType type, UUID payinKey) throws IOException {
+        final String result = switch (type) {
+            case ORDER_INVOICE ->
+                this.renderOrderInvoice(payinKey);
+            case SUBSCRIPTION_BILLING_INVOICE ->
+                throw new UnsupportedOperationException("Subscription billing invoice rendering is not implemented");
+        };
+
+        return result;
+    }
+
+    private String renderOrderInvoice(UUID payinKey) throws IOException {
         final PayInEntity   payin                = payInRepository.findOneEntityByKey(payinKey).orElse(null);
         final OrderEntity   order                = ((PayInOrderItemEntity) payin.getItems().get(0)).getOrder();
         final AccountEntity consumer             = order.getConsumer();
@@ -280,18 +298,17 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
     }
 
     private byte[] renderPDF(PayInEntity payin, OrderEntity orderEntity, CustomerDto customerDto) throws IOException {
-        final OrderItemEntity orderItemEntity      = orderEntity.getItems().get(0);
-        final String          orderReferenceNumber = orderEntity.getReferenceNumber();
-        // final AccountEntity provider = orderItemEntity.getProvider();
-        final String                fullName     = orderEntity.getConsumer().getFullName();
-        final CustomerIndividualDto customer     = (CustomerIndividualDto) customerDto;
-        final String                address      = customer.getAddress().toString();
-        final String                country      = customer.getCountryOfResidence();
-        final String                assetName    = orderItemEntity.getDescription();
-        final BigDecimal            priceExclTax = payin.getTotalPriceExcludingTax();
-        final BigDecimal            tax          = payin.getTotalTax();
-        final BigDecimal            totalPrice   = payin.getTotalPrice();
-        final ZonedDateTime         orderDate    = orderEntity.getCreatedOn();
+        final OrderItemEntity       orderItemEntity      = orderEntity.getItems().get(0);
+        final String                orderReferenceNumber = orderEntity.getReferenceNumber();
+        final String                fullName             = orderEntity.getConsumer().getFullName();
+        final CustomerIndividualDto customer             = (CustomerIndividualDto) customerDto;
+        final String                address              = customer.getAddress().toString();
+        final String                country              = customer.getCountryOfResidence();
+        final String                assetName            = orderItemEntity.getAssetTitle();
+        final BigDecimal            priceExclTax         = payin.getTotalPriceExcludingTax();
+        final BigDecimal            tax                  = payin.getTotalTax();
+        final BigDecimal            totalPrice           = payin.getTotalPrice();
+        final ZonedDateTime         orderDate            = orderEntity.getCreatedOn();
 
         // Initialize all variables that are related to the PDF formatting
         final PDDocument document = new PDDocument();
@@ -299,10 +316,10 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
         byte[]           logo;
 
         try (
-            InputStream logoIs = resourceLoader.getResource(logoFilename).getInputStream();
-            InputStream regularFontIs = resourceLoader.getResource(regularFont).getInputStream();
-            InputStream boldFontIs = resourceLoader.getResource(boldFont).getInputStream();
-            InputStream italicFontIs = resourceLoader.getResource(italicFont).getInputStream();
+            InputStream logoIs           = resourceLoader.getResource(logoFilename).getInputStream();
+            InputStream regularFontIs    = resourceLoader.getResource(regularFont).getInputStream();
+            InputStream boldFontIs       = resourceLoader.getResource(boldFont).getInputStream();
+            InputStream italicFontIs     = resourceLoader.getResource(italicFont).getInputStream();
             InputStream boldItalicFontIs = resourceLoader.getResource(boldItalicFont).getInputStream();
         ) {
             logo = IOUtils.toByteArray(logoIs);
@@ -440,17 +457,17 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
 
             content.beginText();
             content.newLineAtOffset(300, 460);
-            content.showText(priceExclTax.toString());
+            content.showText(this.formatCurrency(priceExclTax));
             content.endText();
 
             content.beginText();
             content.newLineAtOffset(400, 460);
-            content.showText(tax.toString());
+            content.showText(this.formatCurrency(tax));
             content.endText();
 
             content.beginText();
             content.newLineAtOffset(470, 460);
-            content.showText(totalPrice.toString());
+            content.showText(this.formatCurrency(totalPrice));
             content.endText();
 
             content.beginText();
@@ -461,7 +478,7 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
 
             content.beginText();
             content.newLineAtOffset(470, 430);
-            content.showText(totalPrice.toString());
+            content.showText(this.formatCurrency(totalPrice));
             content.endText();
 
             /* Add metadata, header and footer */
@@ -478,6 +495,13 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
             }
 
         }
+    }
+
+    private String formatCurrency(BigDecimal value) {
+        final var locale       = new Locale("el", "GR");
+        final var numberFormat = NumberFormat.getCurrencyInstance(locale);
+
+        return numberFormat.format(value);
     }
 
     private void save(Path path, byte[] data) throws FileNotFoundException, IOException {
