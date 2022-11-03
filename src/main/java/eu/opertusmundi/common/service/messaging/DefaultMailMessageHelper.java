@@ -184,7 +184,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             	break;
 
     		case SUPPLIER_UPLOADED_CONTRACT_EVALUATION :
-    			this.populateSupplierUploadedContractEvaluationdModel(builder);
+    			this.populateSupplierUploadedContractEvaluationModel(builder);
     			break;
 
     		case SUPPLIER_UPLOADED_CONTRACT_ACCEPTED :
@@ -448,7 +448,7 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .add("assetURL", this.baseUrl + "/" + "catalogue" + "/" + assetPublishedId);
 	}
 
-	private void populateSupplierUploadedContractEvaluationdModel(MailModelBuilder builder) {
+	private void populateSupplierUploadedContractEvaluationModel(MailModelBuilder builder) {
         final UUID userKey = UUID.fromString((String) builder.get("userKey"));
 
         final AccountEntity account = this.accountRepository.findOneByKey(userKey).get();

@@ -250,7 +250,7 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
         pdd.setTitle("Topio Market Contract");
         pdd.setCreator("Topio Market");
         pdd.setSubject("Contract");
-        pdd.setKeywords("topio, contract, pdf documnet");
+        pdd.setKeywords("topio, contract, pdf document");
     }
 
     /**
