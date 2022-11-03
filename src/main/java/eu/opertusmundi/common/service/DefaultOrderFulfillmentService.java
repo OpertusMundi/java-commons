@@ -667,7 +667,9 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             sub = new AccountSubscriptionEntity();
 
             sub.setAddedOn(now);
-            sub.setAsset(orderItem.getAssetId());
+            sub.setAssetId(orderItem.getAssetId());
+            sub.setAssetTitle(orderItem.getAssetTitle());
+            sub.setAssetVersion(orderItem.getAssetVersion());
             sub.setCancelledOn(null);
             sub.setConsumer(payIn.getConsumer());
             sub.setExpiresOn(null);

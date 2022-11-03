@@ -277,11 +277,11 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
         final OrderItemEntity item = new OrderItemEntity();
         item.setAssetId(command.getAsset().getId());
+        item.setAssetTitle(command.getAsset().getTitle());
         item.setAssetVersion(command.getAsset().getVersion());
         item.setContractType(command.getContractType());
         item.setContractTemplateId(command.getContractType() == EnumContractType.MASTER_CONTRACT ? command.getAsset().getContractTemplateId() : null);
         item.setContractTemplateVersion(command.getContractType() == EnumContractType.MASTER_CONTRACT ? command.getAsset().getContractTemplateVersion() : null);
-        item.setDescription(command.getAsset().getTitle());
         item.setIndex(1);
         item.setOrder(order);
         item.setPricingModel(command.getQuotation());

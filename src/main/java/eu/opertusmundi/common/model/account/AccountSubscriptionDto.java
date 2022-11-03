@@ -32,6 +32,12 @@ public abstract class AccountSubscriptionDto {
     @Schema(description = "Asset PID")
     private String assetId;
 
+    @Schema(description = "Asset title")
+    private String assetTitle;
+
+    @Schema(description = "Asset version")
+    private String assetVersion;
+
     @Schema(description = "When the subscription was registered to the user account")
     private ZonedDateTime addedOn;
 
@@ -45,7 +51,7 @@ public abstract class AccountSubscriptionDto {
     private EnumTopicCategory segment;
 
     private EnumSubscriptionStatus status;
-    
+
     @Schema(description = "Catalogue item")
     @JsonInclude(Include.NON_NULL)
     private CatalogueItemDto item;

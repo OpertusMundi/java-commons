@@ -102,6 +102,7 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
 
         switch (type) {
             case ASSET_AVAILABLE_TO_PURCHASE :
+                data.put("assetId", this.checkAndGetVariable(variables, "assetId"));
                 data.put("assetName", this.checkAndGetVariable(variables, "assetName"));
                 return data;
 
@@ -215,7 +216,7 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
         data.put("orderId", orderEntity.getReferenceNumber());
         data.put("orderKey", orderEntity.getKey().toString());
         data.put("assetId", orderItemEntity.getAssetId());
-        data.put("assetName", orderItemEntity.getDescription());
+        data.put("assetName", orderItemEntity.getAssetTitle());
         data.put("assetVersion", orderItemEntity.getAssetVersion());
         data.put("supplierName", orderItemEntity.getProvider().getProvider().getName());
         return data;
@@ -230,7 +231,7 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
         data.put("payInKey", payInKey.toString());
         data.put("orderKey", payInOrderItem.getOrder().getKey().toString());
         data.put("assetId", orderItem.getAssetId());
-        data.put("assetName", orderItem.getDescription());
+        data.put("assetName", orderItem.getAssetTitle());
         data.put("assetVersion", orderItem.getAssetVersion());
         return data;
     }
@@ -244,7 +245,7 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
         data.put("payInKey", payInKey.toString());
         data.put("orderKey", payInOrderItem.getOrder().getKey().toString());
         data.put("assetId", orderItem.getAssetId());
-        data.put("assetName", orderItem.getDescription());
+        data.put("assetName", orderItem.getAssetTitle());
         data.put("assetVersion", orderItem.getAssetVersion());
         return data;
     }
@@ -258,7 +259,7 @@ public class DefaultNotificationMessageHelper implements NotificationMessageHelp
         data.put("payInKey", payInKey.toString());
         data.put("orderKey", payInOrderItem.getOrder().getKey().toString());
         data.put("assetId", orderItem.getAssetId());
-        data.put("assetName", orderItem.getDescription());
+        data.put("assetName", orderItem.getAssetTitle());
         data.put("assetVersion", orderItem.getAssetVersion());
         return data;
     }

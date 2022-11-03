@@ -6,6 +6,7 @@ import java.time.ZonedDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import eu.opertusmundi.common.model.catalogue.client.EnumContractType;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
@@ -32,18 +33,19 @@ public abstract class OrderItemDto {
     @Schema(description = "Catalogue item unique PID", example = "opertusmundi.topio.1.asset")
     private String assetId;
 
+    @Schema(description = "Item description at the time of the purchase")
+    @JsonProperty("description")
+    private String assetTitle;
+
     @Schema(description = "Catalogue item version", example = "1.1.0")
     private String assetVersion;
 
     @Schema(description = "Contract type")
     private EnumContractType contractType;
-    
+
     @Schema(description = "Asset contract signature date")
     @JsonInclude(Include.NON_NULL)
     private ZonedDateTime contractSignedOn;
-
-    @Schema(description = "Item description at the time of the purchase")
-    private String description;
 
     @Schema(description = "Pricing model at the time of the purchase")
     private EffectivePricingModelDto pricingModel;

@@ -30,45 +30,42 @@ import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import eu.opertusmundi.common.model.payment.consumer.ConsumerAccountSubscriptionDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskAccountSubscriptionDto;
 import eu.opertusmundi.common.model.payment.provider.ProviderAccountSubscriptionDto;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
 @Entity(name = "AccountSubscription")
 @Table(schema = "web", name = "`account_subscription`")
+@Getter
+@Setter
 public class AccountSubscriptionEntity {
 
     @Id
     @Column(name = "`id`", updatable = false)
     @SequenceGenerator(sequenceName = "web.account_sub_id_seq", name = "account_sub_id_seq", allocationSize = 1)
     @GeneratedValue(generator = "account_sub_id_seq", strategy = GenerationType.SEQUENCE)
-    @Getter
+    @Setter(AccessLevel.PROTECTED)
     private Integer id;
 
     @NotNull
     @NaturalId
     @Column(name = "key", updatable = false, columnDefinition = "uuid")
-    @Getter
-    private final UUID key = UUID.randomUUID();
+    @Setter(AccessLevel.PROTECTED)
+    private UUID key = UUID.randomUUID();
 
     @NotNull
     @ManyToOne(targetEntity = AccountEntity.class)
     @JoinColumn(name = "consumer", nullable = false)
-    @Getter
-    @Setter
     private AccountEntity consumer;
 
     @NotNull
     @ManyToOne(targetEntity = OrderEntity.class)
     @JoinColumn(name = "`order`", nullable = false)
-    @Getter
-    @Setter
     private OrderEntity order;
 
     @NotNull
     @ManyToOne(targetEntity = AccountEntity.class, fetch = FetchType.LAZY)
     @JoinColumn(name = "provider", nullable = false)
-    @Getter
-    @Setter
     private AccountEntity provider;
 
     @OneToMany(
@@ -78,77 +75,65 @@ public class AccountSubscriptionEntity {
         cascade = CascadeType.ALL,
         orphanRemoval = true
     )
-    @Getter
-    private final List<AccountSubscriptionSkuEntity> skus = new ArrayList<>();
+    @Setter(AccessLevel.PROTECTED)
+    private List<AccountSubscriptionSkuEntity> skus = new ArrayList<>();
 
     @NotNull
     @Column(name = "`asset`")
-    @Getter
-    @Setter
-    private String asset;
+    private String assetId;
+
+    @NotNull
+    @Column(name = "`asset_title`")
+    private String assetTitle;
+
+    @NotNull
+    @Column(name = "`asset_version`")
+    private String assetVersion;
 
     @NotNull
     @Column(name = "`added_on`")
-    @Getter
-    @Setter
     private ZonedDateTime addedOn;
 
     @NotNull
     @Column(name = "`updated_on`")
-    @Getter
-    @Setter
     private ZonedDateTime updatedOn;
 
     @Column(name = "`expires_on`")
-    @Getter
-    @Setter
     private ZonedDateTime expiresOn;
 
     @Column(name = "`cancelled_on`")
-    @Getter
-    @Setter
     private ZonedDateTime cancelledOn;
 
     @NotNull
     @Column(name = "`source`")
     @Enumerated(EnumType.STRING)
-    @Getter
-    @Setter
     private EnumAssetSource source;
 
     @Column(name = "`segment`")
     @Enumerated(EnumType.STRING)
-    @Getter
-    @Setter
     private EnumTopicCategory segment;
 
     @NotNull
     @Column(name = "`status`")
     @Enumerated(EnumType.STRING)
-    @Getter
-    @Setter
     private EnumSubscriptionStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payin_recurring_registration")
-    @Getter
-    @Setter
     private PayInRecurringRegistrationEntity recurringPayIn;
 
     @NotNull
     @Column(name = "`last_payin_date`")
-    @Getter
-    @Setter
     private ZonedDateTime lastPayinDate;
 
     @Column(name = "`next_payin_date`")
-    @Getter
-    @Setter
     private ZonedDateTime nextPayinDate;
 
     public void updateDto(AccountSubscriptionDto s) {
         s.setAddedOn(addedOn);
-        s.setAssetId(asset);
+        s.setAssetId(assetId);
+        s.setAssetTitle(assetTitle);
+        s.setAssetVersion(assetVersion);
         s.setId(id);
         s.setKey(key);
         s.setOrderId(order.getId());

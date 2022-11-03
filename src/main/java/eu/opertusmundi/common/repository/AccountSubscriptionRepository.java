@@ -69,7 +69,7 @@ public interface AccountSubscriptionRepository extends JpaRepository<AccountSubs
 
     }
 
-    @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey and s.asset = :assetId")
+    @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey and s.assetId = :assetId")
     List<AccountSubscriptionEntity> findAllByConsumerAndAssetId(UUID userKey, String assetId);
 
     @Query("SELECT s FROM AccountSubscription s WHERE s.provider.key = :userKey")

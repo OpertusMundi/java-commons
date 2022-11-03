@@ -89,6 +89,12 @@ public class OrderItemEntity {
     private String assetId;
 
     @NotNull
+    @Column(name = "`description`")
+    @Getter
+    @Setter
+    private String assetTitle;
+
+    @NotNull
     @Column(name = "`asset_version`")
     @Getter
     @Setter
@@ -100,7 +106,7 @@ public class OrderItemEntity {
     @Getter
     @Setter
     private EnumContractType contractType;
-    
+
     @Column(name = "`contract_template_id`")
     @Getter
     @Setter
@@ -115,12 +121,6 @@ public class OrderItemEntity {
     @Getter
     @Setter
     private ZonedDateTime contractSignedOn;
-
-    @NotNull
-    @Column(name = "`description`")
-    @Getter
-    @Setter
-    private String description;
 
     @NotNull
     @Column(name = "`pricing_model`", columnDefinition = "jsonb")
@@ -159,9 +159,9 @@ public class OrderItemEntity {
 
     public void updateDto(OrderItemDto i) {
         i.setAssetId(assetId);
+        i.setAssetTitle(assetTitle);
         i.setAssetVersion(assetVersion);
         i.setContractSignedOn(contractSignedOn);
-        i.setDescription(description);
         i.setDiscountCode(discountCode);
         i.setId(id);
         i.setIndex(index);
