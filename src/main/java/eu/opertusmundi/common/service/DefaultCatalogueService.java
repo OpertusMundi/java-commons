@@ -59,6 +59,7 @@ import eu.opertusmundi.common.model.catalogue.elastic.ElasticServiceException;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueCollection;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueResponse;
+import eu.opertusmundi.common.model.geodata.EnumGeodataWorkspace;
 import eu.opertusmundi.common.model.geodata.UserGeodataConfiguration;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.model.workflow.EnumWorkflow;
@@ -537,7 +538,7 @@ public class DefaultCatalogueService implements CatalogueService {
      * @param publisherKey
      */
     private void filterIngestionInfo(RequestContext ctx, CatalogueItemDetailsDto item, UUID publisherKey) {
-        final var geodataConfig = this.userGeodataConfigurationResolver.resolveFromUserKey(item.getPublisherId());
+        final var geodataConfig = this.userGeodataConfigurationResolver.resolveFromUserKey(item.getPublisherId(), EnumGeodataWorkspace.PUBLIC);
 
         item.getResources().stream().forEach(r -> {
             if (r instanceof final ServiceResourceDto s) {

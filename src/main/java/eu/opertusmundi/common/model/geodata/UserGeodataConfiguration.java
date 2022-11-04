@@ -10,6 +10,8 @@ import lombok.Getter;
 @Getter
 public class UserGeodataConfiguration {
 
+    private final EnumGeodataWorkspace workspaceType;
+
     /**
      * The absolute URL of the geodata shard
      */
@@ -21,12 +23,9 @@ public class UserGeodataConfiguration {
     private final String shard;
 
     /**
-     * User GeoServer workspace
-     *
-     * <p>
-     * By default the user's unique key prefixed by an underscore
+     * User effective GeoServer workspace
      */
-    private final String workspace;
+    private final String effectiveWorkspace;
 
     /**
      * WMS service endpoint

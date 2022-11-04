@@ -1,20 +1,24 @@
 package eu.opertusmundi.common.model.asset.service;
 
 import java.util.Arrays;
+import java.util.List;
 
+import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import lombok.Getter;
 
+@Getter
 public enum EnumUserServiceType {
 
-    WMS("WMS"),
-    WFS("WFS"),
+    WMS("WMS", List.of(EnumSpatialDataServiceType.WMS)),
+    WFS("WFS", List.of(EnumSpatialDataServiceType.WFS)),
     ;
 
-    @Getter
-    private final String value;
+    private final String                     value;
+    private List<EnumSpatialDataServiceType> allowedOgcServiceTypes;
 
-    private EnumUserServiceType(String value) {
-        this.value = value;
+    EnumUserServiceType(String value, List<EnumSpatialDataServiceType> allowedOgcServiceTypes) {
+        this.value                  = value;
+        this.allowedOgcServiceTypes = allowedOgcServiceTypes;
     }
 
     public static EnumUserServiceType fromString(String value) {

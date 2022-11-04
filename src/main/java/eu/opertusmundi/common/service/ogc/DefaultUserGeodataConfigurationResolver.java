@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.service.ogc;
 
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
@@ -13,6 +14,7 @@ import com.ibm.icu.text.MessageFormat;
 
 import eu.opertusmundi.common.config.GeodataConfiguration;
 import eu.opertusmundi.common.model.account.AccountDto;
+import eu.opertusmundi.common.model.geodata.EnumGeodataWorkspace;
 import eu.opertusmundi.common.model.geodata.Shard;
 import eu.opertusmundi.common.model.geodata.UserGeodataConfiguration;
 import eu.opertusmundi.common.repository.AccountRepository;
@@ -29,8 +31,11 @@ public class DefaultUserGeodataConfigurationResolver implements UserGeodataConfi
     @Value("${opertusmundi.geoserver.workspace:opertusmundi}")
     private String defaultWorkspace;
 
-    @Value("${opertusmundi.geodata.workspace.prefix:_}")
-    private String userWorkspacePrefix;
+    @Value("${opertusmundi.geodata.public-workspace.prefix:_}")
+    private String publicUserWorkspacePrefix;
+
+    @Value("${opertusmundi.geodata.private-workspace.prefix:p_}")
+    private String privateUserWorkspacePrefix;
 
     @Value("${opertusmundi.services.wms.endpoint:}")
     private String wmsEndpointTemplate;
@@ -56,24 +61,32 @@ public class DefaultUserGeodataConfigurationResolver implements UserGeodataConfi
         cacheManager = "defaultCacheManager",
         key = "'account-' + #key"
     )
-    public UserGeodataConfiguration resolveFromUserKey(UUID key) {
-        final AccountDto account           = this.accountRepository.findOneByKeyObject(key).get();
-        final Shard      shard             = this.geodataConfiguration.getShardById(account.getProfile().getGeodataShard());
-        final String     workspace         = shard == null ? this.defaultWorkspace : userWorkspacePrefix + key.toString();
-        final String     geoserverEndpoint = shard == null ? defaultGeoServerEndpoint : shard.getEndpoint();
+    public UserGeodataConfiguration resolveFromUserKey(UUID key, EnumGeodataWorkspace workspaceType) {
+        final AccountDto account            = this.accountRepository.findOneByKeyObject(key).get();
+        final UUID       userKey            = Optional.ofNullable(account.getParentKey()).orElse(account.getKey());
+        final Shard      shard              = this.geodataConfiguration.getShardById(account.getProfile().getGeodataShard());
+        final String     publicWorkspace    = shard == null ? this.defaultWorkspace : publicUserWorkspacePrefix + userKey.toString();
+        final String     privateWorkspace   = shard == null ? this.defaultWorkspace : privateUserWorkspacePrefix + userKey.toString();
+        final String     geoserverEndpoint  = shard == null ? defaultGeoServerEndpoint : shard.getEndpoint();
+
+        final String effectiveWorkspace = switch (workspaceType) {
+            case PUBLIC -> publicWorkspace;
+            case PRIVATE -> privateWorkspace;
+        };
 
         final var arguments = new HashMap<String, Object>();
         arguments.put("shard", shard == null ? "" : shard.getId());
-        arguments.put("workspace", workspace);
+        arguments.put("workspace", effectiveWorkspace);
 
         final String wmsEndpoint  = MessageFormat.format(wmsEndpointTemplate, arguments);
         final String wfsEndpoint  = MessageFormat.format(wfsEndpointTemplate, arguments);
         final String wmtsEndpoint = MessageFormat.format(wmtsEndpointTemplate, arguments);
 
         return UserGeodataConfiguration.of(
+            workspaceType,
             geoserverEndpoint,
             shard == null ? null : shard.getId(),
-            workspace,
+            effectiveWorkspace,
             StringUtils.appendIfMissing(wmsEndpoint, "/"),
             StringUtils.appendIfMissing(wfsEndpoint, "/"),
             StringUtils.appendIfMissing(wmtsEndpoint, "/")

@@ -55,9 +55,12 @@ import eu.opertusmundi.common.model.asset.service.EnumUserServiceType;
 import eu.opertusmundi.common.model.asset.service.UserServiceCommandDto;
 import eu.opertusmundi.common.model.asset.service.UserServiceDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
+import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.file.FilePathCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.file.FileSystemMessageCode;
+import eu.opertusmundi.common.model.geodata.EnumGeodataWorkspace;
+import eu.opertusmundi.common.model.geodata.UserGeodataConfiguration;
 import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestResultResponseDto;
@@ -68,8 +71,10 @@ import eu.opertusmundi.common.repository.AssetMetadataPropertyRepository;
 import eu.opertusmundi.common.repository.SettingRepository;
 import eu.opertusmundi.common.repository.UserServiceLockRepository;
 import eu.opertusmundi.common.repository.UserServiceRepository;
+import eu.opertusmundi.common.service.ogc.UserGeodataConfigurationResolver;
 import eu.opertusmundi.common.util.BpmEngineUtils;
 import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
+import eu.opertusmundi.common.util.StreamUtils;
 
 @Service
 public class DefaultUserServiceService implements UserServiceService {
@@ -78,14 +83,15 @@ public class DefaultUserServiceService implements UserServiceService {
 
     private static final String METADATA_PROPERTY_MBR = "mbr";
 
-    private final AssetMetadataPropertyRepository assetMetadataPropertyRepository;
-    private final BpmEngineUtils                        bpmEngine;
-    private final ObjectMapper                          objectMapper;
-    private final SettingRepository                     settingRepository;
-    private final UserFileManager                       userFileManager;
-    private final UserServiceFileManager                userServiceFileManager;
-    private final UserServiceLockRepository             userServiceLockRepository;
-    private final UserServiceRepository                 userServiceRepository;
+    private final AssetMetadataPropertyRepository  assetMetadataPropertyRepository;
+    private final BpmEngineUtils                   bpmEngine;
+    private final ObjectMapper                     objectMapper;
+    private final SettingRepository                settingRepository;
+    private final UserFileManager                  userFileManager;
+    private final UserGeodataConfigurationResolver userGeodataConfigurationResolver;
+    private final UserServiceFileManager           userServiceFileManager;
+    private final UserServiceLockRepository        userServiceLockRepository;
+    private final UserServiceRepository            userServiceRepository;
 
     @Autowired
     public DefaultUserServiceService(
@@ -94,18 +100,20 @@ public class DefaultUserServiceService implements UserServiceService {
         ObjectMapper objectMapper,
         SettingRepository settingRepository,
         UserFileManager userFileManager,
+        UserGeodataConfigurationResolver userGeodataConfigurationResolver,
         UserServiceLockRepository userServiceLockRepository,
         UserServiceRepository userServiceRepository,
         UserServiceFileManager userServiceFileManager
     ) {
-        this.assetMetadataPropertyRepository = assetMetadataPropertyRepository;
-        this.bpmEngine                       = bpmEngine;
-        this.objectMapper                    = objectMapper;
-        this.settingRepository               = settingRepository;
-        this.userFileManager                 = userFileManager;
-        this.userServiceLockRepository       = userServiceLockRepository;
-        this.userServiceRepository           = userServiceRepository;
-        this.userServiceFileManager          = userServiceFileManager;
+        this.assetMetadataPropertyRepository  = assetMetadataPropertyRepository;
+        this.bpmEngine                        = bpmEngine;
+        this.objectMapper                     = objectMapper;
+        this.settingRepository                = settingRepository;
+        this.userFileManager                  = userFileManager;
+        this.userGeodataConfigurationResolver = userGeodataConfigurationResolver;
+        this.userServiceLockRepository        = userServiceLockRepository;
+        this.userServiceRepository            = userServiceRepository;
+        this.userServiceFileManager           = userServiceFileManager;
     }
 
     @Override
@@ -553,5 +561,29 @@ public class DefaultUserServiceService implements UserServiceService {
         pricingModel.setPrice(new BigDecimal(pricePerCall.getValue()));
 
         service.setPricingModel(pricingModel);
+        this.updateIngestionData(service);
+
+    }
+
+    private void updateIngestionData(UserServiceDto service) {
+        final var geodataConfig = this.userGeodataConfigurationResolver.resolveFromUserKey(service.getOwner().getKey(), EnumGeodataWorkspace.PRIVATE);
+
+        service.getIngestData().getEndpoints().stream().forEach(e -> {
+            e.setUri(this.getEndpointAbsoluteUrl(geodataConfig, e.getType(), e.getUri()));
+        });
+
+        final var effectiveEndpoints = StreamUtils.from(service.getIngestData().getEndpoints())
+            .filter(e -> service.getServiceType().getAllowedOgcServiceTypes().contains(e.getType()))
+            .toList();
+
+        service.getIngestData().setEndpoints(effectiveEndpoints);
+    }
+
+    private String getEndpointAbsoluteUrl(UserGeodataConfiguration config, EnumSpatialDataServiceType type, String endpoint) {
+        return switch (type) {
+            case WMS -> config.getWmsEndpoint() + "?" + endpoint.split("\\?")[1];
+            case WFS -> config.getWfsEndpoint() + "?" + endpoint.split("\\?")[1];
+            default -> null;
+        };
     }
 }
