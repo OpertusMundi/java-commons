@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.locationtech.jts.geom.Geometry;
@@ -29,6 +28,8 @@ import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.asset.EnumResourceType;
+import eu.opertusmundi.common.model.asset.ExternalUrlResourceDto;
+import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
@@ -107,7 +108,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
 
     @Transactional(readOnly = false)
     default AssetDraftDto update(CatalogueItemCommandDto command) throws AssetDraftException {
-        return this.update(command, EnumProviderAssetDraftStatus.DRAFT, null, null);
+        return this.update(command, null, null, null);
     }
 
     @Transactional(readOnly = false)
@@ -130,22 +131,16 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
     ) throws AssetDraftException {
         Assert.notNull(command, "Expected a non-null command");
 
-        Assert.isTrue(
-            status == EnumProviderAssetDraftStatus.DRAFT || status == EnumProviderAssetDraftStatus.SUBMITTED,
-            "Expected status in [DRAFT, SUBMITTED]"
-        );
-
         final ZonedDateTime now = ZonedDateTime.now();
 
         // Check provider
         final AccountEntity account = this.findAccountByKey(command.getPublisherKey()).orElse(null);
-
         if (account == null) {
             throw new AssetDraftException(AssetMessageCode.PROVIDER_NOT_FOUND);
         }
+
         // Check owner
         final AccountEntity owner = this.findAccountByKey(command.getOwnerKey()).orElse(null);
-
         if (owner == null) {
             throw new AssetDraftException(AssetMessageCode.VENDOR_ACCOUNT_NOT_FOUND);
         }
@@ -165,8 +160,15 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
             draft = new ProviderAssetDraftEntity();
             draft.setAssetDraft(draft.getKey());
         }
+        if (status == null) {
+            status = draft.getStatus();
+        }
+        Assert.isTrue(
+            status == EnumProviderAssetDraftStatus.DRAFT || status == EnumProviderAssetDraftStatus.SUBMITTED,
+            "Expected status in [DRAFT, SUBMITTED]"
+        );
 
-        if (draft.getStatus() != EnumProviderAssetDraftStatus.DRAFT) {
+        if (draft.getStatus() != EnumProviderAssetDraftStatus.DRAFT && draft.getStatus() != EnumProviderAssetDraftStatus.SUBMITTED) {
             throw new AssetDraftException(
                 AssetMessageCode.INVALID_STATE,
                 String.format("Expected status is [%s]. Found [%s]", status, draft.getStatus())
@@ -393,28 +395,47 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
     }
 
     @Transactional(readOnly = false)
-    default AssetDraftDto addServiceResource(
-        UUID publisherKey, UUID draftKey, ServiceResourceDto resource
+    default AssetDraftDto addResource(
+        UUID publisherKey, UUID draftKey, ResourceDto resource
     ) throws AssetDraftException {
         final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
-
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
 
-        final EnumProviderAssetDraftStatus expectedStatus = draft.getCommand().getType() == EnumAssetType.SERVICE
-            ? EnumProviderAssetDraftStatus.SUBMITTED
-            : EnumProviderAssetDraftStatus.POST_PROCESSING;
+        final EnumProviderAssetDraftStatus expectedStatus = resource.getType() == EnumResourceType.EXTERNAL_URL
+            ? EnumProviderAssetDraftStatus.DRAFT
+            : EnumProviderAssetDraftStatus.SUBMITTED;
 
         if (draft.getStatus() != expectedStatus) {
             throw new AssetDraftException(
-                AssetMessageCode.INVALID_STATE,
-                String.format("Expected status is [%s]. Found [%s]", EnumProviderAssetDraftStatus.POST_PROCESSING, draft.getStatus())
+                    AssetMessageCode.INVALID_STATE,
+                String.format("Invalid draft status [expected=%s, found=%s", expectedStatus, draft.getStatus())
             );
         }
 
-        // Initialize ingestion data if needed
-        draft.getCommand().addServiceResource(resource);
+        if (resource instanceof final ServiceResourceDto s) {
+            draft.getCommand().addServiceResource(s);
+        }
+        if (resource instanceof final ExternalUrlResourceDto u) {
+            // Always override category from draft
+            u.setCategory(draft.getType());
+            draft.getCommand().addExternalUrlResource(u);
+        }
+        if (resource instanceof final FileResourceDto f && f.getParentId() != null) {
+            final var parent = draft.getCommand().getResources().stream()
+                .filter(r -> r.getId().equals(f.getParentId()))
+                .findFirst()
+                .orElse(null);
+            if (parent == null) {
+                throw new AssetDraftException(
+                    AssetMessageCode.INVALID_STATE,
+                    String.format("File resource parent was not found [parent=%s]", f.getParentId())
+                );
+            }
+            draft.getCommand().addExternalUrlFileResource(f);
+        }
+
         // NOTE: Workaround for updating ingestion data. Property command of entity
         // ProviderAssetDraftEntity is annotated with @Convert for serializing a
         // CatalogueItemCommandDto instance to JSON; Hence updating only the metadata
@@ -565,11 +586,29 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         }
         // Reset ingest data
         draft.getCommand().setIngestionInfo(null);
-        // Reset resources. Service resources are auto-generated by the BPM
-        // worker during the get capabilities task service
-        final List<ResourceDto> resources = draft.getCommand().getResources().stream()
-            .filter(r -> r.getType() == EnumResourceType.FILE)
-            .collect(Collectors.toList());
+        // Reset resources
+        final var initialResources = draft.getCommand().getResources();
+        final var resources = initialResources.stream()
+            .filter(r -> {
+                // Service resources are auto-generated by the BPM
+                // worker during the get capabilities task service;
+                // Hence they are always ignored
+                if (r.getType() == EnumResourceType.FILE) {
+                   final var parent = initialResources.stream()
+                       .filter(ir -> ir.getId().equals(r.getParentId()))
+                       .findFirst()
+                       .orElse(null);
+
+                   // Ignore file resources that are from external URLs.
+                   // The publish workflow will download the files again
+                   return parent == null || parent.getType() != EnumResourceType.EXTERNAL_URL;
+                }
+                if (r.getType() == EnumResourceType.EXTERNAL_URL) {
+                    return true;
+                }
+                return false;
+            })
+            .toList();
 
         draft.getCommand().setResources(resources);
 

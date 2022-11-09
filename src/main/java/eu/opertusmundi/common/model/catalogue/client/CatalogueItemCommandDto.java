@@ -10,6 +10,7 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.locationtech.jts.geom.Geometry;
+import org.springframework.util.Assert;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -21,6 +22,7 @@ import eu.opertusmundi.common.model.asset.AssetContractAnnexDto;
 import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceDto;
 import eu.opertusmundi.common.model.asset.EnumAssetAdditionalResource;
 import eu.opertusmundi.common.model.asset.EnumResourceType;
+import eu.opertusmundi.common.model.asset.ExternalUrlResourceDto;
 import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.asset.ServiceResourceDto;
@@ -216,19 +218,50 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
         }
     }
 
+    public void addExternalUrlResource(ExternalUrlResourceDto resource) {
+        final ResourceDto existing = this.resources.stream()
+            .filter(r -> r.getType() == EnumResourceType.EXTERNAL_URL)
+            .map(r -> (ExternalUrlResourceDto) r)
+            .filter(r -> r.getUrl().equals(resource.getUrl()))
+            .findFirst()
+            .orElse(null);
+
+        if (existing == null) {
+            this.resources.add(resource);
+        } else {
+            existing.patch(resource);
+        }
+    }
+
+    public void addExternalUrlFileResource(FileResourceDto resource) {
+        Assert.notNull(resource.getParentId(), "Expected a non-null parent id for a file resource");
+
+        final ResourceDto existing = this.resources.stream()
+            .filter(r -> r.getType() == EnumResourceType.FILE && r.getParentId().equals(resource.getParentId()))
+            .map(r -> (FileResourceDto) r)
+            .findFirst()
+            .orElse(null);
+
+        if (existing == null) {
+            this.resources.add(resource);
+        } else {
+            existing.patch(resource);
+        }
+    }
+
     public void addAdditionalResource(AssetFileAdditionalResourceDto resource) {
         final AssetFileAdditionalResourceDto existing = this.additionalResources.stream()
-                .filter(r -> r.getType() == EnumAssetAdditionalResource.FILE)
-                .map(r -> (AssetFileAdditionalResourceDto) r)
-                .filter(r -> r.getId().equals(resource.getId()))
-                .findFirst()
-                .orElse(null);
+            .filter(r -> r.getType() == EnumAssetAdditionalResource.FILE)
+            .map(r -> (AssetFileAdditionalResourceDto) r)
+            .filter(r -> r.getId().equals(resource.getId()))
+            .findFirst()
+            .orElse(null);
 
-            if (existing == null) {
-                this.additionalResources.add(resource);
-            } else {
-                existing.patch(resource);
-            }
+        if (existing == null) {
+            this.additionalResources.add(resource);
+        } else {
+            existing.patch(resource);
+        }
     }
 
     public void addServiceResourceSampleAreas(String id, List<Geometry> areas) {

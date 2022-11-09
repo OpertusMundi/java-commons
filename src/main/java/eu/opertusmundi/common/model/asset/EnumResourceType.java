@@ -3,6 +3,7 @@ package eu.opertusmundi.common.model.asset;
 public enum EnumResourceType {
     ASSET,
     FILE,
+    EXTERNAL_URL,
     SERVICE,
     ;
 

@@ -6,15 +6,17 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@NoArgsConstructor
 @Getter
 @Setter
 public class AssetContractAnnexCommandDto extends ResourceCommandDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    public AssetContractAnnexCommandDto() {
+        super();
+    }
 
     /**
      * File size is set at the server

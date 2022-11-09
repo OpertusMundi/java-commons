@@ -103,7 +103,7 @@ public class AssetResourceEntity {
     private String path;
 
     public FileResourceDto toDto() {
-        return new FileResourceDto(key, null, category, crs, encoding, fileName, format, createdOn, path, size, source);
+        return new FileResourceDto(key, parentId, category, crs, encoding, fileName, format, createdOn, path, size, source);
     }
 
 }

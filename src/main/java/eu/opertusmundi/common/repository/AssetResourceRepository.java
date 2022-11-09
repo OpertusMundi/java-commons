@@ -19,6 +19,7 @@ import eu.opertusmundi.common.domain.AssetResourceEntity;
 import eu.opertusmundi.common.domain.ProviderAssetDraftEntity;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
+import eu.opertusmundi.common.model.asset.EnumResourceSource;
 import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.service.AssetDraftException;
@@ -72,7 +73,10 @@ public interface AssetResourceRepository extends JpaRepository<AssetResourceEnti
         }
 
         // Check status
-        if (draft.getStatus() != EnumProviderAssetDraftStatus.DRAFT) {
+        var expectedStatus = command.getSource() == EnumResourceSource.EXTERNAL_URL
+            ? EnumProviderAssetDraftStatus.SUBMITTED
+            : EnumProviderAssetDraftStatus.DRAFT;
+        if (draft.getStatus() != expectedStatus) {
             throw new AssetDraftException(
                 AssetMessageCode.INVALID_STATE,
                 String.format("Expected status to bue [DRAFT]. Found [%s]", draft.getStatus())
@@ -81,13 +85,11 @@ public interface AssetResourceRepository extends JpaRepository<AssetResourceEnti
 
         // Check provider
         final AccountEntity account = this.findAccountByKey(command.getPublisherKey()).orElse(null);
-
         if (account == null) {
             throw new AssetDraftException(AssetMessageCode.PROVIDER_NOT_FOUND);
         }
 
         AssetResourceEntity resource = this.findOneByDraftKeyAndFileName(command.getDraftKey(), command.getFileName()).orElse(null);
-
         if(resource == null ) {
             resource = new AssetResourceEntity(command.getDraftKey());
         } else {

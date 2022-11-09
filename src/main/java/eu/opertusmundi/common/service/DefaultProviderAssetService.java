@@ -74,11 +74,11 @@ import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.asset.EnumProviderSubSortField;
 import eu.opertusmundi.common.model.asset.EnumResourceSource;
 import eu.opertusmundi.common.model.asset.EnumResourceType;
+import eu.opertusmundi.common.model.asset.ExternalUrlFileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.model.asset.MetadataProperty;
 import eu.opertusmundi.common.model.asset.ResourceDto;
-import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.asset.UserFileResourceCommandDto;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceMessageCode;
@@ -1224,7 +1224,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             throw ex;
         } catch(final Exception ex) {
             throw new AssetDraftException(
-                AssetMessageCode.API_COMMAND_RESOURCE_COPY,
+                AssetMessageCode.IO_ERROR,
                 String.format("Failed to copy resource file [%s]", command.getPath()), ex
             );
         }
@@ -1249,13 +1249,70 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         return this.addFileResource(command, input);
     }
 
+    @Override
+    @Transactional
+    public AssetDraftDto addFileResourceFromExternalUrl(
+        ExternalUrlFileResourceCommandDto command
+    ) throws FileSystemException, AssetRepositoryException, AssetDraftException {
+        // The provider must have access to the selected draft and also the
+        // draft must be editable
+        AssetDraftDto draft = this.ensureDraftAndStatus(
+            command.getOwnerKey(), command.getPublisherKey(), command.getDraftKey(), EnumProviderAssetDraftStatus.SUBMITTED
+        );
+
+        // Lock record before update
+        final Pair<EnumLockResult, RecordLockDto> lock = this.getLock(command.getOwnerKey(), command.getDraftKey(), true);
+
+        // Add resource
+        final FileResourceCommandDto resourceCommand = new FileResourceCommandDto();
+
+        var parentResource = draft.getExternalResourceByUrl(command.getUrl());
+        Assert.notNull(parentResource, "Expected a non-null parent resource");
+
+        resourceCommand.setCategory(draft.getType());
+        resourceCommand.setCrs(command.getCrs());
+        resourceCommand.setDraftKey(draft.getKey());
+        resourceCommand.setEncoding(command.getEncoding());
+        resourceCommand.setFileName(command.getFileName());
+        resourceCommand.setFormat(command.getFormat());
+        resourceCommand.setOwnerKey(command.getOwnerKey());
+        resourceCommand.setParentId(parentResource.getId());
+        resourceCommand.setPublisherKey(command.getPublisherKey());
+        resourceCommand.setSize(command.getSize());
+        resourceCommand.setSource(EnumResourceSource.EXTERNAL_URL);
+
+        try (final InputStream input = Files.newInputStream(Path.of(command.getPath()))) {
+            draft = this.addFileResource(resourceCommand, input);
+        } catch(final AssetDraftException ex) {
+            throw ex;
+        } catch(final Exception ex) {
+            throw new AssetDraftException(
+                AssetMessageCode.API_COMMAND_RESOURCE_COPY,
+                String.format("Failed to copy resource file [%s]", command.getPath()), ex
+            );
+        }
+
+        // Release lock if it was created only for the specific operation
+        if (lock != null && lock.getLeft() == EnumLockResult.CREATED) {
+            this.releaseLock(command.getOwnerKey(), command.getDraftKey());
+        } else if (lock != null) {
+            draft.setLock(lock.getRight());
+        }
+
+        return draft;
+    }
+
     private AssetDraftDto addFileResource(
         FileResourceCommandDto command, InputStream input
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException {
         // The provider must have access to the selected draft and also the
         // draft must be editable
+        final EnumProviderAssetDraftStatus expectedStatus = command.getSource() == EnumResourceSource.EXTERNAL_URL
+            ? EnumProviderAssetDraftStatus.SUBMITTED
+            : EnumProviderAssetDraftStatus.DRAFT;
+
         final AssetDraftDto draft = this.ensureDraftAndStatus(
-            command.getOwnerKey(), command.getPublisherKey(), command.getDraftKey(), EnumProviderAssetDraftStatus.DRAFT
+            command.getOwnerKey(), command.getPublisherKey(), command.getDraftKey(), expectedStatus
         );
 
         // Lock record before update
@@ -1292,10 +1349,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     @Transactional
-    public AssetDraftDto addServiceResource(
-        UUID publisherKey, UUID draftKey, ServiceResourceDto resource
+    public AssetDraftDto addResource(
+        UUID publisherKey, UUID draftKey, ResourceDto resource
     ) throws AssetRepositoryException, AssetDraftException {
-        return this.draftRepository.addServiceResource(publisherKey, draftKey, resource);
+        return this.draftRepository.addResource(publisherKey, draftKey, resource);
     }
 
     @Override
@@ -1614,9 +1671,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         final List<ResourceDto>                resources           = command.getResources();
         final List<AssetAdditionalResourceDto> additionalResources = command.getAdditionalResources();
 
-        // Delete all resources that are not present in the draft record
+        // Delete all file resources that are not present in the draft record.
+        // Only file resources with a null parent are checked
         final List<String> rids = resources.stream()
-            .filter(r -> r.getType() == EnumResourceType.FILE)
+            .filter(r -> r.getType() == EnumResourceType.FILE && r.getParentId() == null)
             .map(r -> r.getId())
             .collect(Collectors.toList());
 

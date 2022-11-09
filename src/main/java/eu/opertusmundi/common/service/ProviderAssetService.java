@@ -21,10 +21,10 @@ import eu.opertusmundi.common.model.asset.AssetRepositoryException;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftSortField;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.asset.EnumProviderSubSortField;
+import eu.opertusmundi.common.model.asset.ExternalUrlFileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.FileResourceCommandDto;
 import eu.opertusmundi.common.model.asset.MetadataProperty;
 import eu.opertusmundi.common.model.asset.ResourceDto;
-import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.asset.UserFileResourceCommandDto;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestImportCommandDto;
@@ -307,7 +307,23 @@ public interface ProviderAssetService {
     ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
 
     /**
-     * Adds a service resource to the specified asset
+     * Download a file from a URL and add it as a file resource to the selected
+     * asset
+     *
+     * @param command Resource metadata
+     *
+     * @return The updated draft
+     *
+     * @throws FileSystemException
+     * @throws AssetRepositoryException
+     * @throws AssetDraftException
+     */
+    AssetDraftDto addFileResourceFromExternalUrl(
+        ExternalUrlFileResourceCommandDto command
+    ) throws FileSystemException, AssetRepositoryException, AssetDraftException;
+
+    /**
+     * Adds a resource to the specified asset
      *
      * @param publisherKey
      * @param draftKey
@@ -315,7 +331,7 @@ public interface ProviderAssetService {
      * @return
      * @throws AssetDraftException
      */
-    AssetDraftDto addServiceResource(UUID publisherKey, UUID draftKey, ServiceResourceDto resource) throws AssetDraftException;
+    AssetDraftDto addResource(UUID publisherKey, UUID draftKey, ResourceDto resource) throws AssetDraftException;
 
     /**
      * Uploads an additional resource file for the selected asset

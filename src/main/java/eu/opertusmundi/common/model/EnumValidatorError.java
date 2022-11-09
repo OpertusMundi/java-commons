@@ -4,6 +4,7 @@ import lombok.Getter;
 
 public enum EnumValidatorError {
 
+    FileNameNotUnique("File name is not unique"),
     FileNotFound("File was not found"),
     FileExtensionNotSupported("File name extension is not supported"),
     NotEqual("The value of the property does not match the value of a related property"),
@@ -20,6 +21,8 @@ public enum EnumValidatorError {
     NotNull("The value is required"),
     NotEmpty("The value must not be null or empty"),
     Size("The size of the collection is not supported"),
+
+    UrlNotSecure("The URL is not secure"),
     ;
 
     @Getter

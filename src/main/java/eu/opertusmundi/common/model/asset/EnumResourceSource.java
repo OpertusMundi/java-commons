@@ -6,7 +6,7 @@ public enum EnumResourceSource {
      */
     NONE,
     /**
-     * Resource was copied from the parent data source
+     * File resource copied from the parent data source
      */
     PARENT_DATASOURCE,
     /**
@@ -17,5 +17,9 @@ public enum EnumResourceSource {
      * File was uploaded by the user
      */
     UPLOAD,
+    /**
+     * File was downloaded from an external link
+     */
+    EXTERNAL_URL,
     ;
 }

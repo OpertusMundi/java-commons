@@ -4,12 +4,22 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @Setter
 public abstract class ResourceCommandDto {
+
+    public ResourceCommandDto(UUID publisherKey, UUID ownerKey, UUID draftKey) {
+        super();
+        this.publisherKey = publisherKey;
+        this.ownerKey     = ownerKey;
+        this.draftKey     = draftKey;
+    }
 
     /**
      * The publisher key

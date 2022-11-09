@@ -25,6 +25,7 @@ import lombok.Setter;
 )
 @JsonSubTypes({
     @Type(name = "ASSET", value = BundleAssetResourceDto.class),
+    @Type(name = "EXTERNAL_URL", value = ExternalUrlResourceDto.class),
     @Type(name = "FILE", value = FileResourceDto.class),
     @Type(name = "SERVICE", value = ServiceResourceDto.class),
 })
@@ -33,6 +34,7 @@ import lombok.Setter;
     required = true,
     discriminatorMapping = {
         @DiscriminatorMapping(value = "ASSET", schema = BundleAssetResourceDto.class),
+        @DiscriminatorMapping(value = "EXTERNAL_URL", schema = ExternalUrlResourceDto.class),
         @DiscriminatorMapping(value = "FILE", schema = FileResourceDto.class),
         @DiscriminatorMapping(value = "SERVICE", schema = ServiceResourceDto.class)
     }
@@ -70,6 +72,8 @@ public abstract class ResourceDto implements Serializable {
 
     public static ResourceDto fromCatalogueResource(CatalogueResource r) {
         switch (r.getType()) {
+            case EXTERNAL_URL :
+                return new ExternalUrlResourceDto(r);
             case FILE :
                 return new FileResourceDto(r);
             case SERVICE :

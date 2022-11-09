@@ -120,4 +120,13 @@ public class AssetDraftDto {
             .orElse(null);
     }
 
+    public ExternalUrlResourceDto getExternalResourceByUrl(String url) {
+        return this.getCommand().getResources().stream()
+            .filter(r -> r.getType() == EnumResourceType.EXTERNAL_URL)
+            .map(r -> (ExternalUrlResourceDto) r)
+            .filter(r -> r.getUrl().equals(url))
+            .findFirst()
+            .orElse(null);
+    }
+
 }
