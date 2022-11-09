@@ -7,6 +7,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import eu.opertusmundi.common.model.analytics.AssetCountQuery;
 import eu.opertusmundi.common.model.analytics.AssetTotalValueQuery;
 import eu.opertusmundi.common.model.analytics.AssetTypeEarningsQuery;
+import eu.opertusmundi.common.model.analytics.AssetViewCounterDto;
 import eu.opertusmundi.common.model.analytics.AssetViewQuery;
 import eu.opertusmundi.common.model.analytics.BaseQuery;
 import eu.opertusmundi.common.model.analytics.CoverageQuery;
@@ -24,7 +25,7 @@ public interface DataAnalysisService {
      * @return
      */
     DataSeries<?> execute(SalesQuery query);
-    
+
     /**
      * Executes a query on sales and returns a data series per asset type
      *
@@ -32,7 +33,7 @@ public interface DataAnalysisService {
      * @return
      */
 	DataSeries<?> execute(AssetTypeEarningsQuery query);
-    
+
     /**
      * Executes a query on subscribers data and returns a data series
      *
@@ -64,7 +65,7 @@ public interface DataAnalysisService {
      * @return
      */
     DataSeries<?> executeTotalAssetValue(AssetTotalValueQuery query);
-    
+
     /**
      * Executes a query and returns the count of assets
      *
@@ -76,10 +77,11 @@ public interface DataAnalysisService {
     /**
      * Find popular asset views/searches
      *
-     * @param
+     * @param query
+     * @param limit
      * @return
      */
-    List<ImmutablePair<String, Integer>> executePopularAssetViewsAndSearches(AssetViewQuery query);
+    List<AssetViewCounterDto> executePopularAssetViewsAndSearches(AssetViewQuery query, int limit);
 
     /**
      * Find popular terms
@@ -88,7 +90,7 @@ public interface DataAnalysisService {
      * @return
      */
     List<ImmutablePair<String, Integer>> executePopularTerms(BaseQuery query);
-    
+
     /**
      * Executes a query and returns the count of active vendors
      *

@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.http.HttpMethod;
 
+import eu.opertusmundi.common.model.analytics.AssetViewCounterDto;
 import eu.opertusmundi.common.model.analytics.AssetViewQuery;
 import eu.opertusmundi.common.model.analytics.BaseQuery;
 import eu.opertusmundi.common.model.analytics.DataSeries;
@@ -226,10 +227,11 @@ public interface ElasticSearchService {
      * Find popular asset views/searches
      *
      * @param query
+     * @param limit
      * @return
      * @throws ElasticServiceException
      */
-    List<ImmutablePair<String, Integer>> findPopularAssetViewsAndSearches(AssetViewQuery query) throws ElasticServiceException;
+    List<AssetViewCounterDto> findPopularAssetViewsAndSearches(AssetViewQuery query, int limit) throws ElasticServiceException;
 
     /**
      * Find popular terms

@@ -113,6 +113,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.opertusmundi.common.config.ElasticConfiguration;
 import eu.opertusmundi.common.model.EnumSortingOrder;
+import eu.opertusmundi.common.model.analytics.AssetViewCounterDto;
 import eu.opertusmundi.common.model.analytics.AssetViewQuery;
 import eu.opertusmundi.common.model.analytics.BaseQuery;
 import eu.opertusmundi.common.model.analytics.DataPoint;
@@ -1341,19 +1342,18 @@ public class DefaultElasticSearchService implements ElasticSearchService {
     }
 
     @Override
-    public List<ImmutablePair<String, Integer>> findPopularAssetViewsAndSearches(AssetViewQuery query) {
+    public List<AssetViewCounterDto> findPopularAssetViewsAndSearches(AssetViewQuery query, int limit) {
         Assert.notNull(query, "Expected a non-null query");
         Assert.notNull(query.getSource(), "Expected a non-null source");
 
         try {
 
-        	final List<ImmutablePair<String, Integer>> 	result 			= new ArrayList<ImmutablePair<String, Integer>>();
-        	final TemporalDimension                     time            = query.getTime();
-        	final BoolQueryBuilder                      filterQuery     = QueryBuilders.boolQuery();
-            final EnumAssetViewSource                   source          = query.getSource();
-            
-            if (time != null) {
+            final List<AssetViewCounterDto> result      = new ArrayList<>();
+            final TemporalDimension         time        = query.getTime();
+            final BoolQueryBuilder          filterQuery = QueryBuilders.boolQuery();
+            final EnumAssetViewSource       source      = query.getSource();
 
+            if (time != null) {
                 int minYear  = 0, maxYear = 0;
                 int minMonth = 0, maxMonth = 0;
                 int minWeek  = 0, maxWeek = 0;
@@ -1395,11 +1395,13 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             }
 
             // Sum of view_count/search_count group by id order by sum of view_count/search_count desc
-            final SumAggregationBuilder 		sumOfView					= AggregationBuilders.sum(field).field(field);
-            final TermsAggregationBuilder		termsAggregationBuilder		= AggregationBuilders.terms("id").
-            															field("id.keyword").
-            															order(BucketOrder.aggregation(field, false)).
-            															subAggregation(sumOfView);
+            final SumAggregationBuilder   sumOfView               = AggregationBuilders.sum(field)
+                .field(field);
+            final TermsAggregationBuilder termsAggregationBuilder = AggregationBuilders
+                .terms("id")
+                .field("id.keyword")
+                .order(BucketOrder.aggregation(field, false))
+                .subAggregation(sumOfView);
             termsAggregationBuilder.size(maxBucketCount);
 
             // Define index
@@ -1407,14 +1409,14 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
 
             // Aggregate
-            searchSourceBuilder.query(filterQuery).aggregation(termsAggregationBuilder).size(0);
+            searchSourceBuilder.query(filterQuery).aggregation(termsAggregationBuilder).size(limit);
             searchRequest.source(searchSourceBuilder);
 
             final SearchResponse	searchResponse 	= client.search(searchRequest, RequestOptions.DEFAULT);
             final Terms  			terms 			= searchResponse.getAggregations().get("id");
 
             for (final Terms.Bucket bucket : terms.getBuckets()) {
-            	result.add(new ImmutablePair<>(bucket.getKey().toString(), (int) ((ParsedSum) bucket.getAggregations().asMap().get(field)).getValue()));
+            	result.add(AssetViewCounterDto.of(bucket.getKey().toString(), (int) ((ParsedSum) bucket.getAggregations().asMap().get(field)).getValue()));
             }
 
             return result;
@@ -1431,7 +1433,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
         	final TemporalDimension                     time                   	= query.getTime();
             TermsValuesSourceBuilder                    aggregationByTerm   	= null;
             final List<CompositeValuesSourceBuilder<?>> sources                	= new ArrayList<CompositeValuesSourceBuilder<?>>();
-            
+
             if (time != null) {
 
                 int minYear  = 0, maxYear = 0;

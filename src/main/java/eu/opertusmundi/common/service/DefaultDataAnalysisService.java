@@ -26,6 +26,7 @@ import eu.opertusmundi.common.model.analytics.AssetCountQuery;
 import eu.opertusmundi.common.model.analytics.AssetTotalValueQuery;
 import eu.opertusmundi.common.model.analytics.AssetTypeEarningsQuery;
 import eu.opertusmundi.common.model.analytics.AssetTypeEarningsQuery.EnumDimension;
+import eu.opertusmundi.common.model.analytics.AssetViewCounterDto;
 import eu.opertusmundi.common.model.analytics.AssetViewQuery;
 import eu.opertusmundi.common.model.analytics.BaseQuery;
 import eu.opertusmundi.common.model.analytics.BigDecimalDataPoint;
@@ -57,7 +58,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 
     @Autowired
     private CountryRepository countryRepository;
-    
+
     @Autowired
     private AccountRepository accountRepository;
 
@@ -222,7 +223,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 
         return result;
     }
-    
+
 	@Override
     public DataSeries<?> execute(AssetTypeEarningsQuery query) {
         if (query == null || query.getMetric() == null || query.getDimension() == null) {
@@ -253,7 +254,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
                     groupByFields.add("payin_day");
                 }
             }
-            
+
             // Apply temporal dimension filtering
             if (time.getMin() != null) {
                 filters.add("payin_executed_on >= ?");
@@ -264,20 +265,20 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
                 args.add(time.getMax().atTime(0, 0, 0).atZone(ZoneId.of("UTC")));
             }
         }
-        
+
         String fileSqlString	= null;
         String apiSqlString		= null;
         String totalSqlString 	= null;
         String finalSqlString 	= null;
-        
+
         fileSqlString 	= groupByFields.isEmpty() ? "select 'ASSET' as asset_type, count(*), sum(payin_total_price) " : "select %1$s, 'ASSET' as asset_type, count(*), sum(payin_total_price) ";
         apiSqlString 	= groupByFields.isEmpty() ? "select 'API' as asset_type, count(*), sum(payin_total_price) " : "select %1$s, 'API' as asset_type, count(*), sum(payin_total_price) ";
         totalSqlString 	= groupByFields.isEmpty() ? "select 'TOTAL' as asset_type, count(*), sum(payin_total_price) " : "select %1$s, 'TOTAL' as asset_type, count(*), sum(payin_total_price) ";
-        
+
         fileSqlString 	+= "from \"analytics\".payin_item_hist ";
         apiSqlString	+= "from \"analytics\".payin_item_hist ";
         totalSqlString	+= "from \"analytics\".payin_item_hist ";
-        
+
         fileSqlString 	+= "where asset_type = 'ASSET' ";
         apiSqlString	+= "where asset_type = 'SUBSCRIPTION' ";
 
@@ -286,7 +287,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
         	apiSqlString	+= "and " + String.join(" and ", filters) + " ";
         	totalSqlString	+= "where " + String.join(" and ", filters) + " ";
         }
- 
+
         if (!groupByFields.isEmpty()) {
         	fileSqlString 	+=
                "group by   " + String.join(", ", groupByFields) + " ";
@@ -299,9 +300,9 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
         if (!groupByFields.isEmpty()) {
         	fileSqlString 	= String.format(fileSqlString, String.join(", ", groupByFields));
         	apiSqlString 	= String.format(apiSqlString, String.join(", ", groupByFields));
-        	totalSqlString 	= String.format(totalSqlString, String.join(", ", groupByFields));	
+        	totalSqlString 	= String.format(totalSqlString, String.join(", ", groupByFields));
         }
-        
+
         switch (query.getDimension()) {
         case FILE_ASSET:
         	finalSqlString = fileSqlString;
@@ -316,7 +317,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
         default:
           finalSqlString = "select * from ( " +  fileSqlString + " union " + apiSqlString + " union " + totalSqlString + " ) as sq ";
         }
-        
+
         if (!groupByFields.isEmpty()) {
         	groupByFields.add(0, "asset_type");
         	finalSqlString 	+=  "order by   " + String.join(", ", groupByFields);
@@ -347,7 +348,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 
         return result;
     }
-    
+
     @Override
     public DataSeries<?> execute(SubscribersQuery query) {
         if (query == null || query.getMetric() == null) {
@@ -404,10 +405,10 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
                 	}
                 }
             }
-            
+
             // Apply temporal dimension filtering
             // TODO: When number of calls is ready check if new case is needed
-            if (query.getMetric() == EnumMetric.EARNINGS) {      
+            if (query.getMetric() == EnumMetric.EARNINGS) {
 	            if (time.getMin() != null) {
 	                filters.add("payin_executed_on >= ?");
 	                args.add(time.getMin().atTime(0, 0, 0).atZone(ZoneId.of("UTC")));
@@ -427,27 +428,27 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 	            }
             }
         }
-        
+
         if (assets != null) {
             // Apply asset filtering
             if (!assets.isEmpty()) {
-            	
-                if (query.getMetric() == EnumMetric.EARNINGS) {      
+
+                if (query.getMetric() == EnumMetric.EARNINGS) {
                     filters.add("asset_pid in (" + StringUtils.repeat("?", ", ", assets.size()) + ")");
                     args.addAll(assets);
                 } else {
                     filters.add("asset in (" + StringUtils.repeat("?", ", ", assets.size()) + ")");
                     args.addAll(assets);
                 }
-            	
-            	
+
+
 
             }
         }
 
         String sqlString = "";
         String table	 = "";
-        
+
         switch (query.getMetric()) {
 			case COUNT_SUBSCRIBERS:
 				sqlString	+= "select count(distinct consumer) as count";
@@ -462,7 +463,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 				break;
 			case SUBSCRIBER_LOCATION:
 				sqlString	+=	"select count(1) as count";
-				table	  	=  	"\"web\".account_subscription as ac_subscription "  
+				table	  	=  	"\"web\".account_subscription as ac_subscription "
 						  	+  	"inner join \"web\".account as account "
 						  	+	"on ac_subscription.consumer = account.id "
 						  	+	"inner join \"web\".customer as customer "
@@ -482,12 +483,12 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 				selectFields.add("segment");
 				groupByFields.add("segment");
 				break;
-		} 
-        
+		}
+
         sqlString += groupByFields.isEmpty() ? " " : ", " + String.join(", ", selectFields) + " ";
-        
+
         sqlString += "from " + table + " ";
-        
+
         if (filters.size() > 0) {
             sqlString += "where      " + String.join(" and ", filters) + " ";
         }
@@ -501,7 +502,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
         if (!groupByFields.isEmpty()) {
             sqlString = String.format(sqlString, String.join(", ", groupByFields));
         }
-        
+
 
         final Query nativeQuery = entityManager.createNativeQuery(sqlString);
 
@@ -611,7 +612,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 
         return p;
     }
-    
+
     private DataPoint<BigDecimal> mapObjectToDataPoint(AssetTypeEarningsQuery query, Object[] o) {
         final TemporalDimension time       = query.getTime();
 
@@ -638,7 +639,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
                 }
             }
         }
-        
+
         // Asset type
         p.setAsset((String) o[index++]);
 
@@ -653,13 +654,13 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 
         return p;
     }
-    
+
     private DataPoint<BigDecimal> mapObjectToDataPoint(SubscribersQuery query, Object[] o) {
         final TemporalDimension time       = query.getTime();
 
         final DataPoint<BigDecimal> p     = new DataPoint<>();
         int                         index = 0;
-        
+
         switch (query.getMetric()) {
 			case COUNT_SUBSCRIBERS:
 				p.setValue(BigDecimal.valueOf(((BigInteger) o[index++]).longValue()));
@@ -676,8 +677,8 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 			case SUBSCRIBER_SEGMENT:
 				p.setValue(BigDecimal.valueOf(((BigInteger) o[index++]).longValue()));
 				break;
-		} 
-        
+		}
+
         // The order we extract values must match the order we apply grouping
         // fields
         if (time != null) {
@@ -698,14 +699,14 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
                 }
             }
         }
-        
+
         // Group by segment in case of SUBSCRIBER_SEGMENT
         if (query.getMetric() == EnumMetric.SUBSCRIBER_SEGMENT) {
         	p.setSegment((String) o[index++]);
         } else if (query.getMetric() == EnumMetric.SUBSCRIBER_LOCATION) {
         	p.setLocation(DataPoint.Location.of((String) o[index++]));
         }
-        
+
         return p;
     }
 
@@ -826,7 +827,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 
         return result;
     }
-    
+
     @Override
     public DataSeries<?> executeAssetCount(AssetCountQuery query) {
         if (query == null) {
@@ -869,12 +870,12 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
     }
 
     @Override
-    public List<ImmutablePair<String, Integer>> executePopularAssetViewsAndSearches(AssetViewQuery query) {
+    public List<AssetViewCounterDto> executePopularAssetViewsAndSearches(AssetViewQuery query, int limit) {
         if (elasticSearchService == null || query == null) {
             return Collections.emptyList();
         }
 
-        return this.elasticSearchService.findPopularAssetViewsAndSearches(query);
+        return this.elasticSearchService.findPopularAssetViewsAndSearches(query, limit);
     }
 
     @Override
@@ -885,7 +886,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 
         return this.elasticSearchService.findPopularTerms(query);
     }
-    
+
     @Override
     public DataSeries<?> executeVendorCount(VendorCountQuery query) {
         if (query == null) {
@@ -914,7 +915,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 	            case DAY :
 	                assetStatistics = this.accountRepository.countUsersWithRolePerDay(EnumRole.ROLE_PROVIDER, time.getMin().toString(), time.getMax().toString());
 	                break;
-            }	
+            }
             StreamUtils.from(assetStatistics).forEach(result.getPoints()::add);
         } else {
             final BigDecimal            value = this.accountRepository.countUsersWithRole(EnumRole.ROLE_PROVIDER).orElse(BigDecimal.ZERO);
