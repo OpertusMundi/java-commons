@@ -8,11 +8,21 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.camunda.bpm.engine.rest.dto.CountResultDto;
+import org.camunda.bpm.engine.rest.dto.ModificationDto;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.externaltask.SetRetriesForExternalTasksDto;
+import org.camunda.bpm.engine.rest.dto.history.HistoricActivityInstanceDto;
+import org.camunda.bpm.engine.rest.dto.history.HistoricIncidentDto;
 import org.camunda.bpm.engine.rest.dto.history.HistoricProcessInstanceDto;
+import org.camunda.bpm.engine.rest.dto.history.HistoricVariableInstanceDto;
 import org.camunda.bpm.engine.rest.dto.message.CorrelationMessageDto;
+import org.camunda.bpm.engine.rest.dto.repository.ProcessDefinitionDiagramDto;
+import org.camunda.bpm.engine.rest.dto.repository.ProcessDefinitionDto;
+import org.camunda.bpm.engine.rest.dto.repository.ProcessDefinitionQueryDto;
+import org.camunda.bpm.engine.rest.dto.runtime.IncidentDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
+import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceWithVariablesDto;
 import org.camunda.bpm.engine.rest.dto.runtime.StartProcessInstanceDto;
 import org.camunda.bpm.engine.rest.dto.runtime.VariableInstanceDto;
 import org.camunda.bpm.engine.rest.dto.task.CompleteTaskDto;
@@ -23,6 +33,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import eu.opertusmundi.common.feign.client.BpmServerFeignClient;
 import eu.opertusmundi.common.model.ApplicationException;
@@ -37,6 +48,34 @@ public final class BpmEngineUtils {
 
     @Autowired
     private ObjectProvider<BpmServerFeignClient> bpmClient;
+
+    public List<org.camunda.bpm.engine.rest.dto.repository.DeploymentDto> getDeployments(String sortOrder, String sortBy) {
+        var result = this.bpmClient.getObject().getDeployments(sortOrder, sortBy);
+
+        return result;
+    }
+
+    public void deleteDeployment(String id, boolean cascade) {
+        this.bpmClient.getObject().deleteDeployment(id, cascade);
+    }
+
+    public List<ProcessDefinitionDto> getProcessDefinitions(
+        ProcessDefinitionQueryDto query,
+        int firstResult,
+        int maxResults
+    ) {
+        return this.bpmClient.getObject().getProcessDefinitions(query, firstResult, maxResults);
+    }
+
+    public String getBpmnXml(@PathVariable("id") String processDefinitionId) {
+        final ProcessDefinitionDiagramDto result = this.bpmClient.getObject().getBpmnXml(processDefinitionId).getBody();
+
+        return result == null ? null : result.getBpmn20Xml();
+    }
+
+    public long countProcessInstances() {
+        return this.bpmClient.getObject().countProcessInstances().getCount();
+    }
 
     public ProcessInstanceDto findInstance(UUID businessKey) throws ApplicationException {
         return this.findInstance(businessKey.toString());
@@ -60,6 +99,12 @@ public final class BpmEngineUtils {
 
             throw ApplicationException.fromMessage(fex, BasicMessageCode.BpmServiceError, "Operation on BPM server failed");
         }
+    }
+
+    public List<HistoricProcessInstanceDto> findHistoryInstances(
+        String processDefinitionKey, String businessKey, String processInstanceId
+    ) {
+        return this.bpmClient.getObject().getHistoryProcessInstances(processDefinitionKey, businessKey, processInstanceId);
     }
 
     public List<HistoricProcessInstanceDto> findHistoryInstances(UUID businessKey) throws ApplicationException {
@@ -122,6 +167,16 @@ public final class BpmEngineUtils {
         return this.bpmClient.getObject().startProcessDefinitionByKey(workflow.getKey(), options);
     }
 
+    public ProcessInstanceWithVariablesDto modifyProcessInstance(String processInstanceId, ModificationDto modification) {
+        return this.bpmClient.getObject().modifyProcessInstance(processInstanceId, modification);
+    }
+
+    public long countProcessInstanceTasks() {
+        final CountResultDto result = this.bpmClient.getObject().countProcessInstanceTasks();
+
+        return result.getCount();
+    }
+
     public Optional<TaskDto> findTask(String businessKey, String taskDefinitionKey) {
         final List<TaskDto> tasks = this.bpmClient.getObject().getTasks(businessKey, taskDefinitionKey);
 
@@ -151,16 +206,55 @@ public final class BpmEngineUtils {
         this.bpmClient.getObject().correlateMessage(message);
     }
 
-    public void retryExternalTask(String processInstanceId, String externalTaskId) {
+    public String getExternalTaskErrorDetails(String activityId) {
+        return this.bpmClient.getObject().getExternalTaskErrorDetails(activityId);
+    }
+
+    public String getHistoryExternalTaskLogErrorDetails(String logId) {
+        return this.bpmClient.getObject().getHistoryExternalTaskLogErrorDetails(logId);
+    }
+
+    public void retryExternalTask(String processInstanceId, String externalTaskId, int retryCount) {
         final SetRetriesForExternalTasksDto request            = new SetRetriesForExternalTasksDto();
         final List<String>                  processInstanceIds = Arrays.asList(processInstanceId);
         final List<String>                  externalTaskIds    = Arrays.asList(externalTaskId);
 
         request.setProcessInstanceIds(processInstanceIds);
         request.setExternalTaskIds(externalTaskIds);
-        request.setRetries(1);
+        request.setRetries(retryCount);
 
         this.bpmClient.getObject().setExternalTaskRetries(request);
+    }
+
+    public long countIncidents() {
+        final CountResultDto result = this.bpmClient.getObject().countIncidents();
+
+        return result.getCount();
+    }
+
+    public List<IncidentDto> getIncidents(
+        String incidentId, String processDefinitionId, String processInstanceId, String executionId,
+        String sortBy, String sortOrder
+    ) {
+        return this.bpmClient.getObject().getIncidents(
+            incidentId, processDefinitionId, processInstanceId, executionId, sortBy, sortOrder
+        );
+    }
+
+    public List<HistoricIncidentDto> getHistoryIncidents(String processInstanceId) {
+        return this.bpmClient.getObject().getHistoryIncidents(processInstanceId);
+    }
+
+    public List<HistoricActivityInstanceDto> getHistoryProcessInstanceActivityInstances(String processInstanceId) {
+        return this.bpmClient.getObject().getHistoryProcessInstanceActivityInstances(processInstanceId);
+    }
+
+    public Map<String, VariableValueDto> getProcessInstanceVariables(String processInstanceId) {
+        return this.bpmClient.getObject().getProcessInstanceVariables(processInstanceId);
+    }
+
+    public List<HistoricVariableInstanceDto> getHistoryProcessInstanceVariables(String processInstanceId) {
+        return this.bpmClient.getObject().getHistoryProcessInstanceVariables(processInstanceId);
     }
 
     public List<VariableInstanceDto> getHistoryVariables(String variableName, String variableValue) {
