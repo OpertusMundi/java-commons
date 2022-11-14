@@ -15,6 +15,7 @@ import org.camunda.bpm.engine.rest.dto.history.HistoricTaskInstanceDto;
 import org.camunda.bpm.engine.rest.dto.history.HistoricVariableInstanceDto;
 import org.camunda.bpm.engine.rest.dto.message.CorrelationMessageDto;
 import org.camunda.bpm.engine.rest.dto.message.MessageCorrelationResultWithVariableDto;
+import org.camunda.bpm.engine.rest.dto.repository.DeploymentDto;
 import org.camunda.bpm.engine.rest.dto.repository.ProcessDefinitionDiagramDto;
 import org.camunda.bpm.engine.rest.dto.repository.ProcessDefinitionDto;
 import org.camunda.bpm.engine.rest.dto.repository.ProcessDefinitionQueryDto;
@@ -52,6 +53,36 @@ import eu.opertusmundi.common.feign.client.config.BpmServerFeignClientConfigurat
     configuration = BpmServerFeignClientConfiguration.class
 )
 public interface BpmServerFeignClient {
+
+    /**
+     * Queries for deployments
+     *
+     * @param sortOrder
+     * @param sortBy
+     * @return
+     *
+     * @see https://docs.camunda.org/manual/latest/reference/rest/deployment/get-query/
+     */
+    @GetMapping(value = "/deployment", consumes = "application/json")
+    List<DeploymentDto> getDeployments(
+        @RequestParam("sortOrder") String sortOrder,
+        @RequestParam("sortBy") String sortBy
+    );
+
+    /**
+     * Deletes a deployment by id
+     *
+     * @param id
+     * @param cascade
+     * @return
+     *
+     * @see https://docs.camunda.org/manual/latest/reference/rest/process-instance/delete/
+     */
+    @DeleteMapping(value = "/deployment/{id}")
+    ResponseEntity<Void> deleteDeployment(
+        @PathVariable("id") String id,
+        @RequestParam("cascade") boolean cascade
+    );
 
     /**
      * Queries for process definitions that fulfill given parameters. Parameters
@@ -338,7 +369,6 @@ public interface BpmServerFeignClient {
         @RequestParam(required = false) String sortBy,
         @RequestParam(required = false) String sortOrder
     );
-
 
     /**
      * Queries for historic incidents that fulfill given parameters.
