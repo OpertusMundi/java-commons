@@ -566,6 +566,9 @@ public class DefaultUserServiceService implements UserServiceService {
     }
 
     private void updateIngestionData(UserServiceDto service) {
+        if (service.getIngestData() == null) {
+            return;
+        }
         final var geodataConfig = this.userGeodataConfigurationResolver.resolveFromUserKey(service.getOwner().getKey(), EnumGeodataWorkspace.PRIVATE);
 
         service.getIngestData().getEndpoints().stream().forEach(e -> {
