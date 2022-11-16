@@ -17,6 +17,7 @@ import javax.validation.constraints.NotNull;
 
 import org.hibernate.annotations.NaturalId;
 
+import eu.opertusmundi.common.model.asset.AssetContractAnnexCommandDto;
 import eu.opertusmundi.common.model.asset.AssetContractAnnexDto;
 import lombok.Getter;
 import lombok.Setter;
@@ -86,6 +87,15 @@ public class AssetContractAnnexEntity {
 
     public AssetContractAnnexDto toDto() {
         return AssetContractAnnexDto.of(key, description, fileName, size, createdOn);
+    }
+
+    public AssetContractAnnexCommandDto toCommand() {
+        final var c = new AssetContractAnnexCommandDto();
+        c.setDescription(description);
+        c.setDraftKey(draftKey);
+        c.setFileName(fileName);
+        c.setSize(size);
+        return c;
     }
 
 }

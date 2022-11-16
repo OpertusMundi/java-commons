@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.service;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -568,16 +570,27 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             // Create a new draft if one does not already exists
             if(draft == null) {
                 // Create draft
-                final CatalogueItemCommandDto draftCommand = new CatalogueItemCommandDto(feature);
+                final var draftCommand = new CatalogueItemCommandDto(feature);
+                final var props        = feature.getProperties();
 
                 draftCommand.setAutomatedMetadata(null);
+                draftCommand.setContractTemplateType(props.getContractTemplateType());
                 draftCommand.setIngestionInfo(null);
                 draftCommand.setOwnerKey(command.getOwnerKey());
                 draftCommand.setParentId(command.getPid());
                 draftCommand.setPublisherKey(command.getPublisherKey());
                 draftCommand.setTitle(draftCommand.getTitle() + " [Draft]");
 
-                draft = this.updateDraft(draftCommand);
+                // Copy pricing models and update keys
+                draftCommand.setPricingModels(props.getPricingModels());
+                draftCommand.getPricingModels().stream().forEach(p -> p.setKey(UUID.randomUUID().toString()));
+
+                this.updateDraft(draftCommand);
+
+                // Copy contract data and refresh draft
+                this.copyAssetContractToDraft(feature, draftCommand);
+
+                draft = this.findOneDraft(draftCommand.getDraftKey());
             }
 
             // If a lock is required for the new record, create one
@@ -1267,7 +1280,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         // Add resource
         final FileResourceCommandDto resourceCommand = new FileResourceCommandDto();
 
-        var parentResource = draft.getExternalResourceByUrl(command.getUrl());
+        final var parentResource = draft.getExternalResourceByUrl(command.getUrl());
         Assert.notNull(parentResource, "Expected a non-null parent resource");
 
         resourceCommand.setCategory(draft.getType());
@@ -1936,4 +1949,73 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         return services;
     }
 
+    private void copyAssetContractToDraft(CatalogueFeature feature, CatalogueItemCommandDto command) {
+        final var props = feature.getProperties();
+
+        switch (props.getContractTemplateType()) {
+            case MASTER_CONTRACT :
+                this.copyMasterContractToDraft(feature, command);
+                break;
+
+            case UPLOADED_CONTRACT :
+                this.copyUploadedContractToDraft(feature, command);
+                break;
+
+            case OPEN_DATASET :
+                // No action is required
+                break;
+        }
+    }
+
+    private void copyMasterContractToDraft(CatalogueFeature feature, CatalogueItemCommandDto command) {
+        final var providerTemplate = this.contractRepository.findByIdAndVersion(
+            feature.getProperties().getPublisherId(),
+            feature.getProperties().getContractTemplateId(),
+            feature.getProperties().getContractTemplateVersion()
+        ).orElse(null);
+
+        if (providerTemplate != null) {
+            command.setContractTemplateKey(providerTemplate.getKey());
+        }
+
+        this.updateDraft(command);
+    }
+
+    private void copyUploadedContractToDraft(CatalogueFeature feature, CatalogueItemCommandDto command) {
+        try {
+            // Copy contract file
+            final Path   contractPath = this.resolveAssetContractPath(feature.getId());
+            final File   contractFile = contractPath.toFile();
+            final byte[] contractData = FileUtils.readFileToByteArray(contractFile);
+
+            final ProviderUploadContractCommand contractCommand = ProviderUploadContractCommand.builder()
+                .draftKey(command.getDraftKey())
+                .fileName(FilenameUtils.getName(contractPath.toString()))
+                .ownerKey(command.getOwnerKey())
+                .locked(command.isLocked())
+                .publisherKey(command.getPublisherKey())
+                .size(contractFile.length())
+                .build();
+
+            this.setContract(contractCommand, contractData);
+
+            // Copy annexes
+            final var annexes = this.assetContractAnnexRepository.findAllAnnexesByAssetPid(feature.getId());
+            for (final var annex : annexes) {
+                final Path   annexPath = this.resolveAssetContractAnnexPath(feature.getId(), annex.getKey());
+                final File   annexFile = annexPath.toFile();
+                final byte[] annexData = FileUtils.readFileToByteArray(annexFile);
+
+                final var annexCommand = annex.toCommand();
+                // Override owner/publisher/draft keys with new ones
+                annexCommand.setDraftKey(command.getDraftKey());
+                annexCommand.setOwnerKey(command.getOwnerKey());
+                annexCommand.setPublisherKey(command.getPublisherKey());
+
+                this.addContractAnnex(annexCommand, annexData);
+            }
+        } catch (final IOException ex) {
+            throw new AssetDraftException(AssetMessageCode.IO_ERROR, "Failed to copy contract file and annexes");
+        }
+    }
 }
