@@ -680,8 +680,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     private void deleteDraftData(UUID ownerKey, UUID publisherKey, UUID draftKey) throws AssetDraftException {
         this.ensureDraftAndStatus(ownerKey, publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
 
-        // Delete resource links in database
+        // Delete file metadata from database
         this.assetResourceRepository.deleteAll(draftKey);
+        this.assetContractAnnexRepository.deleteAll(draftKey);
 
         // Delete draft
         this.draftRepository.delete(publisherKey, draftKey);

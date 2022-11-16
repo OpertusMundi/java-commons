@@ -118,4 +118,13 @@ public interface AssetContractAnnexRepository extends JpaRepository<AssetContrac
         return resource;
     }
 
+    @Transactional(readOnly = false)
+    default void deleteAll(UUID draftKey) {
+        Assert.notNull(draftKey, "Expected a non-null draft key");
+
+        final List<AssetContractAnnexEntity> annexes = this.findAllAnnexesByDraftKey(draftKey);
+
+        annexes.stream().forEach(r -> this.delete(r));
+    }
+
 }
