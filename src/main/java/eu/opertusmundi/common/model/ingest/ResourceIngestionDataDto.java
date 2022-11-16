@@ -64,6 +64,7 @@ public class ResourceIngestionDataDto implements Serializable {
         final ServiceEndpoint current = endpoints.stream().filter(e -> e.type == type).findFirst().orElse(null);
 
         if (current == null) {
+            this.endpoints = new ArrayList<>(this.endpoints);
             this.endpoints.add(new ServiceEndpoint(type, uri));
         } else {
             current.setUri(uri);
