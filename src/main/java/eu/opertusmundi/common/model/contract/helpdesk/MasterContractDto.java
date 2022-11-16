@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import eu.opertusmundi.common.model.account.helpdesk.SimpleHelpdeskAccountDto;
+import eu.opertusmundi.common.model.message.client.ClientContactDto;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -47,6 +48,10 @@ public class MasterContractDto implements Serializable {
     @JsonInclude(Include.NON_NULL)
     protected SimpleHelpdeskAccountDto owner;
 
+    @Schema(hidden = true, description = "The provider of this contract")
+    @JsonInclude(Include.NON_NULL)
+    protected ClientContactDto provider;
+    
     @Schema(description = "Title")
     protected String title;
 

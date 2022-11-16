@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.HelpdeskAccountEntity;
 import eu.opertusmundi.common.domain.MasterContractDraftEntity;
 import eu.opertusmundi.common.domain.MasterContractHistoryEntity;
@@ -28,9 +29,10 @@ import eu.opertusmundi.common.model.contract.helpdesk.MasterSectionDto;
 public interface MasterContractDraftRepository extends JpaRepository<MasterContractDraftEntity, Integer> {
 
     @Query("SELECT a FROM HelpdeskAccount a WHERE a.id = :id")
-    Optional<HelpdeskAccountEntity> findAccountById(
-        @Param("id") int id
-    );
+    Optional<HelpdeskAccountEntity> findHelpdeskAccountById(int id);
+
+    @Query("SELECT a FROM Account a WHERE a.key = :key")
+    Optional<AccountEntity> findMarketplaceAccountByKey(UUID key);
 
     @Query("SELECT c FROM ContractHistory c WHERE c.id = :id")
     Optional<MasterContractHistoryEntity> findMasterContractHistoryById(Integer id);
@@ -95,7 +97,7 @@ public interface MasterContractDraftRepository extends JpaRepository<MasterContr
 
         final MasterContractDraftEntity e = MasterContractDraftEntity.from(parent);
 
-        final HelpdeskAccountEntity owner = this.findAccountById(ownerId).orElse(null);
+        final HelpdeskAccountEntity owner = this.findHelpdeskAccountById(ownerId).orElse(null);
         if (owner == null) {
             throw ApplicationException.fromMessage(
                 ContractMessageCode.ACCOUNT_NOT_FOUND, "Record not found"
@@ -105,7 +107,7 @@ public interface MasterContractDraftRepository extends JpaRepository<MasterContr
 
         return this.saveAndFlush(e).toDto(true);
     }
-    
+
     @Transactional(readOnly = false)
     default MasterContractDto cloneFromHistory(int ownerId, int parentId) throws ApplicationException {
         final MasterContractHistoryEntity parent = this.findMasterContractHistoryById(parentId).orElse(null);
@@ -127,7 +129,7 @@ public interface MasterContractDraftRepository extends JpaRepository<MasterContr
         e.setVersion("1");
         e.setParent(null);
 
-        final HelpdeskAccountEntity owner = this.findAccountById(ownerId).orElse(null);
+        final HelpdeskAccountEntity owner = this.findHelpdeskAccountById(ownerId).orElse(null);
         if (owner == null) {
             throw ApplicationException.fromMessage(
                 ContractMessageCode.ACCOUNT_NOT_FOUND, "Record not found"
@@ -156,13 +158,23 @@ public interface MasterContractDraftRepository extends JpaRepository<MasterContr
             e.setModifiedAt(e.getCreatedAt());
             e.setVersion("1");
 
-            final HelpdeskAccountEntity owner = this.findAccountById(c.getUserId()).orElse(null);
+            final HelpdeskAccountEntity owner = this.findHelpdeskAccountById(c.getUserId()).orElse(null);
             if (owner == null) {
                 throw ApplicationException.fromMessage(
                     ContractMessageCode.ACCOUNT_NOT_FOUND, "Record not found"
                 );
             }
             e.setOwner(owner);
+        }
+
+        if (c.getProviderKey() != null) {
+            final AccountEntity provider = this.findMarketplaceAccountByKey(c.getProviderKey()).orElse(null);
+            if (provider == null) {
+                throw ApplicationException.fromMessage(ContractMessageCode.ACCOUNT_NOT_FOUND, "Record not found");
+            }
+            e.setProvider(provider);
+        } else {
+            e.setProvider(null);
         }
 
         e.setSubtitle(c.getSubtitle());

@@ -42,8 +42,8 @@ public interface ProviderTemplateContractDraftRepository extends JpaRepository<P
     @Query("SELECT c FROM ContractHistory c WHERE c.status = 'ACTIVE' and c.defaultContract = true")
     List<MasterContractHistoryEntity> findDefaultMasterContracts();
 
-    @Query("SELECT c FROM ContractHistory c WHERE c.key = :contractKey and status = 'ACTIVE'")
-    Optional<MasterContractHistoryEntity> findActiveMasterContractByKey(UUID contractKey);
+    @Query("SELECT c FROM ContractHistory c LEFT OUTER JOIN c.provider pr WHERE (c.key = :contractKey) and (status = 'ACTIVE') and (pr is null or pr.key = :providerKey)")
+    Optional<MasterContractHistoryEntity> findActiveMasterContractByKeyAndProvider(UUID providerKey, UUID contractKey);
 
     @Query("SELECT c FROM ProviderContractHistory c WHERE c.owner.key = :providerKey and c.key = :contractKey")
     Optional<ProviderTemplateContractHistoryEntity> findProviderTemplateContractHistoryByKey(UUID providerKey, UUID contractKey);
@@ -156,7 +156,7 @@ public interface ProviderTemplateContractDraftRepository extends JpaRepository<P
             }
             e.setOwner(owner);
 
-            final MasterContractHistoryEntity template = this.findActiveMasterContractByKey(c.getTemplateKey()).orElse(null);
+            final MasterContractHistoryEntity template = this.findActiveMasterContractByKeyAndProvider(c.getUserKey(), c.getTemplateKey()).orElse(null);
             if (template == null) {
                 throw ApplicationException.fromMessage(
                     ContractMessageCode.MASTER_CONTRACT_NOT_FOUND, "Record not found"

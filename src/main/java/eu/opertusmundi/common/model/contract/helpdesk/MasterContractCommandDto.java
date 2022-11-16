@@ -2,6 +2,7 @@ package eu.opertusmundi.common.model.contract.helpdesk;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.UUID;
 
 import javax.validation.constraints.NotEmpty;
 
@@ -27,6 +28,9 @@ public class MasterContractCommandDto implements Serializable {
 
     @JsonIgnore
     private Integer userId;
+
+    @Schema(description = "Master contract provider key")
+    private UUID providerKey;
 
     @Schema(description = "Title")
     @NotEmpty

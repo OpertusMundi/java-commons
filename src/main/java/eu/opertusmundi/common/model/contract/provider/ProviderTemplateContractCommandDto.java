@@ -31,6 +31,9 @@ public class ProviderTemplateContractCommandDto implements Serializable {
     @JsonIgnore
     private Integer userId;
 
+    @JsonIgnore
+    private UUID userKey;
+
     @Schema(description = "Master template key")
     @NotNull
     private UUID templateKey;

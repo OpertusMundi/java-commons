@@ -29,7 +29,9 @@ import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryResult;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractQueryDto;
 import eu.opertusmundi.common.model.contract.helpdesk.PublishContractResult;
+import eu.opertusmundi.common.model.message.client.ClientContactDto;
 import eu.opertusmundi.common.model.workflow.EnumWorkflow;
+import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.contract.MasterContractDraftRepository;
 import eu.opertusmundi.common.repository.contract.MasterContractHistoryRepository;
 import eu.opertusmundi.common.repository.contract.MasterContractRepository;
@@ -40,7 +42,8 @@ import eu.opertusmundi.common.validation.DefaultMasterTemplateContractValidator;
 @Service
 public class DefaultMasterTemplateContractService implements MasterTemplateContractService {
 
-    private final BpmEngineUtils bpmEngineUtils;
+    private final AccountRepository                      accountRepository;
+    private final BpmEngineUtils                         bpmEngineUtils;
     private final ContractParametersFactory              contractParametersFactory;
     private final DefaultMasterTemplateContractValidator contractValidator;
     private final MasterContractDraftRepository          draftRepository;
@@ -50,14 +53,16 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
 
     @Autowired
     public DefaultMasterTemplateContractService(
-        BpmEngineUtils bpmEngineUtils,
-        ContractParametersFactory contractParametersFactory,
+        AccountRepository                      accountRepository,
+        BpmEngineUtils                         bpmEngineUtils,
+        ContractParametersFactory              contractParametersFactory,
         DefaultMasterTemplateContractValidator contractValidator,
         MasterContractDraftRepository          draftRepository,
         MasterContractHistoryRepository        historyRepository,
         MasterContractRepository               contractRepository,
         PdfContractGeneratorService            pdfService
     ) {
+        this.accountRepository         = accountRepository;
         this.bpmEngineUtils            = bpmEngineUtils;
         this.contractParametersFactory = contractParametersFactory;
         this.contractValidator         = contractValidator;
@@ -65,6 +70,18 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
         this.historyRepository         = historyRepository;
         this.contractRepository        = contractRepository;
         this.pdfService                = pdfService;
+    }
+
+    @Override
+    public List<ClientContactDto> findProviders(String email) {
+        final PageRequest pageRequest = PageRequest.of(0, 20);
+        final String      filter      = "%" + email + "%";
+
+        final var result = this.accountRepository.findAllProviders(filter, pageRequest).stream()
+            .map(ClientContactDto::new)
+            .toList();
+
+        return result;
     }
 
     @Override
@@ -95,7 +112,7 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
         final PageRequest pageRequest = PageRequest.of(query.getPage(), query.getSize(), Sort.by(direction, query.getOrderBy().getValue()));
 
         final Page<MasterContractDto> p = this.contractRepository.findAllObjects(
-            query.getTitle(), pageRequest
+            query.getTitle(), query.getProviderKey(), pageRequest
         );
 
         final long                             count   = p.getTotalElements();
@@ -113,8 +130,8 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
     }
 
     @Override
-    public Optional<MasterContractDto> findOneByKey(UUID key) {
-        final MasterContractDto result = this.contractRepository.findOneObject(key).orElse(null);
+    public Optional<MasterContractDto> findOneByKey(UUID providerKey, UUID contractKey) {
+        final MasterContractDto result = this.contractRepository.findOneObject(providerKey, contractKey).orElse(null);
 
         return Optional.ofNullable(result);
     }
@@ -147,7 +164,7 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
         // Update all providers only when a default contract is being
         // deactivated
         if (contract.isDefaultContract()) {
-            var variables = BpmInstanceVariablesBuilder.builder()
+            final var variables = BpmInstanceVariablesBuilder.builder()
                 .variableAsString("template", contract.getKey().toString())
                 .variableAsString("templateTitle", contract.getTitle())
                 .variableAsString("templateVersion", contract.getVersion())
@@ -228,7 +245,7 @@ public class DefaultMasterTemplateContractService implements MasterTemplateContr
 
         final MasterContractDto result = this.historyRepository.setDefaultContract(id);
 
-        var variables = BpmInstanceVariablesBuilder.builder()
+        final var variables = BpmInstanceVariablesBuilder.builder()
             .variableAsString("template", result.getKey().toString())
             .variableAsString("templateTitle", result.getTitle())
             .variableAsString("templateVersion", result.getVersion())

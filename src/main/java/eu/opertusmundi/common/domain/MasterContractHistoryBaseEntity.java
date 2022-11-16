@@ -50,6 +50,10 @@ public class MasterContractHistoryBaseEntity {
     @JoinColumn(name = "`owner`", nullable = false)
     protected HelpdeskAccountEntity owner;
     
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "`provider`", nullable = true)
+    protected AccountEntity provider;
+    
     @OneToOne(
         optional = true, fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = false
     )

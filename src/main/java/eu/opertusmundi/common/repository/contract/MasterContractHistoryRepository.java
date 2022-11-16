@@ -33,8 +33,8 @@ public interface MasterContractHistoryRepository extends JpaRepository<MasterCon
     @Query("SELECT c FROM ContractDraft c JOIN FETCH c.sections WHERE c.id = :id")
     Optional<MasterContractDraftEntity> findOneDraftById(int id);
 
-    @Query("SELECT c FROM ContractHistory c WHERE c.key = :key")
-    Optional<MasterContractHistoryEntity> findOneByKey(UUID key);
+    @Query("SELECT c FROM ContractHistory c LEFT OUTER JOIN c.provider pr WHERE (c.key = :contractKey) and (pr is null or pr.key = :providerKey)")
+    Optional<MasterContractHistoryEntity> findOneByKey(UUID providerKey, UUID contractKey);
 
     @Query("SELECT c FROM ContractHistory c WHERE c.status = 'ACTIVE' and c.published.id = :id")
     Optional<MasterContractHistoryEntity> findOneByActiveAndId(int id);

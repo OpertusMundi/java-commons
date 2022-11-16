@@ -14,6 +14,7 @@ import javax.persistence.Table;
 
 import eu.opertusmundi.common.model.contract.EnumContractStatus;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryDto;
+import eu.opertusmundi.common.model.message.client.ClientContactDto;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -59,6 +60,10 @@ public class MasterContractHistoryEntity extends MasterContractHistoryBaseEntity
         c.setTitle(title);
         c.setVersion(version);
 
+        if (provider != null) {
+            c.setProvider(new ClientContactDto(provider));
+        }
+        
         if (includeDetails) {
             c.setContractParentId(contractParent == null ? null : contractParent.getId());
             c.setContractRootId(contractRoot == null ? null : contractRoot.getId());
@@ -81,6 +86,7 @@ public class MasterContractHistoryEntity extends MasterContractHistoryBaseEntity
         e.setDefaultContract(false);
         e.setModifiedAt(e.getCreatedAt());
         e.setOwner(d.getOwner());
+        e.setProvider(d.getProvider());
         e.setSections(d.getSections().stream().map(MasterSectionHistoryEntity::from).collect(Collectors.toList()));
         e.setStatus(EnumContractStatus.INACTIVE);
         e.setSubtitle(d.getSubtitle());

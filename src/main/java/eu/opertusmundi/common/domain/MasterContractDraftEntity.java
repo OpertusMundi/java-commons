@@ -24,6 +24,7 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractDto;
+import eu.opertusmundi.common.model.message.client.ClientContactDto;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -55,6 +56,10 @@ public class MasterContractDraftEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "`owner`", nullable = false)
     private HelpdeskAccountEntity owner;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "`provider`", nullable = true)
+    private AccountEntity provider;
     
     @OneToOne(
         optional = false, fetch = FetchType.LAZY
@@ -99,6 +104,10 @@ public class MasterContractDraftEntity {
         c.setTitle(title);
         c.setVersion(version);
         
+        if (provider != null) {
+            c.setProvider(new ClientContactDto(provider));
+        }
+        
         if (includeDetails) {
             c.setContractParentId(parent == null ? null : parent.getId());
             c.setContractRootId(parent == null ? null : parent.getContractRoot().getId());
@@ -121,6 +130,7 @@ public class MasterContractDraftEntity {
         e.setModifiedAt(e.getCreatedAt());
         e.setOwner(h.getOwner());
         e.setParent(h);
+        e.setProvider(h.getProvider());
         e.setSubtitle(h.getSubtitle());
         e.setTitle(h.getTitle());
         e.setVersion(version.toString());

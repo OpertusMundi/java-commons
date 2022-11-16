@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.model.contract.helpdesk;
 
 import java.util.Set;
+import java.util.UUID;
 
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.contract.EnumContractStatus;
@@ -14,6 +15,8 @@ import lombok.Setter;
 @Setter
 @Builder
 public class MasterContractQueryDto {
+
+    private UUID providerKey;
 
     private int page;
 

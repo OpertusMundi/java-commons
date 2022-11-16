@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.service.contract;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -13,6 +14,7 @@ import eu.opertusmundi.common.model.contract.helpdesk.MasterContractDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryDto;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractHistoryResult;
 import eu.opertusmundi.common.model.contract.helpdesk.MasterContractQueryDto;
+import eu.opertusmundi.common.model.message.client.ClientContactDto;
 
 /**
  * OpertusMundi Master Template Contracts (MTC)
@@ -20,7 +22,15 @@ import eu.opertusmundi.common.model.contract.helpdesk.MasterContractQueryDto;
 public interface MasterTemplateContractService {
 
     /**
-     * Find all contract
+     * Find contact information for all providers
+     *
+     * @param email
+     * @return
+     */
+    List<ClientContactDto> findProviders(String email);
+
+    /**
+     * Find all contracts
      *
      * @param query
      * @return
@@ -44,12 +54,13 @@ public interface MasterTemplateContractService {
     Optional<MasterContractDto> findOneById(int id);
 
     /**
-     * Get a contract by its key
+     * Get a contract by its key and provider key
      *
-     * @param id
+     * @param providerKey
+     * @param contractKey
      * @return
      */
-    Optional<MasterContractDto> findOneByKey(UUID key);
+    Optional<MasterContractDto> findOneByKey(UUID providerKey, UUID contractKey);
 
     /**
      * Create a new draft from an existing master contract
@@ -59,7 +70,7 @@ public interface MasterTemplateContractService {
      * @return
      */
     MasterContractDto createForTemplate(int userId, int templateId) throws ApplicationException;
-    
+
     /**
      * Create a new cloned draft from an existing master contract with new version history
      *
@@ -130,13 +141,13 @@ public interface MasterTemplateContractService {
      * @return
      */
     byte[] print(int masterContractId) throws IOException;
-    
+
     /**
      * Set history contract as the default template.
-     * 
+     *
      * <p>
      * A contract must be <code>ACTIVE</code> to become the default contract.
-     * 
+     *
      * @param id
      * @return
      * @throws ApplicationException
