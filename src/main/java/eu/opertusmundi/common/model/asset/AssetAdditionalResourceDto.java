@@ -13,6 +13,7 @@ import eu.opertusmundi.common.model.catalogue.server.CatalogueAdditionalResource
 import eu.opertusmundi.common.model.pricing.EnumPricingModel;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -40,7 +41,7 @@ public abstract class AssetAdditionalResourceDto implements Serializable {
     )
     @JsonDeserialize(using = EnumPricingModel.Deserializer.class)
     @Getter
-    @Setter
+    @Setter(AccessLevel.PROTECTED)
     protected EnumAssetAdditionalResource type;
 
     protected AssetAdditionalResourceDto() {

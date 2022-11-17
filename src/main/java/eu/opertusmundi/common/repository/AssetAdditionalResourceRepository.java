@@ -130,4 +130,13 @@ public interface AssetAdditionalResourceRepository extends JpaRepository<AssetAd
         return resource;
     }
 
+    @Transactional(readOnly = false)
+    default void deleteAll(UUID draftKey) {
+        Assert.notNull(draftKey, "Expected a non-null draft key");
+
+        final List<AssetAdditionalResourceEntity> resources = this.findAllResourcesByDraftKey(draftKey);
+
+        resources.stream().forEach(r -> this.delete(r));
+    }
+
 }

@@ -69,6 +69,7 @@ import eu.opertusmundi.common.model.asset.AssetDraftSetStatusCommandDto;
 import eu.opertusmundi.common.model.asset.AssetFileAdditionalResourceDto;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
+import eu.opertusmundi.common.model.asset.AssetUriAdditionalResourceDto;
 import eu.opertusmundi.common.model.asset.EnumAssetAdditionalResource;
 import eu.opertusmundi.common.model.asset.EnumMetadataPropertyType;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftSortField;
@@ -97,6 +98,7 @@ import eu.opertusmundi.common.model.catalogue.client.EnumContractType;
 import eu.opertusmundi.common.model.catalogue.client.EnumDeliveryMethod;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.client.UnpublishAssetCommand;
+import eu.opertusmundi.common.model.catalogue.server.CatalogueAdditionalResource;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.contract.provider.ProviderTemplateContractHistoryDto;
 import eu.opertusmundi.common.model.contract.provider.ProviderUploadContractCommand;
@@ -589,6 +591,8 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
                 // Copy contract data and refresh draft
                 this.copyAssetContractToDraft(feature, draftCommand);
+                // Copy additional resources
+                this.copyAssetAdditionalResourcesToDraft(feature, draftCommand);
 
                 draft = this.findOneDraft(draftCommand.getDraftKey());
             }
@@ -695,6 +699,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
         // Delete file metadata from database
         this.assetResourceRepository.deleteAll(draftKey);
+        this.assetAdditionalResourceRepository.deleteAll(draftKey);
         this.assetContractAnnexRepository.deleteAll(draftKey);
 
         // Delete draft
@@ -1949,16 +1954,68 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         return services;
     }
 
+    private void copyAssetAdditionalResourcesToDraft(CatalogueFeature feature, CatalogueItemCommandDto command) {
+        final var resources = feature.getProperties().getAdditionalResources();
+
+        for (final CatalogueAdditionalResource r : resources) {
+            switch (r.getType()) {
+                case URI :
+                    final var uriResource = new AssetUriAdditionalResourceDto();
+                    uriResource.setText(r.getName());
+                    uriResource.setUri(r.getValue());
+                    command.getAdditionalResources().add(uriResource);
+                    break;
+
+                case FILE :
+                    this.copyAssetFileAdditionalResourceToDraft(feature, r, command);
+                    break;
+                case UNDEFINED :
+                    // No action required
+                    break;
+            }
+        }
+    }
+
+    private void copyAssetFileAdditionalResourceToDraft(
+        CatalogueFeature feature, CatalogueAdditionalResource resource, CatalogueItemCommandDto command
+    ) {
+        Assert.isTrue(resource.getType() == EnumAssetAdditionalResource.FILE, "Expected a file resource");
+
+        try {
+            final Path resourcePath = this.resolveAssetAdditionalResource(feature.getId(), resource.getId());
+
+            final AssetAdditionalResourceCommandDto resourceCommand = new AssetAdditionalResourceCommandDto();
+            resourceCommand.setDescription(resource.getName());
+            resourceCommand.setDraftKey(command.getDraftKey());
+            resourceCommand.setFileName(resource.getValue());
+            resourceCommand.setOwnerKey(command.getOwnerKey());
+            resourceCommand.setPublisherKey(command.getPublisherKey());
+            resourceCommand.setSize(resource.getSize());
+
+            try (final InputStream input = Files.newInputStream(resourcePath)) {
+                this.addAdditionalResource(resourceCommand, input);
+            } catch(final Exception ex) {
+                logger.error(String.format(
+                    "Failed to copy additional resource file [path=%s, draft=%s]",
+                    resourcePath, command.getDraftKey()
+                ), ex);
+                throw ex;
+            }
+        } catch (final Exception ex) {
+            throw new AssetDraftException(AssetMessageCode.IO_ERROR, "Failed to copy additional file resource");
+        }
+    }
+
     private void copyAssetContractToDraft(CatalogueFeature feature, CatalogueItemCommandDto command) {
         final var props = feature.getProperties();
 
         switch (props.getContractTemplateType()) {
             case MASTER_CONTRACT :
-                this.copyMasterContractToDraft(feature, command);
+                this.copyAssetMasterContractToDraft(feature, command);
                 break;
 
             case UPLOADED_CONTRACT :
-                this.copyUploadedContractToDraft(feature, command);
+                this.copyAssetUploadedContractToDraft(feature, command);
                 break;
 
             case OPEN_DATASET :
@@ -1967,7 +2024,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         }
     }
 
-    private void copyMasterContractToDraft(CatalogueFeature feature, CatalogueItemCommandDto command) {
+    private void copyAssetMasterContractToDraft(CatalogueFeature feature, CatalogueItemCommandDto command) {
         final var providerTemplate = this.contractRepository.findByIdAndVersion(
             feature.getProperties().getPublisherId(),
             feature.getProperties().getContractTemplateId(),
@@ -1981,7 +2038,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         this.updateDraft(command);
     }
 
-    private void copyUploadedContractToDraft(CatalogueFeature feature, CatalogueItemCommandDto command) {
+    private void copyAssetUploadedContractToDraft(CatalogueFeature feature, CatalogueItemCommandDto command) {
         try {
             // Copy contract file
             final Path   contractPath = this.resolveAssetContractPath(feature.getId());
