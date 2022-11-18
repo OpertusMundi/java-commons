@@ -745,7 +745,9 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             }
 
             // Check if workflow exists
-            final EnumProviderAssetDraftStatus newStatus = EnumProviderAssetDraftStatus.SUBMITTED;
+            final EnumProviderAssetDraftStatus newStatus = command.getType() == EnumAssetType.BUNDLE
+                ? EnumProviderAssetDraftStatus.PENDING_HELPDESK_REVIEW
+                : EnumProviderAssetDraftStatus.SUBMITTED;
             ProcessInstanceDto                 instance  = this.bpmEngine.findInstance(command.getDraftKey());
 
             if (instance == null) {

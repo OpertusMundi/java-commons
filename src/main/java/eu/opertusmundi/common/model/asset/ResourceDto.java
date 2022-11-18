@@ -72,6 +72,8 @@ public abstract class ResourceDto implements Serializable {
 
     public static ResourceDto fromCatalogueResource(CatalogueResource r) {
         switch (r.getType()) {
+            case ASSET :
+                return new BundleAssetResourceDto(r);
             case EXTERNAL_URL :
                 return new ExternalUrlResourceDto(r);
             case FILE :

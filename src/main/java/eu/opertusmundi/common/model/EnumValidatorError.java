@@ -4,6 +4,8 @@ import lombok.Getter;
 
 public enum EnumValidatorError {
 
+    NotAuthorized("Resource is not accessible"),
+
     FileNameNotUnique("File name is not unique"),
     FileNotFound("File was not found"),
     FileExtensionNotSupported("File name extension is not supported"),

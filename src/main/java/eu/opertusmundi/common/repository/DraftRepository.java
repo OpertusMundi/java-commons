@@ -164,8 +164,10 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
             status = draft.getStatus();
         }
         Assert.isTrue(
-            status == EnumProviderAssetDraftStatus.DRAFT || status == EnumProviderAssetDraftStatus.SUBMITTED,
-            "Expected status in [DRAFT, SUBMITTED]"
+            (status == EnumProviderAssetDraftStatus.DRAFT) ||
+            (draft.getType() != EnumAssetType.BUNDLE && status == EnumProviderAssetDraftStatus.SUBMITTED) ||
+            (draft.getType() == EnumAssetType.BUNDLE && status == EnumProviderAssetDraftStatus.PENDING_HELPDESK_REVIEW),
+            "Expected status in [DRAFT, SUBMITTED, PENDING_HELPDESK_REVIEW]"
         );
 
         if (draft.getStatus() != EnumProviderAssetDraftStatus.DRAFT && draft.getStatus() != EnumProviderAssetDraftStatus.SUBMITTED) {

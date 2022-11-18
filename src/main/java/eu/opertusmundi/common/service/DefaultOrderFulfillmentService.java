@@ -50,7 +50,9 @@ import eu.opertusmundi.common.model.account.EnumAssetSource;
 import eu.opertusmundi.common.model.account.EnumSubscriptionStatus;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
+import eu.opertusmundi.common.model.asset.BundleAssetResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
+import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumContractType;
 import eu.opertusmundi.common.model.email.EmailAddressDto;
 import eu.opertusmundi.common.model.email.EnumMailType;
@@ -586,7 +588,19 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
         switch (asset.getType().getOrderItemType()) {
             case ASSET :
-                this.registerAsset(payIn, payInItem, asset);
+                // For bundles, register every asset
+                if(asset.getType() == EnumAssetType.BUNDLE) {
+                    asset.getResources().stream()
+                        .map(r -> {
+                            final var result = (r instanceof final BundleAssetResourceDto assetResource)
+                                    ? this.catalogueService.findOne(null, assetResource.getId(), null, false)
+                                    : null;
+                            return result;
+                        })
+                        .forEach(a -> this.registerAsset(payIn, payInItem, a));
+                } else {
+                    this.registerAsset(payIn, payInItem, asset);
+                }
                 break;
 
             case SUBSCRIPTION :
@@ -607,41 +621,40 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         final OrderEntity              order        = payInItem.getOrder();
         final OrderItemEntity          orderItem    = order.getItems().get(0);
         final EffectivePricingModelDto pricingModel = orderItem.getPricingModel();
+        final ZonedDateTime            purchaseOn   = payIn.getExecutedOn();
 
         // Check if the order item is already registered
-        final AccountAssetEntity ownedAsset = accountAssetRepository.findAllByUserKeyAndAssetId(userKey, orderItem.getAssetId()).stream()
+        AccountAssetEntity ownedAsset = accountAssetRepository.findAllByUserKeyAndAssetId(userKey, asset.getId()).stream()
             .filter(a -> !a.getOrder().getId().equals(order.getId()))
             .findFirst().orElse(null);
-        // TODO: Update existing asset i.e. update update years of free updates
-        if (ownedAsset != null) {
-            return;
+
+        if (ownedAsset == null) {
+            // Register asset to consumer's account
+            ownedAsset = new AccountAssetEntity();
+
+
+            ownedAsset.setAddedOn(purchaseOn);
+            ownedAsset.setAsset(asset.getId());
+            ownedAsset.setConsumer(payIn.getConsumer());
+            ownedAsset.setOrder(order);
+            ownedAsset.setProvider(orderItem.getProvider());
+            ownedAsset.setPurchasedOn(purchaseOn);
+            ownedAsset.setSource(EnumAssetSource.PURCHASE);
+            ownedAsset.setUpdateEligibility(purchaseOn);
+            ownedAsset.setUpdateInterval(0);
         }
-
-        // Register asset to consumer's account
-        final AccountAssetEntity reg        = new AccountAssetEntity();
-        final ZonedDateTime      purchaseOn = payIn.getExecutedOn();
-
-        reg.setAddedOn(purchaseOn);
-        reg.setAsset(orderItem.getAssetId());
-        reg.setConsumer(payIn.getConsumer());
-        reg.setOrder(order);
-        reg.setProvider(orderItem.getProvider());
-        reg.setPurchasedOn(purchaseOn);
-        reg.setSource(EnumAssetSource.PURCHASE);
-        reg.setUpdateEligibility(purchaseOn);
-        reg.setUpdateInterval(0);
-
+        // Set or update years of free updates
         if (pricingModel.getModel().getType() == EnumPricingModel.FIXED) {
             final FixedPricingModelCommandDto fixedPricingModel = (FixedPricingModelCommandDto) pricingModel.getModel();
             final Integer                     yearsOfUpdates    = fixedPricingModel.getYearsOfUpdates();
 
             if (fixedPricingModel.getYearsOfUpdates() > 0) {
-                reg.setUpdateEligibility(purchaseOn.plusYears(yearsOfUpdates));
-                reg.setUpdateInterval(yearsOfUpdates);
+                ownedAsset.setUpdateEligibility(purchaseOn.plusYears(yearsOfUpdates));
+                ownedAsset.setUpdateInterval(yearsOfUpdates);
             }
         }
 
-        this.accountAssetRepository.save(reg);
+        this.accountAssetRepository.save(ownedAsset);
     }
 
     private void registerSubscription(PayInEntity payIn, PayInOrderItemEntity payInItem, CatalogueItemDetailsDto asset) {
@@ -653,7 +666,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
         final ZonedDateTime            now          = ZonedDateTime.now();
 
         // Check if a subscription is already active
-        final AccountSubscriptionEntity activeSubscription = accountSubscriptionRepository.findAllByConsumerAndAssetId(userKey, orderItem.getAssetId()).stream()
+        final AccountSubscriptionEntity activeSubscription = accountSubscriptionRepository.findAllByConsumerAndAssetId(userKey, asset.getId()).stream()
             .filter(s -> !s.getOrder().getId().equals(order.getId()))
             .findFirst().orElse(null);
         final boolean renewal = activeSubscription != null;
@@ -667,7 +680,7 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
             sub = new AccountSubscriptionEntity();
 
             sub.setAddedOn(now);
-            sub.setAssetId(orderItem.getAssetId());
+            sub.setAssetId(asset.getId());
             sub.setAssetTitle(orderItem.getAssetTitle());
             sub.setAssetVersion(orderItem.getAssetVersion());
             sub.setCancelledOn(null);
