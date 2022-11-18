@@ -73,8 +73,8 @@ public final class BpmEngineUtils {
         return result == null ? null : result.getBpmn20Xml();
     }
 
-    public long countProcessInstances() {
-        return this.bpmClient.getObject().countProcessInstances().getCount();
+    public long countProcessInstances(String deploymentId) {
+        return this.bpmClient.getObject().countProcessInstances(deploymentId).getCount();
     }
 
     public ProcessInstanceDto findInstance(UUID businessKey) throws ApplicationException {

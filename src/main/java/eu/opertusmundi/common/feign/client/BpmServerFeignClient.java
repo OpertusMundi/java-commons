@@ -120,11 +120,13 @@ public interface BpmServerFeignClient {
 
     /**
      * Queries for the number of process instances that fulfill given parameters.
+     * 
+     * @param deploymentId Filter by the deployment the id belongs to
      *
      * @see https://docs.camunda.org/manual/latest/reference/rest/process-instance/get-query-count/
      */
     @PostMapping(value = "/process-instance/count", consumes = "application/json")
-    CountResultDto countProcessInstances();
+    CountResultDto countProcessInstances(@RequestParam(required = false) String deploymentId);
 
     /**
      * Queries for process instances that fulfill given parameters. Parameters

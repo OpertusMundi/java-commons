@@ -2,12 +2,13 @@ package eu.opertusmundi.common.model.workflow;
 
 public enum EnumProcessInstanceResource {
     ACCOUNT,
-    CONSUMER,
-    PROVIDER,
-    DRAFT,
     ASSET,
-    USER_SERVICE,
+    CONSUMER,
+    DRAFT,
+    ORDER,
     PAYIN,
     PAYOUT,
+    PROVIDER,
+    USER_SERVICE,
     ;
 }
