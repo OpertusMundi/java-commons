@@ -59,7 +59,7 @@ public class DefaultPayOutService implements PayOutService {
                 return payOut.getProcessInstance();
             }
 
-            ProcessInstanceDto instance = this.bpmEngine.findInstance(payOut.toString());
+            ProcessInstanceDto instance = this.bpmEngine.findInstance(payOutKey.toString());
 
             if (instance == null) {
                 final Map<String, VariableValueDto> variables = BpmInstanceVariablesBuilder.builder()
