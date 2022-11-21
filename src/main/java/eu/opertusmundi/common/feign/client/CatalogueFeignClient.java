@@ -63,7 +63,16 @@ public interface CatalogueFeignClient {
      * @return An instance of {@link CatalogueResponse}
      */
     @GetMapping(value = "/api/published/related_items/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> findAllRelated(@RequestParam("id") String id);
+    ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> findAllRelatedAssets(@PathVariable("id") String id);
+
+    /**
+     * Find collections of assets (bundles) that the asset belongs to
+     *
+     * @param id The asset identifier
+     * @return An instance of {@link CatalogueResponse}
+     */
+    @GetMapping(value = "/api/published/available_as/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> findAllRelatedBundles(@PathVariable("id") String id);
 
     /**
      * Get an item by id

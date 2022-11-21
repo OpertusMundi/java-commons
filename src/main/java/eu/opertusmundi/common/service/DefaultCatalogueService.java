@@ -210,12 +210,23 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     @Override
-    public CatalogueResult<CatalogueItemDto> findAllRelated(RequestContext ctx, String id) throws CatalogueServiceException {
+    public CatalogueResult<CatalogueItemDto> findAllRelatedAssets(RequestContext ctx, String id) throws CatalogueServiceException {
+        return this.findRelated(ctx, id, false);
+    }
+
+    @Override
+    public CatalogueResult<CatalogueItemDto> findAllRelatedBundles(RequestContext ctx, String id) throws CatalogueServiceException {
+        return this.findRelated(ctx, id, true);
+    }
+
+    private CatalogueResult<CatalogueItemDto> findRelated(RequestContext ctx, String id, boolean bundles) {
         Assert.isTrue(!StringUtils.isBlank(id), "Expected a non-null identifier");
 
         try {
             // Catalogue service data page index is 1-based
-            final ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> e = this.catalogueClient.getObject().findAllRelated(id);
+            final ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> e = bundles
+                ? this.catalogueClient.getObject().findAllRelatedBundles(id)
+                : this.catalogueClient.getObject().findAllRelatedAssets(id);
 
             final CatalogueResponse<List<CatalogueFeature>> catalogueResponse = e.getBody();
 

@@ -47,7 +47,17 @@ public interface CatalogueService {
      * @return
      * @throws CatalogueServiceException
      */
-    CatalogueResult<CatalogueItemDto> findAllRelated(RequestContext ctx, String id) throws CatalogueServiceException;
+    CatalogueResult<CatalogueItemDto> findAllRelatedAssets(RequestContext ctx, String id) throws CatalogueServiceException;
+
+    /**
+     * Find all related collections of assets (bundles)
+     *
+     * @param ctx
+     * @param id
+     * @return
+     * @throws CatalogueServiceException
+     */
+    CatalogueResult<CatalogueItemDto> findAllRelatedBundles(RequestContext ctx, String id) throws CatalogueServiceException;
 
     /**
      * Search for published items using Elasticsearch
