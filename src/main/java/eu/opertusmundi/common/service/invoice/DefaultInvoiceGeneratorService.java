@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -39,9 +40,11 @@ import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.OrderItemEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
+import eu.opertusmundi.common.domain.PayInSubscriptionBillingItemEntity;
 import eu.opertusmundi.common.model.account.CustomerDto;
 import eu.opertusmundi.common.model.account.CustomerIndividualDto;
 import eu.opertusmundi.common.model.payment.EnumInvoiceType;
+import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
 import eu.opertusmundi.common.repository.PayInRepository;
 import lombok.Getter;
 import lombok.NonNull;
@@ -273,7 +276,7 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
             case ORDER_INVOICE ->
                 this.renderOrderInvoice(payinKey);
             case SUBSCRIPTION_BILLING_INVOICE ->
-                throw new UnsupportedOperationException("Subscription billing invoice rendering is not implemented");
+                this.renderSubscriptionPayoffInvoice(payinKey);
         };
 
         return result;
@@ -297,6 +300,23 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
         return path.toString();
     }
 
+    private String renderSubscriptionPayoffInvoice(UUID payinKey) throws IOException {
+        final PayInEntity                              payin = payInRepository.findOneEntityByKey(payinKey).orElse(null);
+        final List<PayInSubscriptionBillingItemEntity> items = payin.getItems().stream()
+            .filter(i -> i.getType() == EnumPaymentItemType.SUBSCRIPTION_BILLING)
+            .map(i -> (PayInSubscriptionBillingItemEntity) i)
+            .toList();
+        
+        Assert.isTrue(items.size() > 0, "Expected at least one subscription billing item");
+
+        final AccountEntity consumer             = payin.getConsumer();
+        final CustomerDto   customerDto          = consumer.getProfile().getConsumer().toDto();
+        final Integer       userId               = consumer.getId();
+        final String        payinReferenceNumber = payin.getReferenceNumber();
+
+        throw new UnsupportedOperationException("Subscription billing invoice rendering is not implemented");
+    }
+    
     private byte[] renderPDF(PayInEntity payin, OrderEntity orderEntity, CustomerDto customerDto) throws IOException {
         final OrderItemEntity       orderItemEntity      = orderEntity.getItems().get(0);
         final String                orderReferenceNumber = orderEntity.getReferenceNumber();
