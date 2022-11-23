@@ -1402,14 +1402,14 @@ public class DefaultElasticSearchService implements ElasticSearchService {
                 .field("id.keyword")
                 .order(BucketOrder.aggregation(field, false))
                 .subAggregation(sumOfView);
-            termsAggregationBuilder.size(maxBucketCount);
+            termsAggregationBuilder.size(limit);
 
             // Define index
             final SearchRequest       searchRequest       = new SearchRequest(this.configuration.getAssetViewAggregateIndex().getName());
             final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
 
             // Aggregate
-            searchSourceBuilder.query(filterQuery).aggregation(termsAggregationBuilder).size(limit);
+            searchSourceBuilder.query(filterQuery).aggregation(termsAggregationBuilder).size(0);
             searchRequest.source(searchSourceBuilder);
 
             final SearchResponse	searchResponse 	= client.search(searchRequest, RequestOptions.DEFAULT);
@@ -1551,7 +1551,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
             final Request request = new Request(method.toString(), endpoint);
             request.setJsonEntity(entity);
 
-            final Response         response       = client.performRequest(request);
+            final Response   response       = client.performRequest(request);
             final HttpStatus responseStatus = HttpStatus.valueOf(response.getStatusLine().getStatusCode());
             final boolean    success        = responseStatus.is2xxSuccessful();
             if (!success) {
