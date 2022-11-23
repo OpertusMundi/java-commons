@@ -105,6 +105,7 @@ import eu.opertusmundi.common.model.contract.provider.ProviderUploadContractComm
 import eu.opertusmundi.common.model.file.FilePathCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.file.FileSystemMessageCode;
+import eu.opertusmundi.common.model.geodata.EnumGeodataWorkspace;
 import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestResultResponseDto;
@@ -121,8 +122,10 @@ import eu.opertusmundi.common.repository.AssetResourceRepository;
 import eu.opertusmundi.common.repository.DraftLockRepository;
 import eu.opertusmundi.common.repository.DraftRepository;
 import eu.opertusmundi.common.repository.contract.ProviderTemplateContractHistoryRepository;
+import eu.opertusmundi.common.service.ogc.UserGeodataConfigurationResolver;
 import eu.opertusmundi.common.util.BpmEngineUtils;
 import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
+import eu.opertusmundi.common.util.StreamUtils;
 import feign.FeignException;
 
 // TODO: Scheduler job for deleting orphaned resources
@@ -185,6 +188,12 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Autowired
     private PersistentIdentifierService pidService;
+    
+    @Autowired
+    private UserGeodataConfigurationResolver geodataConfigurationResolver;
+    
+    @Autowired
+    private IngestService ingestService;
 
     @Autowired
     private BpmEngineUtils bpmEngine;
@@ -996,7 +1005,16 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                     String.format("Invalid draft status found. [status=%s]", draft.getStatus())
                 );
             }
+            // Cleanup ingested service data
+            if (!CollectionUtils.isEmpty(draft.getCommand().getIngestionInfo())) {
+                final var userGeodataConfig = geodataConfigurationResolver.resolveFromUserKey(publisherKey, EnumGeodataWorkspace.PUBLIC);
+                final var shard             = userGeodataConfig.getShard();
+                final var workspace         = userGeodataConfig.getEffectiveWorkspace();
 
+                StreamUtils.from(draft.getCommand().getIngestionInfo()).forEach(d -> {
+                    this.ingestService.removeDataAndLayer(shard, workspace, d.getTableName());
+                });
+            }
             // Cleanup files
             this.draftFileManager.resetDraft(publisherKey, draftKey);
             // Update data
@@ -1695,7 +1713,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         // Delete all file resources that are not present in the draft record.
         // Only file resources with a null parent are checked
         final List<String> rids = resources.stream()
-            .filter(r -> r.getType() == EnumResourceType.FILE && r.getParentId() == null)
+            .filter(r -> r.getType() == EnumResourceType.FILE)
             .map(r -> r.getId())
             .collect(Collectors.toList());
 
