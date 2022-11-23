@@ -62,7 +62,7 @@ public interface CatalogueFeignClient {
      * @param id The asset identifier whose related assets are requested
      * @return An instance of {@link CatalogueResponse}
      */
-    @GetMapping(value = "/api/published/related_items/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/api/published/related_data_source_items/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> findAllRelatedAssets(@PathVariable("id") String id);
 
     /**
