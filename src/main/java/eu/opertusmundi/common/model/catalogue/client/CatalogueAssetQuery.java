@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.model.catalogue.client;
 
+import java.util.Set;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import eu.opertusmundi.common.model.EnumSortingOrder;
@@ -11,16 +13,18 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 @Schema(description = "Catalogue query")
 @NoArgsConstructor
 @Getter
 @Setter
+@ToString(callSuper = true)
 public class CatalogueAssetQuery extends PageRequestDto {
 
     @Builder
     public CatalogueAssetQuery(
-        int page, int size, String publisherKey, String query, EnumCatalogueSortField orderBy, EnumSortingOrder order
+        int page, int size, String publisherKey, Set<EnumAssetType> type, String query, EnumCatalogueSortField orderBy, EnumSortingOrder order
     ) {
         super(page, size);
 
@@ -28,6 +32,7 @@ public class CatalogueAssetQuery extends PageRequestDto {
         this.orderBy      = orderBy;
         this.publisherKey = publisherKey;
         this.query        = query;
+        this.type         = type;
     }
 
     @JsonIgnore
@@ -36,6 +41,9 @@ public class CatalogueAssetQuery extends PageRequestDto {
 
     @Schema(description = "Query string used for full text search operation")
     private String query;
+
+    @Schema(description = "Filter assets by type")
+    private Set<EnumAssetType> type;
 
     @Schema(description = "Sorting order", defaultValue = "ASC")
     private EnumSortingOrder order;
@@ -48,15 +56,7 @@ public class CatalogueAssetQuery extends PageRequestDto {
     }
 
     public CatalogueAssetQuery next() {
-        return new CatalogueAssetQuery(this.page + 1, this.size, publisherKey, query, orderBy, order);
-    }
-
-    @Override
-    public String toString() {
-        return String.format(
-            "Catalogue asset query [page: %d, size %d, publisherKey: %s, query: %s, order: %s, orderBy: %s]",
-            page, size, publisherKey, query, order, orderBy
-        );
+        return new CatalogueAssetQuery(this.page + 1, this.size, publisherKey, type, query, orderBy, order);
     }
 
 }

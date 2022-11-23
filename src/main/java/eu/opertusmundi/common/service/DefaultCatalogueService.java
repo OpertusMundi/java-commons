@@ -21,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -137,8 +138,10 @@ public class DefaultCatalogueService implements CatalogueService {
 
         try {
             // Catalogue service data page index is 1-based
-            final ResponseEntity<CatalogueResponse<CatalogueCollection>> e = this.catalogueClient.getObject().findAll(
-                request.getQuery(), request.getPublisherKey(), request.getPage() + 1, request.getSize(), request.getOrderBy(), request.getOrder()
+            final var type = CollectionUtils.isEmpty(request.getType()) ? null : StringUtils.join(request.getType(), ",");
+            final var e    = this.catalogueClient.getObject().findAll(
+                request.getQuery(), request.getPublisherKey(), type,
+                request.getPage() + 1, request.getSize(), request.getOrderBy(), request.getOrder()
             );
 
             final CatalogueResponse<CatalogueCollection> catalogueResponse = e.getBody();
@@ -169,8 +172,10 @@ public class DefaultCatalogueService implements CatalogueService {
 
         try {
             // Catalogue service data page index is 1-based
-            final ResponseEntity<CatalogueResponse<CatalogueCollection>> e = this.catalogueClient.getObject().findAll(
-                request.getQuery(), request.getPublisherKey(), request.getPage() + 1, request.getSize(), request.getOrderBy(), request.getOrder()
+            final var type = CollectionUtils.isEmpty(request.getType()) ? null : StringUtils.join(request.getType(), ",");
+            final var e    = this.catalogueClient.getObject().findAll(
+                request.getQuery(), request.getPublisherKey(), type,
+                request.getPage() + 1, request.getSize(), request.getOrderBy(), request.getOrder()
             );
 
             final CatalogueResponse<CatalogueCollection> catalogueResponse = e.getBody();

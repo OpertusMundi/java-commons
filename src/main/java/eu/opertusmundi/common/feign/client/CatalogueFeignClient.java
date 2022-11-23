@@ -41,6 +41,7 @@ public interface CatalogueFeignClient {
     ResponseEntity<CatalogueResponse<CatalogueCollection>> findAll(
         @RequestParam("q") String query,
         @RequestParam(name = "publisher_id", required = false) String publisher,
+        @RequestParam(name = "type", required = false) String type,
         @RequestParam("page") int pageIndex,
         @RequestParam("per_page") int pageSize,
         @RequestParam("orderBy") EnumCatalogueSortField orderBy,
