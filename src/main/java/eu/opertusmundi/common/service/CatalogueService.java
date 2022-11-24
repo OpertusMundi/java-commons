@@ -72,11 +72,26 @@ public interface CatalogueService {
     /**
      * Find all items with the specified identifiers
      *
+     * <p>
+     * See {@link #findAllById(String[], boolean)}
+     *
      * @param id
      * @return
      * @throws CatalogueServiceException
      */
-    List<CatalogueItemDetailsDto> findAllById(String[] id) throws CatalogueServiceException;
+    default List<CatalogueItemDetailsDto> findAllById(String[] id) throws CatalogueServiceException {
+        return this.findAllById(id, true);
+    }
+
+    /**
+     * Find all items with the specified identifiers
+     *
+     * @param id
+     * @param throwOnMissing
+     * @return
+     * @throws CatalogueServiceException
+     */
+    List<CatalogueItemDetailsDto> findAllById(String[] id, boolean throwOnMissing) throws CatalogueServiceException;
 
     /**
      * Search for draft items

@@ -316,7 +316,7 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     @Override
-    public List<CatalogueItemDetailsDto> findAllById(String[] id) throws CatalogueServiceException {
+    public List<CatalogueItemDetailsDto> findAllById(String[] id, boolean throwOnMissing) throws CatalogueServiceException {
         Assert.notEmpty(id, "Expected a non-empty array of identifiers");
 
         try {
@@ -329,7 +329,7 @@ public class DefaultCatalogueService implements CatalogueService {
                 throw CatalogueServiceException.fromService(catalogueResponse.getMessage());
             }
 
-            if (catalogueResponse.getResult().size() != id.length) {
+            if (throwOnMissing && catalogueResponse.getResult().size() != id.length) {
                 throw new CatalogueServiceException(
                     CatalogueServiceMessageCode.ITEM_NOT_FOUND,
                     String.format("Expected [%d] items. Found [%s]", id.length, catalogueResponse.getResult().size())
