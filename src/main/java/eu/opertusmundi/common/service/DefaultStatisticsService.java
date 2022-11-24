@@ -1,7 +1,7 @@
 package eu.opertusmundi.common.service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -50,8 +50,11 @@ public class DefaultStatisticsService implements StatisticsService {
 
         final Geometry          geom            = item.getGeometry();
         final EnumTopicCategory segment         = StreamUtils.from(item.getTopicCategory()).findFirst().orElse(null);
-        final ZonedDateTime     now             = ZonedDateTime.now();
-        final ZonedDateTime     publicationDate = ZonedDateTime.of(LocalDateTime.parse(item.getPublicationDate()), now.getZone());
+        final ZonedDateTime     now             = ZonedDateTime.now();       
+        final ZonedDateTime     publicationDate = ZonedDateTime.of(
+            LocalDate.parse(item.getPublicationDate()).atStartOfDay(), 
+            now.getZone()
+        );
 
         BigDecimal maxPrice = new BigDecimal(0);
         for (final EffectivePricingModelDto p : item.getEffectivePricingModels()) {
