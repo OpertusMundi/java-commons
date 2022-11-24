@@ -127,36 +127,35 @@ public class AccountProfileEntity {
         this.imageMimeType = command.getImageMimeType();
     }
 
-    /**
-     * Convert to a DTO object
-     *
-     * @return a new {@link AccountProfileDto} instance
-     */
     public AccountProfileDto toDto() {
+        return this.toDto(false);
+    }
+
+    public AccountProfileDto toDto(boolean includeHelpdeskDetails) {
         final AccountProfileDto profile = new AccountProfileDto();
 
         // Set provider data
         if (this.provider != null) {
-            final CustomerProfessionalDto p = this.provider.toDto();
+            final CustomerProfessionalDto p = this.provider.toDto(includeHelpdeskDetails);
 
             profile.getProvider().setCurrent(p);
         }
 
         if (this.providerRegistration != null && !this.getProviderRegistration().isProcessed()) {
-            final CustomerDraftProfessionalDto p = this.providerRegistration.toDto(false);
+            final CustomerDraftProfessionalDto p = this.providerRegistration.toDto(includeHelpdeskDetails);
 
             profile.getProvider().setDraft(p);
         }
 
         // Set consumer data
         if (this.consumer != null) {
-            final CustomerDto c = this.consumer.toDto();
+            final CustomerDto c = this.consumer.toDto(includeHelpdeskDetails);
 
             profile.getConsumer().setCurrent(c);
         }
 
         if (this.consumerRegistration != null) {
-            final CustomerDraftDto c = this.consumerRegistration.toDto();
+            final CustomerDraftDto c = this.consumerRegistration.toDto(includeHelpdeskDetails);
 
             profile.getConsumer().setDraft(c);
         }

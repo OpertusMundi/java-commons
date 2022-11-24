@@ -269,7 +269,6 @@ public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
         }
         p.setId(this.id);
         p.setHelpdeskErrorMessage(this.helpdeskErrorMessage);
-        p.setKey(this.key);
         p.setLegalPersonType(this.legalPersonType);
         p.setLogoImage(this.logoImage);
         p.setLogoImageMimeType(this.logoImageMimeType);
@@ -284,6 +283,7 @@ public class CustomerDraftProfessionalEntity extends CustomerDraftEntity {
         p.setWalletIdempotentKey(this.walletIdempotentKey);
 
         if (includeHelpdeskDetails) {
+            p.setKey(this.key);
             p.setWorkflowErrorDetails(workflowErrorDetails);
             p.setWorkflowErrorMessages(workflowErrorMessages);
         }

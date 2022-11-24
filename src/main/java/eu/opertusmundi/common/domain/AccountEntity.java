@@ -272,7 +272,7 @@ public class AccountEntity {
         a.setRoles(this.roles.stream().map(r -> r.getRole()).collect(Collectors.toSet()));
 
         if (this.profile != null) {
-            a.setProfile(this.profile.toDto());
+            a.setProfile(this.profile.toDto(includeHelpdeskData));
         }
         if (this.getParent() != null) {
             a.setParentId(this.parent.getId());
@@ -284,7 +284,7 @@ public class AccountEntity {
             a.setProcessInstance(this.processInstance);
             a.setType(this.type);
             if (this.getParent() != null) {
-                a.setParent(this.getParent().toDto());
+                a.setParent(this.getParent().toDto(includeHelpdeskData));
             }
         }
 

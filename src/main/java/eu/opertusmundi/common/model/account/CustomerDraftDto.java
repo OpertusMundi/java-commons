@@ -29,7 +29,6 @@ public abstract class CustomerDraftDto {
     @JsonIgnore
     protected Integer id;
 
-    @JsonIgnore
     protected UUID key;
 
     protected ZonedDateTime modifiedAt;
