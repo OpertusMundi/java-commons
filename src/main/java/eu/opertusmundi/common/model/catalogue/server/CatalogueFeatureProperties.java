@@ -39,6 +39,7 @@ public class CatalogueFeatureProperties {
         this.conformity                   = command.getConformity() != null
             ? command.getConformity().getValue()
             : EnumConformity.NOT_EVALUATED.getValue();
+        this.conformityStandard           = command.getConformityStandard();
         this.contractTemplateType         = command.getContractTemplateType();
         this.creationDate                 = command.getCreationDate();
         this.dateEnd                      = command.getDateEnd();
@@ -128,6 +129,10 @@ public class CatalogueFeatureProperties {
 
     @JsonInclude(Include.NON_EMPTY)
     private String conformity;
+
+    @JsonProperty("conformity_standard")
+    @JsonInclude(Include.NON_EMPTY)
+    private String conformityStandard;
 
     @JsonProperty("contract_template_id")
     @JsonInclude(Include.NON_NULL)

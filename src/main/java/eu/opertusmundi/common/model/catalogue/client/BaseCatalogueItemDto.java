@@ -39,6 +39,7 @@ public abstract class BaseCatalogueItemDto {
 
         this.automatedMetadata            = props.getAutomatedMetadata();
         this.conformity                   = EnumConformity.fromString(props.getConformity());
+        this.conformityStandard           = props.getConformityStandard();
         this.creationDate                 = props.getCreationDate();
         this.dateEnd                      = props.getDateEnd();
         this.dateStart                    = props.getDateStart();
@@ -100,9 +101,12 @@ public abstract class BaseCatalogueItemDto {
     public void resetAutomatedMetadata() {
         this.automatedMetadata = null;
     }
-	
+
     @Schema(description = "Degree of conformity with the implementing rules/standard of the metadata followed")
     private EnumConformity conformity;
+
+    @Schema(description = "Title of the implementing rules/standard the resource conforms to")
+    private String conformityStandard;
 
     @Schema(
         description = "A point or period of time associated with the creation event in the lifecycle of the resource",
