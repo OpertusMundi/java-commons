@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import eu.opertusmundi.common.model.asset.AssetAdditionalResourceDto;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.asset.ResourceDto;
+import eu.opertusmundi.common.model.catalogue.DeliveryMethodOptions;
 import eu.opertusmundi.common.model.catalogue.client.BaseCatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemStatistics;
@@ -47,6 +48,7 @@ public class CatalogueFeatureProperties {
         this.deliveryMethod               = command.getDeliveryMethod() != null
             ? command.getDeliveryMethod().getValue().toString()
             : null;
+        this.deliveryMethodOptions        = command.getDeliveryMethodOptions();
         this.extensions                   = command.getExtensions();
         this.format                       = command.getFormat();
         this.ingestionInfo                = command.getIngestionInfo();
@@ -161,6 +163,10 @@ public class CatalogueFeatureProperties {
     @JsonProperty("delivery_method")
     @JsonInclude(Include.NON_NULL)
     private String deliveryMethod;
+
+    @JsonProperty("delivery_method_options")
+    @JsonInclude(Include.NON_NULL)
+    private DeliveryMethodOptions deliveryMethodOptions;
 
     @JsonInclude(Include.NON_NULL)
     private Extensions extensions;

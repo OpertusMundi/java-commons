@@ -4,12 +4,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.validation.Valid;
+
 import org.locationtech.jts.geom.Geometry;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import eu.opertusmundi.common.model.catalogue.DeliveryMethodOptions;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeatureProperties;
 import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
@@ -44,6 +47,7 @@ public abstract class BaseCatalogueItemDto {
         this.dateEnd                      = props.getDateEnd();
         this.dateStart                    = props.getDateStart();
         this.deliveryMethod               = EnumDeliveryMethod.fromString(props.getDeliveryMethod());
+        this.deliveryMethodOptions        = props.getDeliveryMethodOptions();
         this.format                       = props.getFormat();
         this.ingestionInfo                = props.getIngestionInfo();
         this.language                     = props.getLanguage();
@@ -122,6 +126,10 @@ public abstract class BaseCatalogueItemDto {
 
     @Schema(description = "Channel of asset distribution")
     private EnumDeliveryMethod deliveryMethod;
+
+    @Schema(description = "Delivery method options of the item")
+    @Valid
+    private DeliveryMethodOptions deliveryMethodOptions;
 
     @Schema(description = "The file format, physical medium, or dimensions of the resource", example = "ESRI Shapefile")
     private String format;
