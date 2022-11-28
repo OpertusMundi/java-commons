@@ -59,6 +59,9 @@ public enum EnumRole {
      * Sentinel Hub {@link https://www.sentinel-hub.com/}
      */
     ROLE_SENTINEL_HUB,
+
+    // Role for API calls that use JWT authorization
+    ROLE_API,
     ;
 
     public static EnumRole fromString(String value) {
