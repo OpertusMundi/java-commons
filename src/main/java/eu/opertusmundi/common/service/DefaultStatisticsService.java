@@ -2,6 +2,7 @@ package eu.opertusmundi.common.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -50,9 +51,10 @@ public class DefaultStatisticsService implements StatisticsService {
 
         final Geometry          geom            = item.getGeometry();
         final EnumTopicCategory segment         = StreamUtils.from(item.getTopicCategory()).findFirst().orElse(null);
-        final ZonedDateTime     now             = ZonedDateTime.now();       
+        final ZonedDateTime     now             = ZonedDateTime.now();
+        final String            date            = item.getPublicationDate();
         final ZonedDateTime     publicationDate = ZonedDateTime.of(
-            LocalDate.parse(item.getPublicationDate()).atStartOfDay(), 
+            date.contains("T") ? LocalDateTime.parse(date) : LocalDate.parse(date).atStartOfDay(), 
             now.getZone()
         );
 
