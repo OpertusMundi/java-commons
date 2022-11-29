@@ -59,14 +59,13 @@ public interface AccountSubscriptionRepository extends JpaRepository<AccountSubs
     }
 
     @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey and s.key = :subscriptionKey")
-    Optional<AccountSubscriptionEntity> findOneByConsumerAndOrder(UUID userKey, UUID subscriptionKey);
+    Optional<AccountSubscriptionEntity> findOneByConsumerAndKey(UUID userKey, UUID subscriptionKey);
 
-    default Optional<AccountSubscriptionDto> findOneObjectByConsumerAndOrder(
+    default Optional<AccountSubscriptionDto> findOneObjectByConsumerAndKey(
         UUID userKey, UUID subscriptionKey, boolean includeProviderDetails
     ) {
-        return this.findOneByConsumerAndOrder(userKey, subscriptionKey)
+        return this.findOneByConsumerAndKey(userKey, subscriptionKey)
             .map(e -> e.toConsumerDto(includeProviderDetails));
-
     }
 
     @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey and s.assetId = :assetId")

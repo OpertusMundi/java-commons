@@ -137,6 +137,7 @@ public class AccountSubscriptionEntity {
         s.setId(id);
         s.setKey(key);
         s.setOrderId(order.getId());
+        s.setPricingModel(order.getItems().get(0).getPricingModel().getModel());
         s.setSegment(segment);
         s.setSource(source);
         s.setStatus(status);

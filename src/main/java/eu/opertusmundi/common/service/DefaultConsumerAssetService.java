@@ -225,7 +225,7 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
 
     @Override
     public AccountSubscriptionDto findSubscription(UUID userKey, UUID subscriptionKey) {
-       final AccountSubscriptionDto result = this.accountSubscriptionRepository.findOneObjectByConsumerAndOrder(userKey, subscriptionKey, true)
+       final AccountSubscriptionDto result = this.accountSubscriptionRepository.findOneObjectByConsumerAndKey(userKey, subscriptionKey, true)
            .orElse(null);
 
         if (result == null) {
@@ -249,7 +249,7 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
     @Transactional
     public void cancelSubscription(UUID userKey, UUID subscriptionKey) {
         final AccountSubscriptionEntity subscription = this.accountSubscriptionRepository
-            .findOneByConsumerAndOrder(userKey, subscriptionKey)
+            .findOneByConsumerAndKey(userKey, subscriptionKey)
             .orElse(null);
 
         if (subscription == null || subscription.getStatus() == EnumSubscriptionStatus.INACTIVE) {

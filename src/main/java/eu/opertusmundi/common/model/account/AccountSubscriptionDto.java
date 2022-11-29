@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import eu.opertusmundi.common.model.payment.RecurringRegistrationDto;
+import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -59,5 +60,9 @@ public abstract class AccountSubscriptionDto {
     @Schema(description = "Recurring PayIn registration")
     @JsonInclude(Include.NON_NULL)
     private RecurringRegistrationDto recurringRegistration;
+
+    @Schema(description = "Subscription pricing model")
+    @JsonInclude(Include.NON_NULL)
+    private BasePricingModelCommandDto pricingModel;
 
 }
