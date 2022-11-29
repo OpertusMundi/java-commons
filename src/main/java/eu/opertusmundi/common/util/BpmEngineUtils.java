@@ -50,7 +50,7 @@ public final class BpmEngineUtils {
     private ObjectProvider<BpmServerFeignClient> bpmClient;
 
     public List<org.camunda.bpm.engine.rest.dto.repository.DeploymentDto> getDeployments(String sortOrder, String sortBy) {
-        var result = this.bpmClient.getObject().getDeployments(sortOrder, sortBy);
+        final var result = this.bpmClient.getObject().getDeployments(sortOrder, sortBy);
 
         return result;
     }
@@ -78,7 +78,7 @@ public final class BpmEngineUtils {
     }
 
     public ProcessInstanceDto findInstance(UUID businessKey) throws ApplicationException {
-        return this.findInstance(businessKey.toString());
+        return this.findInstance(businessKey == null ? null : businessKey.toString());
     }
 
     public ProcessInstanceDto findInstance(String businessKey) throws ApplicationException {
