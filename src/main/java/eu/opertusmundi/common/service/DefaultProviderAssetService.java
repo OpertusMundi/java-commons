@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
 import org.camunda.bpm.engine.rest.dto.task.TaskDto;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.locationtech.jts.io.WKTReader;
@@ -188,10 +190,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Autowired
     private PersistentIdentifierService pidService;
-    
+
     @Autowired
     private UserGeodataConfigurationResolver geodataConfigurationResolver;
-    
+
     @Autowired
     private IngestService ingestService;
 
@@ -1032,18 +1034,40 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         feature.setId(pid);
         feature.getProperties().setPublisherId(publisherKey);
 
-        // Initialize geometry if not already set for tabular assets
-        if (draft.getType() == EnumAssetType.TABULAR && feature.getGeometry() == null) {
+        // For bundles, compute MBR union
+        if(draft.getType() == EnumAssetType.BUNDLE) {
+            final List<String> assetKeys = draft.getCommand().getResources().stream()
+                .filter(r -> r.getType() == EnumResourceType.ASSET)
+                .map(r -> r.getId())
+                .collect(Collectors.toList());
+
+            final List<CatalogueItemDetailsDto> assets = this.catalogueService
+                .findAllById(assetKeys.toArray(new String[assetKeys.size()]));
+
+            final List<Geometry> geometries = new ArrayList<>();
+            assets.stream()
+                .filter(a -> a.getGeometry() != null)
+                .map(a -> a.getGeometry())
+                .forEach(geometries::add);
+            if (!geometries.isEmpty()) {
+                final var factory            = new GeometryFactory(new PrecisionModel(), 4326);
+                final var geometryCollection = (GeometryCollection) factory.buildGeometry(geometries);
+                final var mbr                = geometryCollection.getEnvelope();
+                feature.setGeometry(mbr);
+            }
+        }
+
+        // Initialize geometry if not already set
+        if (feature.getGeometry() == null) {
             final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
-            final Geometry        geom            = geometryFactory.createPolygon(new Coordinate[] {
+            final Geometry        geometry        = geometryFactory.createPolygon(new Coordinate[]{
                 new Coordinate(-180.0,-90.0),
-                new Coordinate(180.0,-90.0),
-                new Coordinate(180.0,90.0),
-                new Coordinate(-180.0,90.0),
+                new Coordinate( 180.0,-90.0),
+                new Coordinate( 180.0, 90.0),
+                new Coordinate(-180.0, 90.0),
                 new Coordinate(-180.0,-90.0)
             });
-
-            feature.setGeometry(geom);
+            feature.setGeometry(geometry);
         }
 
         // Set contract

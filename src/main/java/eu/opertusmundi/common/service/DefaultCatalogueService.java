@@ -11,6 +11,10 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.runtime.ProcessInstanceDto;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.PrecisionModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -51,7 +55,6 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDraftDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemStatistics;
-import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumCatalogueType;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQuery;
@@ -999,8 +1002,19 @@ public class DefaultCatalogueService implements CatalogueService {
             this.statisticsService.updateAssetPublish(publishedItem);
 
             if (this.elasticSearchService != null) {
-                // For tabular assets, reset geometry
-                if (EnumAssetType.fromString(publishedFeature.getProperties().getType()) == EnumAssetType.TABULAR) {
+                final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
+                final Geometry        world           = geometryFactory.createPolygon(new Coordinate[]{
+                    new Coordinate(-180.0,-90.0),
+                    new Coordinate( 180.0,-90.0),
+                    new Coordinate( 180.0, 90.0),
+                    new Coordinate(-180.0, 90.0),
+                    new Coordinate(-180.0,-90.0)
+                });
+
+                var geometry = publishedFeature.getGeometry();
+
+                // Reset geometry if it covers the whole world
+                if (geometry != null && geometry.equalsTopo(world)) {
                     publishedFeature.setGeometry(null);
                 }
                 this.elasticSearchService.addAsset(publishedFeature);
