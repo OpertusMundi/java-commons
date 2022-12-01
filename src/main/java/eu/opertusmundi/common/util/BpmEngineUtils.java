@@ -108,7 +108,7 @@ public final class BpmEngineUtils {
     }
 
     public List<HistoricProcessInstanceDto> findHistoryInstances(UUID businessKey) throws ApplicationException {
-        return this.findHistoryInstances(businessKey.toString());
+        return this.findHistoryInstances(businessKey == null ? null : businessKey.toString());
     }
 
     public List<HistoricProcessInstanceDto> findHistoryInstances(String businessKey) throws ApplicationException {
