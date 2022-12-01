@@ -164,9 +164,10 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
 
     @Override
     public PageResultDto<AccountSubscriptionDto> findAllSubscriptions(
-            UUID userKey, EnumSpatialDataServiceType type, int pageIndex, int pageSize, EnumConsumerSubSortField orderBy, EnumSortingOrder order
+            UUID userKey, EnumSubscriptionStatus status, EnumSpatialDataServiceType type,
+            int pageIndex, int pageSize, EnumConsumerSubSortField orderBy, EnumSortingOrder order
     ) {
-        List<AccountSubscriptionDto> records = this.accountSubscriptionRepository.findAllObjectsByConsumer(userKey, false);
+        List<AccountSubscriptionDto> records = this.accountSubscriptionRepository.findAllObjectsByConsumer(userKey, status, false);
 
         if (records.isEmpty()) {
             return PageResultDto.empty(PageRequestDto.of(pageIndex, pageSize));

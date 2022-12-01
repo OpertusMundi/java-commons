@@ -223,7 +223,7 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
                 throw new PaymentException(PaymentMessageCode.ACCOUNT_NOT_FOUND, String.format("Account was not found [userKey=%s]", userKey));
             }
 
-            final var subscriptions = this.accountSubscriptionRepository.findAllEntitiesByConsumer(userKey);
+            final var subscriptions = this.accountSubscriptionRepository.findAllEntitiesByConsumer(userKey, null);
             final var stats         = this.subscriptionUseStatsService.getUseStats(userKey, year, month);
 
             for (final ServiceUseStatsDto subStats : stats) {

@@ -23,8 +23,12 @@ import eu.opertusmundi.common.model.payment.provider.ProviderAccountSubscription
 @Transactional(readOnly = true)
 public interface AccountSubscriptionRepository extends JpaRepository<AccountSubscriptionEntity, Integer> {
 
-    @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey")
-    List<AccountSubscriptionEntity> findAllEntitiesByConsumer(UUID userKey);
+    @Query("SELECT s "
+         + "FROM AccountSubscription s "
+         + "WHERE (s.consumer.key = :userKey) and "
+         + "      (s.status = :status or :status is null)"
+    )
+    List<AccountSubscriptionEntity> findAllEntitiesByConsumer(UUID userKey, EnumSubscriptionStatus status);
 
     @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey and s.status = :status")
     List<AccountSubscriptionEntity> findAllEntitiesByConsumerAndStatus(UUID userKey, EnumSubscriptionStatus status);
@@ -34,13 +38,13 @@ public interface AccountSubscriptionRepository extends JpaRepository<AccountSubs
          + "WHERE   (s.status in :status or :status is null) and "
          + "        (cast(:consumerKey as org.hibernate.type.UUIDCharType) IS NULL or s.consumer.key = :consumerKey) and "
          + "        (cast(:providerKey as org.hibernate.type.UUIDCharType) IS NULL or s.provider.key = :providerKey) "
-     )
+    )
     Page<AccountSubscriptionEntity> findAllEntitiesByConsumer(
         UUID consumerKey, UUID providerKey, Set<EnumSubscriptionStatus> status, Pageable pageable
     );
 
-    default List<AccountSubscriptionDto> findAllObjectsByConsumer(UUID userKey, boolean includeProviderDetails) {
-        return this.findAllEntitiesByConsumer(userKey).stream()
+    default List<AccountSubscriptionDto> findAllObjectsByConsumer(UUID userKey, EnumSubscriptionStatus status, boolean includeProviderDetails) {
+        return this.findAllEntitiesByConsumer(userKey, status).stream()
             .map(e -> e.toConsumerDto(includeProviderDetails))
             .collect(Collectors.toList());
     }

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,7 @@ import lombok.NoArgsConstructor;
     @Type(name = "BasicMessageCode.Validation", value = ValidationMessage.class),
 })
 @NoArgsConstructor
+@AllArgsConstructor(staticName = "of")
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Message {
 
@@ -30,7 +32,7 @@ public class Message {
 
         private final int value;
 
-        private EnumLevel(int value) {
+        EnumLevel(int value) {
             this.value = value;
         }
 

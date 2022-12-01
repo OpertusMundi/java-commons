@@ -8,6 +8,7 @@ import eu.opertusmundi.common.model.ServiceException;
 import eu.opertusmundi.common.model.account.AccountAssetDto;
 import eu.opertusmundi.common.model.account.AccountSubscriptionDto;
 import eu.opertusmundi.common.model.account.ConsumerServiceException;
+import eu.opertusmundi.common.model.account.EnumSubscriptionStatus;
 import eu.opertusmundi.common.model.asset.EnumConsumerAssetSortField;
 import eu.opertusmundi.common.model.asset.EnumConsumerSubSortField;
 import eu.opertusmundi.common.model.asset.FileResourceDto;
@@ -46,6 +47,7 @@ public interface ConsumerAssetService {
      * Search registered subscriptions
      *
      * @param userKey
+     * @param status
      * @param type
      * @param pageIndex
      * @param pageSize
@@ -55,7 +57,8 @@ public interface ConsumerAssetService {
      * @throws ConsumerServiceException if a catalogue item is not found
      */
     PageResultDto<AccountSubscriptionDto> findAllSubscriptions(
-        UUID userKey, EnumSpatialDataServiceType type, int pageIndex, int pageSize, EnumConsumerSubSortField orderBy, EnumSortingOrder order
+        UUID userKey, EnumSubscriptionStatus status, EnumSpatialDataServiceType type,
+        int pageIndex, int pageSize, EnumConsumerSubSortField orderBy, EnumSortingOrder order
     ) throws ConsumerServiceException;
 
     /**

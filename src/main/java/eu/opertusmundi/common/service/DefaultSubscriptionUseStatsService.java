@@ -24,7 +24,7 @@ public class DefaultSubscriptionUseStatsService implements SubscriptionUseStatsS
 
     @Override
     public List<ServiceUseStatsDto> getUseStats(UUID userKey, int year, int month) {
-        final List<AccountSubscriptionDto> subs = this.accountSubscriptionRepository.findAllObjectsByConsumer(userKey, false);
+        final List<AccountSubscriptionDto> subs = this.accountSubscriptionRepository.findAllObjectsByConsumer(userKey, null, false);
 
         final List<ServiceUseStatsDto> result = subs.stream()
             .map(s -> this.getUseStats(userKey, s.getKey(), year, month))
