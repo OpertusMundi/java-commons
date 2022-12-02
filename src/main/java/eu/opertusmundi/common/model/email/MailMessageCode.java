@@ -7,6 +7,7 @@ public enum MailMessageCode implements MessageCode {
     RECIPIENT_NOT_FOUND,
     TEMPLATE_NOT_FOUND,
     SEND_MAIL_FAILED,
+    SERVICE_ERROR,
     ;
 
     @Override
