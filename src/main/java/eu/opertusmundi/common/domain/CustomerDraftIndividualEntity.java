@@ -127,6 +127,7 @@ public class CustomerDraftIndividualEntity extends CustomerDraftEntity {
         c.setFirstName(this.firstName);
         c.setHelpdeskErrorMessage(this.helpdeskErrorMessage);
         c.setId(this.id);
+        c.setKey(this.key);
         c.setLastName(this.lastName);
         c.setModifiedAt(this.modifiedAt);
         c.setNationality(this.nationality);
@@ -137,7 +138,6 @@ public class CustomerDraftIndividualEntity extends CustomerDraftEntity {
         c.setWalletIdempotentKey(this.walletIdempotentKey);
 
         if (includeHelpdeskDetails) {
-            c.setKey(this.key);
             c.setWorkflowErrorDetails(workflowErrorDetails);
             c.setWorkflowErrorMessages(workflowErrorMessages);
         }
