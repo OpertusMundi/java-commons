@@ -6,6 +6,9 @@ import java.util.UUID;
 
 import javax.validation.constraints.NotBlank;
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -78,5 +81,21 @@ public class ExternalUrlFileResourceCommandDto extends ResourceCommandDto implem
         r.setUrl(url);
 
         return r;
+    }
+
+    /**
+     * Initialize the filename from the URL
+     *
+     * <p>
+     * The extension of the filename in the URL must not be empty.
+     */
+    public void setFileNameFromUrl() {
+        if (StringUtils.isBlank(fileName) && !StringUtils.isBlank(url)) {
+            final var fileName  = FilenameUtils.getName(url);
+            final var extension = FilenameUtils.getExtension(url);
+            if (!StringUtils.isBlank(extension)) {
+                this.fileName = fileName;
+            }
+        }
     }
 }
