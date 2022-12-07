@@ -29,7 +29,7 @@ public interface SettingRepository extends JpaRepository<SettingEntity, Integer>
     Optional<HelpdeskAccountEntity> findAccountById(Integer id);
 
     @Query("SELECT s FROM Setting s ORDER BY s.service, s.key")
-    List<SettingEntity> findAll(EnumService service);
+    List<SettingEntity> findAll();
 
     default List<SettingDto> findAllAsObjects() {
         return this.findAll().stream()

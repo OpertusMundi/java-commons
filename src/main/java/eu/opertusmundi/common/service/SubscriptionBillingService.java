@@ -16,6 +16,7 @@ import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.SubscriptionBillingBatchCommandDto;
 import eu.opertusmundi.common.model.payment.SubscriptionBillingBatchDto;
 import eu.opertusmundi.common.model.payment.SubscriptionBillingDto;
+import eu.opertusmundi.common.model.pricing.PerCallPricingModelCommandDto;
 
 public interface SubscriptionBillingService {
 
@@ -95,7 +96,6 @@ public interface SubscriptionBillingService {
      */
     void fail(UUID key);
 
-
     /**
      * Initialize a workflow instance to process the referenced PayIn.
      *
@@ -126,4 +126,19 @@ public interface SubscriptionBillingService {
      */
     void cancelPayoff(UUID payInKey) throws PaymentException;
 
+    /**
+     * Get the default pricing model for private OGC Services
+     * 
+     * @return
+     */
+    PerCallPricingModelCommandDto getPrivateServicePricingModel();
+
+    /**
+     * Set the default pricing model for private OGC services
+     * 
+     * @param userId
+     * @param model
+     */
+    void setPrivateServicePricingModel(int userId, PerCallPricingModelCommandDto model);    
+    
 }

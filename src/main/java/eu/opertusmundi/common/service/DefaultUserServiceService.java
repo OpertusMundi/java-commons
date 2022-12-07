@@ -1,7 +1,6 @@
 package eu.opertusmundi.common.service;
 
 import java.io.InputStream;
-import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -30,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -37,6 +37,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import eu.opertusmundi.common.domain.AssetMetadataPropertyEntity;
 import eu.opertusmundi.common.domain.RecordLockEntity;
 import eu.opertusmundi.common.domain.UserServiceEntity;
+import eu.opertusmundi.common.model.BasicMessageCode;
 import eu.opertusmundi.common.model.EnumLockResult;
 import eu.opertusmundi.common.model.EnumRecordLock;
 import eu.opertusmundi.common.model.EnumSetting;
@@ -44,7 +45,7 @@ import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.Message;
 import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.RecordLockDto;
-import eu.opertusmundi.common.model.SettingDto;
+import eu.opertusmundi.common.model.ServiceException;
 import eu.opertusmundi.common.model.asset.AssetRepositoryException;
 import eu.opertusmundi.common.model.asset.EnumMetadataPropertyType;
 import eu.opertusmundi.common.model.asset.MetadataProperty;
@@ -141,7 +142,7 @@ public class DefaultUserServiceService implements UserServiceService {
         final long                 count   = items.getTotalElements();
         final List<UserServiceDto> records = items.getContent();
 
-        items.forEach(this::injectProperties);
+        this.injectProperties(items.getContent());
 
         return PageResultDto.of(pageIndex, pageSize, records, count);
     }
@@ -163,7 +164,7 @@ public class DefaultUserServiceService implements UserServiceService {
 
         final UserServiceDto service = e != null ? e.toDto(true) : null;
         if (service != null) {
-            this.injectProperties(service);
+            this.injectProperties(List.of(service));
         }
 
         return service;
@@ -175,7 +176,7 @@ public class DefaultUserServiceService implements UserServiceService {
 
         final UserServiceDto service = e != null ? e.toDto() : null;
         if (service != null) {
-            this.injectProperties(service);
+            this.injectProperties(List.of(service));
         }
 
         return service;
@@ -554,14 +555,19 @@ public class DefaultUserServiceService implements UserServiceService {
         return Pair.of(lock == null ? EnumLockResult.NONE : EnumLockResult.EXISTS, lock);
     }
 
-    private void injectProperties(UserServiceDto service) {
-        final PerCallPricingModelCommandDto pricingModel = new PerCallPricingModelCommandDto();
-        final SettingDto                    pricePerCall = this.settingRepository.findOne(EnumSetting.USER_SERVICE_PRICE_PER_CALL);
+    private void injectProperties(List<UserServiceDto> services) {
+        try {
+            final var setting      = this.settingRepository.findOne(EnumSetting.USER_SERVICE_PRICE_PER_CALL);
+            final var pricingModel = this.objectMapper.readValue(setting.getValue(), new TypeReference<PerCallPricingModelCommandDto>() { });
 
-        pricingModel.setPrice(new BigDecimal(pricePerCall.getValue()));
+            services.forEach(s -> {
+                s.setPricingModel(pricingModel);
+                this.updateIngestionData(s);
+            });
+        } catch (final JsonProcessingException ex) {
+            throw new ServiceException(BasicMessageCode.SerializationError, "Failed to parse the pricing model for private OGC services", ex);
+        }
 
-        service.setPricingModel(pricingModel);
-        this.updateIngestionData(service);
 
     }
 

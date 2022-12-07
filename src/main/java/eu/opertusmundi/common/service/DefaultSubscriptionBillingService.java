@@ -31,7 +31,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ibm.icu.text.NumberFormat;
 
 import eu.opertusmundi.common.domain.AccountSubscriptionEntity;
@@ -42,9 +45,15 @@ import eu.opertusmundi.common.domain.PayInSubscriptionBillingItemEntity;
 import eu.opertusmundi.common.domain.SubscriptionBillingBatchEntity;
 import eu.opertusmundi.common.domain.SubscriptionBillingEntity;
 import eu.opertusmundi.common.feign.client.MessageServiceFeignClient;
+import eu.opertusmundi.common.model.BasicMessageCode;
+import eu.opertusmundi.common.model.EnumService;
+import eu.opertusmundi.common.model.EnumSetting;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.EnumView;
 import eu.opertusmundi.common.model.PageResultDto;
+import eu.opertusmundi.common.model.ServiceException;
+import eu.opertusmundi.common.model.SettingUpdateCommandDto;
+import eu.opertusmundi.common.model.SettingUpdateDto;
 import eu.opertusmundi.common.model.account.EnumSubscriptionBillingSortField;
 import eu.opertusmundi.common.model.account.EnumSubscriptionBillingStatus;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
@@ -63,6 +72,7 @@ import eu.opertusmundi.common.model.payment.SubscriptionBillingDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskSubscriptionBillingDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
+import eu.opertusmundi.common.model.pricing.PerCallPricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.QuotationDto;
 import eu.opertusmundi.common.model.pricing.QuotationException;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
@@ -70,6 +80,8 @@ import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.AccountSubscriptionRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
+import eu.opertusmundi.common.repository.SettingHistoryRepository;
+import eu.opertusmundi.common.repository.SettingRepository;
 import eu.opertusmundi.common.repository.SubscriptionBillingBatchRepository;
 import eu.opertusmundi.common.repository.SubscriptionBillingRepository;
 import eu.opertusmundi.common.service.messaging.NotificationMessageHelper;
@@ -105,10 +117,13 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
     private final AccountSubscriptionRepository             accountSubscriptionRepository;
     private final BpmEngineUtils                            bpmEngine;
     private final CatalogueService                          catalogueService;
+    private final ObjectMapper                              objectMapper;
     private final ObjectProvider<MessageServiceFeignClient> messageClient;
     private final NotificationMessageHelper                 notificationMessageBuilder;
     private final PayInRepository                           payInRepository;
     private final QuotationService                          quotationService;
+    private final SettingRepository                         settingRepository;
+    private final SettingHistoryRepository                  settingHistoryRepository;
     private final SubscriptionBillingBatchRepository        subscriptionBillingBatchRepository;
     private final SubscriptionBillingRepository             subscriptionBillingRepository;
     private final SubscriptionUseStatsService               subscriptionUseStatsService;
@@ -119,10 +134,13 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
         AccountSubscriptionRepository               accountSubscriptionRepository,
         BpmEngineUtils                              bpmEngine,
         CatalogueService                            catalogueService,
+        ObjectMapper                                objectMapper,
         ObjectProvider<MessageServiceFeignClient>   messageClient,
         NotificationMessageHelper                   notificationMessageBuilder,
         PayInRepository                             payInRepository,
         QuotationService                            quotationService,
+        SettingRepository                           settingRepository,
+        SettingHistoryRepository                    settingHistoryRepository,
         SubscriptionBillingBatchRepository          subscriptionBillingBatchRepository,
         SubscriptionBillingRepository               subscriptionBillingRepository,
         SubscriptionUseStatsService                 subscriptionUseStatsService
@@ -133,8 +151,11 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
         this.catalogueService                   = catalogueService;
         this.messageClient                      = messageClient;
         this.notificationMessageBuilder         = notificationMessageBuilder;
+        this.objectMapper                       = objectMapper;
         this.payInRepository                    = payInRepository;
         this.quotationService                   = quotationService;
+        this.settingRepository                  = settingRepository;
+        this.settingHistoryRepository           = settingHistoryRepository;
         this.subscriptionBillingBatchRepository = subscriptionBillingBatchRepository;
         this.subscriptionBillingRepository      = subscriptionBillingRepository;
         this.subscriptionUseStatsService        = subscriptionUseStatsService;
@@ -643,6 +664,38 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
             .build();
 
         messageClient.getObject().sendNotification(notification);
+    }
+
+    @Override
+    public PerCallPricingModelCommandDto getPrivateServicePricingModel() {
+        try {
+            var setting = this.settingRepository.findOne(EnumSetting.USER_SERVICE_PRICE_PER_CALL);
+            if (setting == null || StringUtils.isBlank(setting.getValue())) {
+                return null;
+            }
+            var pricingModel = this.objectMapper.readValue(setting.getValue(), new TypeReference<PerCallPricingModelCommandDto>() { });
+
+            return pricingModel;
+        } catch (JacksonException ex) {
+            throw new ServiceException(BasicMessageCode.SerializationError, "Failed to parse the pricing model for private OGC services", ex);
+        }
+    }
+
+    @Transactional
+    @Override
+    public void setPrivateServicePricingModel(int userId, PerCallPricingModelCommandDto model) {
+        try {
+            var setting = this.settingRepository.findOne(EnumSetting.USER_SERVICE_PRICE_PER_CALL);
+            this.settingHistoryRepository.create(setting);
+
+            var value   = this.objectMapper.writeValueAsString(model);
+            var update  = SettingUpdateDto.of(EnumSetting.USER_SERVICE_PRICE_PER_CALL.getKey(), EnumService.ADMIN_GATEWAY, value);
+            var command = SettingUpdateCommandDto.of(userId, List.of(update));
+            this.settingRepository.update(command);
+        } catch (JacksonException ex) {
+            throw new ServiceException(BasicMessageCode.SerializationError, "Failed to serialize the pricing model for private OGC services",
+                    ex);
+        }
     }
 
 }
