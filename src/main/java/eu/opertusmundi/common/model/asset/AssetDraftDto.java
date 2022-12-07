@@ -11,6 +11,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import eu.opertusmundi.common.model.Message;
 import eu.opertusmundi.common.model.RecordLockDto;
 import eu.opertusmundi.common.model.account.ProviderDto;
+import eu.opertusmundi.common.model.account.SimpleAccountDto;
+import eu.opertusmundi.common.model.account.helpdesk.SimpleHelpdeskAccountDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
@@ -62,8 +64,14 @@ public class AssetDraftDto {
     @Schema(description = "Draft status")
     private EnumProviderAssetDraftStatus status;
 
+    @JsonInclude(Include.NON_NULL)
+    private SimpleHelpdeskAccountDto helpdeskReviewAccount;
+
     @Schema(description = "Rejection reason if the draft has been rejected by a HelpDesk user")
     private String helpdeskRejectionReason;
+
+    @JsonInclude(Include.NON_NULL)
+    private SimpleAccountDto providerReviewAccount;
 
     @Schema(description = "Rejection reason if the draft has been rejected by the provider")
     private String providerRejectionReason;
@@ -108,6 +116,9 @@ public class AssetDraftDto {
     )
     @JsonInclude(Include.NON_EMPTY)
     private List<Message> workflowErrorMessages;
+
+    @JsonInclude(Include.NON_NULL)
+    private SimpleHelpdeskAccountDto helpdeskSetErrorAccount;
 
     @Schema(description = "Helpdesk error message")
     @JsonInclude(Include.NON_EMPTY)

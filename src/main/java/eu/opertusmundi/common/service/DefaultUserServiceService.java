@@ -138,7 +138,7 @@ public class DefaultUserServiceService implements UserServiceService {
             ? this.userServiceRepository.findAllByOwnerAndStatus(parentKey, status, serviceType, pageRequest)
             : this.userServiceRepository.findAllByOwnerAndParentAndStatus(ownerKey, parentKey, status, serviceType, pageRequest);
 
-        final Page<UserServiceDto> items   = entities.map(UserServiceEntity::toDto);
+        final Page<UserServiceDto> items   = entities.map(e -> e.toDto(false));
         final long                 count   = items.getTotalElements();
         final List<UserServiceDto> records = items.getContent();
 
@@ -162,7 +162,7 @@ public class DefaultUserServiceService implements UserServiceService {
             ? this.userServiceRepository.findOneByOwnerAndKey(ownerKey, serviceKey).orElse(null)
             : this.userServiceRepository.findOneByOwnerAndParentAndKey(ownerKey, parentKey, serviceKey).orElse(null);
 
-        final UserServiceDto service = e != null ? e.toDto(true) : null;
+        final UserServiceDto service = e != null ? e.toDto(false) : null;
         if (service != null) {
             this.injectProperties(List.of(service));
         }
@@ -172,13 +172,10 @@ public class DefaultUserServiceService implements UserServiceService {
 
     @Override
     public UserServiceDto findOne(UUID serviceKey) {
-        final UserServiceEntity e = this.userServiceRepository.findOneByKey(serviceKey).orElse(null);
-
-        final UserServiceDto service = e != null ? e.toDto() : null;
+        final var service = this.userServiceRepository.findOneObjectByKey(serviceKey, true);
         if (service != null) {
             this.injectProperties(List.of(service));
         }
-
         return service;
     }
 

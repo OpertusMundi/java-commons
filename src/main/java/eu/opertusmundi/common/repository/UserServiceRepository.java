@@ -21,6 +21,7 @@ import org.springframework.util.Assert;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.domain.AccountEntity;
+import eu.opertusmundi.common.domain.HelpdeskAccountEntity;
 import eu.opertusmundi.common.domain.UserServiceEntity;
 import eu.opertusmundi.common.model.Message;
 import eu.opertusmundi.common.model.asset.UserServiceMessageCode;
@@ -39,6 +40,9 @@ public interface UserServiceRepository extends JpaRepository<UserServiceEntity, 
 
     @Query("SELECT a FROM Account a WHERE a.key = :key")
     Optional<AccountEntity> findAccountByKey(UUID key);
+
+    @Query("SELECT a FROM HelpdeskAccount a WHERE a.key = :key")
+    Optional<HelpdeskAccountEntity> findHelpdeskAccountByKey(UUID key);
 
     @Query("SELECT s.id FROM UserService s WHERE s.key = :key")
     Integer getIdFromKey(UUID key);
@@ -79,6 +83,10 @@ public interface UserServiceRepository extends JpaRepository<UserServiceEntity, 
 
     @Query("SELECT s FROM UserService s WHERE s.key = :key")
     Optional<UserServiceEntity> findOneByKey(UUID key);
+
+    default UserServiceDto findOneObjectByKey(UUID key, boolean includeHelpdeskDetails) {
+        return this.findOneByKey(key).map(e -> e.toDto(true)).orElse(null);
+    }
 
     @Query("SELECT s FROM UserService s WHERE s.key = :serviceKey and s.account.key = :ownerKey")
     Optional<UserServiceEntity> findOneByOwnerAndKey(UUID ownerKey, UUID serviceKey);
@@ -126,7 +134,7 @@ public interface UserServiceRepository extends JpaRepository<UserServiceEntity, 
 
         this.saveAndFlush(service);
 
-        return service.toDto();
+        return service.toDto(false);
     }
 
     @Transactional(readOnly = false)
@@ -197,9 +205,9 @@ public interface UserServiceRepository extends JpaRepository<UserServiceEntity, 
     }
 
     @Transactional(readOnly = false)
-    default void setErrorMessage(UUID ownerKey, UUID serviceKey, String message) throws UserServiceException {
-        final UserServiceEntity service = this.findOneByOwnerAndKey(ownerKey, serviceKey).orElse(null);
-
+    default void setErrorMessage(UUID helpdeskUserKey, UUID ownerKey, UUID serviceKey, String message) throws UserServiceException {
+        final var service      = this.findOneByOwnerAndKey(ownerKey, serviceKey).orElse(null);
+        final var helpdeskUser = this.findHelpdeskAccountByKey(helpdeskUserKey).get();
         if (service == null) {
             throw new UserServiceException(UserServiceMessageCode.SERVICE_NOT_FOUND);
         }
@@ -211,8 +219,9 @@ public interface UserServiceRepository extends JpaRepository<UserServiceEntity, 
                 String.format("Invalid service status found. [status=%s]", service.getStatus())
             );
         }
-        service.setUpdatedOn(ZonedDateTime.now());
         service.setHelpdeskErrorMessage(message);
+        service.setHelpdeskSetErrorAccount(helpdeskUser);
+        service.setUpdatedOn(ZonedDateTime.now());
 
         this.saveAndFlush(service);
     }

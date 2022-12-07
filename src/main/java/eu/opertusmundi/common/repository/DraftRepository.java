@@ -22,9 +22,11 @@ import org.springframework.util.Assert;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.domain.AccountEntity;
+import eu.opertusmundi.common.domain.HelpdeskAccountEntity;
 import eu.opertusmundi.common.domain.ProviderAssetDraftEntity;
 import eu.opertusmundi.common.model.Message;
 import eu.opertusmundi.common.model.asset.AssetDraftDto;
+import eu.opertusmundi.common.model.asset.AssetDraftReviewCommandDto;
 import eu.opertusmundi.common.model.asset.AssetMessageCode;
 import eu.opertusmundi.common.model.asset.EnumProviderAssetDraftStatus;
 import eu.opertusmundi.common.model.asset.EnumResourceType;
@@ -45,7 +47,10 @@ import eu.opertusmundi.common.service.AssetDraftException;
 public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity, Integer> {
 
     @Query("SELECT a FROM Account a WHERE a.key = :key")
-    Optional<AccountEntity> findAccountByKey(@Param("key") UUID key);
+    Optional<AccountEntity> findAccountByKey(UUID key);
+
+    @Query("SELECT a FROM HelpdeskAccount a WHERE a.key = :key")
+    Optional<HelpdeskAccountEntity> findHelpdeskAccountByKey(UUID key);
 
     @Query("SELECT a FROM ProviderAssetDraft a WHERE "
            + "(a.status in :status or :status is null) and "
@@ -54,12 +59,23 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
            + "(a.serviceType in :serviceType or :serviceType is null) "
     )
     Page<ProviderAssetDraftEntity> findAllByPublisherAndStatus(
-        @Param("publisherKey") UUID publisherKey,
-        @Param("status") Set<EnumProviderAssetDraftStatus> status,
-        @Param("type") Set<EnumAssetType> type,
-        @Param("serviceType") Set<EnumSpatialDataServiceType> serviceType,
+        UUID publisherKey,
+        Set<EnumProviderAssetDraftStatus> status,
+        Set<EnumAssetType> type,
+        Set<EnumSpatialDataServiceType> serviceType,
         Pageable pageable
     );
+
+    default Page<AssetDraftDto> findAllObjectsByPublisherAndStatus(
+        UUID publisherKey,
+        Set<EnumProviderAssetDraftStatus> status,
+        Set<EnumAssetType> type,
+        Set<EnumSpatialDataServiceType> serviceType,
+        Pageable pageable
+    ) {
+        final var page = this.findAllByPublisherAndStatus(publisherKey, status, type, serviceType, pageable).map(ProviderAssetDraftEntity::toDto);
+        return page;
+    }
 
     @Query("SELECT d FROM ProviderAssetDraft d WHERE "
             + "(d.status in :status or :status is null) and "
@@ -76,6 +92,19 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
          @Param("serviceType") Set<EnumSpatialDataServiceType> serviceType,
          Pageable pageable
      );
+
+    default Page<AssetDraftDto> findAllObjectsByOwnerAndPublisherAndStatus(
+         UUID ownerKey,
+         UUID publisherKey,
+         Set<EnumProviderAssetDraftStatus> status,
+         Set<EnumAssetType> type,
+         Set<EnumSpatialDataServiceType> serviceType,
+         Pageable pageable
+    ) {
+        final var page = this.findAllByOwnerAndPublisherAndStatus(ownerKey, publisherKey, status, type, serviceType, pageable)
+            .map(ProviderAssetDraftEntity::toDto);
+        return page;
+    }
 
     @Query("SELECT a FROM ProviderAssetDraft a WHERE "
            + "(a.parentId = :parentId) and "
@@ -101,7 +130,12 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
     );
 
     @Query("SELECT a FROM ProviderAssetDraft a WHERE a.key = :key")
-    Optional<ProviderAssetDraftEntity> findOneByKey(@Param("key") UUID assetKey);
+    Optional<ProviderAssetDraftEntity> findOneByKey(UUID key);
+
+    @Query("SELECT a FROM ProviderAssetDraft a WHERE a.key = :key")
+    default AssetDraftDto findOneObjectByKey(UUID key) {
+        return this.findOneByKey(key).map(e -> e.toDto(true)).orElse(null);
+    }
 
     @Query("SELECT a.id FROM ProviderAssetDraft a WHERE a.key = :key")
     Integer getIdFromKey(UUID key);
@@ -199,7 +233,12 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         if (resetErrors) {
             draft.setWorkflowErrorDetails(null);
             draft.setWorkflowErrorMessages(null);
+
             draft.setHelpdeskErrorMessage(null);
+            draft.setHelpdeskSetErrorAccount(null);
+
+            draft.setHelpdeskReviewAccount(null);
+            draft.setProviderReviewAccount(null);
         }
 
         this.saveAndFlush(draft);
@@ -449,21 +488,23 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
     }
 
     @Transactional(readOnly = false)
-    default EnumProviderAssetDraftStatus acceptHelpDesk(UUID publisherKey, UUID draftKey) throws AssetDraftException {
-        final ProviderAssetDraftEntity     draft      = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
-        final EnumProviderAssetDraftStatus currStatus = EnumProviderAssetDraftStatus.PENDING_HELPDESK_REVIEW;
-        final EnumProviderAssetDraftStatus nextStatus = EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW;
+    default EnumProviderAssetDraftStatus acceptHelpDesk(AssetDraftReviewCommandDto command) throws AssetDraftException {
+        final var draft         = this.findOneByPublisherAndKey(command.getPublisherKey(), command.getDraftKey()).orElse(null);
+        final var helpdeskUser  = this.findHelpdeskAccountByKey(command.getReviewerKey()).get();
+        final var currentStatus = EnumProviderAssetDraftStatus.PENDING_HELPDESK_REVIEW;
+        final var nextStatus    = EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW;
 
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
-        if (draft.getStatus() != currStatus) {
+        if (draft.getStatus() != currentStatus) {
             throw new AssetDraftException(
                 AssetMessageCode.INVALID_STATE,
-                String.format("Expected status [%s]. Found [%s]", currStatus, draft.getStatus())
+                String.format("Expected status [%s]. Found [%s]", currentStatus, draft.getStatus())
             );
         }
 
+        draft.setHelpdeskReviewAccount(helpdeskUser);
         draft.setModifiedOn(ZonedDateTime.now());
         draft.setStatus(nextStatus);
 
@@ -471,77 +512,83 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
     }
 
     @Transactional(readOnly = false)
-    default EnumProviderAssetDraftStatus acceptProvider(UUID publisherKey, UUID draftKey) throws AssetDraftException {
-        final ProviderAssetDraftEntity     draft     = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
-        final EnumProviderAssetDraftStatus currStatus = EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW;
-        final EnumProviderAssetDraftStatus nextStatus = EnumProviderAssetDraftStatus.POST_PROCESSING;
+    default EnumProviderAssetDraftStatus acceptProvider(AssetDraftReviewCommandDto command) throws AssetDraftException {
+        final var draft           = this.findOneByPublisherAndKey(command.getPublisherKey(), command.getDraftKey()).orElse(null);
+        final var marketplaceUser = this.findAccountByKey(command.getReviewerKey()).get();
+        final var currentStatus   = EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW;
+        final var nextStatus      = EnumProviderAssetDraftStatus.POST_PROCESSING;
 
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
-        if (draft.getStatus() != currStatus) {
+        if (draft.getStatus() != currentStatus) {
             throw new AssetDraftException(
                 AssetMessageCode.INVALID_STATE,
-                String.format("Expected status [%s]. Found [%s]", currStatus, draft.getStatus())
+                String.format("Expected status [%s]. Found [%s]", currentStatus, draft.getStatus())
             );
         }
 
         draft.setModifiedOn(ZonedDateTime.now());
+        draft.setProviderReviewAccount(marketplaceUser);
         draft.setStatus(nextStatus);
 
         return nextStatus;
     }
 
     @Transactional(readOnly = false)
-    default EnumProviderAssetDraftStatus rejectHelpDesk(UUID publisherKey, UUID draftKey, String reason) throws AssetDraftException {
-        final ProviderAssetDraftEntity     draft     = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
-        final EnumProviderAssetDraftStatus currStatus = EnumProviderAssetDraftStatus.PENDING_HELPDESK_REVIEW;
-        final EnumProviderAssetDraftStatus nextStatus = EnumProviderAssetDraftStatus.HELPDESK_REJECTED;
+    default EnumProviderAssetDraftStatus rejectHelpDesk(AssetDraftReviewCommandDto command) throws AssetDraftException {
+        final var draft         = this.findOneByPublisherAndKey(command.getPublisherKey(), command.getDraftKey()).orElse(null);
+        final var helpdeskUser  = this.findHelpdeskAccountByKey(command.getReviewerKey()).get();
+        final var currentStatus = EnumProviderAssetDraftStatus.PENDING_HELPDESK_REVIEW;
+        final var nextStatus    = EnumProviderAssetDraftStatus.HELPDESK_REJECTED;
 
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
-        if (draft.getStatus() != currStatus) {
+        if (draft.getStatus() != currentStatus) {
             throw new AssetDraftException(
                 AssetMessageCode.INVALID_STATE,
-                String.format("Expected status [%s]. Found [%s]", currStatus, draft.getStatus())
+                String.format("Expected status [%s]. Found [%s]", currentStatus, draft.getStatus())
             );
         }
 
+        draft.setHelpdeskReviewAccount(helpdeskUser);
         draft.setModifiedOn(ZonedDateTime.now());
         draft.setStatus(nextStatus);
-        draft.setHelpdeskRejectionReason(reason);
+        draft.setHelpdeskRejectionReason(command.getReason());
 
         return nextStatus;
     }
 
     @Transactional(readOnly = false)
-    default EnumProviderAssetDraftStatus rejectProvider(UUID publisherKey, UUID draftKey, String reason) throws AssetDraftException {
-        final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
-        final EnumProviderAssetDraftStatus currStatus = EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW;
-        final EnumProviderAssetDraftStatus nextStatus = EnumProviderAssetDraftStatus.PROVIDER_REJECTED;
+    default EnumProviderAssetDraftStatus rejectProvider(AssetDraftReviewCommandDto command) throws AssetDraftException {
+        final var draft           = this.findOneByPublisherAndKey(command.getPublisherKey(), command.getDraftKey()).orElse(null);
+        final var marketplaceUser = this.findAccountByKey(command.getReviewerKey()).get();
+        final var currentStatus   = EnumProviderAssetDraftStatus.PENDING_PROVIDER_REVIEW;
+        final var nextStatus      = EnumProviderAssetDraftStatus.PROVIDER_REJECTED;
 
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
-        if (draft.getStatus() != currStatus) {
+        if (draft.getStatus() != currentStatus) {
             throw new AssetDraftException(
                 AssetMessageCode.INVALID_STATE,
-                String.format("Expected status [%s]. Found [%s]", currStatus, draft.getStatus())
+                String.format("Expected status [%s]. Found [%s]", currentStatus, draft.getStatus())
             );
         }
 
         draft.setModifiedOn(ZonedDateTime.now());
+        draft.setProviderRejectionReason(command.getReason());
+        draft.setProviderReviewAccount(marketplaceUser);
         draft.setStatus(nextStatus);
-        draft.setProviderRejectionReason(reason);
 
         return nextStatus;
     }
 
     @Transactional(readOnly = false)
-    default void setErrorMessage(UUID publisherKey, UUID draftKey, String message) throws AssetDraftException {
-        final ProviderAssetDraftEntity draft = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
-
+    default void setErrorMessage(UUID helpdeskUserKey, UUID publisherKey, UUID draftKey, String message) throws AssetDraftException {
+        final var draft        = this.findOneByPublisherAndKey(publisherKey, draftKey).orElse(null);
+        final var helpdeskUser = this.findHelpdeskAccountByKey(helpdeskUserKey).get();
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
@@ -553,6 +600,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
                 String.format("Invalid draft status found. [status=%s]", draft.getStatus())
             );
         }
+        draft.setHelpdeskSetErrorAccount(helpdeskUser);
         draft.setModifiedOn(ZonedDateTime.now());
         draft.setHelpdeskErrorMessage(message);
 

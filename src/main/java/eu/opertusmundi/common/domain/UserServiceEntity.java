@@ -8,6 +8,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -141,15 +142,17 @@ public class UserServiceEntity {
     @Type(type = "jsonb")
     private List<Message> workflowErrorMessages;
 
+    @ManyToOne(targetEntity = HelpdeskAccountEntity.class, fetch = FetchType.LAZY)
+    @JoinColumn(name = "helpdesk_set_error_account")
+    @Getter
+    @Setter
+    private HelpdeskAccountEntity helpdeskSetErrorAccount;
+
     @Column(name = "`helpdesk_error_message`")
     private String helpdeskErrorMessage;
 
     @Column(name = "`computed_geometry`")
     private boolean computedGeometry = false;
-
-    public UserServiceDto toDto() {
-        return this.toDto(false);
-    }
 
     public UserServiceDto toDto(boolean includeHelpdeskDetails) {
         final UserServiceDto a = new UserServiceDto();
@@ -169,7 +172,7 @@ public class UserServiceEntity {
         a.setId(id);
         a.setIngestData(ingestData);
         a.setKey(key);
-        a.setOwner(this.getAccount().toSimpleDto());
+        a.setOwner(getAccount().toSimpleDto());
         a.setPath(path);
         a.setServiceType(serviceType);
         a.setStatus(status);
@@ -182,6 +185,9 @@ public class UserServiceEntity {
             a.setProcessInstance(processInstance);
             a.setWorkflowErrorDetails(workflowErrorDetails);
             a.setWorkflowErrorMessages(workflowErrorMessages);
+            if (helpdeskSetErrorAccount != null) {
+                a.setHelpdeskSetErrorAccount(helpdeskSetErrorAccount.toSimpleDto());
+            }
         }
 
         return a;

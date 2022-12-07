@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import eu.opertusmundi.common.model.Message;
 import eu.opertusmundi.common.model.account.SimpleAccountDto;
+import eu.opertusmundi.common.model.account.helpdesk.SimpleHelpdeskAccountDto;
 import eu.opertusmundi.common.model.ingest.ResourceIngestionDataDto;
 import eu.opertusmundi.common.model.openapi.schema.GeometryAsJson;
 import eu.opertusmundi.common.model.openapi.schema.UserServiceEndpointTypes;
@@ -117,6 +118,9 @@ public class UserServiceDto {
     )
     @JsonInclude(Include.NON_EMPTY)
     private List<Message> workflowErrorMessages;
+
+    @JsonInclude(Include.NON_NULL)
+    private SimpleHelpdeskAccountDto helpdeskSetErrorAccount;
 
     @Schema(description = "Helpdesk error message")
     @JsonInclude(Include.NON_EMPTY)

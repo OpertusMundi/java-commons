@@ -11,12 +11,15 @@ import lombok.Setter;
 @Setter
 public class AssetDraftReviewCommandDto {
 
+    @JsonIgnore
+    private UUID reviewerKey;
+    
     /**
      * The publisher key
      *
      * If this is a vendor account (with role `ROLE_VENDOR_PROVIDER`), the
      * publisher key is the unique key of the parent account. If this is a
-     * provider account (with role `ROLE_PROVIDER`, this is the unique key of
+     * provider account (with role `ROLE_PROVIDER`), this is the unique key of
      * the authenticated user.
      */
     @JsonIgnore

@@ -179,39 +179,20 @@ public interface ProviderAssetService {
     void updateStatus(AssetDraftSetStatusCommandDto command) throws AssetDraftException;
 
     /**
-     * Accept a draft from a HelpDesk account
-     *
-     * @param publisherKey
-     * @param draftKey
-     * @throws AssetDraftException
-     */
-    void acceptHelpDesk(UUID publisherKey, UUID draftKey) throws AssetDraftException;
-
-    /**
-     * Reject a draft from a HelpDesk account
-     *
-     * @param publisherKey
-     * @param draftKey
-     * @param reason
-     * @throws AssetDraftException
-     */
-    void rejectHelpDesk(UUID publisherKey, UUID draftKey, String reason) throws AssetDraftException;
-
-    /**
-     * Accept a draft from a provider account
+     * Accept or reject a draft from a HelpDesk account
      *
      * @param command
      * @throws AssetDraftException
      */
-    void acceptProvider(AssetDraftReviewCommandDto command) throws AssetDraftException;
+    void reviewHelpDesk(AssetDraftReviewCommandDto command) throws AssetDraftException;
 
     /**
-     * Reject a draft from a provider account
+     * Accept or reject a draft from a provider account
      *
      * @param command
      * @throws AssetDraftException
      */
-    void rejectProvider(AssetDraftReviewCommandDto command) throws AssetDraftException;
+    void reviewProvider(AssetDraftReviewCommandDto command) throws AssetDraftException;
 
     /**
      * Publish draft to catalogue service

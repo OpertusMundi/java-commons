@@ -9,6 +9,7 @@ import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -130,10 +131,22 @@ public class ProviderAssetDraftEntity {
     @Setter
     private EnumProviderAssetDraftStatus status = EnumProviderAssetDraftStatus.DRAFT;
 
+    @ManyToOne(targetEntity = HelpdeskAccountEntity.class, fetch = FetchType.LAZY)
+    @JoinColumn(name = "helpdesk_review_account")
+    @Getter
+    @Setter
+    private HelpdeskAccountEntity helpdeskReviewAccount;
+
     @Column(name = "`helpdesk_rejection_reason`")
     @Getter
     @Setter
     private String helpdeskRejectionReason;
+
+    @ManyToOne(targetEntity = AccountEntity.class, fetch = FetchType.LAZY)
+    @JoinColumn(name = "provider_review_account")
+    @Getter
+    @Setter
+    private AccountEntity providerReviewAccount;
 
     @Column(name = "`provider_rejection_reason`")
     @Getter
@@ -153,6 +166,12 @@ public class ProviderAssetDraftEntity {
     @Getter
     @Setter
     private ZonedDateTime modifiedOn;
+
+    @ManyToOne(targetEntity = HelpdeskAccountEntity.class, fetch = FetchType.LAZY)
+    @JoinColumn(name = "helpdesk_set_error_account")
+    @Getter
+    @Setter
+    private HelpdeskAccountEntity helpdeskSetErrorAccount;
 
     @Column(name = "`workflow_error_details`")
     @Getter
@@ -205,9 +224,18 @@ public class ProviderAssetDraftEntity {
 
         a.setPublisher(this.account.getProvider().toProviderDto(true));
 
-        if(includeHelpdeskDetails) {
+        if (includeHelpdeskDetails) {
             a.setWorkflowErrorDetails(workflowErrorDetails);
             a.setWorkflowErrorMessages(workflowErrorMessages);
+            if (this.helpdeskReviewAccount != null) {
+                a.setHelpdeskReviewAccount(this.helpdeskReviewAccount.toSimpleDto());
+            }
+            if (this.helpdeskSetErrorAccount != null) {
+                a.setHelpdeskSetErrorAccount(this.helpdeskSetErrorAccount.toSimpleDto());
+            }
+            if (this.providerReviewAccount != null) {
+                a.setProviderReviewAccount(this.providerReviewAccount.toSimpleDto());
+            }
         }
 
         return a;
