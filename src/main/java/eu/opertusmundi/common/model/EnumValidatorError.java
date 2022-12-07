@@ -26,6 +26,7 @@ public enum EnumValidatorError {
     Size("The size of the collection is not supported"),
 
     UrlNotSecure("The URL is not secure"),
+    UrlNotAccessible("Cannot access URL"),
     ;
 
     @Getter
