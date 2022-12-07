@@ -36,7 +36,7 @@ public interface SettingHistoryRepository extends JpaRepository<SettingHistoryEn
 
     @Transactional(readOnly = false)
     default void create(SettingDto setting) throws EntityNotFoundException {
-        var updatedBy = this.findAccountById(setting.getUpdatedBy().getId()).orElse(null);
+        var updatedBy = setting.getUpdatedBy() == null ? null : this.findAccountById(setting.getUpdatedBy().getId()).orElse(null);
         var history   = new SettingHistoryEntity();
 
         history.setKey(setting.getKey());
