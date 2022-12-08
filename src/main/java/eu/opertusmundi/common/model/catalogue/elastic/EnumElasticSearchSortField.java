@@ -4,7 +4,7 @@ import lombok.Getter;
 
 public enum EnumElasticSearchSortField {
     TITLE("properties.title.keyword"),
-    REVISION_DATE("properties.revision_date"),
+    PUBLICATION_DATE("properties.publication_date"),
     SCORE("_score")
     ;
 
