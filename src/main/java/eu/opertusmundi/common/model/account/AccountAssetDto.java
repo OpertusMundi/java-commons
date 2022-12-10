@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -42,6 +42,6 @@ public class AccountAssetDto {
     private EnumAssetSource source;
 
     @Schema(description = "Catalogue item")
-    private CatalogueItemDto item;
+    private CatalogueItemDetailsDto item;
 
 }

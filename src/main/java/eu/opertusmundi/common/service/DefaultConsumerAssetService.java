@@ -37,7 +37,6 @@ import eu.opertusmundi.common.model.asset.EnumResourceType;
 import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.model.asset.ResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
-import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumAssetType;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.file.CopyToDriveCommandDto;
@@ -116,7 +115,7 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
 
         // Add catalogue items to records
         records.forEach(r -> {
-            final CatalogueItemDto item = assets.stream()
+            final CatalogueItemDetailsDto item = assets.stream()
                 .filter(a -> a.getId().equals(r.getAssetId()))
                 .findFirst()
                 .orElse(null);
@@ -178,7 +177,7 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
 
         // Add catalogue items to records
         records.forEach(r -> {
-            final CatalogueItemDto item = assets.stream()
+            final CatalogueItemDetailsDto item = assets.stream()
                 .filter(a -> a.getId().equals(r.getAssetId()))
                 .findFirst()
                 .orElse(null);

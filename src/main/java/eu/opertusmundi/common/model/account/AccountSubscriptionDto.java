@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumTopicCategory;
 import eu.opertusmundi.common.model.payment.RecurringRegistrationDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
@@ -55,7 +55,7 @@ public abstract class AccountSubscriptionDto {
 
     @Schema(description = "Catalogue item")
     @JsonInclude(Include.NON_NULL)
-    private CatalogueItemDto item;
+    private CatalogueItemDetailsDto item;
 
     @Schema(description = "Recurring PayIn registration")
     @JsonInclude(Include.NON_NULL)
