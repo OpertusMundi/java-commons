@@ -32,8 +32,16 @@ public enum EnumProviderAssetDraftStatus {
      */
     POST_PROCESSING,
     /**
+     * Asset is being published to the catalogue
+     */
+    PUBLISHING,
+    /**
      * Draft is published
      */
-    PUBLISHED
+    PUBLISHED,
+    /**
+     * Cancelled by the user
+     */
+    CANCELLED,
     ;
 }

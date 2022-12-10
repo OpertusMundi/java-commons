@@ -52,15 +52,17 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
     @Query("SELECT a FROM HelpdeskAccount a WHERE a.key = :key")
     Optional<HelpdeskAccountEntity> findHelpdeskAccountByKey(UUID key);
 
-    @Query("SELECT a FROM ProviderAssetDraft a WHERE "
-           + "(a.status in :status or :status is null) and "
-           + "(a.account.key = :publisherKey or CAST(:publisherKey as org.hibernate.type.UUIDCharType) is null) and "
-           + "(a.type in :type or :type is null) and "
-           + "(a.serviceType in :serviceType or :serviceType is null) "
+    @Query("SELECT d FROM ProviderAssetDraft d WHERE "
+           + "(d.status in :includeStatus or :includeStatus is null) and "
+           + "(not d.status in :excludeStatus or :excludeStatus is null) and "
+           + "(d.account.key = :publisherKey or CAST(:publisherKey as org.hibernate.type.UUIDCharType) is null) and "
+           + "(d.type in :type or :type is null) and "
+           + "(d.serviceType in :serviceType or :serviceType is null) "
     )
     Page<ProviderAssetDraftEntity> findAllByPublisherAndStatus(
         UUID publisherKey,
-        Set<EnumProviderAssetDraftStatus> status,
+        Set<EnumProviderAssetDraftStatus> includeStatus,
+        Set<EnumProviderAssetDraftStatus> excludeStatus,
         Set<EnumAssetType> type,
         Set<EnumSpatialDataServiceType> serviceType,
         Pageable pageable
@@ -68,41 +70,48 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
 
     default Page<AssetDraftDto> findAllObjectsByPublisherAndStatus(
         UUID publisherKey,
-        Set<EnumProviderAssetDraftStatus> status,
+        Set<EnumProviderAssetDraftStatus> includeStatus,
+        Set<EnumProviderAssetDraftStatus> excludeStatus,
         Set<EnumAssetType> type,
         Set<EnumSpatialDataServiceType> serviceType,
         Pageable pageable
     ) {
-        final var page = this.findAllByPublisherAndStatus(publisherKey, status, type, serviceType, pageable).map(ProviderAssetDraftEntity::toDto);
+        final var page = this.findAllByPublisherAndStatus(
+            publisherKey, includeStatus, excludeStatus, type, serviceType, pageable
+        ).map(ProviderAssetDraftEntity::toDto);
         return page;
     }
 
     @Query("SELECT d FROM ProviderAssetDraft d WHERE "
-            + "(d.status in :status or :status is null) and "
+            + "(d.status in :includeStatus or :includeStatus is null) and "
+            + "(not d.status in :excludeStatus or :excludeStatus is null) and "
             + "(d.vendorAccount.key = :ownerKey) and "
             + "(d.account.key = :publisherKey) and "
             + "(d.type in :type or :type is null) and "
             + "(d.serviceType in :serviceType or :serviceType is null) "
      )
      Page<ProviderAssetDraftEntity> findAllByOwnerAndPublisherAndStatus(
-         @Param("ownerKey") UUID ownerKey,
-         @Param("publisherKey") UUID publisherKey,
-         @Param("status") Set<EnumProviderAssetDraftStatus> status,
-         @Param("type") Set<EnumAssetType> type,
-         @Param("serviceType") Set<EnumSpatialDataServiceType> serviceType,
+         UUID ownerKey,
+         UUID publisherKey,
+         Set<EnumProviderAssetDraftStatus> includeStatus,
+         Set<EnumProviderAssetDraftStatus> excludeStatus,
+         Set<EnumAssetType> type,
+         Set<EnumSpatialDataServiceType> serviceType,
          Pageable pageable
      );
 
     default Page<AssetDraftDto> findAllObjectsByOwnerAndPublisherAndStatus(
          UUID ownerKey,
          UUID publisherKey,
-         Set<EnumProviderAssetDraftStatus> status,
+         Set<EnumProviderAssetDraftStatus> includeStatus,
+         Set<EnumProviderAssetDraftStatus> excludeStatus,
          Set<EnumAssetType> type,
          Set<EnumSpatialDataServiceType> serviceType,
          Pageable pageable
     ) {
-        final var page = this.findAllByOwnerAndPublisherAndStatus(ownerKey, publisherKey, status, type, serviceType, pageable)
-            .map(ProviderAssetDraftEntity::toDto);
+        final var page = this.findAllByOwnerAndPublisherAndStatus(
+            ownerKey, publisherKey, includeStatus, excludeStatus, type, serviceType, pageable
+        ).map(ProviderAssetDraftEntity::toDto);
         return page;
     }
 

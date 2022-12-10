@@ -50,7 +50,8 @@ public interface ProviderAssetService {
      *
      * @param ownerKey
      * @param publisherKey
-     * @param status
+     * @param includeStatus
+     * @param excludeStatus
      * @param type
      * @param serviceType
      * @param pageIndex
@@ -60,19 +61,28 @@ public interface ProviderAssetService {
      * @return
      */
     PageResultDto<AssetDraftDto> findAllDraft(
-        UUID ownerKey, UUID publisherKey,
-        Set<EnumProviderAssetDraftStatus> status, Set<EnumAssetType> type, Set<EnumSpatialDataServiceType> serviceType,
+        UUID ownerKey,
+        UUID publisherKey,
+        Set<EnumProviderAssetDraftStatus> includeStatus,
+        Set<EnumProviderAssetDraftStatus> excludeStatus,
+        Set<EnumAssetType> type,
+        Set<EnumSpatialDataServiceType> serviceType,
         int pageIndex, int pageSize,
         EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order
     );
 
     default PageResultDto<AssetDraftDto> findAllDraft(
-        UUID ownerKey, UUID publisherKey,
-        Set<EnumProviderAssetDraftStatus> status, Set<EnumAssetType> type, Set<EnumSpatialDataServiceType> serviceType,
+        UUID ownerKey,
+        UUID publisherKey,
+        Set<EnumProviderAssetDraftStatus> includeStatus,
+        Set<EnumProviderAssetDraftStatus> excludeStatus,
+        Set<EnumProviderAssetDraftStatus> status,
+        Set<EnumAssetType> type,
+        Set<EnumSpatialDataServiceType> serviceType,
         int pageIndex, int pageSize
     ) {
         return this.findAllDraft(
-            ownerKey, publisherKey, status, type, serviceType, pageIndex, pageSize,
+            ownerKey, publisherKey, includeStatus, excludeStatus, type, serviceType, pageIndex, pageSize,
             EnumProviderAssetDraftSortField.MODIFIED_ON, EnumSortingOrder.DESC
         );
     }
@@ -148,11 +158,6 @@ public interface ProviderAssetService {
 
     /**
      * Delete a draft
-     *
-     * The status must be one of:
-     * {@link EnumProviderAssetDraftStatus#DRAFT}
-     * {@link EnumProviderAssetDraftStatus#HELPDESK_REJECTED}
-     * {@link EnumProviderAssetDraftStatus#PROVIDER_REJECTED}
      *
      * @param ownerKey
      * @param publisherKey

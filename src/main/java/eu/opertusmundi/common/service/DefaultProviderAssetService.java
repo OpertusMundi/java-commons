@@ -113,6 +113,7 @@ import eu.opertusmundi.common.model.ingest.ServerIngestPublishResponseDto;
 import eu.opertusmundi.common.model.ingest.ServerIngestResultResponseDto;
 import eu.opertusmundi.common.model.payment.provider.ProviderAccountSubscriptionDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
+import eu.opertusmundi.common.model.workflow.EnumSignal;
 import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.AccountSubscriptionRepository;
@@ -202,16 +203,23 @@ public class DefaultProviderAssetService implements ProviderAssetService {
 
     @Override
     public PageResultDto<AssetDraftDto> findAllDraft(
-        UUID ownerKey, UUID publisherKey,
-        Set<EnumProviderAssetDraftStatus> status, Set<EnumAssetType> type, Set<EnumSpatialDataServiceType> serviceType,
+        UUID ownerKey,
+        UUID publisherKey,
+        Set<EnumProviderAssetDraftStatus> includeStatus,
+        Set<EnumProviderAssetDraftStatus> excludeStatus,
+        Set<EnumAssetType> type,
+        Set<EnumSpatialDataServiceType> serviceType,
         int pageIndex, int pageSize,
         EnumProviderAssetDraftSortField orderBy, EnumSortingOrder order
     ) {
-        final Direction   direction   = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
-        final PageRequest pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
+        final var direction     = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
+        final var pageRequest   = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
 
-        if (status != null && status.isEmpty()) {
-            status = null;
+        if (includeStatus != null && includeStatus.isEmpty()) {
+            includeStatus = null;
+        }
+        if (excludeStatus != null && excludeStatus.isEmpty()) {
+            excludeStatus = null;
         }
         if (type != null && type.isEmpty()) {
             type = null;
@@ -221,8 +229,12 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         }
 
         final Page<AssetDraftDto> items = ownerKey == null || ownerKey.equals(publisherKey)
-            ? this.draftRepository.findAllObjectsByPublisherAndStatus(publisherKey, status, type, serviceType, pageRequest)
-            : this.draftRepository.findAllObjectsByOwnerAndPublisherAndStatus(ownerKey, publisherKey, status, type, serviceType, pageRequest);
+            ? this.draftRepository.findAllObjectsByPublisherAndStatus(
+                publisherKey, includeStatus, excludeStatus, type, serviceType, pageRequest
+            )
+            : this.draftRepository.findAllObjectsByOwnerAndPublisherAndStatus(
+                ownerKey, publisherKey, includeStatus, excludeStatus, type, serviceType, pageRequest
+            );
 
         final long                count   = items.getTotalElements();
         final List<AssetDraftDto> records = items.getContent();
@@ -687,15 +699,53 @@ public class DefaultProviderAssetService implements ProviderAssetService {
     @Transactional
     public void deleteDraft(UUID ownerKey, UUID publisherKey, UUID draftKey) throws AssetDraftException {
         try {
-            this.ensureDraftAndStatus(ownerKey, publisherKey, draftKey, EnumProviderAssetDraftStatus.DRAFT);
-
+            final var draft = this.ensureDraft(ownerKey, publisherKey, draftKey);
             this.getLock(ownerKey, draftKey, true);
 
-            // Delete data in transaction before deleting files
-            this.deleteDraftData(ownerKey, publisherKey, draftKey);
+            switch (draft.getStatus()) {
+                case CANCELLED :
+                    // No action required
+                    break;
 
-            // Delete all files for the selected draft
-            this.draftFileManager.deleteAllFiles(publisherKey, draftKey);
+                case PUBLISHING:
+                case PUBLISHED :
+                    throw new AssetDraftException(
+                        AssetMessageCode.INVALID_STATE,
+                        String.format("Status not supported [status=%s]", draft.getStatus())
+                    );
+
+                case DRAFT :
+                    // Delete data in transaction before deleting files
+                    this.deleteDraftData(ownerKey, publisherKey, draftKey);
+
+                    // Delete all files for the selected draft
+                    this.draftFileManager.deleteAllFiles(publisherKey, draftKey);
+                    break;
+
+                default :
+                    // Set status to CANCELLED. This operation may cause several
+                    // task services to fail due to invalid draft status
+                    this.draftRepository.updateStatus(publisherKey, draftKey, EnumProviderAssetDraftStatus.CANCELLED);
+                    // Signal any active workflow process instance to end its
+                    // execution
+                    final var processInstance = draft.getProcessInstance();
+                    if (!StringUtils.isBlank(processInstance)) {
+                        final var instance = this.bpmEngine.findInstance(draft.getKey());
+                        if (instance != null) {
+                            try {
+                                final var variables = BpmInstanceVariablesBuilder.builder()
+                                    .variable(EnumSignal.CANCEL_PUBLISH_ASSET)
+                                    .build();
+                                this.bpmEngine.throwSignal(EnumSignal.CANCEL_PUBLISH_ASSET, processInstance, variables);
+                            } catch (final Exception ex) {
+                                logger.error(String.format("Failed to deliver signal [processInstance=%s]", processInstance), ex);
+                                throw ex;
+                            }
+                        }
+                    }
+                    break;
+            }
+
         } finally {
             this.releaseLock(ownerKey, draftKey);
         }
@@ -899,10 +949,11 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
             }
 
-            if (draft.getStatus() != EnumProviderAssetDraftStatus.POST_PROCESSING) {
+            if (draft.getStatus() != EnumProviderAssetDraftStatus.POST_PROCESSING &&
+                draft.getStatus() != EnumProviderAssetDraftStatus.PUBLISHING) {
                 throw new AssetDraftException(
                     AssetMessageCode.INVALID_STATE,
-                    String.format("Expected status to be [POST_PROCESSING]. Found [%s]", draft.getStatus())
+                    String.format("Expected status to be [POST_PROCESSING, PUBLISHING]. Found [%s]", draft.getStatus())
                 );
             }
 
@@ -1667,6 +1718,10 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             }
         }
         throw new FileSystemException(FileSystemMessageCode.FILE_IS_MISSING, "File not found");
+    }
+
+    private AssetDraftDto ensureDraft(UUID ownerKey, UUID publisherKey, UUID assetKey) throws AssetDraftException {
+        return this.ensureDraftAndStatus(ownerKey, publisherKey, assetKey, null);
     }
 
     private AssetDraftDto ensureDraftAndStatus(
