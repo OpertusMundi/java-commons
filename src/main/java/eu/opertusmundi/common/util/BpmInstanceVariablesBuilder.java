@@ -7,6 +7,8 @@ import java.util.stream.Collectors;
 
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 
+import eu.opertusmundi.common.model.workflow.EnumSignal;
+
 public class BpmInstanceVariablesBuilder {
 
     private final Map<String, VariableValueDto> variables = new HashMap<>();
@@ -36,6 +38,11 @@ public class BpmInstanceVariablesBuilder {
 
     public BpmInstanceVariablesBuilder variableAsUuid(String name, UUID value) {
         this.variable("String", name, value);
+        return this;
+    }
+
+    public BpmInstanceVariablesBuilder variable(EnumSignal signal) {
+        this.variable("String", signal.getVariableName(), signal.name());
         return this;
     }
 

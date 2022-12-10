@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
 import org.camunda.bpm.engine.rest.dto.ModificationDto;
+import org.camunda.bpm.engine.rest.dto.SignalDto;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.externaltask.SetRetriesForExternalTasksDto;
 import org.camunda.bpm.engine.rest.dto.history.HistoricActivityInstanceDto;
@@ -33,11 +34,13 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import eu.opertusmundi.common.feign.client.BpmServerFeignClient;
 import eu.opertusmundi.common.model.ApplicationException;
 import eu.opertusmundi.common.model.BasicMessageCode;
+import eu.opertusmundi.common.model.workflow.EnumSignal;
 import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import feign.FeignException;
 
@@ -272,6 +275,23 @@ public final class BpmEngineUtils {
 
     public void deleteHistoryProcessInstance(String processInstanceId) {
         this.bpmClient.getObject().deleteHistoryProcessInstance(processInstanceId);
+    }
+
+    public void throwSignal(EnumSignal name, String executionId) {
+        this.throwSignal(name, executionId, null);
+    }
+
+    public void throwSignal(EnumSignal name, String executionId, Map<String, VariableValueDto> variables) {
+        Assert.notNull(name, "Expected a non-null name");
+        Assert.hasText(executionId, "Expected a non-empty execution identifier");
+
+        final var signal = new SignalDto();
+
+        signal.setExecutionId(executionId);
+        signal.setName(name.getSignalName());
+        signal.setVariables(variables);
+
+        this.bpmClient.getObject().throwSignal(signal);
     }
 
 }

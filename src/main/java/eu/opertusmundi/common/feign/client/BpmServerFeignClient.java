@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.camunda.bpm.engine.rest.dto.CountResultDto;
 import org.camunda.bpm.engine.rest.dto.ModificationDto;
+import org.camunda.bpm.engine.rest.dto.SignalDto;
 import org.camunda.bpm.engine.rest.dto.VariableValueDto;
 import org.camunda.bpm.engine.rest.dto.externaltask.SetRetriesForExternalTasksDto;
 import org.camunda.bpm.engine.rest.dto.history.HistoricActivityInstanceDto;
@@ -120,7 +121,7 @@ public interface BpmServerFeignClient {
 
     /**
      * Queries for the number of process instances that fulfill given parameters.
-     * 
+     *
      * @param deploymentId Filter by the deployment the id belongs to
      *
      * @see https://docs.camunda.org/manual/latest/reference/rest/process-instance/get-query-count/
@@ -421,5 +422,16 @@ public interface BpmServerFeignClient {
         @PathVariable("id") String processInstanceId,
         ModificationDto modification
     );
+
+    /**
+     * Deliver a signal to the execution specified by the
+     * {@code executionId} parameter
+     *
+     * @param signal Signal to deliver
+     *
+     * @see https://docs.camunda.org/manual/latest/reference/rest/signal/post-signal/
+     */
+    @PostMapping(value = "/signal", consumes = "application/json")
+    ResponseEntity<Void> throwSignal(SignalDto signal);
 
 }
