@@ -1858,15 +1858,18 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         String urlTemplate = "";
 
         switch (status) {
-            case POST_PROCESSING :
-                urlTemplate = "/action/assets/%s/resources/%s/metadata/%s";
-                break;
             case PENDING_HELPDESK_REVIEW :
                 urlTemplate = "/action/helpdesk-drafts/%s/resources/%s/metadata/%s";
                 break;
+
+            case POST_PROCESSING :
+            case PUBLISHING :
+                urlTemplate = "/action/assets/%s/resources/%s/metadata/%s";
+                break;
+
             default :
                 throw new AssetDraftException(AssetMessageCode.INVALID_STATE, String.format(
-                    "Expected status in [POST_PROCESSING, PENDING_PROVIDER_REVIEW]. Found [%s]", status
+                    "Expected status in [PENDING_HELPDESK_REVIEW, POST_PROCESSING, PUBLISHING]. Found [%s]", status
                 ));
         }
 
