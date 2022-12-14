@@ -1,6 +1,6 @@
 package eu.opertusmundi.common.model.account;
 
-public enum EnumSubscriptionBillingStatus {
+public enum EnumPayoffStatus {
     /**
      * A billing record with 0 total price has been created
      */

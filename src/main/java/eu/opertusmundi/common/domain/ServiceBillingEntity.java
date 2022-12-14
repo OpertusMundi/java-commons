@@ -24,12 +24,13 @@ import org.hibernate.annotations.TypeDef;
 
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 
-import eu.opertusmundi.common.model.account.EnumSubscriptionBillingStatus;
+import eu.opertusmundi.common.model.account.EnumPayoffStatus;
+import eu.opertusmundi.common.model.payment.EnumBillableServiceType;
+import eu.opertusmundi.common.model.payment.ServiceBillingDto;
 import eu.opertusmundi.common.model.payment.ServiceUseStatsDto;
-import eu.opertusmundi.common.model.payment.SubscriptionBillingDto;
-import eu.opertusmundi.common.model.payment.consumer.ConsumerSubscriptionBillingDto;
-import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskSubscriptionBillingDto;
-import eu.opertusmundi.common.model.payment.provider.ProviderSubscriptionBillingDto;
+import eu.opertusmundi.common.model.payment.consumer.ConsumerServiceBillingDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskServiceBillingDto;
+import eu.opertusmundi.common.model.payment.provider.ProviderServiceBillingDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -38,20 +39,20 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity(name = "SubscriptionBilling")
-@Table(schema = "billing", name = "`subscription_billing`")
+@Entity(name = "ServiceBilling")
+@Table(schema = "billing", name = "`service_billing`")
 @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Getter
 @Setter
-public class SubscriptionBillingEntity {
+public class ServiceBillingEntity {
 
     @Id
     @Column(name = "`id`", updatable = false)
-    @SequenceGenerator(sequenceName = "billing.subscription_billing_id_seq", name = "subscription_billing_id_seq", allocationSize = 1)
-    @GeneratedValue(generator = "subscription_billing_id_seq", strategy = GenerationType.SEQUENCE)
+    @SequenceGenerator(sequenceName = "billing.service_billing_id_seq", name = "service_billing_id_seq", allocationSize = 1)
+    @GeneratedValue(generator = "service_billing_id_seq", strategy = GenerationType.SEQUENCE)
     @Setter(AccessLevel.PRIVATE)
     private Integer id;
 
@@ -63,9 +64,22 @@ public class SubscriptionBillingEntity {
     private UUID key = UUID.randomUUID();
 
     @NotNull
+    @Column(name = "`type`")
+    @Enumerated(EnumType.STRING)
+    private EnumBillableServiceType type;
+
+    @NotNull
+    @ManyToOne(targetEntity = AccountEntity.class)
+    @JoinColumn(name = "`billed_account`", nullable = false)
+    private AccountEntity billedAccount;
+    
     @ManyToOne(targetEntity = AccountSubscriptionEntity.class)
-    @JoinColumn(name = "subscription", nullable = false)
+    @JoinColumn(name = "`subscription`", nullable = false)
     private AccountSubscriptionEntity subscription;
+
+    @ManyToOne(targetEntity = UserServiceEntity.class)
+    @JoinColumn(name = "`user_service`", nullable = false)
+    private UserServiceEntity userService;
 
     @ManyToOne(targetEntity = PayInEntity.class)
     @JoinColumn(name = "payin")
@@ -132,38 +146,54 @@ public class SubscriptionBillingEntity {
     @NotNull
     @Column(name = "`status`")
     @Enumerated(EnumType.STRING)
-    private EnumSubscriptionBillingStatus status;
+    private EnumPayoffStatus status;
 
-    private void updateDto(SubscriptionBillingDto s) {
-        s.setConsumerKey(this.getSubscription().getConsumer().getKey());
+    private void updateDto(ServiceBillingDto s) {
         s.setCreatedOn(createdOn);
         s.setDueDate(dueDate);
         s.setFromDate(fromDate);
         s.setId(id);
         s.setKey(key);
         s.setPricingModel(pricingModel);
-        s.setProviderKey(subscription.getProvider().getKey());
-        s.setSubscriptionId(this.getSubscription().getId());
         s.setSkuTotalCalls(skuTotalCalls);
         s.setSkuTotalRows(skuTotalRows);
         s.setStats(stats);
         s.setStatus(status);
-        s.setSubscriptionKey(subscription.getKey());
         s.setToDate(toDate);
         s.setTotalCalls(totalCalls);
         s.setTotalPrice(totalPrice);
         s.setTotalPriceExcludingTax(totalPriceExcludingTax);
         s.setTotalRows(totalRows);
         s.setTotalTax(totalTax);
+        s.setType(type);
         s.setUpdatedOn(updatedOn);
+
+        if (this.getUserService() != null) {
+            s.setProviderKey(this.getUserService().getAccount().getKey());
+            s.setProviderParentKey(this.getUserService().getAccount().getParentKey());
+            s.setServiceKey(this.getUserService().getKey());
+            s.setUserServiceId(this.getUserService().getId());
+        }
+        if (this.getSubscription() != null) {
+            s.setConsumerKey(this.getSubscription().getConsumer().getKey());
+            s.setProviderKey(this.getSubscription().getProvider().getKey());
+            s.setProviderParentKey(this.getSubscription().getProvider().getParentKey());
+            s.setServiceKey(this.getSubscription().getKey());
+            s.setSubscriptionId(this.getSubscription().getId());
+        }
     }
 
-    public ConsumerSubscriptionBillingDto toConsumerDto(boolean includeProviderDetails) {
-        final ConsumerSubscriptionBillingDto s = new ConsumerSubscriptionBillingDto();
+    public ConsumerServiceBillingDto toConsumerDto(boolean includeDetails) {
+        final ConsumerServiceBillingDto s = new ConsumerServiceBillingDto();
         this.updateDto(s);
 
-        if (includeProviderDetails) {
-            s.setSubscription(this.subscription.toConsumerDto(includeProviderDetails));
+        if (includeDetails) {
+            if (this.subscription != null) {
+                s.setSubscription(this.subscription.toConsumerDto(includeDetails));
+            }
+            if (this.userService != null) {
+                s.setUserService(this.getUserService().toDto(false));
+            }
             if (this.payin != null) {
                 s.setPayIn(payin.toConsumerDto(false));
             }
@@ -171,12 +201,17 @@ public class SubscriptionBillingEntity {
         return s;
     }
 
-    public ProviderSubscriptionBillingDto toProviderDto(boolean includeDetails) {
-        final ProviderSubscriptionBillingDto s = new ProviderSubscriptionBillingDto();
+    public ProviderServiceBillingDto toProviderDto(boolean includeDetails) {
+        final ProviderServiceBillingDto s = new ProviderServiceBillingDto();
         this.updateDto(s);
 
         if (includeDetails) {
-            s.setSubscription(this.subscription.toProviderDto());
+            if (this.subscription != null) {
+                s.setSubscription(this.subscription.toProviderDto());
+            }
+            if (this.userService != null) {
+                s.setUserService(this.getUserService().toDto(false));
+            }
             if (this.payin != null) {
                 s.setPayIn(payin.toProviderDto(false));
             }
@@ -184,18 +219,23 @@ public class SubscriptionBillingEntity {
         return s;
     }
 
-    public HelpdeskSubscriptionBillingDto toHelpdeskDto() {
+    public HelpdeskServiceBillingDto toHelpdeskDto() {
         return this.toHelpdeskDto(false);
     }
 
-    public HelpdeskSubscriptionBillingDto toHelpdeskDto(boolean includeDetails) {
-        final HelpdeskSubscriptionBillingDto s = new HelpdeskSubscriptionBillingDto();
+    public HelpdeskServiceBillingDto toHelpdeskDto(boolean includeDetails) {
+        final HelpdeskServiceBillingDto s = new HelpdeskServiceBillingDto();
         this.updateDto(s);
 
         if (includeDetails) {
-            s.setSubscription(this.subscription.toHelpdeskDto());
+            if (this.subscription != null) {
+                s.setSubscription(this.subscription.toHelpdeskDto());
+            }
+            if (this.userService != null) {
+                s.setUserService(this.getUserService().toDto(includeDetails));
+            }
             if (this.getPayin() != null) {
-                s.setPayIn(this.getPayin().toProviderDto(false));
+                s.setPayIn(this.getPayin().toProviderDto(includeDetails));
             }
         }
         return s;

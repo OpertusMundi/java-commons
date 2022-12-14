@@ -18,21 +18,27 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Schema(description = "An object that contains information about a service usage over a specific period")
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @Getter
+@ToString
 public class ServiceUseStatsDto {
+
+    @Schema(description = "Subscriber account unique key")
+    @NotNull
+    private EnumBillableServiceType type;
 
     @Schema(description = "Subscriber account unique key")
     @NotNull
     private UUID userKey;
 
-    @Schema(description = "Asset unique PID")
+    @Schema(description = "The subscription or private OGC service unique identifier")
     @NotEmpty
-    private UUID subscriptionKey;
+    private UUID serviceKey;
 
     @Schema(description = "Number of service calls")
     @Builder.Default
@@ -65,10 +71,12 @@ public class ServiceUseStatsDto {
     public ServiceUseStatsDto shallowCopy() {
         final ServiceUseStatsDto s = new ServiceUseStatsDto();
 
-        s.userKey         = this.userKey;
-        s.subscriptionKey = this.subscriptionKey;
-        s.calls           = this.calls;
-        s.rows            = this.rows;
+        s.calls      = this.calls;
+        s.rows       = this.rows;
+        s.serviceKey = this.serviceKey;
+        s.type       = this.type;
+        s.userKey    = this.userKey;
+
         s.clientCalls.putAll(this.clientCalls);
         s.clientRows.putAll(this.clientRows);
 

@@ -47,33 +47,48 @@ public interface UserServiceRepository extends JpaRepository<UserServiceEntity, 
     @Query("SELECT s.id FROM UserService s WHERE s.key = :key")
     Integer getIdFromKey(UUID key);
 
-    @Query("SELECT s FROM UserService s WHERE "
-         + "(s.status != 'DELETED') and "
-         + "(s.status in :status or :status is null) and "
-         + "(s.serviceType in :serviceType or :serviceType is null) and "
-         + "(s.account.key = :ownerKey)"
-    )
-    Page<UserServiceEntity> findAllByOwnerAndStatus(
-        UUID ownerKey,
-        Set<EnumUserServiceStatus> status,
+    @Query("""
+        SELECT  s
+        FROM    UserService s
+                    LEFT OUTER JOIN s.account a
+                    LEFT OUTER JOIN a.parent p
+        WHERE   (cast(:ownerKey as org.hibernate.type.UUIDCharType) IS NULL or a.key = :ownerKey) and
+                (cast(:parentKey as org.hibernate.type.UUIDCharType) IS NULL or a.key = :parentKey or p.key = :parentKey) and
+                (s.status in :includeStatus or :includeStatus is null) and
+                (not s.status in :excludeStatus or :excludeStatus is null) and
+                (s.serviceType in :serviceType or :serviceType is null) and
+                (s.account.key = :ownerKey)
+    """)
+    Page<UserServiceEntity> findAll(
+        UUID ownerKey, UUID parentKey,
+        Set<EnumUserServiceStatus> includeStatus, Set<EnumUserServiceStatus> excludeStatus,
         Set<EnumUserServiceType> serviceType,
         Pageable pageable
     );
 
-    @Query("SELECT s FROM UserService s WHERE "
-         + "(s.status != 'DELETED') and "
-         + "(s.status in :status or :status is null) and "
-         + "(s.account.key = :ownerKey) and "
-         + "(s.account.parent.key = :parentKey) and "
-         + "(s.serviceType in :serviceType or :serviceType is null) "
-    )
-    Page<UserServiceEntity> findAllByOwnerAndParentAndStatus(
-        UUID ownerKey,
-        UUID parentKey,
-        Set<EnumUserServiceStatus> status,
+    default Page<UserServiceDto> findAllObjects(
+        UUID ownerKey, UUID parentKey,
+        Set<EnumUserServiceStatus> includeStatus, Set<EnumUserServiceStatus> excludeStatus,
         Set<EnumUserServiceType> serviceType,
-        Pageable pageable
-    );
+        Pageable pageable, boolean includeDetails
+    ) {
+        return this.findAll(ownerKey, parentKey, includeStatus, excludeStatus, serviceType, pageable)
+            .map(s -> s.toDto(includeDetails));
+    }
+
+    @Query("""
+        SELECT  s
+        FROM    UserService s
+                    LEFT OUTER JOIN s.account a
+                    LEFT OUTER JOIN a.parent p
+        WHERE   (p is null and a.key = :parentKey) or
+                (p.key = :parentKey)
+    """)
+    List<UserServiceEntity> findAllByParent(UUID parentKey);
+
+    default List<UserServiceDto> findAllObjectsByParent(UUID parentKey, boolean includeHelpdeskDetails) {
+        return this.findAllByParent(parentKey).stream().map(s -> s.toDto(includeHelpdeskDetails)).toList();
+    }
 
     @Query("SELECT s FROM UserService s WHERE s.account.key = :ownerKey")
     Page<UserServiceEntity> findAllByOwner(UUID ownerKey, Pageable pageable);

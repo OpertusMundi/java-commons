@@ -10,6 +10,7 @@ public enum EnumWorkflow {
     CONSUMER_PURCHASE_ASSET_WITH_PAYIN   ("consumer-purchase-asset-with-payin"      , EnumProcessInstanceResource.ORDER),
     CONSUMER_PURCHASE_ASSET_WITHOUT_PAYIN("consumer-purchase-asset-without-payin"   , EnumProcessInstanceResource.ORDER),
     CONSUMER_REGISTRATION                ("consumer-registration"                   , EnumProcessInstanceResource.CONSUMER),
+    CONSUMER_SERVICE_BILLING_PAYOFF      ("consumer-service-billing-payoff"         , EnumProcessInstanceResource.PAYIN),
     PROVIDER_PAYOUT                      ("provider-payout"                         , EnumProcessInstanceResource.PAYOUT),
     PROVIDER_PUBLISH_ASSET               ("provider-publish-asset"                  , EnumProcessInstanceResource.DRAFT),
     PROVIDER_REGISTRATION                ("provider-registration"                   , EnumProcessInstanceResource.PROVIDER),
@@ -18,8 +19,7 @@ public enum EnumWorkflow {
     PROVIDER_UPDATE_DEFAULT_CONTRACTS    ("provider-update-default-contracts"),
     PUBLISH_USER_SERVICE                 ("user-publish-service"                    , EnumProcessInstanceResource.USER_SERVICE),
     REMOVE_USER_SERVICE                  ("user-remove-service"                     , EnumProcessInstanceResource.USER_SERVICE),
-    SUBSCRIPTION_BILLING                 ("subscription-billing"),
-    SUBSCRIPTION_BILLING_CONSUMER_PAYIN  ("subscription-billing-consumer-payin"     , EnumProcessInstanceResource.PAYIN),
+    SERVICE_BILLING                      ("service-billing"),
     VENDOR_ACCOUNT_REGISTRATION          ("vendor-account-registration"             , EnumProcessInstanceResource.ACCOUNT),
 
     // System Maintenance workflows

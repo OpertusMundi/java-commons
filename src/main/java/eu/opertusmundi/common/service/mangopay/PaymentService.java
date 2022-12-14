@@ -18,7 +18,7 @@ import eu.opertusmundi.common.model.payment.CardDirectPayInCommand;
 import eu.opertusmundi.common.model.payment.CardDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationCommandDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationDto;
-import eu.opertusmundi.common.model.payment.CheckoutSubscriptionBillingCommandDto;
+import eu.opertusmundi.common.model.payment.CheckoutServiceBillingCommandDto;
 import eu.opertusmundi.common.model.payment.ClientDto;
 import eu.opertusmundi.common.model.payment.ClientWalletDto;
 import eu.opertusmundi.common.model.payment.EnumPayInItemSortField;
@@ -59,7 +59,7 @@ public interface  PaymentService {
      * @return
      * @throws PaymentException
      */
-    PayInDto preparePayInFromSubscriptionBillingRecords(CheckoutSubscriptionBillingCommandDto command) throws PaymentException;
+    PayInDto preparePayInFromServiceBillingRecords(CheckoutServiceBillingCommandDto command) throws PaymentException;
 
     /**
      * Get client registration information

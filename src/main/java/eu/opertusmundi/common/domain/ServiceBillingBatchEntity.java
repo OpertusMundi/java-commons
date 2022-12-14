@@ -22,8 +22,8 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.NaturalId;
 
-import eu.opertusmundi.common.model.payment.EnumSubscriptionBillingBatchStatus;
-import eu.opertusmundi.common.model.payment.SubscriptionBillingBatchDto;
+import eu.opertusmundi.common.model.payment.EnumServiceBillingBatchStatus;
+import eu.opertusmundi.common.model.payment.ServiceBillingBatchDto;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,19 +31,19 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity(name = "SubscriptionBillingBatch")
-@Table(schema = "billing", name = "`subscription_billing_batch`")
+@Entity(name = "ServiceBillingBatch")
+@Table(schema = "billing", name = "`service_billing_batch`")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Getter
 @Setter
-public class SubscriptionBillingBatchEntity {
+public class ServiceBillingBatchEntity {
 
     @Id
     @Column(name = "`id`", updatable = false)
-    @SequenceGenerator(sequenceName = "billing.subscription_billing_batch_id_seq", name = "subscription_billing_batch_id_seq", allocationSize = 1)
-    @GeneratedValue(generator = "subscription_billing_batch_id_seq", strategy = GenerationType.SEQUENCE)
+    @SequenceGenerator(sequenceName = "billing.service_billing_batch_id_seq", name = "service_billing_batch_id_seq", allocationSize = 1)
+    @GeneratedValue(generator = "service_billing_batch_id_seq", strategy = GenerationType.SEQUENCE)
     @Setter(AccessLevel.PRIVATE)
     private Integer id;
 
@@ -69,7 +69,7 @@ public class SubscriptionBillingBatchEntity {
     @Column(name = "`status`")
     @Enumerated(EnumType.STRING)
     @Builder.Default
-    private EnumSubscriptionBillingBatchStatus status = EnumSubscriptionBillingBatchStatus.RUNNING;
+    private EnumServiceBillingBatchStatus status = EnumServiceBillingBatchStatus.RUNNING;
 
     @NotNull
     @Column(name = "`from_date`")
@@ -106,8 +106,8 @@ public class SubscriptionBillingBatchEntity {
         return !StringUtils.isBlank(this.processInstance);
     }
 
-    public SubscriptionBillingBatchDto toDto() {
-        final SubscriptionBillingBatchDto s = new SubscriptionBillingBatchDto();
+    public ServiceBillingBatchDto toDto() {
+        final ServiceBillingBatchDto s = new ServiceBillingBatchDto();
 
         s.setCreatedBy(this.createdBy.toSimpleDto());
         s.setCreatedOn(createdOn);

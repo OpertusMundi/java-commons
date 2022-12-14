@@ -20,14 +20,14 @@ import lombok.Setter;
 )
 @JsonSubTypes({
     @Type(name = "ORDER", value = ConsumerOrderPayInItemDto.class),
-    @Type(name = "SUBSCRIPTION_BILLING", value = ConsumerSubscriptionBillingPayInItemDto.class),
+    @Type(name = "SUBSCRIPTION_BILLING", value = ConsumerServiceBillingPayInItemDto.class),
 })
 @Schema(
     description = "Consumer PayIn item",
     required = true,
     discriminatorMapping = {
         @DiscriminatorMapping(value = "ORDER", schema = ConsumerOrderPayInItemDto.class),
-        @DiscriminatorMapping(value = "SUBSCRIPTION_BILLING", schema = ConsumerSubscriptionBillingPayInItemDto.class)
+        @DiscriminatorMapping(value = "SUBSCRIPTION_BILLING", schema = ConsumerServiceBillingPayInItemDto.class)
     }
 )
 public class ConsumerPayInItemDto extends PayInItemDto {

@@ -27,6 +27,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -120,23 +121,26 @@ public class DefaultUserServiceService implements UserServiceService {
     @Override
     public PageResultDto<UserServiceDto> findAll(
         UUID ownerKey, UUID parentKey,
-        Set<EnumUserServiceStatus> status, Set<EnumUserServiceType> serviceType,
+        Set<EnumUserServiceStatus> includeStatus, Set<EnumUserServiceStatus> excludeStatus, Set<EnumUserServiceType> serviceType,
         int pageIndex, int pageSize,
         EnumUserServiceSortField orderBy, EnumSortingOrder order
     ) {
         final Direction   direction   = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
         final PageRequest pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
 
-        if (status != null && status.isEmpty()) {
-            status = null;
+        if (CollectionUtils.isEmpty(includeStatus)) {
+            includeStatus = null;
+        }
+        if (CollectionUtils.isEmpty(excludeStatus)) {
+            excludeStatus = null;
         }
         if (serviceType != null && serviceType.isEmpty()) {
             serviceType = null;
         }
 
-        final Page<UserServiceEntity> entities = ownerKey == null || ownerKey.equals(parentKey)
-            ? this.userServiceRepository.findAllByOwnerAndStatus(parentKey, status, serviceType, pageRequest)
-            : this.userServiceRepository.findAllByOwnerAndParentAndStatus(ownerKey, parentKey, status, serviceType, pageRequest);
+        final Page<UserServiceEntity> entities = this.userServiceRepository.findAll(
+            ownerKey, parentKey, includeStatus, excludeStatus, serviceType, pageRequest
+        );
 
         final Page<UserServiceDto> items   = entities.map(e -> e.toDto(false));
         final long                 count   = items.getTotalElements();

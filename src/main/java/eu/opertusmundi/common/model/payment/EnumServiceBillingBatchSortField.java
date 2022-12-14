@@ -2,7 +2,7 @@ package eu.opertusmundi.common.model.payment;
 
 import lombok.Getter;
 
-public enum EnumSubscriptionBillingBatchSortField {
+public enum EnumServiceBillingBatchSortField {
     CREATED_ON("createdOn"),
     DUE_DATE("dueDate"),
     FROM_DATE("fromDate"),
@@ -14,12 +14,12 @@ public enum EnumSubscriptionBillingBatchSortField {
     @Getter
     private String value;
 
-    private EnumSubscriptionBillingBatchSortField(String value) {
+    private EnumServiceBillingBatchSortField(String value) {
         this.value = value;
     }
 
-    public static EnumSubscriptionBillingBatchSortField fromValue(String value) {
-        for (final EnumSubscriptionBillingBatchSortField e : EnumSubscriptionBillingBatchSortField.values()) {
+    public static EnumServiceBillingBatchSortField fromValue(String value) {
+        for (final EnumServiceBillingBatchSortField e : EnumServiceBillingBatchSortField.values()) {
             if (e.getValue().equals(value)) {
                 return e;
             }

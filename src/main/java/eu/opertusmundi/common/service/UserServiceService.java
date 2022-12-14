@@ -27,7 +27,8 @@ public interface UserServiceService {
      *
      * @param ownerKey
      * @param parentKey
-     * @param status
+     * @param includeStatus
+     * @param excludeStatus
      * @param type
      * @param serviceType
      * @param pageIndex
@@ -38,18 +39,18 @@ public interface UserServiceService {
      */
     PageResultDto<UserServiceDto> findAll(
         UUID ownerKey, UUID parentKey,
-        Set<EnumUserServiceStatus> status, Set<EnumUserServiceType> serviceType,
+        Set<EnumUserServiceStatus> includeStatus, Set<EnumUserServiceStatus> excludeStatus, Set<EnumUserServiceType> serviceType,
         int pageIndex, int pageSize,
         EnumUserServiceSortField orderBy, EnumSortingOrder order
     );
 
     default PageResultDto<UserServiceDto> findAll(
         UUID ownerKey, UUID parentKey,
-        Set<EnumUserServiceStatus> status, Set<EnumUserServiceType> serviceType,
+        Set<EnumUserServiceStatus> includeStatus, Set<EnumUserServiceStatus> excludeStatus, Set<EnumUserServiceType> serviceType,
         int pageIndex, int pageSize
     ) {
         return this.findAll(
-            ownerKey, parentKey, status, serviceType, pageIndex, pageSize,
+            ownerKey, parentKey, includeStatus, excludeStatus, serviceType, pageIndex, pageSize,
             EnumUserServiceSortField.UPDATED_ON, EnumSortingOrder.DESC
         );
     }

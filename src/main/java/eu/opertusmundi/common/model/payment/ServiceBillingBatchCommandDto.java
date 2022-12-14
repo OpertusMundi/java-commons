@@ -10,7 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class SubscriptionBillingBatchCommandDto {
+public class ServiceBillingBatchCommandDto {
 
     @JsonIgnore
     private Integer userId;

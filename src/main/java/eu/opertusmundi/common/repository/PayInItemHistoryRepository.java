@@ -15,9 +15,6 @@ import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInItemHistoryEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
-import eu.opertusmundi.common.domain.PayInSubscriptionBillingItemEntity;
-import eu.opertusmundi.common.domain.SubscriptionBillingEntity;
-import eu.opertusmundi.common.model.order.EnumOrderItemType;
 import eu.opertusmundi.common.model.payment.TransferDto;
 
 @Repository
@@ -34,18 +31,18 @@ public interface PayInItemHistoryRepository extends JpaRepository<PayInItemHisto
             return;
         }
 
-        final PayInEntity            payIn      = item.getPayin();
-        final PayInItemHistoryEntity e          = new PayInItemHistoryEntity();
-        OrderEntity                  order      = null;
-        SubscriptionBillingEntity    subBilling = null;
+        final PayInEntity            payIn          = item.getPayin();
+        final PayInItemHistoryEntity e              = new PayInItemHistoryEntity();
+        OrderEntity                  order          = null;
 
         switch (item.getType()) {
             case ORDER :
                 order = ((PayInOrderItemEntity) item).getOrder();
                 break;
-            case SUBSCRIPTION_BILLING :
-                subBilling = ((PayInSubscriptionBillingItemEntity) item).getSubscriptionBilling();
-                break;
+            case SERVICE_BILLING :
+                // Table billing.service_billing stores historical data for
+                // service billing
+                return;
         }
 
         // A PayIn item may have a reference to either an order or a
@@ -64,18 +61,6 @@ public interface PayInItemHistoryRepository extends JpaRepository<PayInItemHisto
             e.setProvider(orderItem.getProvider().getId());
             e.setProviderKey(orderItem.getProvider().getKey());
             e.setSegment(orderItem.getSegment());
-        }
-        if (subBilling != null) {
-            // TODO: Implement
-            e.setAssetId(subBilling.getSubscription().getAssetId());
-            e.setAssetType(EnumOrderItemType.SUBSCRIPTION);
-            e.setPayInCountry(subBilling.getSubscription().getConsumer().getCountry());
-            e.setPayInTotalPrice(subBilling.getTotalPrice());
-            e.setPayInTotalPriceExcludingTax(subBilling.getTotalPriceExcludingTax());
-            e.setPayInTotalTax(subBilling.getTotalTax());
-            e.setProvider(subBilling.getSubscription().getProvider().getId());
-            e.setProviderKey(subBilling.getSubscription().getProvider().getKey());
-            e.setSegment(subBilling.getSubscription().getSegment());
         }
 
         e.setConsumer(payIn.getConsumer().getId());

@@ -37,13 +37,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ibm.icu.text.NumberFormat;
 
+import eu.opertusmundi.common.domain.AccountEntity;
 import eu.opertusmundi.common.domain.AccountSubscriptionEntity;
 import eu.opertusmundi.common.domain.AccountSubscriptionSkuEntity;
 import eu.opertusmundi.common.domain.OrderItemEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
-import eu.opertusmundi.common.domain.PayInSubscriptionBillingItemEntity;
-import eu.opertusmundi.common.domain.SubscriptionBillingBatchEntity;
-import eu.opertusmundi.common.domain.SubscriptionBillingEntity;
+import eu.opertusmundi.common.domain.PayInServiceBillingItemEntity;
+import eu.opertusmundi.common.domain.ServiceBillingBatchEntity;
+import eu.opertusmundi.common.domain.ServiceBillingEntity;
+import eu.opertusmundi.common.domain.UserServiceEntity;
 import eu.opertusmundi.common.feign.client.MessageServiceFeignClient;
 import eu.opertusmundi.common.model.BasicMessageCode;
 import eu.opertusmundi.common.model.EnumService;
@@ -54,23 +56,24 @@ import eu.opertusmundi.common.model.PageResultDto;
 import eu.opertusmundi.common.model.ServiceException;
 import eu.opertusmundi.common.model.SettingUpdateCommandDto;
 import eu.opertusmundi.common.model.SettingUpdateDto;
-import eu.opertusmundi.common.model.account.EnumSubscriptionBillingSortField;
-import eu.opertusmundi.common.model.account.EnumSubscriptionBillingStatus;
+import eu.opertusmundi.common.model.account.EnumPayoffStatus;
+import eu.opertusmundi.common.model.account.EnumServiceBillingRecordSortField;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.message.EnumNotificationType;
 import eu.opertusmundi.common.model.message.server.ServerNotificationCommandDto;
 import eu.opertusmundi.common.model.payment.BillingSubscriptionDates;
+import eu.opertusmundi.common.model.payment.EnumBillableServiceType;
 import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
-import eu.opertusmundi.common.model.payment.EnumSubscriptionBillingBatchStatus;
+import eu.opertusmundi.common.model.payment.EnumServiceBillingBatchStatus;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.PaymentMessageCode;
+import eu.opertusmundi.common.model.payment.ServiceBillingDto;
 import eu.opertusmundi.common.model.payment.ServiceUseStatsDto;
-import eu.opertusmundi.common.model.payment.SubscriptionBillingBatchCommandDto;
-import eu.opertusmundi.common.model.payment.SubscriptionBillingBatchDto;
-import eu.opertusmundi.common.model.payment.SubscriptionBillingDto;
+import eu.opertusmundi.common.model.payment.ServiceBillingBatchCommandDto;
+import eu.opertusmundi.common.model.payment.ServiceBillingBatchDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
-import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskSubscriptionBillingDto;
+import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskServiceBillingDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.pricing.PerCallPricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.QuotationDto;
@@ -80,18 +83,22 @@ import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.AccountSubscriptionRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
+import eu.opertusmundi.common.repository.ServiceBillingRepository;
 import eu.opertusmundi.common.repository.SettingHistoryRepository;
 import eu.opertusmundi.common.repository.SettingRepository;
-import eu.opertusmundi.common.repository.SubscriptionBillingBatchRepository;
-import eu.opertusmundi.common.repository.SubscriptionBillingRepository;
+import eu.opertusmundi.common.repository.ServiceBillingBatchRepository;
+import eu.opertusmundi.common.repository.UserServiceRepository;
 import eu.opertusmundi.common.service.messaging.NotificationMessageHelper;
 import eu.opertusmundi.common.util.BpmEngineUtils;
 import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
 
 @Service
-public class DefaultSubscriptionBillingService implements SubscriptionBillingService {
+public class DefaultServiceBillingService implements ServiceBillingService {
 
-    private static final Logger logger = LoggerFactory.getLogger(DefaultSubscriptionBillingService.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultServiceBillingService.class);
 
     private static final String IDEMPOTENT_KEY_PREFIX        = "SUB_BILLING";
     private static final String IDEMPOTENT_KEY_SUFFIX_CHARGE = "CHARGE";
@@ -124,12 +131,13 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
     private final QuotationService                          quotationService;
     private final SettingRepository                         settingRepository;
     private final SettingHistoryRepository                  settingHistoryRepository;
-    private final SubscriptionBillingBatchRepository        subscriptionBillingBatchRepository;
-    private final SubscriptionBillingRepository             subscriptionBillingRepository;
-    private final SubscriptionUseStatsService               subscriptionUseStatsService;
+    private final ServiceBillingBatchRepository             ServiceBillingBatchRepository;
+    private final ServiceBillingRepository                  serviceBillingRepository;
+    private final ServiceUseStatsService                    serviceUseStatsService;
+    private final UserServiceRepository                     userServiceRepository;
 
     @Autowired
-    public DefaultSubscriptionBillingService(
+    public DefaultServiceBillingService(
         AccountRepository                           accountRepository,
         AccountSubscriptionRepository               accountSubscriptionRepository,
         BpmEngineUtils                              bpmEngine,
@@ -141,9 +149,10 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
         QuotationService                            quotationService,
         SettingRepository                           settingRepository,
         SettingHistoryRepository                    settingHistoryRepository,
-        SubscriptionBillingBatchRepository          subscriptionBillingBatchRepository,
-        SubscriptionBillingRepository               subscriptionBillingRepository,
-        SubscriptionUseStatsService                 subscriptionUseStatsService
+        ServiceBillingBatchRepository               ServiceBillingBatchRepository,
+        ServiceBillingRepository                    serviceBillingRepository,
+        ServiceUseStatsService                      serviceUseStatsService,
+        UserServiceRepository                       userServiceRepository
     ) {
         this.accountRepository                  = accountRepository;
         this.accountSubscriptionRepository      = accountSubscriptionRepository;
@@ -156,22 +165,24 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
         this.quotationService                   = quotationService;
         this.settingRepository                  = settingRepository;
         this.settingHistoryRepository           = settingHistoryRepository;
-        this.subscriptionBillingBatchRepository = subscriptionBillingBatchRepository;
-        this.subscriptionBillingRepository      = subscriptionBillingRepository;
-        this.subscriptionUseStatsService        = subscriptionUseStatsService;
+        this.ServiceBillingBatchRepository      = ServiceBillingBatchRepository;
+        this.serviceBillingRepository           = serviceBillingRepository;
+        this.serviceUseStatsService             = serviceUseStatsService;
+        this.userServiceRepository              = userServiceRepository;
     }
 
     @Override
-    public PageResultDto<SubscriptionBillingDto> findAllSubscriptionBillingRecords(
-        EnumView view, UUID consumerKey, UUID providerKey, UUID subscriptionKey, Set<EnumSubscriptionBillingStatus> status,
+    public PageResultDto<ServiceBillingDto> findAllServiceBillingRecords(
+        EnumView view, EnumBillableServiceType type,
+        UUID ownerKey, UUID providerKey, UUID serviceKey, Set<EnumPayoffStatus> status,
         int pageIndex, int pageSize,
-        EnumSubscriptionBillingSortField orderBy, EnumSortingOrder order
+        EnumServiceBillingRecordSortField orderBy, EnumSortingOrder order
     ) {
         final var direction   = order == EnumSortingOrder.DESC ? Direction.DESC : Direction.ASC;
         final var pageRequest = PageRequest.of(pageIndex, pageSize, Sort.by(direction, orderBy.getValue()));
 
-        final var page = this.subscriptionBillingRepository .findAllObjects(
-            view, true, consumerKey, providerKey, subscriptionKey, status, pageRequest
+        final var page = this.serviceBillingRepository.findAllObjects(
+            view, type, ownerKey, providerKey, serviceKey, status, pageRequest, false
         );
 
         final var count   = page.getTotalElements();
@@ -181,24 +192,24 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
     }
 
     @Override
-    public Optional<SubscriptionBillingDto> findOneSubscriptionBillingRecord(EnumView view, UUID key) {
-        return this.subscriptionBillingRepository.findOneObject(view, key, true);
+    public Optional<ServiceBillingDto> findOneServiceBillingRecord(EnumView view, UUID key) {
+        return this.serviceBillingRepository.findOneSubscriptionObjectByKey(view, key, true);
     }
 
     @Override
-    public Optional<SubscriptionBillingBatchDto> findOneBillingIntervalByKey(UUID key) {
-        return this.subscriptionBillingBatchRepository.findOneObjectByKey(key);
+    public Optional<ServiceBillingBatchDto> findOneBillingIntervalByKey(UUID key) {
+        return this.ServiceBillingBatchRepository.findOneObjectByKey(key);
     }
 
     @Override
     @Transactional
-    public SubscriptionBillingBatchDto start(SubscriptionBillingBatchCommandDto command) throws PaymentException {
+    public ServiceBillingBatchDto start(ServiceBillingBatchCommandDto command) throws PaymentException {
         // Compute dates
         final BillingSubscriptionDates dates = computeInterval(command);
 
-        final SubscriptionBillingBatchEntity batch = subscriptionBillingBatchRepository.findOneOrCreate(command, dates);
+        final ServiceBillingBatchEntity batch = ServiceBillingBatchRepository.findOneOrCreate(command, dates);
 
-        final var runningInstances = this.bpmEngine.findInstancesByProcessDefinitionKey(EnumWorkflow.SUBSCRIPTION_BILLING.getKey());
+        final var runningInstances = this.bpmEngine.findInstancesByProcessDefinitionKey(EnumWorkflow.SERVICE_BILLING.getKey());
         if (!runningInstances.isEmpty()) {
             throw new PaymentException(PaymentMessageCode.SUBSCRIPTION_BILLING_RUNNING, "A subscription billing task is already running");
         }
@@ -221,64 +232,55 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
                 .variableAsInteger("month", command.getMonth())
                 .build();
 
-            instance = this.bpmEngine.startProcessDefinitionByKey(EnumWorkflow.SUBSCRIPTION_BILLING, businessKey, variables);
+            instance = this.bpmEngine.startProcessDefinitionByKey(EnumWorkflow.SERVICE_BILLING, businessKey, variables);
         }
 
         batch.setProcessDefinition(instance.getDefinitionId());
         batch.setProcessInstance(instance.getId());
 
-        this.subscriptionBillingBatchRepository.saveAndFlush(batch);
+        this.ServiceBillingBatchRepository.saveAndFlush(batch);
 
         return batch.toDto();
     }
 
     @Override
     @Transactional
-    public List<SubscriptionBillingDto> create(UUID userKey, int year, int month, boolean quotationOnly) throws PaymentException {
+    public List<ServiceBillingDto> create(UUID userKey, int year, int month, boolean quotationOnly) throws PaymentException {
         try {
             final var dates  = computeInterval(year, month);
-            final var result = new ArrayList<SubscriptionBillingDto>();
+            final var result = new ArrayList<ServiceBillingDto>();
 
-            final var account = this.accountRepository.findOneByKeyObject(userKey).orElse(null);
+            final var account = this.accountRepository.findOneByKey(userKey).orElse(null);
             if (account == null) {
                 throw new PaymentException(PaymentMessageCode.ACCOUNT_NOT_FOUND, String.format("Account was not found [userKey=%s]", userKey));
             }
 
             final var subscriptions = this.accountSubscriptionRepository.findAllEntitiesByConsumer(userKey, null);
-            final var stats         = this.subscriptionUseStatsService.getUseStats(userKey, year, month);
+            final var userServices  = this.userServiceRepository.findAllByParent(userKey);
+            final var userStats     = this.serviceUseStatsService.getUseStats(userKey, year, month);
 
-            for (final ServiceUseStatsDto subStats : stats) {
-                // Ignore unused subscriptions
-                if (subStats.getCalls() == 0 && subStats.getRows() == 0) {
+            final var ctx = OperationContext.builder()
+                .account(account)
+                .userKey(userKey)
+                .month(month)
+                .year(year)
+                .subscriptions(subscriptions)
+                .userServices(userServices)
+                .useStats(userStats)
+                .dates(dates)
+                .build();
+
+            for (final ServiceUseStatsDto stats : userStats) {
+                if (stats.getCalls() == 0 && stats.getRows() == 0) {
                     continue;
                 }
 
-                // Find subscription
-                final var subscription = subscriptions.stream()
-                    .filter(s -> s.getKey().equals(subStats.getSubscriptionKey()))
-                    .findFirst()
-                    .orElse(null);
-                if (subscription == null) {
-                    throw new PaymentException(PaymentMessageCode.SUBSCRIPTION_NOT_FOUND, String.format(
-                        "Subscription was not found [subscriptionKey=%s]", subStats.getSubscriptionKey()
-                    ));
-                }
-                // Check if billing has already been computed
-                var record = this.subscriptionBillingRepository
-                    .findOneBySubscriptionAndInterval(dates.getDateFrom(), dates.getDateTo(), subscription.getId())
-                    .map(b-> b.toHelpdeskDto(true))
-                    .orElse(null);
+                final var record = switch (stats.getType()) {
+                    case SUBSCRIPTION -> this.createForSubscription(ctx, stats);
+                    case PRIVATE_OGC_SERVICE ->  this.createForUserService(ctx, stats);
+                };
 
-                if (record == null) {
-                    record = this.compute(dates, subscription, subStats, quotationOnly);
-                } else {
-                    this.validateBillingStats(record, subStats);
-                }
                 result.add(record);
-
-                if (notificationPerSubscription && record.getTotalPrice().compareTo(BigDecimal.ZERO) > 0) {
-                    this.sendChargeNotification(dates, subscription, record);
-                }
             }
 
             if(!notificationPerSubscription) {
@@ -302,13 +304,139 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
         }
     }
 
-    private HelpdeskSubscriptionBillingDto compute(
-        BillingSubscriptionDates dates, AccountSubscriptionEntity subscription, ServiceUseStatsDto subStats, boolean quotationOnly
-    ) {
-        Assert.notNull(dates, "Expected a non-null date interval");
-        Assert.notNull(subscription, "Expected a non-null subscription");
+    private HelpdeskServiceBillingDto createForSubscription(OperationContext ctx, ServiceUseStatsDto stats) throws PaymentException {
+        Assert.isTrue(stats.getType() == EnumBillableServiceType.SUBSCRIPTION, "Expected use stats to be of type SUBSCRIPTION");
+        try {
+            // Find subscription
+            final var subscription = ctx.subscriptions.stream()
+                .filter(s -> s.getKey().equals(stats.getServiceKey()))
+                .findFirst()
+                .orElse(null);
+            if (subscription == null) {
+                throw new PaymentException(PaymentMessageCode.SUBSCRIPTION_NOT_FOUND, String.format(
+                    "Subscription was not found [subscriptionKey=%s]", stats.getServiceKey()
+                ));
+            }
+            // Check if billing has already been computed
+            var record = this.serviceBillingRepository
+                .findOneBySubscriptionIdAndInterval(ctx.dates.getDateFrom(), ctx.dates.getDateTo(), subscription.getId())
+                .map(b -> b.toHelpdeskDto(true))
+                .orElse(null);
+
+            if (record == null) {
+                record = this.compute(ctx, subscription, stats);
+            } else {
+                this.validateBillingStats(record, stats);
+            }
+
+            if (notificationPerSubscription && record.getTotalPrice().compareTo(BigDecimal.ZERO) > 0) {
+                this.sendSubscriptionChargeNotification(ctx.dates, subscription, record);
+            }
+
+            return record;
+        } catch(final PaymentException ex) {
+            throw ex;
+        } catch(final QuotationException ex) {
+            throw new PaymentException(PaymentMessageCode.QUOTATION_ERROR, String.format(
+                "Failed to create quotation [userKey=%s, year=%d, month=%d]", ctx.userKey, ctx.year, ctx.month
+            ));
+        }
+    }
+
+    private HelpdeskServiceBillingDto createForUserService(OperationContext ctx, ServiceUseStatsDto stats) throws PaymentException {
+        Assert.isTrue(stats.getType() == EnumBillableServiceType.PRIVATE_OGC_SERVICE, "Expected use stats to be of type PRIVATE_OGC_SERVICE");
+        try {
+            // Find user service
+            final var service = ctx.userServices.stream()
+                .filter(s -> s.getKey().equals(stats.getServiceKey()))
+                .findFirst()
+                .orElse(null);
+            if (service == null) {
+                throw new PaymentException(PaymentMessageCode.USER_SERVICE_NOT_FOUND, String.format(
+                    "User services was not found [serviceKey=%s]", stats.getServiceKey()
+                ));
+            }
+            // Check if billing has already been computed
+            var record = this.serviceBillingRepository
+                .findOneByUserServiceIdAndInterval(ctx.dates.getDateFrom(), ctx.dates.getDateTo(), service.getId())
+                .map(b-> b.toHelpdeskDto(true))
+                .orElse(null);
+
+            if (record == null) {
+                record = this.compute(ctx, service, stats);
+            } else {
+                this.validateBillingStats(record, stats);
+            }
+
+            if (notificationPerSubscription && record.getTotalPrice().compareTo(BigDecimal.ZERO) > 0) {
+                this.sendUserServiceChargeNotification(ctx.dates, service, record);
+            }
+
+            return record;
+        } catch(final PaymentException ex) {
+            throw ex;
+        } catch(final QuotationException ex) {
+            throw new PaymentException(PaymentMessageCode.QUOTATION_ERROR, String.format(
+                "Failed to create quotation [userKey=%s, year=%d, month=%d]", ctx.userKey, ctx.year, ctx.month
+            ));
+        }
+    }
+
+    private HelpdeskServiceBillingDto compute(OperationContext ctx, UserServiceEntity service, ServiceUseStatsDto subStats) {
+        Assert.notNull(ctx, "Expected a non-null operation context");
+        Assert.notNull(ctx.dates, "Expected a non-null date interval");
+        Assert.notNull(service, "Expected a non-null service");
+        Assert.isTrue(service.getKey().equals(subStats.getServiceKey()), "Service and use statistics object key mismatch");
         Assert.notNull(subStats, "Expected a non-null use statistics object");
-        Assert.isTrue(subscription.getKey().equals(subStats.getSubscriptionKey()), "Subscription and ust statistics object key mismatch");
+        Assert.isTrue(subStats.getType() == EnumBillableServiceType.PRIVATE_OGC_SERVICE, "Invalid use stats type");
+
+        // Get pricing model. Create quotation based on the pricing
+        // model of the asset
+        final PerCallPricingModelCommandDto pricingModel = this.getPrivateServicePricingModel();
+
+        // Compute quotation (exclude prepaid rows/calls)
+        final QuotationDto quotation = this.quotationService.createQuotation(pricingModel, subStats);
+
+        // Add billing record
+        final ZonedDateTime now = ZonedDateTime.now();
+
+        ServiceBillingEntity subBilling = ServiceBillingEntity.builder()
+            .billedAccount(ctx.account)
+            .createdOn(now)
+            .dueDate(ctx.dates.getDateDue())
+            .fromDate(ctx.dates.getDateFrom())
+            .pricingModel(pricingModel)
+            .skuTotalCalls(0)
+            .skuTotalRows(0)
+            .userService(service)
+            .toDate(ctx.dates.getDateTo())
+            .totalCalls(subStats.getCalls())
+            .totalRows(subStats.getRows())
+            .totalPriceExcludingTax(quotation.getTotalPriceExcludingTax())
+            .totalPrice(quotation.getTotalPrice())
+            .totalTax(quotation.getTax())
+            .stats(subStats)
+            .status(quotation.getTotalPrice().compareTo(BigDecimal.ZERO) == 0
+                ? EnumPayoffStatus.NO_CHARGE
+                : EnumPayoffStatus.DUE)
+            .updatedOn(now)
+            .type(EnumBillableServiceType.PRIVATE_OGC_SERVICE)
+            .build();
+
+        if (!ctx.quotationOnly) {
+            subBilling = serviceBillingRepository.saveAndFlush(subBilling);
+        }
+
+        return subBilling.toHelpdeskDto(true);
+    }
+
+    private HelpdeskServiceBillingDto compute(OperationContext ctx, AccountSubscriptionEntity subscription, ServiceUseStatsDto subStats) {
+        Assert.notNull(ctx, "Expected a non-null operation context");
+        Assert.notNull(ctx.dates, "Expected a non-null date interval");
+        Assert.notNull(subscription, "Expected a non-null subscription");
+        Assert.isTrue(subscription.getKey().equals(subStats.getServiceKey()), "Subscription and use statistics object key mismatch");
+        Assert.notNull(subStats, "Expected a non-null use statistics object");
+        Assert.isTrue(subStats.getType() == EnumBillableServiceType.SUBSCRIPTION, "Invalid use stats type");
 
         final ServiceUseStatsDto initialStats = subStats.shallowCopy();
 
@@ -352,15 +480,16 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
         // Add billing record
         final ZonedDateTime now = ZonedDateTime.now();
 
-        SubscriptionBillingEntity subBilling = SubscriptionBillingEntity.builder()
+        ServiceBillingEntity subBilling = ServiceBillingEntity.builder()
+            .billedAccount(ctx.account)
             .createdOn(now)
-            .dueDate(dates.getDateDue())
-            .fromDate(dates.getDateFrom())
+            .dueDate(ctx.dates.getDateDue())
+            .fromDate(ctx.dates.getDateFrom())
             .pricingModel(pricingModel.getModel())
             .skuTotalCalls(totalSkuCalls)
             .skuTotalRows(totalSkuRows)
             .subscription(subscription)
-            .toDate(dates.getDateTo())
+            .toDate(ctx.dates.getDateTo())
             .totalCalls(totalCalls)
             .totalRows(totalRows)
             .totalPriceExcludingTax(quotation.getTotalPriceExcludingTax())
@@ -368,20 +497,21 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
             .totalTax(quotation.getTax())
             .stats(initialStats)
             .status(quotation.getTotalPrice().compareTo(BigDecimal.ZERO) == 0
-                ? EnumSubscriptionBillingStatus.NO_CHARGE
-                : EnumSubscriptionBillingStatus.DUE)
+                ? EnumPayoffStatus.NO_CHARGE
+                : EnumPayoffStatus.DUE)
+            .type(EnumBillableServiceType.SUBSCRIPTION)
             .updatedOn(now)
             .build();
 
-        if (!quotationOnly) {
-            subBilling = subscriptionBillingRepository.saveAndFlush(subBilling);
+        if (!ctx.quotationOnly) {
+            subBilling = serviceBillingRepository.saveAndFlush(subBilling);
         }
 
         return subBilling.toHelpdeskDto(true);
     }
 
-    private void sendChargeNotification(
-        BillingSubscriptionDates dates, AccountSubscriptionEntity subscription, HelpdeskSubscriptionBillingDto record
+    private void sendSubscriptionChargeNotification(
+        BillingSubscriptionDates dates, AccountSubscriptionEntity subscription, HelpdeskServiceBillingDto record
     ) {
         final String                  idempotentKey = buildIdempotentKey(subscription.getKey(), dates, IDEMPOTENT_KEY_SUFFIX_CHARGE);
         final EnumNotificationType    type          = EnumNotificationType.SUBSCRIPTION_BILLING_SINGLE_CHARGE;
@@ -409,11 +539,38 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
         messageClient.getObject().sendNotification(notification);
     }
 
+    private void sendUserServiceChargeNotification(
+        BillingSubscriptionDates dates, UserServiceEntity service, HelpdeskServiceBillingDto record
+    ) {
+        final String                  idempotentKey = buildIdempotentKey(service.getKey(), dates, IDEMPOTENT_KEY_SUFFIX_CHARGE);
+        final EnumNotificationType    type          = EnumNotificationType.USER_SERVICE_BILLING_SINGLE_CHARGE;
+
+        final Map<String, Object> variables = new HashMap<>();
+        variables.put("intervalFrom", dates.getDateFrom().format(dateFormat));
+        variables.put("intervalTo", dates.getDateTo().format(dateFormat));
+        variables.put("dueDate", dates.getDateDue().format(dateFormat));
+        variables.put("service_title", service.getTitle());
+        variables.put("service_version", service.getVersion());
+        variables.put("amount", this.formatCurrency(record.getTotalPrice()));
+
+        final JsonNode data = this.notificationMessageBuilder.collectNotificationData(type, variables);
+
+        final ServerNotificationCommandDto notification = ServerNotificationCommandDto.builder()
+            .data(data)
+            .eventType(type.toString())
+            .idempotentKey(idempotentKey)
+            .recipient(service.getAccount().getParentKey())
+            .text(this.notificationMessageBuilder.composeNotificationText(type, data))
+            .build();
+
+        messageClient.getObject().sendNotification(notification);
+    }
+
     private void sendChargeNotification(
         UUID userKey, BillingSubscriptionDates dates, BigDecimal total
     ) {
         final String               idempotentKey = buildIdempotentKey(userKey, dates, IDEMPOTENT_KEY_SUFFIX_CHARGE);
-        final EnumNotificationType type          = EnumNotificationType.SUBSCRIPTION_BILLING_TOTAL_CHARGE;
+        final EnumNotificationType type          = EnumNotificationType.SERVICE_BILLING_TOTAL_CHARGE;
         final Map<String, Object>  variables     = new HashMap<>();
 
         variables.put("intervalFrom", dates.getDateFrom().format(dateFormat));
@@ -452,24 +609,24 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
     @Override
     @Transactional
     public void complete(UUID key, int totalSubscriptions, BigDecimal totalPrice, BigDecimal totalPriceExcludingTax, BigDecimal totalTax) {
-        final SubscriptionBillingBatchEntity e = this.subscriptionBillingBatchRepository.findOneByKey(key).get();
+        final ServiceBillingBatchEntity e = this.ServiceBillingBatchRepository.findOneByKey(key).get();
 
-        e.setStatus(EnumSubscriptionBillingBatchStatus.SUCCEEDED);
+        e.setStatus(EnumServiceBillingBatchStatus.SUCCEEDED);
         e.setTotalPrice(totalPrice);
         e.setTotalPriceExcludingTax(totalPriceExcludingTax);
         e.setTotalSubscriptions(totalSubscriptions);
         e.setTotalTax(totalTax);
 
-        this.subscriptionBillingBatchRepository.saveAndFlush(e);
+        this.ServiceBillingBatchRepository.saveAndFlush(e);
     }
 
     @Override
     @Transactional
     public void fail(UUID key) {
-        this.subscriptionBillingBatchRepository.setStatus(key, EnumSubscriptionBillingBatchStatus.FAILED);
+        this.ServiceBillingBatchRepository.setStatus(key, EnumServiceBillingBatchStatus.FAILED);
     }
 
-    private BillingSubscriptionDates computeInterval(SubscriptionBillingBatchCommandDto command) {
+    private BillingSubscriptionDates computeInterval(ServiceBillingBatchCommandDto command) {
         return this.computeInterval(command.getYear(), command.getMonth());
     }
 
@@ -518,7 +675,7 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
         }
     }
 
-    private void validateBillingStats(SubscriptionBillingDto record, ServiceUseStatsDto newStats) {
+    private void validateBillingStats(ServiceBillingDto record, ServiceUseStatsDto newStats) {
         final ServiceUseStatsDto prevStats = record.getStats();
 
         if (prevStats.getCalls() != newStats.getCalls() || prevStats.getRows() != newStats.getRows()) {
@@ -538,10 +695,10 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
     @Retryable(include = {Exception.class}, maxAttempts = 3, backoff = @Backoff(delay = 2000, maxDelay = 3000))
     @Transactional
     public String startPayInWorkflow(UUID payInKey, String payInId, EnumTransactionStatus payInStatus) {
-        final EnumWorkflow workflow = EnumWorkflow.SUBSCRIPTION_BILLING_CONSUMER_PAYIN;
+        final EnumWorkflow workflow = EnumWorkflow.CONSUMER_SERVICE_BILLING_PAYOFF;
 
         try {
-            final HelpdeskPayInDto payIn = this.ensureSubscriptionBillingPayin(payInKey).toHelpdeskDto(true);
+            final HelpdeskPayInDto payIn = this.ensureServiceBillingPayin(payInKey).toHelpdeskDto(true);
             if (!StringUtils.isBlank(payIn.getProcessInstance())) {
                 // Workflow instance already exists
                 return payIn.getProcessInstance();
@@ -581,39 +738,39 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
     @Override
     @Transactional
     public void updatePayoff(UUID payInKey) {
-        this.updatePayoff(payInKey, EnumSubscriptionBillingStatus.PAID);
+        this.updatePayoff(payInKey, EnumPayoffStatus.PAID);
     }
 
     @Override
     @Transactional
     public void cancelPayoff(UUID payInKey) {
-        this.updatePayoff(payInKey, EnumSubscriptionBillingStatus.DUE);
+        this.updatePayoff(payInKey, EnumPayoffStatus.DUE);
     }
 
-    private void updatePayoff(UUID payInKey, EnumSubscriptionBillingStatus status) {
+    private void updatePayoff(UUID payInKey, EnumPayoffStatus status) {
         try {
-            final PayInEntity payIn = ensureSubscriptionBillingPayin(payInKey);
+            final PayInEntity payIn = ensureServiceBillingPayin(payInKey);
 
-            payIn.getItems().stream().map(i -> (PayInSubscriptionBillingItemEntity) i).forEach(i -> {
-                i.getSubscriptionBilling().setStatus(status);
-                i.getSubscriptionBilling().setPayin(payIn);
+            payIn.getItems().stream().map(i -> (PayInServiceBillingItemEntity) i).forEach(i -> {
+                i.getServiceBilling().setStatus(status);
+                i.getServiceBilling().setPayin(payIn);
             });
 
             this.payInRepository.saveAndFlush(payIn);
 
-            if (status == EnumSubscriptionBillingStatus.PAID) {
-                payIn.getItems().stream().map(i -> (PayInSubscriptionBillingItemEntity) i).forEach(i -> {
+            if (status == EnumPayoffStatus.PAID) {
+                payIn.getItems().stream().map(i -> (PayInServiceBillingItemEntity) i).forEach(i -> {
                     this.sendPayoffNotification(i);
                 });
             }
         } catch (final PaymentException pEx) {
             throw pEx;
         } catch (final Exception ex) {
-            throw new PaymentException(PaymentMessageCode.SUBSCRIPTION_BILLING_PAYOFF_ERROR, "Subscription billing payoff failed", ex);
+            throw new PaymentException(PaymentMessageCode.SERVICE_BILLING_RECORD_PAYOFF_ERROR, "Subscription billing payoff failed", ex);
         }
     }
 
-    private PayInEntity ensureSubscriptionBillingPayin(UUID payInKey) throws PaymentException {
+    private PayInEntity ensureServiceBillingPayin(UUID payInKey) throws PaymentException {
         final PayInEntity payIn = payInRepository.findOneEntityByKey(payInKey).orElse(null);
         if (payIn == null) {
             throw new PaymentException(PaymentMessageCode.PAYIN_NOT_FOUND, "Payin record was not found");
@@ -622,9 +779,9 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
         final List<EnumPaymentItemType> types = payIn.getItems().stream().map(i -> i.getType()).distinct().toList();
         Assert.isTrue(types.size() == 1, "Expected items of the same type");
 
-        if (types.get(0) != EnumPaymentItemType.SUBSCRIPTION_BILLING) {
+        if (types.get(0) != EnumPaymentItemType.SERVICE_BILLING) {
             throw new PaymentException(
-                PaymentMessageCode.SUBSCRIPTION_BILLING_INVALID_ITEM_TYPE,
+                PaymentMessageCode.SERVICE_BILLING_RECORD_INVALID_ITEM_TYPE,
                 "Expected items for subscription billing records"
             );
         }
@@ -633,25 +790,45 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
     }
 
     private void sendPayoffNotification(
-        PayInSubscriptionBillingItemEntity item
+        PayInServiceBillingItemEntity item
     ) {
-        final SubscriptionBillingEntity subscriptionBilling = item.getSubscriptionBilling();
-        final AccountSubscriptionEntity subscription        = subscriptionBilling.getSubscription();
-        final UUID                      subscriptionKey     = subscription.getKey();
-        final String                    assetId             = subscription.getAssetId();
-        final int                       year                = subscriptionBilling.getFromDate().getYear();
-        final int                       month               = subscriptionBilling.getFromDate().getMonthValue();
-        final String                    idempotentKey       = buildIdempotentKey(subscriptionKey, year, month, IDEMPOTENT_KEY_SUFFIX_PAYOFF);
-        final EnumNotificationType      type                = EnumNotificationType.SUBSCRIPTION_BILLING_SINGLE_CHARGE;
-        final CatalogueItemDetailsDto   asset               = this.catalogueService.findOne(null, assetId, null, false);
+        final var serviceBilling = item.getServiceBilling();
+        final var subscription   = serviceBilling.getSubscription();
+        final var service        = serviceBilling.getUserService();
 
-        final Map<String, Object> variables = new HashMap<>();
-        variables.put("intervalFrom", subscriptionBilling.getFromDate().format(dateFormat));
-        variables.put("intervalTo", subscriptionBilling.getToDate().format(dateFormat));
-        variables.put("asset_id", assetId);
-        variables.put("asset_title", asset.getTitle());
-        variables.put("asset_version", asset.getVersion());
-        variables.put("amount", this.formatCurrency(subscriptionBilling.getTotalPrice()));
+        Assert.isTrue(subscription != null || service != null, "Expected either a non-null subscription or user service");
+        
+        final var year  = serviceBilling.getFromDate().getYear();
+        final var month = serviceBilling.getFromDate().getMonthValue();
+        final var type  = subscription == null
+            ? EnumNotificationType.USER_SERVICE_BILLING_PAYOFF
+            : EnumNotificationType.SUBSCRIPTION_BILLING_PAYOFF;  
+        
+        final var serviceKey    = subscription == null ? service.getKey() : subscription.getKey();
+        final var idempotentKey = buildIdempotentKey(serviceKey, year, month, IDEMPOTENT_KEY_SUFFIX_PAYOFF);
+
+        final var recipientKey = subscription == null
+            ? service.getAccount().getParent() == null ? service.getAccount().getKey() : service.getAccount().getParent().getKey()
+            : subscription.getConsumer().getKey();
+        
+        final Map<String, Object> variables    = new HashMap<>();
+        variables.put("intervalFrom", serviceBilling.getFromDate().format(dateFormat));
+        variables.put("intervalTo", serviceBilling.getToDate().format(dateFormat));
+        variables.put("amount", this.formatCurrency(serviceBilling.getTotalPrice()));
+        
+        if (subscription != null) {
+            final var assetId = subscription.getAssetId();
+            final var asset   = this.catalogueService.findOne(null, assetId, null, false);
+
+            variables.put("asset_id", assetId);
+            variables.put("asset_title", asset.getTitle());
+            variables.put("asset_version", asset.getVersion());
+
+        }
+        if (service != null) {
+            variables.put("service_title", service.getTitle());
+            variables.put("service_version", service.getVersion());
+        }
 
         final JsonNode data = this.notificationMessageBuilder.collectNotificationData(type, variables);
 
@@ -659,7 +836,7 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
             .data(data)
             .eventType(type.toString())
             .idempotentKey(idempotentKey)
-            .recipient(subscription.getConsumer().getKey())
+            .recipient(recipientKey)
             .text(this.notificationMessageBuilder.composeNotificationText(type, data))
             .build();
 
@@ -669,14 +846,14 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
     @Override
     public PerCallPricingModelCommandDto getPrivateServicePricingModel() {
         try {
-            var setting = this.settingRepository.findOne(EnumSetting.USER_SERVICE_PRICE_PER_CALL);
+            final var setting = this.settingRepository.findOne(EnumSetting.USER_SERVICE_PRICE_PER_CALL);
             if (setting == null || StringUtils.isBlank(setting.getValue())) {
                 return null;
             }
-            var pricingModel = this.objectMapper.readValue(setting.getValue(), new TypeReference<PerCallPricingModelCommandDto>() { });
+            final var pricingModel = this.objectMapper.readValue(setting.getValue(), new TypeReference<PerCallPricingModelCommandDto>() { });
 
             return pricingModel;
-        } catch (JacksonException ex) {
+        } catch (final JacksonException ex) {
             throw new ServiceException(BasicMessageCode.SerializationError, "Failed to parse the pricing model for private OGC services", ex);
         }
     }
@@ -685,17 +862,35 @@ public class DefaultSubscriptionBillingService implements SubscriptionBillingSer
     @Override
     public void setPrivateServicePricingModel(int userId, PerCallPricingModelCommandDto model) {
         try {
-            var setting = this.settingRepository.findOne(EnumSetting.USER_SERVICE_PRICE_PER_CALL);
+            final var setting = this.settingRepository.findOne(EnumSetting.USER_SERVICE_PRICE_PER_CALL);
             this.settingHistoryRepository.create(setting);
 
-            var value   = this.objectMapper.writeValueAsString(model);
-            var update  = SettingUpdateDto.of(EnumSetting.USER_SERVICE_PRICE_PER_CALL.getKey(), EnumService.ADMIN_GATEWAY, value);
-            var command = SettingUpdateCommandDto.of(userId, List.of(update));
+            final var value   = this.objectMapper.writeValueAsString(model);
+            final var update  = SettingUpdateDto.of(EnumSetting.USER_SERVICE_PRICE_PER_CALL.getKey(), EnumService.ADMIN_GATEWAY, value);
+            final var command = SettingUpdateCommandDto.of(userId, List.of(update));
             this.settingRepository.update(command);
-        } catch (JacksonException ex) {
+        } catch (final JacksonException ex) {
             throw new ServiceException(BasicMessageCode.SerializationError, "Failed to serialize the pricing model for private OGC services",
                     ex);
         }
+    }
+
+    @AllArgsConstructor
+    @Builder
+    @Getter
+    private static class OperationContext {
+
+        private final UUID    userKey;
+        private final int     year;
+        private final int     month;
+        private final boolean quotationOnly;
+
+        private final AccountEntity                   account;
+        private final BillingSubscriptionDates        dates;
+        private final List<AccountSubscriptionEntity> subscriptions;
+        private final List<UserServiceEntity>         userServices;
+        private final List<ServiceUseStatsDto>        useStats;
+
     }
 
 }

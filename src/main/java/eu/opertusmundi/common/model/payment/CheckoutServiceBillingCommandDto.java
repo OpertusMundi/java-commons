@@ -13,7 +13,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class CheckoutSubscriptionBillingCommandDto {
+public class CheckoutServiceBillingCommandDto {
 
     @JsonIgnore
     private UUID userKey;

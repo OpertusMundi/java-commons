@@ -8,9 +8,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class HelpdeskSubscriptionBillingPayInItemDto extends HelpdeskPayInItemDto {
+public class HelpdeskServiceBillingPayInItemDto extends HelpdeskPayInItemDto {
 
-    @Schema(description = "PayIn subscription billing record")
-    protected HelpdeskSubscriptionBillingDto subscriptionBilling;
+    @Schema(description = "PayIn service billing record")
+    protected HelpdeskServiceBillingDto serviceBilling;
 
 }

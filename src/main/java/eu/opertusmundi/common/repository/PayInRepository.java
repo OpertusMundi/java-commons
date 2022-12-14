@@ -34,16 +34,16 @@ import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
 import eu.opertusmundi.common.domain.PayInRecurringRegistrationEntity;
 import eu.opertusmundi.common.domain.PayInStatusEntity;
-import eu.opertusmundi.common.domain.PayInSubscriptionBillingItemEntity;
+import eu.opertusmundi.common.domain.PayInServiceBillingItemEntity;
 import eu.opertusmundi.common.domain.ShippingAddressEmbeddable;
-import eu.opertusmundi.common.domain.SubscriptionBillingEntity;
+import eu.opertusmundi.common.domain.ServiceBillingEntity;
 import eu.opertusmundi.common.model.EnumReferenceType;
 import eu.opertusmundi.common.model.EnumRole;
 import eu.opertusmundi.common.model.payment.BankwirePayInCommand;
 import eu.opertusmundi.common.model.payment.BankwirePayInExecutionContext;
 import eu.opertusmundi.common.model.payment.CardDirectPayInCommand;
 import eu.opertusmundi.common.model.payment.CardDirectPayInExecutionContext;
-import eu.opertusmundi.common.model.payment.CheckoutSubscriptionBillingCommandDto;
+import eu.opertusmundi.common.model.payment.CheckoutServiceBillingCommandDto;
 import eu.opertusmundi.common.model.payment.EnumRecurringPaymentType;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.FreePayInCommand;
@@ -62,8 +62,8 @@ import io.jsonwebtoken.lang.Assert;
 @Transactional(readOnly = true)
 public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
 
-    @Query("SELECT b FROM SubscriptionBilling b WHERE (b.key in :keys)")
-    List<SubscriptionBillingEntity> findSubscriptionBillingRecords(List<UUID> keys);
+    @Query("SELECT b FROM ServiceBilling b WHERE (b.key in :keys)")
+    List<ServiceBillingEntity> findServiceBillingRecords(List<UUID> keys);
 
     @Query("SELECT c FROM Cart c WHERE c.id = : id")
     Optional<CartEntity> findCartById(Integer id);
@@ -450,8 +450,8 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
      * @throws Exception
      */
     @Transactional(readOnly = false)
-    default ConsumerPayInDto prepareCardDirectPayInForSubscriptionBilling(
-        CheckoutSubscriptionBillingCommandDto command
+    default ConsumerPayInDto prepareCardDirectPayInForServiceBilling(
+        CheckoutServiceBillingCommandDto command
     ) throws Exception {
         Assert.notNull(command, "Expected a non-null command");
         Assert.notEmpty(command.getKeys(), "Expected a non-empty subscription billing list");
@@ -485,16 +485,22 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
 
         payin.getStatusHistory().add(status);
 
-        final var records = this.findSubscriptionBillingRecords(command.getKeys());
+        final var records = this.findServiceBillingRecords(command.getKeys());
         for (int index = 0; index < records.size(); index++) {
             final var record = records.get(index);
-            final var item   = new PayInSubscriptionBillingItemEntity();
+            final var item   = new PayInServiceBillingItemEntity();
             item.setIndex(index + 1);
             item.setPayin(payin);
-            item.setProvider(record.getSubscription().getProvider());
-            item.setSubscriptionBilling(record);
+            final var owner = switch (record.getType()) {
+                case SUBSCRIPTION -> record.getSubscription().getProvider();
+                case PRIVATE_OGC_SERVICE -> record.getUserService().getAccount().getParent() == null
+                    ? record.getUserService().getAccount()
+                    : record.getUserService().getAccount().getParent();
+            };
+            item.setProvider(owner);
+            item.setServiceBilling(record);
 
-            //record.setStatus(EnumSubscriptionBillingStatus.PROCESSING);
+            //record.setStatus(EnumServiceBillingStatus.PROCESSING);
 
             payin.getItems().add(item);
         }
@@ -510,7 +516,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
         return payin.toConsumerDto(true);
     }
 
-    default ConsumerPayInDto updateCardDirectPayInForSubscriptionBilling(CardDirectPayInExecutionContext ctx) {
+    default ConsumerPayInDto updateCardDirectPayInForServiceBilling(CardDirectPayInExecutionContext ctx) {
         Assert.notNull(ctx, "Expected a non-null context");
 
         final CardDirectPayInCommand command = ctx.getCommand();

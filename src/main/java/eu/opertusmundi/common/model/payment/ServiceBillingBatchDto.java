@@ -16,7 +16,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class SubscriptionBillingBatchDto {
+public class ServiceBillingBatchDto {
 
     @JsonIgnore
     private Integer id;
@@ -29,7 +29,7 @@ public class SubscriptionBillingBatchDto {
 
     private ZonedDateTime updatedOn;
 
-    private EnumSubscriptionBillingBatchStatus status;
+    private EnumServiceBillingBatchStatus status;
 
     @Schema(description = "Billing interval first date")
     private LocalDate fromDate;

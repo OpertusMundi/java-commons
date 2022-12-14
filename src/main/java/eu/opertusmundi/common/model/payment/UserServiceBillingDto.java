@@ -9,9 +9,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import eu.opertusmundi.common.model.account.AccountSubscriptionDto;
-import eu.opertusmundi.common.model.account.EnumSubscriptionBillingStatus;
-import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
+import eu.opertusmundi.common.model.asset.service.UserServiceDto;
+import eu.opertusmundi.common.model.pricing.PerCallPricingModelCommandDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,13 +19,13 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public abstract class SubscriptionBillingDto {
+public class UserServiceBillingDto {
 
     @JsonIgnore
     private Integer id;
 
     @JsonIgnore
-    private Integer subscriptionId;
+    private Integer serviceId;
 
     private UUID key;
 
@@ -65,26 +64,21 @@ public abstract class SubscriptionBillingDto {
     private BigDecimal totalTax;
 
     @Schema(description = "Quotation pricing model")
-    private BasePricingModelCommandDto pricingModel;
+    private PerCallPricingModelCommandDto pricingModel;
 
     @Schema(description = "Use statistics")
     private ServiceUseStatsDto stats;
-
-    private EnumSubscriptionBillingStatus status;
 
     @JsonInclude(Include.NON_NULL)
     private PayInDto payIn;
 
     @JsonInclude(Include.NON_NULL)
-    private UUID subscriptionKey;
+    private UUID serviceKey;
 
     @JsonInclude(Include.NON_NULL)
-    private UUID providerKey;
+    private UUID userKey;
 
     @JsonInclude(Include.NON_NULL)
-    private UUID consumerKey;
-
-    @JsonInclude(Include.NON_NULL)
-    private AccountSubscriptionDto subscription;
+    private UserServiceDto service;
 
 }

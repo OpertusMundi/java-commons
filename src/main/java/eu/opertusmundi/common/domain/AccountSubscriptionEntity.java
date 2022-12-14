@@ -144,12 +144,12 @@ public class AccountSubscriptionEntity {
         s.setUpdatedOn(updatedOn);
     }
 
-    public ConsumerAccountSubscriptionDto toConsumerDto(boolean includeProviderDetails) {
+    public ConsumerAccountSubscriptionDto toConsumerDto(boolean includeDetails) {
         final ConsumerAccountSubscriptionDto s = new ConsumerAccountSubscriptionDto();
 
         this.updateDto(s);
 
-        s.setProvider(this.provider.getProvider().toProviderDto(includeProviderDetails));
+        s.setProvider(this.provider.getProvider().toProviderDto(includeDetails));
         if (this.recurringPayIn != null) {
             s.setRecurringRegistration(this.recurringPayIn.toConsumerDto(true, false));
         }

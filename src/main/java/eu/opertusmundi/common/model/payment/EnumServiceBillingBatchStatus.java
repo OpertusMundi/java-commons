@@ -1,6 +1,6 @@
 package eu.opertusmundi.common.model.payment;
 
-public enum EnumSubscriptionBillingBatchStatus {
+public enum EnumServiceBillingBatchStatus {
     RUNNING,
     SUCCEEDED,
     FAILED,

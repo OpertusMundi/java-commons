@@ -40,7 +40,7 @@ import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.OrderItemEntity;
 import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
-import eu.opertusmundi.common.domain.PayInSubscriptionBillingItemEntity;
+import eu.opertusmundi.common.domain.PayInServiceBillingItemEntity;
 import eu.opertusmundi.common.model.account.CustomerDto;
 import eu.opertusmundi.common.model.account.CustomerIndividualDto;
 import eu.opertusmundi.common.model.payment.EnumInvoiceType;
@@ -275,7 +275,7 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
         final String result = switch (type) {
             case ORDER_INVOICE ->
                 this.renderOrderInvoice(payinKey);
-            case SUBSCRIPTION_BILLING_INVOICE ->
+            case SERVICE_BILLING_INVOICE ->
                 this.renderSubscriptionPayoffInvoice(payinKey);
         };
 
@@ -302,9 +302,9 @@ public class DefaultInvoiceGeneratorService implements InvoiceGeneratorService {
 
     private String renderSubscriptionPayoffInvoice(UUID payinKey) throws IOException {
         final PayInEntity                              payin = payInRepository.findOneEntityByKey(payinKey).orElse(null);
-        final List<PayInSubscriptionBillingItemEntity> items = payin.getItems().stream()
-            .filter(i -> i.getType() == EnumPaymentItemType.SUBSCRIPTION_BILLING)
-            .map(i -> (PayInSubscriptionBillingItemEntity) i)
+        final List<PayInServiceBillingItemEntity> items = payin.getItems().stream()
+            .filter(i -> i.getType() == EnumPaymentItemType.SERVICE_BILLING)
+            .map(i -> (PayInServiceBillingItemEntity) i)
             .toList();
         
         Assert.isTrue(items.size() > 0, "Expected at least one subscription billing item");

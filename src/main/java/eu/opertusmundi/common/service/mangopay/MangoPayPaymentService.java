@@ -92,7 +92,7 @@ import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
 import eu.opertusmundi.common.domain.PayInRecurringRegistrationEntity;
-import eu.opertusmundi.common.domain.PayInSubscriptionBillingItemEntity;
+import eu.opertusmundi.common.domain.PayInServiceBillingItemEntity;
 import eu.opertusmundi.common.domain.PayOutEntity;
 import eu.opertusmundi.common.model.EnumSortingOrder;
 import eu.opertusmundi.common.model.EnumView;
@@ -103,7 +103,7 @@ import eu.opertusmundi.common.model.account.EnumCustomerRegistrationStatus;
 import eu.opertusmundi.common.model.account.EnumCustomerType;
 import eu.opertusmundi.common.model.account.EnumLegalPersonType;
 import eu.opertusmundi.common.model.account.EnumMangopayUserType;
-import eu.opertusmundi.common.model.account.EnumSubscriptionBillingStatus;
+import eu.opertusmundi.common.model.account.EnumPayoffStatus;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumContractType;
 import eu.opertusmundi.common.model.email.EnumMailType;
@@ -124,7 +124,7 @@ import eu.opertusmundi.common.model.payment.CardDirectPayInExecutionContext;
 import eu.opertusmundi.common.model.payment.CardDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationCommandDto;
 import eu.opertusmundi.common.model.payment.CardRegistrationDto;
-import eu.opertusmundi.common.model.payment.CheckoutSubscriptionBillingCommandDto;
+import eu.opertusmundi.common.model.payment.CheckoutServiceBillingCommandDto;
 import eu.opertusmundi.common.model.payment.ClientDto;
 import eu.opertusmundi.common.model.payment.ClientWalletDto;
 import eu.opertusmundi.common.model.payment.EnumPayInItemSortField;
@@ -147,7 +147,7 @@ import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.PaymentMessageCode;
 import eu.opertusmundi.common.model.payment.RecurringRegistrationCreateCommand;
 import eu.opertusmundi.common.model.payment.RecurringRegistrationDto;
-import eu.opertusmundi.common.model.payment.SubscriptionBillingDto;
+import eu.opertusmundi.common.model.payment.ServiceBillingDto;
 import eu.opertusmundi.common.model.payment.TransferDto;
 import eu.opertusmundi.common.model.payment.UserBlockedStatusDto;
 import eu.opertusmundi.common.model.payment.UserCardCommand;
@@ -170,7 +170,7 @@ import eu.opertusmundi.common.repository.OrderRepository;
 import eu.opertusmundi.common.repository.PayInItemHistoryRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
 import eu.opertusmundi.common.repository.PayOutRepository;
-import eu.opertusmundi.common.repository.SubscriptionBillingRepository;
+import eu.opertusmundi.common.repository.ServiceBillingRepository;
 import eu.opertusmundi.common.service.CatalogueService;
 import eu.opertusmundi.common.service.OrderFulfillmentService;
 import eu.opertusmundi.common.service.PayOutService;
@@ -187,18 +187,18 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     // TODO: Set from configuration
     private final BigDecimal feePercent = new BigDecimal(5);
 
-    private final AccountRepository             accountRepository;
-    private final CustomerRepository            customerRepository;
-    private final OrderRepository               orderRepository;
-    private final PayInRepository               payInRepository;
-    private final PayOutRepository              payOutRepository;
-    private final PayInItemHistoryRepository    payInItemHistoryRepository;
-    private final CatalogueService              catalogueService;
-    private final QuotationService              quotationService;
-    private final OrderFulfillmentService       orderFulfillmentService;
-    private final PayOutService                 payOutService;
-    private final RecurringPaymentService       recurringPaymentService;
-    private final SubscriptionBillingRepository subscriptionBillingRepository;
+    private final AccountRepository          accountRepository;
+    private final CustomerRepository         customerRepository;
+    private final OrderRepository            orderRepository;
+    private final PayInRepository            payInRepository;
+    private final PayOutRepository           payOutRepository;
+    private final PayInItemHistoryRepository payInItemHistoryRepository;
+    private final CatalogueService           catalogueService;
+    private final QuotationService           quotationService;
+    private final OrderFulfillmentService    orderFulfillmentService;
+    private final PayOutService              payOutService;
+    private final RecurringPaymentService    recurringPaymentService;
+    private final ServiceBillingRepository   serviceBillingRepository;
 
     @Autowired
     public MangoPayPaymentService(
@@ -213,20 +213,20 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         OrderFulfillmentService       orderFulfillmentService,
         PayOutService                 payOutService,
         RecurringPaymentService       recurringPaymentService,
-        SubscriptionBillingRepository subscriptionBillingRepository
+        ServiceBillingRepository      serviceBillingRepository
     ) {
-        this.accountRepository             = accountRepository;
-        this.customerRepository            = customerRepository;
-        this.orderRepository               = orderRepository;
-        this.payOutRepository              = payOutRepository;
-        this.payInRepository               = payInRepository;
-        this.payInItemHistoryRepository    = payInItemHistoryRepository;
-        this.catalogueService              = catalogueService;
-        this.quotationService              = quotationService;
-        this.orderFulfillmentService       = orderFulfillmentService;
-        this.payOutService                 = payOutService;
-        this.recurringPaymentService       = recurringPaymentService;
-        this.subscriptionBillingRepository = subscriptionBillingRepository;
+        this.accountRepository          = accountRepository;
+        this.customerRepository         = customerRepository;
+        this.orderRepository            = orderRepository;
+        this.payOutRepository           = payOutRepository;
+        this.payInRepository            = payInRepository;
+        this.payInItemHistoryRepository = payInItemHistoryRepository;
+        this.catalogueService           = catalogueService;
+        this.quotationService           = quotationService;
+        this.orderFulfillmentService    = orderFulfillmentService;
+        this.payOutService              = payOutService;
+        this.recurringPaymentService    = recurringPaymentService;
+        this.serviceBillingRepository   = serviceBillingRepository;
     }
 
     @Override
@@ -854,7 +854,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
     }
 
     @Override
-    public PayInDto preparePayInFromSubscriptionBillingRecords(CheckoutSubscriptionBillingCommandDto command) throws PaymentException {
+    public PayInDto preparePayInFromServiceBillingRecords(CheckoutServiceBillingCommandDto command) throws PaymentException {
         try {
             // Validate user
             final AccountEntity  account  = this.getAccount(command.getUserKey());
@@ -863,7 +863,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             this.ensureCustomer(customer, command.getUserKey());
 
             // Validate billing records
-            final var records = this.getSubscriptionBillingRecords(command.getUserKey(), command.getKeys());
+            final var records = this.getServiceBillingRecords(command.getUserKey(), command.getKeys());
 
             BigDecimal totalPrice             = BigDecimal.ZERO;
             BigDecimal totalPriceExcludingTax = BigDecimal.ZERO;
@@ -884,7 +884,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             }
 
             // Create database record
-            final ConsumerCardDirectPayInDto result = (ConsumerCardDirectPayInDto) this.payInRepository.prepareCardDirectPayInForSubscriptionBilling(command);
+            final ConsumerCardDirectPayInDto result = (ConsumerCardDirectPayInDto) this.payInRepository.prepareCardDirectPayInForServiceBilling(command);
 
             return result;
         } catch (final Exception ex) {
@@ -1234,7 +1234,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             ConsumerCardDirectPayInDto result = null;
 
             if (StringUtils.isEmpty(payIn.getPayIn())) {
-                result = (ConsumerCardDirectPayInDto) this.payInRepository.updateCardDirectPayInForSubscriptionBilling(ctx);
+                result = (ConsumerCardDirectPayInDto) this.payInRepository.updateCardDirectPayInForServiceBilling(ctx);
             } else {
                 result = (ConsumerCardDirectPayInDto) payIn.toConsumerDto(true);
             }
@@ -1259,7 +1259,7 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
     }
 
-    private List<SubscriptionBillingDto> getSubscriptionBillingRecords(UUID userKey, List<UUID> keys) {
+    private List<ServiceBillingDto> getServiceBillingRecords(UUID userKey, List<UUID> keys) {
         if (CollectionUtils.isEmpty(keys)) {
             throw new PaymentException(
                 PaymentMessageCode.SUBSCRIPTION_BILLING_SELECTION_EMPTY,
@@ -1267,26 +1267,32 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
             );
         }
 
-        final var records = subscriptionBillingRepository.findAllObjectsByKeys(EnumView.HELPDESK, keys, true);
+        final var records = serviceBillingRepository.findAllObjectsByKey(EnumView.HELPDESK, keys, true);
         if (records.size() != keys.size()) {
             throw new PaymentException(
-                PaymentMessageCode.SUBSCRIPTION_BILLING_NOT_FOUND,
+                PaymentMessageCode.SERVICE_BILLING_RECORD_NOT_FOUND,
                 "One or more subscription billing records were not found"
             );
         }
 
-        final var unauthorizedKeys = records.stream().filter(r -> !r.getConsumerKey().equals(userKey)).toList();
+        // A record refers either to a subscription whose consumer is the
+        // selected user or to a private OGC service whose owner parent is the
+        // billed account. The user key is compared to the owner parent to
+        // include VENDOR account private services
+        final var unauthorizedKeys = records.stream()
+            .filter(r -> !userKey.equals(r.getConsumerKey()) && !userKey.equals(r.getProviderParentKey()))
+            .toList();
         if (!unauthorizedKeys.isEmpty()) {
             throw new PaymentException(
-                PaymentMessageCode.SUBSCRIPTION_BILLING_ACCESS_DENIED,
+                PaymentMessageCode.SERVICE_BILLING_RECORD_ACCESS_DENIED,
                 "One or more subscription billing records do not belong to the authenticated user"
             );
         }
 
-        final var invalidStatusRecords = records.stream().filter(r -> r.getStatus() != EnumSubscriptionBillingStatus.DUE).toList();
+        final var invalidStatusRecords = records.stream().filter(r -> r.getStatus() != EnumPayoffStatus.DUE).toList();
         if (!invalidStatusRecords.isEmpty()) {
             throw new PaymentException(
-                PaymentMessageCode.SUBSCRIPTION_BILLING_INVALID_STATUS,
+                PaymentMessageCode.SERVICE_BILLING_RECORD_INVALID_STATUS,
                 "One or more subscription billing records are not due and cannot included to the order"
             );
         }
@@ -1558,9 +1564,9 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
                             idempotencyKey, payInKey, (PayInOrderItemEntity) item, debitCustomer
                         );
                         break;
-                    case SUBSCRIPTION_BILLING :
-                        transfer = this.createTransferForSubscriptionBilling(
-                            idempotencyKey, payInKey, (PayInSubscriptionBillingItemEntity) item, debitCustomer
+                    case SERVICE_BILLING :
+                        transfer = this.createTransferForServiceBilling(
+                            idempotencyKey, payInKey, (PayInServiceBillingItemEntity) item, debitCustomer
                         );
                         break;
                     default :
@@ -1644,16 +1650,16 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         return result;
     }
 
-    private TransferDto createTransferForSubscriptionBilling(
-        String idempotencyKey, UUID payInKey, PayInSubscriptionBillingItemEntity item, CustomerEntity debitCustomer
+    private TransferDto createTransferForServiceBilling(
+        String idempotencyKey, UUID payInKey, PayInServiceBillingItemEntity item, CustomerEntity debitCustomer
     ) throws Exception {
-        Assert.isTrue(item.getSubscriptionBilling() != null, "Expected a non-null subscription billing record");
+        Assert.isTrue(item.getServiceBilling() != null, "Expected a non-null subscription billing record");
 
         // Get credit customer
-        final AccountEntity  creditAccount  = item.getSubscriptionBilling().getSubscription().getProvider();
+        final AccountEntity  creditAccount  = item.getServiceBilling().getSubscription().getProvider();
         final CustomerEntity creditCustomer = creditAccount.getProfile().getProvider();
-        final BigDecimal     amount         = item.getSubscriptionBilling().getTotalPrice().multiply(BigDecimal.valueOf(100L));
-        final BigDecimal     fees           = item.getSubscriptionBilling().getTotalPrice()
+        final BigDecimal     amount         = item.getServiceBilling().getTotalPrice().multiply(BigDecimal.valueOf(100L));
+        final BigDecimal     fees           = item.getServiceBilling().getTotalPrice()
             .multiply(this.feePercent)
             .divide(BigDecimal.valueOf(100L))
             .setScale(2, RoundingMode.HALF_UP)

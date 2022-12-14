@@ -2,7 +2,7 @@ package eu.opertusmundi.common.model.account;
 
 import lombok.Getter;
 
-public enum EnumSubscriptionBillingSortField {
+public enum EnumServiceBillingRecordSortField {
     CREATED_ON("createdOn"),
     DUE_DATE("dueDate"),
     FROM_DATE("fromDate"),
@@ -16,18 +16,18 @@ public enum EnumSubscriptionBillingSortField {
     @Getter
     private String value;
 
-    EnumSubscriptionBillingSortField(String value) {
+    EnumServiceBillingRecordSortField(String value) {
         this.value = value;
     }
 
-    public static EnumSubscriptionBillingSortField fromValue(String value) {
-        for (final EnumSubscriptionBillingSortField e : EnumSubscriptionBillingSortField.values()) {
+    public static EnumServiceBillingRecordSortField fromValue(String value) {
+        for (final EnumServiceBillingRecordSortField e : EnumServiceBillingRecordSortField.values()) {
             if (e.getValue().equals(value)) {
                 return e;
             }
         }
 
-        throw new IllegalArgumentException(String.format("Value [%s] is not a valid member of enum [EnumSubscriptionBillingSortField]", value));
+        throw new IllegalArgumentException(String.format("Value [%s] is not a valid member of enum [EnumServiceBillingSortField]", value));
     }
 
 }
