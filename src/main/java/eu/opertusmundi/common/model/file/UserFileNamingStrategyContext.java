@@ -38,8 +38,12 @@ public class UserFileNamingStrategyContext extends FileNamingStrategyContext {
     }
 
     @Override
-    public boolean validateName(String name) {
+    public boolean validateName(int level, String name) {
         Assert.hasText(name, "A path component must be non empty");
+
+        if (level == 0 && name.equals(EnumUserFileReservedEntry.NOTEBOOKS_FOLDER.entryName())) {
+            return true;
+        }
         return !strict || strictNameMatchPredicate.test(name);
     }
 }

@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.service;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,6 +13,7 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +25,8 @@ import org.springframework.util.Assert;
 import com.google.common.base.Charsets;
 
 import eu.opertusmundi.common.model.file.DirectoryDto;
+import eu.opertusmundi.common.model.file.EnumUserFileReservedEntry;
+import eu.opertusmundi.common.model.file.FileMoveCommand;
 import eu.opertusmundi.common.model.file.FilePathCommand;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.file.FileSystemMessageCode;
@@ -112,8 +116,9 @@ public class DefaultUserFileManager implements UserFileManager {
                 throw new FileSystemException(FileSystemMessageCode.PATH_IS_EMPTY, "A path is required");
             }
 
-            final UserFileNamingStrategyContext ctx = UserFileNamingStrategyContext.of(command.getUserName());
-            final Path                          dir = this.fileNamingStrategy.resolvePath(ctx, command.getPath());
+            final var ctx = UserFileNamingStrategyContext.of(command.getUserName());
+            final var dir = this.fileNamingStrategy.resolvePath(ctx, command.getPath());
+            this.checkReservedPaths(ctx, dir);
 
             if (Files.exists(dir)) {
                 throw new FileSystemException(
@@ -188,6 +193,60 @@ public class DefaultUserFileManager implements UserFileManager {
     }
 
     @Override
+    public void moveFile(FileMoveCommand command) throws FileSystemException {
+        Assert.notNull(command, "Expected a non-null command");
+        Assert.hasText(command.getUserName(), "Expected a non-null user name");
+
+        try {
+            final var ctx              = UserFileNamingStrategyContext.of(command.getUserName());
+            final var sourceFilePath   = this.fileNamingStrategy.resolvePath(ctx, command.getSourcePath());
+            final var sourceFileName   = FilenameUtils.getName(command.getSourcePath());
+            final var sourceFolderName = FilenameUtils.getFullPath(command.getSourcePath());
+
+            final var targetFileName   = StringUtils.isBlank(command.getTargetFileName()) ? sourceFileName : command.getTargetFileName();
+            final var targetFolderName = StringUtils.isBlank(command.getTargetFolder()) ? sourceFolderName : command.getTargetFolder();
+            final var targetFilePath   = this.fileNamingStrategy.resolvePath(ctx, Paths.get(targetFolderName, targetFileName));
+            final var targetFolderPath = this.fileNamingStrategy.resolvePath(ctx, targetFolderName);
+
+            final var sourceFile   = sourceFilePath.toFile();
+            final var targetFolder = targetFolderPath.toFile();
+            final var targetFile   = targetFilePath.toFile();
+
+            if (!sourceFile.exists()) {
+                throw new FileSystemException(FileSystemMessageCode.FILE_IS_MISSING, "Source file does not exist");
+            }
+            if (sourceFile.isDirectory()) {
+                throw new FileSystemException(FileSystemMessageCode.PATH_IS_DIRECTORY, "Source file is a directory");
+            }
+
+            if (!targetFolder.exists()) {
+                Files.createDirectories(targetFolderPath);
+                Files.setPosixFilePermissions(targetFolderPath, DEFAULT_DIRECTORY_PERMISSIONS);
+            }
+
+            if (!targetFolder.isDirectory()) {
+                throw new FileSystemException(FileSystemMessageCode.PATH_IS_FILE, "Target folder is a file");
+            }
+            if (targetFile.exists()) {
+                if (command.isOverwrite()) {
+                    FileUtils.deleteQuietly(targetFile);
+                } else {
+                    throw new FileSystemException(FileSystemMessageCode.PATH_ALREADY_EXISTS, "File with the same name already exists");
+                }
+            }
+
+            FileUtils.moveFile(
+                sourceFile, targetFile,
+                StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING
+            );
+        } catch (final FileSystemException ex) {
+            throw ex;
+        } catch (final Exception ex) {
+            throw new FileSystemException(FileSystemMessageCode.IO_ERROR, "An unknown error has occurred", ex);
+        }
+    }
+
+    @Override
     public void deletePath(FilePathCommand command) throws FileSystemException {
         Assert.notNull(command, "Expected a non-null command");
         Assert.hasText(command.getUserName(), "Expected a non-null user name");
@@ -200,6 +259,7 @@ public class DefaultUserFileManager implements UserFileManager {
             final UserFileNamingStrategyContext ctx          = UserFileNamingStrategyContext.of(command.getUserName());
             final Path                          absolutePath = this.fileNamingStrategy.resolvePath(ctx, command.getPath());
             final File                          file         = absolutePath.toFile();
+            this.checkReservedPaths(ctx, absolutePath);
 
             if (!file.exists()) {
                 throw new FileSystemException(FileSystemMessageCode.PATH_NOT_FOUND, "Path does not exist");
@@ -271,6 +331,15 @@ public class DefaultUserFileManager implements UserFileManager {
             return Long.parseLong(size.substring(0, size.length() - 2)) * 1024 * 1024 * 1024;
         }
         return Long.parseLong(size);
+    }
+
+    private void checkReservedPaths(UserFileNamingStrategyContext ctx, Path path) throws FileSystemException, IOException {
+        for (final var p : EnumUserFileReservedEntry.values()) {
+            final var reservedPath = this.fileNamingStrategy.resolvePath(ctx, p.entryName());
+            if (reservedPath.equals(path)) {
+                throw new FileSystemException(FileSystemMessageCode.RESERVED_PATH, "Path is a system reserved path");
+            }
+        }
     }
 
 }

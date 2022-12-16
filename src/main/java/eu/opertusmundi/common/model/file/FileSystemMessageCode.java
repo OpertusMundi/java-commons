@@ -16,6 +16,7 @@ public enum FileSystemMessageCode implements MessageCode {
     PATH_NOT_FOUND,
     INVALID_PATH,
     FILE_IS_MISSING,
+    RESERVED_PATH,
     ;
 
     @Override

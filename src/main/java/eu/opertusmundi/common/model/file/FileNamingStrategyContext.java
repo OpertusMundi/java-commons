@@ -10,14 +10,15 @@ public abstract class FileNamingStrategyContext {
     }
 
     private final boolean createIfNotExists;
-    
+
     /**
      * Validate a name component of a path.
-     * 
+     *
+     * @param level the level of the path component
      * @param name a path component
      * @return
      */
-    public boolean validateName(String name)
+    public boolean validateName(int level, String name)
     {
         // This is a stub; override in subclasses to provide specific filtering
         return true;

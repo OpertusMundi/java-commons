@@ -55,14 +55,15 @@ public class DefaultUserFileNamingStrategy extends AbstractFileNamingStrategy<Us
                 String.format("Path [%s] depth exceeds the limit [%d]", path, this.maxDepth)
             );
         }
-        for (final String p : parts) {
+        for (var level = 0; level < parts.length; level++) {
+            final var p = parts[level];
             if (p.length() > this.maxLength) {
                 throw new FileSystemException(
                     FileSystemMessageCode.PATH_MAX_LENGTH,
                     String.format("Path component [%s] length exceeds the limit [%d]", p, this.maxLength)
                 );
             }
-            if (!ctx.validateName(p)) {
+            if (!ctx.validateName(level, p)) {
                 throw new FileSystemException(
                     FileSystemMessageCode.INVALID_PATH,
                     String.format("Path component [%s] is not valid", p)
