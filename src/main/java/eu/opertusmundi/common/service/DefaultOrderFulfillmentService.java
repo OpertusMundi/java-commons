@@ -667,15 +667,19 @@ public class DefaultOrderFulfillmentService implements OrderFulfillmentService {
 
         // Check if a subscription is already active
         final AccountSubscriptionEntity activeSubscription = accountSubscriptionRepository.findAllByConsumerAndAssetId(userKey, asset.getId()).stream()
-            .filter(s -> !s.getOrder().getId().equals(order.getId()))
-            .findFirst().orElse(null);
+            .filter(s -> !s.getOrder().getId().equals(order.getId()) && s.getStatus() == EnumSubscriptionStatus.ACTIVE)
+            .findFirst()
+            .orElse(null);
         final boolean renewal = activeSubscription != null;
 
         // Create/Update subscription for consumer account
         AccountSubscriptionEntity sub;
         if (renewal) {
             sub = activeSubscription;
+            sub.setAssetTitle(orderItem.getAssetTitle());
+            sub.setAssetVersion(orderItem.getAssetVersion());
             sub.setUpdatedOn(now);
+            sub.setLastPayinDate(order.getPayin().getExecutedOn());
         } else {
             sub = new AccountSubscriptionEntity();
 
