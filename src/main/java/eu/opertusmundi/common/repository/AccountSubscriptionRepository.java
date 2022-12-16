@@ -72,6 +72,16 @@ public interface AccountSubscriptionRepository extends JpaRepository<AccountSubs
             .map(e -> e.toConsumerDto(includeProviderDetails));
     }
 
+    @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey and s.assetId = :assetId and s.status = 'ACTIVE'")
+    Optional<AccountSubscriptionEntity> findOneActiveByConsumerAndAsset(UUID userKey, String assetId);
+
+    default Optional<AccountSubscriptionDto> findOneActiveByConsumerAndAsset(
+        UUID userKey, String assetId, boolean includeProviderDetails
+    ) {
+        return this.findOneActiveByConsumerAndAsset(userKey, assetId)
+            .map(e -> e.toConsumerDto(includeProviderDetails));
+    }
+
     @Query("SELECT s FROM AccountSubscription s WHERE s.consumer.key = :userKey and s.assetId = :assetId")
     List<AccountSubscriptionEntity> findAllByConsumerAndAssetId(UUID userKey, String assetId);
 

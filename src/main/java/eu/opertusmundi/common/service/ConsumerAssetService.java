@@ -71,6 +71,15 @@ public interface ConsumerAssetService {
     AccountSubscriptionDto findSubscription(UUID userKey, UUID subscriptionKey);
 
     /**
+     * Get a subscription from purchase order key
+     *
+     * @param userKey
+     * @param orderKey
+     * @return
+     */
+    AccountSubscriptionDto findSubscriptionFromOrderKey(UUID userKey, UUID orderKey);
+
+    /**
      * Cancel active subscription
      *
      * @param userKey

@@ -44,6 +44,7 @@ import eu.opertusmundi.common.model.file.CopyToDriveResultDto;
 import eu.opertusmundi.common.model.file.FileCopyResourceCommandDto;
 import eu.opertusmundi.common.model.file.FileCopyResourceDto;
 import eu.opertusmundi.common.model.file.FilePathCommand;
+import eu.opertusmundi.common.model.order.EnumOrderItemType;
 import eu.opertusmundi.common.model.pricing.FreePricingModelCommandDto;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
 import eu.opertusmundi.common.model.workflow.EnumWorkflow;
@@ -52,6 +53,7 @@ import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.AccountSubscriptionRepository;
 import eu.opertusmundi.common.repository.AssetStatisticsRepository;
 import eu.opertusmundi.common.repository.FileCopyResourceRepository;
+import eu.opertusmundi.common.repository.OrderRepository;
 import eu.opertusmundi.common.util.BpmEngineUtils;
 import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
 
@@ -73,6 +75,7 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
     private final BpmEngineUtils                bpmEngine;
     private final CatalogueService              catalogueService;
     private final FileCopyResourceRepository    fileCopyResourceRepository;
+    private final OrderRepository               orderRepository;
     private final UserFileManager               userFileManager;
 
     @Autowired
@@ -85,6 +88,7 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
         BpmEngineUtils bpmEngine,
         CatalogueService catalogueService,
         FileCopyResourceRepository fileCopyResourceRepository,
+        OrderRepository orderRepository,
         UserFileManager userFileManager
     ) {
         this.accountRepository             = accountRepository;
@@ -95,6 +99,7 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
         this.bpmEngine                     = bpmEngine;
         this.catalogueService              = catalogueService;
         this.fileCopyResourceRepository    = fileCopyResourceRepository;
+        this.orderRepository               = orderRepository;
         this.userFileManager               = userFileManager;
     }
 
@@ -225,24 +230,52 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
 
     @Override
     public AccountSubscriptionDto findSubscription(UUID userKey, UUID subscriptionKey) {
-       final AccountSubscriptionDto result = this.accountSubscriptionRepository.findOneObjectByConsumerAndKey(userKey, subscriptionKey, true)
-           .orElse(null);
+        final AccountSubscriptionDto result = this.accountSubscriptionRepository
+            .findOneObjectByConsumerAndKey(userKey, subscriptionKey, true)
+            .orElse(null);
 
         if (result == null) {
             return result;
         }
+        this.setAssetToSubscription(result);
 
-        final List<CatalogueItemDetailsDto> assets = this.catalogueService.findAllById(new String[]{result.getAssetId()});
+        return result;
+    }
+
+    @Override
+    public AccountSubscriptionDto findSubscriptionFromOrderKey(UUID userKey, UUID orderKey) {
+        final var order = this.orderRepository.findObjectByKeyAndConsumerAndStatusNotCreated(userKey, orderKey).orElse(null);
+        if (order == null) {
+            return null;
+        }
+        Assert.isTrue(order.getItems().size() == 1, "Expected a single order item");
+
+        final var orderItem = order.getItems().get(0);
+        final var assetId   = orderItem.getAssetId();
+        Assert.isTrue(orderItem.getType() == EnumOrderItemType.SUBSCRIPTION, "Expected a subscription order item");
+
+        final AccountSubscriptionDto result = this.accountSubscriptionRepository
+            .findOneActiveByConsumerAndAsset(userKey, assetId, true)
+            .orElse(null);
+
+        if (result == null) {
+            return result;
+        }
+        this.setAssetToSubscription(result);
+
+        return result;
+    }
+
+    private void setAssetToSubscription(AccountSubscriptionDto sub) {
+        final List<CatalogueItemDetailsDto> assets = this.catalogueService.findAllById(new String[]{sub.getAssetId()});
 
         if(assets.isEmpty()) {
             throw new ConsumerServiceException(ConsumerServiceMessageCode.CATALOGUE_ITEM_NOT_FOUND, String.format(
                 "Catalogue item not found [userKey=%s, assetPid=%s]" ,
-                userKey,result.getAssetId()
+                sub, sub.getAssetId()
             ));
         }
-        result.setItem(assets.get(0));
-
-       return result;
+        sub.setItem(assets.get(0));
     }
 
     @Override
