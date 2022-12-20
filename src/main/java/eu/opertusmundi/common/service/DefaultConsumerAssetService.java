@@ -115,8 +115,8 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
             return PageResultDto.empty(PageRequestDto.of(pageIndex, pageSize));
         }
 
-        final String[]                      pid    = records.stream().map(a -> a.getAssetId()).distinct().toArray(String[]::new);
-        final List<CatalogueItemDetailsDto> assets = this.catalogueService.findAllById(pid);
+        final var pid    = records.stream().map(a -> a.getAssetId()).distinct().toArray(String[]::new);
+        final var assets = this.catalogueService.findAllHistoryAndPublishedById(pid);
 
         // Add catalogue items to records
         records.forEach(r -> {
@@ -178,7 +178,7 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
         }
 
         final String[]               pid    = records.stream().map(a -> a.getAssetId()).distinct().toArray(String[]::new);
-        final List<CatalogueItemDetailsDto> assets = this.catalogueService.findAllById(pid);
+        final List<CatalogueItemDetailsDto> assets = this.catalogueService.findAllHistoryAndPublishedById(pid);
 
         // Add catalogue items to records
         records.forEach(r -> {
@@ -267,7 +267,7 @@ public class DefaultConsumerAssetService implements ConsumerAssetService {
     }
 
     private void setAssetToSubscription(AccountSubscriptionDto sub) {
-        final List<CatalogueItemDetailsDto> assets = this.catalogueService.findAllById(new String[]{sub.getAssetId()});
+        final List<CatalogueItemDetailsDto> assets = this.catalogueService.findAllHistoryAndPublishedById(new String[]{sub.getAssetId()});
 
         if(assets.isEmpty()) {
             throw new ConsumerServiceException(ConsumerServiceMessageCode.CATALOGUE_ITEM_NOT_FOUND, String.format(

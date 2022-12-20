@@ -20,6 +20,7 @@ import eu.opertusmundi.common.model.catalogue.EnumCatalogueSortField;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueCollection;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueResponse;
+import eu.opertusmundi.common.model.catalogue.server.HistoryIdVersionQuery;
 
 @FeignClient(
     name = "${opertusmundi.feign.catalogue.name}",
@@ -55,7 +56,16 @@ public interface CatalogueFeignClient {
      * @return An instance of {@link CatalogueServerItem}
      */
     @GetMapping(value = "/api/published/get", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> findAllById(@RequestParam("id") String[] id);
+    ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> findAllPublishedById(@RequestParam("id") String[] id);
+
+    /**
+     * Returns a specific version for each item id and version pair
+     *
+     * @param query
+     * @return An instance of {@link CatalogueServerItem}
+     */
+    @PostMapping(value = "/api/history/get_list", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> findAllHistoryByIdAndVersion(@RequestBody HistoryIdVersionQuery query);
 
     /**
      * Find related assets given an asset's identifier

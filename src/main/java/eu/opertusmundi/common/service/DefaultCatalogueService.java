@@ -1,6 +1,7 @@
 package eu.opertusmundi.common.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,7 @@ import eu.opertusmundi.common.model.asset.ServiceResourceDto;
 import eu.opertusmundi.common.model.catalogue.CatalogueResult;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceMessageCode;
+import eu.opertusmundi.common.model.catalogue.IdVersionPair;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueAssetQuery;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueDraftQuery;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestCommandDto;
@@ -63,6 +65,7 @@ import eu.opertusmundi.common.model.catalogue.elastic.ElasticServiceException;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueCollection;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueResponse;
+import eu.opertusmundi.common.model.catalogue.server.HistoryIdVersionQuery;
 import eu.opertusmundi.common.model.geodata.EnumGeodataWorkspace;
 import eu.opertusmundi.common.model.geodata.UserGeodataConfiguration;
 import eu.opertusmundi.common.model.workflow.EnumProcessInstanceVariable;
@@ -319,12 +322,27 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     @Override
-    public List<CatalogueItemDetailsDto> findAllById(String[] id, boolean throwOnMissing) throws CatalogueServiceException {
+    public List<CatalogueItemDetailsDto> findAllHistoryAndPublishedById(String[] id) throws CatalogueServiceException {
+        // Search published assets but ignore missing ones
+        final var published = this.findAllPublishedById(id, false);
+        if (published.size() == id.length) {
+            return published;
+        }
+        // If not all assets are found, search history too
+        final var publishedIds = published.stream().map(a -> a.getId()).toList();
+        final var historyIds   = Arrays.stream(id).filter(i -> !publishedIds.contains(i)).map(i -> IdVersionPair.of(i)).toList();
+        final var history      = this.findAllHistoryByIdAndVersion(historyIds);
+
+        published.addAll(history);
+        return published;
+    }
+
+    @Override
+    public List<CatalogueItemDetailsDto> findAllPublishedById(String[] id, boolean throwOnMissing) throws CatalogueServiceException {
         Assert.notEmpty(id, "Expected a non-empty array of identifiers");
 
         try {
-            // Catalogue service data page index is 1-based
-            final ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> e = this.catalogueClient.getObject().findAllById(id);
+            final ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> e = this.catalogueClient.getObject().findAllPublishedById(id);
 
             final CatalogueResponse<List<CatalogueFeature>> catalogueResponse = e.getBody();
 
@@ -336,6 +354,50 @@ public class DefaultCatalogueService implements CatalogueService {
                 throw new CatalogueServiceException(
                     CatalogueServiceMessageCode.ITEM_NOT_FOUND,
                     String.format("Expected [%d] items. Found [%s]", id.length, catalogueResponse.getResult().size())
+                );
+            }
+
+            return catalogueResponse.getResult().stream()
+                .map(feature -> this.featureToItem(null, feature, feature.getProperties().getPublisherId(), false))
+                .collect(Collectors.toList());
+        } catch (final CatalogueServiceException ex) {
+            throw ex;
+        } catch (final FeignException fex) {
+            // Convert 404 errors to empty results
+            if (fex.status() == HttpStatus.NOT_FOUND.value()) {
+                return new ArrayList<>();
+            }
+
+            logger.error("[Feign Client][Catalogue] Operation has failed", fex);
+
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage(), fex);
+        } catch (final Exception ex) {
+            logger.error("Operation has failed", ex);
+
+            throw CatalogueServiceException.wrap(ex);
+        }
+    }
+
+    @Override
+    public List<CatalogueItemDetailsDto> findAllHistoryByIdAndVersion(
+        List<IdVersionPair> pairs, boolean throwOnMissing
+    ) throws CatalogueServiceException {
+        Assert.notNull(pairs, "Expected a non-null list of id and version value pairs");
+
+        try {
+            final ResponseEntity<CatalogueResponse<List<CatalogueFeature>>> e = this.catalogueClient.getObject()
+                .findAllHistoryByIdAndVersion(HistoryIdVersionQuery.of(pairs));
+
+            final CatalogueResponse<List<CatalogueFeature>> catalogueResponse = e.getBody();
+
+            if (!catalogueResponse.isSuccess()) {
+                throw CatalogueServiceException.fromService(catalogueResponse.getMessage());
+            }
+
+            if (throwOnMissing && catalogueResponse.getResult().size() != pairs.size()) {
+                throw new CatalogueServiceException(
+                    CatalogueServiceMessageCode.ITEM_NOT_FOUND,
+                    String.format("Expected [%d] items. Found [%s]", pairs.size(), catalogueResponse.getResult().size())
                 );
             }
 
@@ -1011,7 +1073,7 @@ public class DefaultCatalogueService implements CatalogueService {
                     new Coordinate(-180.0,-90.0)
                 });
 
-                var geometry = publishedFeature.getGeometry();
+                final var geometry = publishedFeature.getGeometry();
 
                 // Reset geometry if it covers the whole world
                 if (geometry != null && geometry.equalsTopo(world)) {

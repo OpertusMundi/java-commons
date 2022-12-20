@@ -8,6 +8,7 @@ import org.springframework.lang.Nullable;
 import eu.opertusmundi.common.model.RequestContext;
 import eu.opertusmundi.common.model.catalogue.CatalogueResult;
 import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
+import eu.opertusmundi.common.model.catalogue.IdVersionPair;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueAssetQuery;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueDraftQuery;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestCommandDto;
@@ -70,6 +71,17 @@ public interface CatalogueService {
     CatalogueResult<CatalogueItemDto> findAllElastic(RequestContext ctx, ElasticAssetQuery request) throws CatalogueServiceException;
 
     /**
+     * Find all items with the specified identifiers in both published and
+     * history catalogue tables
+     *
+     * @param id
+     * @param throwOnMissing
+     * @return
+     * @throws CatalogueServiceException
+     */
+    List<CatalogueItemDetailsDto> findAllHistoryAndPublishedById(String[] id) throws CatalogueServiceException;
+
+    /**
      * Find all items with the specified identifiers
      *
      * <p>
@@ -79,8 +91,8 @@ public interface CatalogueService {
      * @return
      * @throws CatalogueServiceException
      */
-    default List<CatalogueItemDetailsDto> findAllById(String[] id) throws CatalogueServiceException {
-        return this.findAllById(id, true);
+    default List<CatalogueItemDetailsDto> findAllPublishedById(String[] id) throws CatalogueServiceException {
+        return this.findAllPublishedById(id, true);
     }
 
     /**
@@ -91,7 +103,32 @@ public interface CatalogueService {
      * @return
      * @throws CatalogueServiceException
      */
-    List<CatalogueItemDetailsDto> findAllById(String[] id, boolean throwOnMissing) throws CatalogueServiceException;
+    List<CatalogueItemDetailsDto> findAllPublishedById(String[] id, boolean throwOnMissing) throws CatalogueServiceException;
+
+    /**
+     * Find all history items with the specified pairs of identifier and version
+     * values
+     *
+     * <p>
+     * See {@link #findAllHistoryByIdAndVersion(List, boolean)}
+     *
+     * @param pairs
+     * @return
+     * @throws CatalogueServiceException
+     */
+    default List<CatalogueItemDetailsDto> findAllHistoryByIdAndVersion(List<IdVersionPair> pairs) throws CatalogueServiceException {
+        return this.findAllHistoryByIdAndVersion(pairs, true);
+    }
+
+    /**
+     * Find all history items with the specified pairs of identifier and version
+     * values
+     *
+     * @param pairs
+     * @return
+     * @throws CatalogueServiceException
+     */
+    List<CatalogueItemDetailsDto> findAllHistoryByIdAndVersion(List<IdVersionPair> pairs, boolean throwOnMissing) throws CatalogueServiceException;
 
     /**
      * Search for draft items
