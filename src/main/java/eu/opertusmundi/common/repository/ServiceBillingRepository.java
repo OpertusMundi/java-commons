@@ -1,7 +1,9 @@
 package eu.opertusmundi.common.repository;
 
 import java.time.LocalDate;
+import java.time.temporal.WeekFields;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -13,12 +15,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import eu.opertusmundi.common.domain.ServiceBillingEntity;
 import eu.opertusmundi.common.model.EnumView;
 import eu.opertusmundi.common.model.account.EnumPayoffStatus;
 import eu.opertusmundi.common.model.payment.EnumBillableServiceType;
 import eu.opertusmundi.common.model.payment.ServiceBillingDto;
+import eu.opertusmundi.common.model.payment.TransferDto;
 
 @Repository
 @Transactional(readOnly = true)
@@ -156,5 +160,24 @@ public interface ServiceBillingRepository extends JpaRepository<ServiceBillingEn
             case PROVIDER -> e.map(s -> s.toProviderDto(includeDetails));
             case HELPDESK -> e.map(s -> s.toHelpdeskDto(includeDetails));
         };
+    }
+    
+    default void updateTransfer(Integer id, TransferDto transfer) {
+        Assert.notNull(transfer, "Expected a non-null transfer");
+
+        final ServiceBillingEntity e = this.findById(id).orElse(null);
+
+        Assert.notNull(e, "Expected a non-null service billing record");
+
+        e.setTransferCreditedFunds(transfer.getCreditedFunds());
+        e.setTransferDay(transfer.getExecutedOn().getDayOfMonth());
+        e.setTransferExecutedOn(transfer.getExecutedOn());
+        e.setTransferMonth(transfer.getExecutedOn().getMonthValue());
+        e.setTransferPlatformFees(transfer.getFees());
+        e.setTransferProviderId(transfer.getId());
+        e.setTransferWeek(transfer.getExecutedOn().get(WeekFields.of(Locale.getDefault()).weekOfYear()));
+        e.setTransferYear(transfer.getExecutedOn().getYear());
+
+        this.saveAndFlush(e);
     }
 }

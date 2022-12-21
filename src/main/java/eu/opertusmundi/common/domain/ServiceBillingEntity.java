@@ -148,6 +148,30 @@ public class ServiceBillingEntity {
     @Enumerated(EnumType.STRING)
     private EnumPayoffStatus status;
 
+    @Column(name = "transfer_provider_id")
+    private String transferProviderId;
+
+    @Column(name = "transfer_executed_on")
+    private ZonedDateTime transferExecutedOn;
+
+    @Column(name = "transfer_year")
+    private Integer transferYear;
+
+    @Column(name = "transfer_month")
+    private Integer transferMonth;
+
+    @Column(name = "transfer_week")
+    private Integer transferWeek;
+
+    @Column(name = "transfer_day")
+    private Integer transferDay;
+
+    @Column(name = "`transfer_credited_funds`", columnDefinition = "numeric", precision = 20, scale = 6)
+    private BigDecimal transferCreditedFunds;
+
+    @Column(name = "`transfer_platform_fees`", columnDefinition = "numeric", precision = 20, scale = 6)
+    private BigDecimal transferPlatformFees;
+    
     private void updateDto(ServiceBillingDto s) {
         s.setCreatedOn(createdOn);
         s.setDueDate(dueDate);

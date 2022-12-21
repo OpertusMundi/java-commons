@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -184,6 +185,9 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
     private static final Logger logger = LoggerFactory.getLogger(MangoPayPaymentService.class);
 
+    @Value("${opertusmundi.topio-account-id:68}")
+    private Integer topioAccountId;
+    
     // TODO: Set from configuration
     private final BigDecimal feePercent = new BigDecimal(5);
 
@@ -1582,7 +1586,26 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
                     // If transfer is successful, update item history record
                     if (transfer.getStatus() == EnumTransactionStatus.SUCCEEDED) {
-                        this.payInItemHistoryRepository.updateTransfer(item.getId(), transfer);
+                        switch (item.getType()) {
+                            case ORDER :
+                                // For order items, transfer data is stored with
+                                // payment analytics data
+                                this.payInItemHistoryRepository.updateTransfer(item.getId(), transfer);
+                                break;
+
+                            case SERVICE_BILLING :
+                                // For service billing items, transfer data is
+                                // stored with the billing record
+                                final var serviceItem = (PayInServiceBillingItemEntity) item;
+                                this.serviceBillingRepository.updateTransfer(serviceItem.getServiceBilling().getId(), transfer);
+                                break;
+
+                            default :
+                                throw new PaymentException(PaymentMessageCode.SERVER_ERROR, String.format(
+                                    "[MANGOPAY] PayIn item type not supported [key=%s, index=%d, type=%s]", 
+                                    payInKey, item.getId(), item.getType())
+                                );
+                        }
                     }
 
                     transfer.setKey(item.getTransferKey());
@@ -1590,7 +1613,22 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
 
                     // Update provider wallet
                     if (transfer.getStatus() == EnumTransactionStatus.SUCCEEDED) {
-                        this.updateCustomerWalletFunds(item.getProvider().getKey(), EnumCustomerType.PROVIDER);
+                        final UUID providerKey = switch (item.getType()) {
+                            case ORDER -> 
+                                item.getProvider().getKey();
+
+                            case SERVICE_BILLING -> {
+                                final var serviceItem = (PayInServiceBillingItemEntity) item;
+                                yield switch (serviceItem.getServiceBilling().getType()) {
+                                    case SUBSCRIPTION -> 
+                                        serviceItem.getServiceBilling().getSubscription().getProvider().getKey();
+                                        
+                                    case PRIVATE_OGC_SERVICE -> 
+                                        this.accountRepository.findById(topioAccountId).get().getKey();
+                                };
+                            }
+                        };
+                        this.updateCustomerWalletFunds(providerKey, EnumCustomerType.PROVIDER);
                     }
                 }
             }
@@ -1656,14 +1694,42 @@ public class MangoPayPaymentService extends BaseMangoPayService implements Payme
         Assert.isTrue(item.getServiceBilling() != null, "Expected a non-null subscription billing record");
 
         // Get credit customer
-        final AccountEntity  creditAccount  = item.getServiceBilling().getSubscription().getProvider();
-        final CustomerEntity creditCustomer = creditAccount.getProfile().getProvider();
-        final BigDecimal     amount         = item.getServiceBilling().getTotalPrice().multiply(BigDecimal.valueOf(100L));
-        final BigDecimal     fees           = item.getServiceBilling().getTotalPrice()
-            .multiply(this.feePercent)
-            .divide(BigDecimal.valueOf(100L))
-            .setScale(2, RoundingMode.HALF_UP)
-            .multiply(BigDecimal.valueOf(100L));
+        final AccountEntity creditAccount = switch (item.getServiceBilling().getType()) {
+            case SUBSCRIPTION -> 
+                item.getServiceBilling().getSubscription().getProvider();
+
+            case PRIVATE_OGC_SERVICE -> 
+                this.accountRepository.findById(topioAccountId).orElse(null);
+
+            default -> 
+                throw new PaymentException(PaymentMessageCode.SERVER_ERROR, String.format(
+                    "[MANGOPAY] Service billing item type not supported [payInKey=%s, index=%d, type=%s]", 
+                    payInKey, item.getId(), item.getServiceBilling().getType())
+                );
+        };
+        
+        final var creditCustomer = creditAccount.getProfile().getProvider();
+        final var amount         = item.getServiceBilling().getTotalPrice().multiply(BigDecimal.valueOf(100L));
+        final var fees           = switch (item.getServiceBilling().getType()) {
+            case SUBSCRIPTION -> item.getServiceBilling().getTotalPrice()     
+                .multiply(this.feePercent)
+                .divide(BigDecimal.valueOf(100L))
+                .setScale(2, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100L));
+            
+             // For private OGC services, the provider
+             // is the Topio platform; Hence all funds
+             // are credited to the platform wallet as
+             // fees
+            case PRIVATE_OGC_SERVICE -> 
+                amount;
+
+            default -> 
+                throw new PaymentException(PaymentMessageCode.SERVER_ERROR, String.format(
+                    "[MANGOPAY] Service billing item type not supported [payInKey=%s, index=%d, type=%s]", 
+                    payInKey, item.getId(), item.getServiceBilling().getType())
+                );
+        };
 
         if (creditCustomer == null) {
             throw new PaymentException(PaymentMessageCode.SERVER_ERROR, String.format(
