@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -334,7 +335,7 @@ public class DefaultUserFileManager implements UserFileManager {
     }
 
     private void checkReservedPaths(UserFileNamingStrategyContext ctx, Path path) throws FileSystemException, IOException {
-        for (final var p : EnumUserFileReservedEntry.values()) {
+        for (final var p : List.of(EnumUserFileReservedEntry.NOTEBOOKS_FOLDER)) {
             final var reservedPath = this.fileNamingStrategy.resolvePath(ctx, p.entryName());
             if (reservedPath.equals(path)) {
                 throw new FileSystemException(FileSystemMessageCode.RESERVED_PATH, "Path is a system reserved path");
