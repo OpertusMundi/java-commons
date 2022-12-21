@@ -58,7 +58,6 @@ import eu.opertusmundi.common.model.SettingUpdateCommandDto;
 import eu.opertusmundi.common.model.SettingUpdateDto;
 import eu.opertusmundi.common.model.account.EnumPayoffStatus;
 import eu.opertusmundi.common.model.account.EnumServiceBillingRecordSortField;
-import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.message.EnumNotificationType;
 import eu.opertusmundi.common.model.message.server.ServerNotificationCommandDto;
 import eu.opertusmundi.common.model.payment.BillingSubscriptionDates;
@@ -68,10 +67,10 @@ import eu.opertusmundi.common.model.payment.EnumServiceBillingBatchStatus;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.PaymentMessageCode;
-import eu.opertusmundi.common.model.payment.ServiceBillingDto;
-import eu.opertusmundi.common.model.payment.ServiceUseStatsDto;
 import eu.opertusmundi.common.model.payment.ServiceBillingBatchCommandDto;
 import eu.opertusmundi.common.model.payment.ServiceBillingBatchDto;
+import eu.opertusmundi.common.model.payment.ServiceBillingDto;
+import eu.opertusmundi.common.model.payment.ServiceUseStatsDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskServiceBillingDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
@@ -83,10 +82,10 @@ import eu.opertusmundi.common.model.workflow.EnumWorkflow;
 import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.AccountSubscriptionRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
+import eu.opertusmundi.common.repository.ServiceBillingBatchRepository;
 import eu.opertusmundi.common.repository.ServiceBillingRepository;
 import eu.opertusmundi.common.repository.SettingHistoryRepository;
 import eu.opertusmundi.common.repository.SettingRepository;
-import eu.opertusmundi.common.repository.ServiceBillingBatchRepository;
 import eu.opertusmundi.common.repository.UserServiceRepository;
 import eu.opertusmundi.common.service.messaging.NotificationMessageHelper;
 import eu.opertusmundi.common.util.BpmEngineUtils;
@@ -513,9 +512,10 @@ public class DefaultServiceBillingService implements ServiceBillingService {
     private void sendSubscriptionChargeNotification(
         BillingSubscriptionDates dates, AccountSubscriptionEntity subscription, HelpdeskServiceBillingDto record
     ) {
-        final String                  idempotentKey = buildIdempotentKey(subscription.getKey(), dates, IDEMPOTENT_KEY_SUFFIX_CHARGE);
-        final EnumNotificationType    type          = EnumNotificationType.SUBSCRIPTION_BILLING_SINGLE_CHARGE;
-        final CatalogueItemDetailsDto asset         = this.catalogueService.findOne(null, subscription.getAssetId(), null, false);
+        final var idempotentKey = buildIdempotentKey(subscription.getKey(), dates, IDEMPOTENT_KEY_SUFFIX_CHARGE);
+        final var type          = EnumNotificationType.SUBSCRIPTION_BILLING_SINGLE_CHARGE;
+        final var assets        = this.catalogueService.findAllHistoryAndPublishedById(new String[]{subscription.getAssetId()});
+        final var asset         = assets.size() == 1 ? assets.get(0) : null;
 
         final Map<String, Object> variables = new HashMap<>();
         variables.put("intervalFrom", dates.getDateFrom().format(dateFormat));
@@ -818,12 +818,12 @@ public class DefaultServiceBillingService implements ServiceBillingService {
         
         if (subscription != null) {
             final var assetId = subscription.getAssetId();
-            final var asset   = this.catalogueService.findOne(null, assetId, null, false);
+            final var assets  = this.catalogueService.findAllHistoryAndPublishedById(new String[]{assetId});
+            final var asset   = assets.size() == 1 ? assets.get(0) : null;
 
             variables.put("asset_id", assetId);
             variables.put("asset_title", asset.getTitle());
             variables.put("asset_version", asset.getVersion());
-
         }
         if (service != null) {
             variables.put("service_title", service.getTitle());
