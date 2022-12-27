@@ -191,6 +191,11 @@ public abstract class PayInEntity {
     @Getter
     @Setter
     protected String resultMessage;
+    
+    @Column(name = "`invoice_printed_on`")
+    @Getter
+    @Setter
+    protected ZonedDateTime invoicePrintedOn;
 
     public abstract ConsumerPayInDto toConsumerDto(boolean includeDetails);
 

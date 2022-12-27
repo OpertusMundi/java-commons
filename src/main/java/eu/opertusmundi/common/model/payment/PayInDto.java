@@ -34,6 +34,9 @@ public abstract class PayInDto {
     protected String payIn;
 
     @JsonIgnore
+    protected Integer consumerId;
+
+    @JsonIgnore
     protected UUID consumerKey;
 
     @JsonIgnore
@@ -85,6 +88,12 @@ public abstract class PayInDto {
     @Schema(description = "Platform reference number")
     protected String referenceNumber;
 
+    @JsonIgnore
+    protected ZonedDateTime invoicePrintedOn;
+
+    @Schema(description = "`true` if the invoice has been created")
+    protected boolean invoicePrinted;
+    
     public void addStatusHistory(PayInStatusDto h) {
         this.statusHistory.add(h);
     }

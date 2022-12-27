@@ -56,12 +56,14 @@ public class BankWirePayInEntity extends PayInEntity {
     private BankAccountEmbeddable bankAccount;
 
     public void updateDto(PayInDto p) {
-
+        p.setConsumerId(consumer.getId());
         p.setConsumerKey(consumer.getKey());
         p.setCreatedOn(createdOn);
         p.setCurrency(currency);
         p.setExecutedOn(executedOn);
         p.setId(id);
+        p.setInvoicePrinted(this.invoicePrintedOn != null);
+        p.setInvoicePrintedOn(this.invoicePrintedOn);
         p.setKey(key);
         p.setPayIn(payIn);
         p.setPaymentMethod(paymentMethod);
