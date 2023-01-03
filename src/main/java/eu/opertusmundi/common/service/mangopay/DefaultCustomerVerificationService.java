@@ -59,7 +59,6 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultCustomerVerificationService.class);
 
-    private final AccountRepository         accountRepository;
     private final BpmEngineUtils            bpmEngineUtils;
     private final CustomerRepository        customerRepository;
     private final KycDocumentPageRepository kycDocumentPageRepository;
@@ -71,7 +70,8 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
         CustomerRepository        customerRepository,
         KycDocumentPageRepository kycDocumentPageRepository
     ) {
-        this.accountRepository         = accountRepository;
+        super(accountRepository);
+
         this.bpmEngineUtils            = bpmEngineUtils;
         this.customerRepository        = customerRepository;
         this.kycDocumentPageRepository = kycDocumentPageRepository;
@@ -398,19 +398,6 @@ public class DefaultCustomerVerificationService extends BaseMangoPayService impl
         }
 
         return result;
-    }
-
-    private AccountEntity getAccount(UUID key) throws CustomerVerificationException {
-        final AccountEntity account = this.accountRepository.findOneByKey(key).orElse(null);
-
-        if (account == null) {
-            throw new CustomerVerificationException(
-                CustomerVerificationMessageCode.ACCOUNT_NOT_FOUND,
-                String.format("[Customer Verification] OpertusMundi user [%s] was not found", key)
-            );
-        }
-
-        return account;
     }
 
     private void ensureCustomer(CustomerEntity consumer, UUID key, EnumCustomerType userType) throws CustomerVerificationException {

@@ -1,4 +1,4 @@
-package eu.opertusmundi.common.service;
+package eu.opertusmundi.common.service.mangopay;
 
 import java.util.Map;
 import java.util.UUID;
@@ -24,28 +24,30 @@ import eu.opertusmundi.common.util.BpmEngineUtils;
 import eu.opertusmundi.common.util.BpmInstanceVariablesBuilder;
 import feign.FeignException;
 
+/**
+ * Utility service that implements retryable operations for managing MANGOPAY
+ * PayOut workflow instances
+ */
 @Service
 @Transactional
-public class DefaultPayOutService implements PayOutService {
+public class DefaultPayOutWorkflowService implements PayOutWorkflowService {
 
     private static final String MESSAGE_UPDATE_PAYOUT_STATUS = "payout-updated-message";
 
-    private static final Logger logger = LoggerFactory.getLogger(DefaultPayOutService.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultPayOutWorkflowService.class);
+
+    private final PayOutRepository payOutRepository;
+    private final BpmEngineUtils   bpmEngine;
 
     @Autowired
-    private PayOutRepository payOutRepository;
+    public DefaultPayOutWorkflowService(
+        BpmEngineUtils   bpmEngine,
+        PayOutRepository payOutRepository
+    ) {
+        this.bpmEngine        = bpmEngine;
+        this.payOutRepository = payOutRepository;
+    }
 
-    @Autowired
-    private BpmEngineUtils bpmEngine;
-
-    /**
-     * Initializes a workflow instance to process the referenced PayOut
-     *
-     * The operation may fail because of (a) a network error, (b) BPM engine
-     * service error or (c) database command error. The operation is retried for
-     * at most 3 times, with a maximum latency due to attempt delays of 9
-     * seconds.
-     */
     @Override
     @Retryable(include = {Exception.class}, maxAttempts = 3, backoff = @Backoff(delay = 2000, maxDelay = 3000))
     public String start(UUID userKey, UUID payOutKey) {
@@ -91,7 +93,7 @@ public class DefaultPayOutService implements PayOutService {
 
     @Override
     @Retryable(include = {Exception.class}, maxAttempts = 3, backoff = @Backoff(delay = 2000, maxDelay = 3000))
-    public void sendPayOutStatusUpdateMessage(UUID payOutKey, EnumTransactionStatus status) {
+    public void sendStatusUpdateMessage(UUID payOutKey, EnumTransactionStatus status) {
         final String messageName = MESSAGE_UPDATE_PAYOUT_STATUS;
 
         try {

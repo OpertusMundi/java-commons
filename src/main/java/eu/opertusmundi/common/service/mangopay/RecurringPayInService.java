@@ -10,7 +10,7 @@ import eu.opertusmundi.common.model.payment.RecurringRegistrationCreateCommand;
 import eu.opertusmundi.common.model.payment.RecurringRegistrationDto;
 import eu.opertusmundi.common.model.payment.RecurringRegistrationUpdateCommandDto;
 
-public interface RecurringPaymentService {
+public interface RecurringPayInService {
 
     /**
      * Initializes a new recurring PayIn registration

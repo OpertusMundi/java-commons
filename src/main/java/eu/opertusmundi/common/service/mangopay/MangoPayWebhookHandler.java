@@ -17,11 +17,26 @@ import eu.opertusmundi.common.model.payment.PaymentMessageCode;
 @Transactional
 public class MangoPayWebhookHandler {
 
-    @Autowired
-    private PaymentService paymentService;
+    private final CustomerVerificationService customerVerificationService;
+    private final PayInService                paymentService;
+    private final PayOutService               payoutService;
+    private final TransferService             transferService;
+    private final UserService                 userService;
 
     @Autowired
-    private CustomerVerificationService customerVerificationService;
+    public MangoPayWebhookHandler(
+        CustomerVerificationService customerVerificationService,
+        PayInService                paymentService,
+        PayOutService               payoutService,
+        TransferService             transferService,
+        UserService                 userService
+    ) {
+        this.paymentService              = paymentService;
+        this.payoutService               = payoutService;
+        this.transferService             = transferService;
+        this.customerVerificationService = customerVerificationService;
+        this.userService                 = userService;
+    }
 
     public void handleWebHook(String eventType, String resourceId, ZonedDateTime date) throws PaymentException {
         // Ignore empty requests (requests may originate from web hook registration)
@@ -50,19 +65,19 @@ public class MangoPayWebhookHandler {
             case PAYOUT_NORMAL_SUCCEEDED :
             case PAYOUT_NORMAL_FAILED :
                 // Update PayOut
-                this.paymentService.sendPayOutStatusUpdateMessage(resourceId);
+                this.payoutService.sendPayOutStatusUpdateMessage(resourceId);
                 break;
 
             case PAYOUT_REFUND_SUCCEEDED :
             case PAYOUT_REFUND_FAILED :
                 // Update PayOut refund
-                this.paymentService.updatePayOutRefund(resourceId);
+                this.payoutService.updatePayOutRefund(resourceId);
                 break;
 
             case TRANSFER_NORMAL_FAILED :
             case TRANSFER_NORMAL_SUCCEEDED :
                 // Update Transfer
-                this.paymentService.updateTransfer(resourceId);
+                this.transferService.updateTransfer(resourceId);
                 break;
 
             case TRANSFER_REFUND_SUCCEEDED :
@@ -88,7 +103,7 @@ public class MangoPayWebhookHandler {
             case USER_INFLOWS_UNBLOCKED :
             case USER_OUTFLOWS_BLOCKED :
             case USER_OUTFLOWS_UNBLOCKED :
-                this.paymentService.updateUserBlockStatus(resourceId);
+                this.userService.updateUserBlockStatus(resourceId);
                 break;
 
             // TODO: Add support for recurring registration web hooks after java

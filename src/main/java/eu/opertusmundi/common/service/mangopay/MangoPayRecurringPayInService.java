@@ -38,15 +38,16 @@ import eu.opertusmundi.common.model.payment.RecurringRegistrationDto;
 import eu.opertusmundi.common.model.payment.RecurringRegistrationUpdateCommandDto;
 import eu.opertusmundi.common.model.payment.RecurringRegistrationUpdateStatusCommand;
 import eu.opertusmundi.common.model.payment.consumer.ConsumerCardDirectPayInDto;
+import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.OrderRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
 import eu.opertusmundi.common.repository.RecurringPaymentRepository;
 
 @Service
 @Transactional
-public class MangoPayRecurringPaymentService extends BaseMangoPayService implements RecurringPaymentService {
+public class MangoPayRecurringPayInService extends BaseMangoPayService implements RecurringPayInService {
 
-    private static final Logger logger = LoggerFactory.getLogger(MangoPayRecurringPaymentService.class);
+    private static final Logger logger = LoggerFactory.getLogger(MangoPayRecurringPayInService.class);
 
     /**
      * This is the URL where users are automatically redirected after 3DS
@@ -58,14 +59,23 @@ public class MangoPayRecurringPaymentService extends BaseMangoPayService impleme
     @Value("${opertusmundi.payments.mangopay.secure-mode-return-url:}")
     private String secureModeReturnUrl;
 
-    @Autowired
-    private OrderRepository orderRepository;
+    private final OrderRepository            orderRepository;
+    private final RecurringPaymentRepository recurringPaymentRepository;
+    private final PayInRepository            payInRepository;
 
     @Autowired
-    private RecurringPaymentRepository recurringPaymentRepository;
+    public MangoPayRecurringPayInService(
+        AccountRepository           accountRepository,
+        OrderRepository             orderRepository,
+        PayInRepository             payInRepository,
+        RecurringPaymentRepository  recurringPaymentRepository
+    ) {
+        super(accountRepository);
 
-    @Autowired
-    private PayInRepository payInRepository;
+        this.orderRepository            = orderRepository;
+        this.payInRepository            = payInRepository;
+        this.recurringPaymentRepository = recurringPaymentRepository;
+    }
 
     @Override
     public RecurringRegistrationDto initializeRegistration(RecurringRegistrationCreateCommand command) throws PaymentException {

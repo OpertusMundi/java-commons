@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,7 @@ import com.mangopay.entities.Hook;
 
 import eu.opertusmundi.common.model.admin.WebhookRegistration;
 import eu.opertusmundi.common.model.payment.PaymentException;
+import eu.opertusmundi.common.repository.AccountRepository;
 
 /**
  * Service for configuring MANGOPAY web hooks
@@ -26,6 +28,11 @@ import eu.opertusmundi.common.model.payment.PaymentException;
 public class MangoPayWebhookHelper extends BaseMangoPayService {
 
     private static final Logger logger = LoggerFactory.getLogger(MangoPayWebhookHelper.class);
+
+    @Autowired
+    public MangoPayWebhookHelper(AccountRepository accountRepository) {
+        super(accountRepository);
+    }
 
     private final List<EventType> eventTypes = Arrays.asList(
         // KYC documents
