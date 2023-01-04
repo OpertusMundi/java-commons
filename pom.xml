@@ -27,19 +27,19 @@
 
 		<spring-cloud.version>2021.0.3</spring-cloud.version>
 
-		<com.mangopay.version>2.25.1</com.mangopay.version>
-		<com.github.spotbugs.spotbugs.version>4.7.2</com.github.spotbugs.spotbugs.version>
-		<com.github.spotbugs.spotbugs-maven-plugin.version>4.7.2.1</com.github.spotbugs.spotbugs-maven-plugin.version>
+		<com.mangopay.version>2.26.0</com.mangopay.version>
+		<com.github.spotbugs.spotbugs.version>4.7.3</com.github.spotbugs.spotbugs.version>
+		<com.github.spotbugs.spotbugs-maven-plugin.version>4.7.3.0</com.github.spotbugs.spotbugs-maven-plugin.version>
 		<com.google.apis.analyticsreporting>v4-rev174-1.25.0</com.google.apis.analyticsreporting>
 		<com.sun.xml.bind.jaxb-impl>4.0.1</com.sun.xml.bind.jaxb-impl>
 		<com.sun.xml.ws.jaxws-ri>4.0.0</com.sun.xml.ws.jaxws-ri>
-		<com.vladmihalcea.hibernate-types-55.version>2.19.2</com.vladmihalcea.hibernate-types-55.version>
+		<com.vladmihalcea.hibernate-types-55.version>2.21.1</com.vladmihalcea.hibernate-types-55.version>
 		<commons-io.version>2.11.0</commons-io.version>
 		<feign-form.version>3.8.0</feign-form.version>
-		<geotools.version>27.1</geotools.version>
-		<icu4j.version>71.1</icu4j.version>
+		<geotools.version>28.0</geotools.version>
+		<icu4j.version>72.1</icu4j.version>
 		<io.jsonwebtoken.version>0.11.5</io.jsonwebtoken.version>
-    <javax.jws.javax.jws-api>1.1</javax.jws.javax.jws-api>
+    	<javax.jws.javax.jws-api>1.1</javax.jws.javax.jws-api>
 		<org.apache.pdfbox.pdfbox>2.0.27</org.apache.pdfbox.pdfbox>
 		<org.apache.pdfbox.fontbox>2.0.27</org.apache.pdfbox.fontbox>
 		<org.apache.pdfbox.jempbox>1.8.17</org.apache.pdfbox.jempbox>
@@ -50,8 +50,8 @@
 		<org.locationtech.jts.spatial4j.version>0.8</org.locationtech.jts.spatial4j.version>
 		<passay.version>1.6.2</passay.version>
 		<slugify.version>3.0.2</slugify.version>
-		<springdoc.version>1.6.11</springdoc.version>
-		<thumbnailator.version>0.4.17</thumbnailator.version>
+		<springdoc.version>1.6.14</springdoc.version>
+		<thumbnailator.version>0.4.19</thumbnailator.version>
 
 		<spotbugs.skip>false</spotbugs.skip>
 	</properties>
