@@ -56,15 +56,21 @@ public interface SettingRepository extends JpaRepository<SettingEntity, Integer>
     }
 
     @Transactional(readOnly = false)
-    default void update(SettingUpdateCommandDto command) throws EntityNotFoundException {
+    default void update(SettingUpdateCommandDto command) throws EntityNotFoundException, IllegalStateException {
         for (final SettingUpdateDto update : command.getUpdates()) {
             final SettingEntity         e = this.findOneByServiceAndKey(update.getService(), update.getKey()).orElse(null);
             final HelpdeskAccountEntity a = this.findAccountById(command.getUserId()).orElse(null);
             if (e == null) {
-                throw new EntityNotFoundException(
-                    String.format("Setting not found [service=%s, key=%s]",
-                            update.getService(), update.getKey())
-                );
+                throw new EntityNotFoundException(String.format(
+                    "Setting not found [service=%s, key=%s]",
+                    update.getService(), update.getKey()
+                ));
+            }
+            if(e.isReadOnly()) {
+                throw new IllegalStateException(String.format(
+                    "Cannot update read-only setting [service=%s, key=%s]",
+                    update.getService(), update.getKey()
+                ));
             }
 
             e.setUpdatedBy(a);

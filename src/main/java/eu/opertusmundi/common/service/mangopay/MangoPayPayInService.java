@@ -18,7 +18,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -130,9 +129,6 @@ import eu.opertusmundi.common.util.StreamUtils;
 public class MangoPayPayInService extends BaseMangoPayService implements PayInService {
 
     private static final Logger logger = LoggerFactory.getLogger(MangoPayPayInService.class);
-
-    @Value("${opertusmundi.topio-account-id:68}")
-    private Integer topioAccountId;
 
     private final OrderRepository            orderRepository;
     private final PayInRepository            payInRepository;

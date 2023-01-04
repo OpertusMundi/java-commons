@@ -23,7 +23,7 @@ import lombok.Setter;
 
 @Entity(name = "Setting")
 @Table(
-    schema = "`web`", 
+    schema = "`web`",
     name   = "`settings`"
 )
 @IdClass(SettingId.class)
@@ -57,6 +57,12 @@ public class SettingEntity {
     @Setter
     private String value;
 
+    @NotNull
+    @Column(name = "`read_only`")
+    @Getter
+    @Setter
+    private boolean readOnly;
+
     @ManyToOne()
     @JoinColumn(name = "updated_by")
     private HelpdeskAccountEntity updatedBy;
@@ -68,7 +74,7 @@ public class SettingEntity {
     public void setUpdatedBy(HelpdeskAccountEntity updatedBy) {
         this.updatedBy = updatedBy;
     }
-    
+
     @NotNull
     @Column(name = "`updated_on`")
     @Getter

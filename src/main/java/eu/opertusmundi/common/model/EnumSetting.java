@@ -8,7 +8,9 @@ import lombok.Getter;
 public enum EnumSetting {
     MARKETPLACE_BANNER_TEXT         (EnumService.API_GATEWAY,   "announcement.text",                EnumSettingType.TEXT),
     MARKETPLACE_BANNER_ENABLED      (EnumService.API_GATEWAY,   "announcement.enabled",             EnumSettingType.BOOLEAN),
-    USER_SERVICE_PRICE_PER_CALL     (EnumService.ADMIN_GATEWAY, "user-service.pricing-model.price", EnumSettingType.JSON)
+    TOPIO_ACCOUNT_ID                (EnumService.BPM_WORKER,    "topio-account-id",                 EnumSettingType.NUMERIC),
+    TOPIO_FEE_PERCENT               (EnumService.BPM_WORKER,    "topio-fee-percent",                EnumSettingType.NUMERIC),
+    USER_SERVICE_PRICE_PER_CALL     (EnumService.ADMIN_GATEWAY, "user-service.pricing-model.price", EnumSettingType.JSON),
     ;
 
     @Getter

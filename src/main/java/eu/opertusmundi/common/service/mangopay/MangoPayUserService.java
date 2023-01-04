@@ -6,7 +6,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,9 +46,6 @@ import eu.opertusmundi.common.util.MangopayUtils;
 public class MangoPayUserService extends BaseMangoPayService implements UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(MangoPayUserService.class);
-
-    @Value("${opertusmundi.topio-account-id:68}")
-    private Integer topioAccountId;
 
     private final CustomerRepository customerRepository;
 

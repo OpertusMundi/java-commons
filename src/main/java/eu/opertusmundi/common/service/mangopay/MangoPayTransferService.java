@@ -10,7 +10,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -25,6 +24,7 @@ import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
 import eu.opertusmundi.common.domain.PayInServiceBillingItemEntity;
+import eu.opertusmundi.common.model.EnumSetting;
 import eu.opertusmundi.common.model.account.EnumCustomerType;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
@@ -35,6 +35,7 @@ import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.PayInItemHistoryRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
 import eu.opertusmundi.common.repository.ServiceBillingRepository;
+import eu.opertusmundi.common.repository.SettingRepository;
 
 @Service
 @Transactional
@@ -42,16 +43,11 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
 
     private static final Logger logger = LoggerFactory.getLogger(MangoPayTransferService.class);
 
-    @Value("${opertusmundi.topio-account-id:68}")
-    private Integer topioAccountId;
-
-    // TODO: Set from configuration
-    private final BigDecimal feePercent = new BigDecimal(5);
-
     @Autowired
     private final PayInRepository            payInRepository;
     private final PayInItemHistoryRepository payInItemHistoryRepository;
     private final ServiceBillingRepository   serviceBillingRepository;
+    private final SettingRepository          settingRepository;
     private final WalletService              walletService;
 
     @Autowired
@@ -60,6 +56,7 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
         PayInRepository               payInRepository,
         PayInItemHistoryRepository    payInItemHistoryRepository,
         ServiceBillingRepository      serviceBillingRepository,
+        SettingRepository             settingRepository,
         WalletService                 walletService
     ) {
         super(accountRepository);
@@ -67,13 +64,18 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
         this.payInRepository            = payInRepository;
         this.payInItemHistoryRepository = payInItemHistoryRepository;
         this.serviceBillingRepository   = serviceBillingRepository;
+        this.settingRepository          = settingRepository;
         this.walletService              = walletService;
     }
 
     @Override
     public List<TransferDto> createTransfer(UUID userKey, UUID payInKey) throws PaymentException {
         try {
-            final List<TransferDto> transfers = new ArrayList<>();
+            final var topioAccountSetting = this.settingRepository.findOne(EnumSetting.TOPIO_ACCOUNT_ID);
+            final var feePercentSetting   = this.settingRepository.findOne(EnumSetting.TOPIO_FEE_PERCENT);
+            final var topioAccountId      = Integer.parseInt(topioAccountSetting.getValue());
+            final var feePercent          = BigDecimal.valueOf(Long.parseLong(feePercentSetting.getValue()));
+            final var transfers           = new ArrayList<TransferDto>();
 
             // PayIn must exist with a transaction status SUCCEEDED
             final PayInEntity payIn = this.payInRepository.findOneEntityByKey(payInKey).orElse(null);
@@ -115,12 +117,13 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
                 switch (item.getType()) {
                     case ORDER :
                         transfer = this.createTransferForOrder(
-                            idempotencyKey, payInKey, (PayInOrderItemEntity) item, debitCustomer
+                            idempotencyKey, payInKey, (PayInOrderItemEntity) item, debitCustomer, feePercent
                         );
                         break;
                     case SERVICE_BILLING :
                         transfer = this.createTransferForServiceBilling(
-                            idempotencyKey, payInKey, (PayInServiceBillingItemEntity) item, debitCustomer
+                            idempotencyKey, payInKey, (PayInServiceBillingItemEntity) item, debitCustomer,
+                            feePercent, topioAccountId
                         );
                         break;
                     default :
@@ -197,7 +200,7 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
     }
 
     private TransferDto createTransferForOrder(
-        String idempotencyKey, UUID payInKey, PayInOrderItemEntity item, CustomerEntity debitCustomer
+        String idempotencyKey, UUID payInKey, PayInOrderItemEntity item, CustomerEntity debitCustomer, BigDecimal feePercent
     ) throws Exception {
         Assert.isTrue(item.getOrder() != null, "Expected a non-null order");
         Assert.isTrue(item.getOrder().getStatus() == EnumOrderStatus.SUCCEEDED, "Expected order status to be SUCCEEDED");
@@ -209,7 +212,7 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
         final CustomerEntity creditCustomer = creditAccount.getProfile().getProvider();
         final BigDecimal     amount         = item.getOrder().getTotalPrice().multiply(BigDecimal.valueOf(100L));
         final BigDecimal     fees           = item.getOrder().getTotalPrice()
-            .multiply(this.feePercent)
+            .multiply(feePercent)
             .divide(BigDecimal.valueOf(100L))
             .setScale(2, RoundingMode.HALF_UP)
             .multiply(BigDecimal.valueOf(100L));
@@ -239,7 +242,8 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
     }
 
     private TransferDto createTransferForServiceBilling(
-        String idempotencyKey, UUID payInKey, PayInServiceBillingItemEntity item, CustomerEntity debitCustomer
+        String idempotencyKey, UUID payInKey, PayInServiceBillingItemEntity item, CustomerEntity debitCustomer,
+        BigDecimal feePercent, Integer topioAccountId
     ) throws Exception {
         Assert.isTrue(item.getServiceBilling() != null, "Expected a non-null subscription billing record");
 
@@ -262,7 +266,7 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
         final var amount         = item.getServiceBilling().getTotalPrice().multiply(BigDecimal.valueOf(100L));
         final var fees           = switch (item.getServiceBilling().getType()) {
             case SUBSCRIPTION -> item.getServiceBilling().getTotalPrice()
-                .multiply(this.feePercent)
+                .multiply(feePercent)
                 .divide(BigDecimal.valueOf(100L))
                 .setScale(2, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100L));
