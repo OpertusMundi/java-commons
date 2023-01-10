@@ -19,6 +19,7 @@ import eu.opertusmundi.common.domain.CustomerProfessionalEntity;
 import eu.opertusmundi.common.domain.MailTemplateEntity;
 import eu.opertusmundi.common.domain.OrderEntity;
 import eu.opertusmundi.common.domain.OrderItemEntity;
+import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.model.ServiceException;
 import eu.opertusmundi.common.model.account.EnumActivationTokenType;
 import eu.opertusmundi.common.model.account.EnumMangopayUserType;
@@ -29,6 +30,7 @@ import eu.opertusmundi.common.repository.AccountRepository;
 import eu.opertusmundi.common.repository.ActivationTokenRepository;
 import eu.opertusmundi.common.repository.MailTemplateRepository;
 import eu.opertusmundi.common.repository.OrderRepository;
+import eu.opertusmundi.common.repository.PayInRepository;
 import eu.opertusmundi.common.service.CatalogueService;
 import eu.opertusmundi.common.service.ProviderAssetService;
 
@@ -49,6 +51,9 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
 
     @Autowired
     private OrderRepository orderRepository;
+
+    @Autowired
+    private PayInRepository payInRepository;
 
     @Autowired
     private ProviderAssetService providerAssetService;
@@ -92,10 +97,11 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             case SUPPLIER_PURCHASE_REMINDER :
             case SUPPLIER_UPLOADED_CONTRACT_EVALUATION :
             case SUPPLIER_UPLOADED_CONTRACT_ACCEPTED :
-            case SUPPLIER_UPLOADED_CONTRACT_REJECTED:
+            case SUPPLIER_UPLOADED_CONTRACT_REJECTED :
             case SUPPLIER_CONTRACT_TO_BE_FILLED_OUT :
             case CONSUMER_SUPPLIER_CONTRACT_SIGNED :
-            case VENDOR_ACCOUNT_INVITATION:
+            case CONSUMER_REFUND_INVOICE :
+            case VENDOR_ACCOUNT_INVITATION :
             case VENDOR_ACCOUNT_ACTIVATION_SUCCESS :
                 return MessageFormat.format(template.getSubjectTemplate(), variables);
         }
@@ -218,6 +224,10 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             case CONSUMER_INVOICE :
             	this.populateConsumerInvoiceModel(builder);
             	break;
+
+            case CONSUMER_REFUND_INVOICE :
+                this.populateConsumerRefundInvoiceModel(builder);
+                break;
 
             case CONSUMER_PURCHASE_NOTIFICATION :
             	this.populateConsumerPurchaseNotificationModel(builder);
@@ -652,6 +662,19 @@ public class DefaultMailMessageHelper implements MailMessageHelper {
             .add("orderId", orderEntity.getReferenceNumber());
 
 	}
+
+    private void populateConsumerRefundInvoiceModel(MailModelBuilder builder) {
+        final UUID payInKey = UUID.fromString((String) builder.get("payInKey"));
+
+        final PayInEntity   payinEntity = this.payInRepository.findOneEntityByKey(payInKey).get();
+        final AccountEntity account     = payinEntity.getConsumer();
+
+        builder
+            .setRecipientName(account.getFullName())
+            .setRecipientAddress(account.getEmail())
+            .add("name", account.getFullName())
+            .add("payInReferenceNumber", payinEntity.getReferenceNumber());
+    }
 
 	private void populateConsumerPurchaseNotificationModel(MailModelBuilder builder) {
         final UUID userKey  = UUID.fromString((String) builder.get("userKey"));
