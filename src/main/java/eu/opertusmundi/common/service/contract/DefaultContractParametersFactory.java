@@ -16,6 +16,7 @@ import eu.opertusmundi.common.model.pricing.DiscountRateDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.pricing.EnumContinent;
 import eu.opertusmundi.common.model.pricing.EnumPricingModel;
+import eu.opertusmundi.common.model.pricing.PrePaidTierDto;
 import eu.opertusmundi.common.repository.OrderRepository;
 import eu.opertusmundi.common.service.CatalogueService;
 
@@ -74,11 +75,16 @@ public class DefaultContractParametersFactory implements ContractParametersFacto
         final String				totalPriceExcludingTax			= null;
         final String				pricePerRows					= null;
         final String				pricePerPopulation				= null;
+        final String				pricePerCall					= null;
+        final String              	annualPrice						= null;
+        final String				monthlyPrice					= null;
         final List<DiscountRateDto>	discountRates					= null;
+        final List<PrePaidTierDto>  prepaidTiers					= null;
 		final ContractParametersDto.PricingModel	pricingModel	= new ContractParametersDto.PricingModel(
 					pricingModelType, pricingModelDescription, consumerRestrictionContinents, consumerRestrictionCountries,
 					coverageRestrictionContinents, coverageRestrictionCountries, domainRestrictions,
-					totalPrice, totalPriceExcludingTax, pricePerRows, pricePerPopulation, discountRates);
+					totalPrice, totalPriceExcludingTax, pricePerRows, pricePerPopulation, pricePerCall,
+					annualPrice, monthlyPrice, discountRates, prepaidTiers);
 
     	final ContractParametersDto params = ContractParametersDto.builder()
         		.consumer(consumer)

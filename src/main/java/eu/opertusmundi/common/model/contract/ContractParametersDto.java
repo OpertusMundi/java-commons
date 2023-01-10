@@ -18,6 +18,11 @@ import eu.opertusmundi.common.model.pricing.EnumPricingModel;
 import eu.opertusmundi.common.model.pricing.FixedPopulationPricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.FixedPricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.FixedRowPricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.PerCallPricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.PerRowPricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.PrePaidTierDto;
+import eu.opertusmundi.common.model.pricing.integration.SHImagePricingModelCommandDto;
+import eu.opertusmundi.common.model.pricing.integration.SHSubscriptionPricingModelCommandDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -66,7 +71,6 @@ public class ContractParametersDto {
 
         public static Consumer from(CustomerDto c) {
             final Consumer result = new Consumer();
-
             switch (c.getType()) {
                 case INDIVIDUAL :
                 	final CustomerIndividualDto d = (CustomerIndividualDto) c;
@@ -76,14 +80,14 @@ public class ContractParametersDto {
                     break;
 
                 case PROFESSIONAL :
-                    final CustomerProfessionalDto t = (CustomerProfessionalDto) c;
-
+                	final CustomerProfessionalDto t = (CustomerProfessionalDto) c;
                     result.companyRegistrationNumber = t.getCompanyNumber();
                     result.contactEmail = t.getEmail();
                     result.contactPerson = String.format("%s %s", t.getRepresentative().getFirstName(), t.getRepresentative().getLastName()) .trim();
                     result.corporateName = t.getName();
                     result.euVatNumber = "N/A";
                     result.professionalAddress = t.getHeadquartersAddress().toString();
+                    break;
 
                 default :
                     throw ApplicationException.fromMessage(String.format("Customer type not supported [type=%s]", c.getType()));
@@ -113,7 +117,6 @@ public class ContractParametersDto {
             final Product                    result     = new Product();
             final CatalogueFeatureProperties properties = f.getProperties();
             final DecimalFormat              df         = new DecimalFormat("#,##0.00");
-
             result.applicableFees        = df.format(i.getPricingModel().getQuotation().getTotalPrice()) + " €";
             result.description           = properties.getAbstractText();
             result.estimatedDeliveryDate = "";
@@ -183,13 +186,46 @@ public class ContractParametersDto {
             	result.pricePerPopulation	= df.format(fixedPopulationPricingModelCommandDto.getPrice());
             	result.discountRates		= fixedPopulationPricingModelCommandDto.getDiscountRates();
             }
+            
+            else if (result.pricingModelType == EnumPricingModel.PER_CALL) {
+                final PerCallPricingModelCommandDto perCallPricingModelCommandDto = (PerCallPricingModelCommandDto) c.getModel();
+                result.pricingModelDescription = "The product includes access to the current version of the asset"
+                								 + ", based on the purchased calls"
+                								 + ", with no access to updates.";
+            	result.pricePerCall 		= df.format(perCallPricingModelCommandDto.getPrice());
+            	result.discountRates		= perCallPricingModelCommandDto.getDiscountRates();
+            	result.prepaidTiers 		= perCallPricingModelCommandDto.getPrePaidTiers();
+            }
+            else if (result.pricingModelType == EnumPricingModel.PER_ROW) {
+                final PerRowPricingModelCommandDto perRowPricingModelCommandDto = (PerRowPricingModelCommandDto) c.getModel();
+                result.pricingModelDescription = "The product includes a subset of the current version of the asset"
+                								 + ", based on the purchased rows"
+                								 + ", with no access to updates.";
+            	result.pricePerRows 		= df.format(perRowPricingModelCommandDto.getPrice());
+            	result.discountRates		= perRowPricingModelCommandDto.getDiscountRates();
+            	result.prepaidTiers 		= perRowPricingModelCommandDto.getPrePaidTiers();
+            }
+            else if (result.pricingModelType == EnumPricingModel.SENTINEL_HUB_SUBSCRIPTION) {
+                final SHSubscriptionPricingModelCommandDto sHSubscriptionPricingModelCommandDto = (SHSubscriptionPricingModelCommandDto) c.getModel();
+                result.pricingModelDescription = "The product includes access to the asset"
+                								 + ", based on the sentinel hub subscription model";
+            	result.annualPrice			= df.format(sHSubscriptionPricingModelCommandDto.getAnnualPriceExcludingTax());
+            	result.monthlyPrice			= df.format(sHSubscriptionPricingModelCommandDto.getMonthlyPriceExcludingTax());
+            	result.pricePerPopulation	= null;
+            }
+            else if (result.pricingModelType == EnumPricingModel.SENTINEL_HUB_IMAGES) {
+                final SHImagePricingModelCommandDto SHImagePricingModelCommandDto = (SHImagePricingModelCommandDto) c.getModel();
+                result.pricingModelDescription = "The product includes access to the asset"
+						 						+ ", based on the sentinel hub subscription model";
+            }
 
+            result.domainRestrictions				= c.getModel().getDomainRestrictions();
             result.consumerRestrictionContinents	= c.getModel().getConsumerRestrictionContinents();
             result.consumerRestrictionCountries		= c.getModel().getConsumerRestrictionCountries();
             result.coverageRestrictionContinents	= c.getModel().getCoverageRestrictionContinents();
             result.coverageRestrictionCountries		= c.getModel().getCoverageRestrictionCountries();
-            result.totalPrice                    = df.format(c.getQuotation().getTotalPrice());
-            result.totalPriceExcludingTax        = df.format(c.getQuotation().getTotalPriceExcludingTax());
+            result.totalPrice                    	= df.format(c.getQuotation().getTotalPrice());
+            result.totalPriceExcludingTax        	= df.format(c.getQuotation().getTotalPriceExcludingTax());
 
             return result;
         }
@@ -205,7 +241,11 @@ public class ContractParametersDto {
         private String                totalPriceExcludingTax;
         private String                pricePerRows;
         private String                pricePerPopulation;
+        private String                pricePerCall;
+        private String                annualPrice;
+        private String				  monthlyPrice;
         private List<DiscountRateDto> discountRates;
+        private List<PrePaidTierDto>  prepaidTiers;
     }
 
     private Consumer     consumer;
@@ -214,8 +254,8 @@ public class ContractParametersDto {
     private PricingModel pricingModel;
     private String       referenceNumber;
 
-    public ContractParametersDto() {
+	public ContractParametersDto() {
 
-    }
+	}
 
 }
