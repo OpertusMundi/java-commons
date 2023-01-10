@@ -74,7 +74,7 @@ public class DefaultAccountClientService implements AccountClientService {
             }
 
             // Create Keycloak client and retrieve the client secret
-            final UUID clientId = UUID.randomUUID();
+            final UUID clientId = command.getClientId().orElse(UUID.randomUUID());
             String clientSecret = "";
 
             if (keycloakAdminService != null) {
