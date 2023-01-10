@@ -84,6 +84,8 @@ public class DefaultInvoiceGeneratorService extends BaseInvoiceGeneratorService 
         final String result = switch (type) {
             case ORDER_INVOICE ->
                 this.renderOrderInvoice(payinKey);
+            case REFUND_INVOICE -> 
+                this.renderRefundInvoice(payinKey);
             case SERVICE_BILLING_INVOICE ->
                 this.renderServicePayoffInvoice(payinKey);
         };
@@ -110,7 +112,7 @@ public class DefaultInvoiceGeneratorService extends BaseInvoiceGeneratorService 
         final String        payinReferenceNumber = payin.getReferenceNumber();
 
         final Path   path = invoiceFileManager.resolvePath(userId, payinReferenceNumber);
-        final byte[] data = renderPDF(payin, order, customerDto);
+        final byte[] data = renderOrderInvoice(payin, order, customerDto);
         this.save(path, data);
 
         payin.setInvoicePrintedOn(ZonedDateTime.now());
@@ -119,7 +121,7 @@ public class DefaultInvoiceGeneratorService extends BaseInvoiceGeneratorService 
         return path.toString();
     }
 
-    private byte[] renderPDF(PayInEntity payin, OrderEntity orderEntity, CustomerDto customerDto) throws IOException {
+    private byte[] renderOrderInvoice(PayInEntity payin, OrderEntity orderEntity, CustomerDto customerDto) throws IOException {
         final OrderItemEntity       orderItemEntity      = orderEntity.getItems().get(0);
         final String                orderReferenceNumber = orderEntity.getReferenceNumber();
         final String                fullName             = orderEntity.getConsumer().getFullName();
@@ -319,6 +321,201 @@ public class DefaultInvoiceGeneratorService extends BaseInvoiceGeneratorService 
         }
     }
 
+    private String renderRefundInvoice(UUID payinKey) throws IOException {
+        final PayInEntity   payin                 = payInRepository.findOneEntityByKey(payinKey).orElse(null);
+        final AccountEntity consumer              = payin.getConsumer();
+        final CustomerDto   customerDto           = consumer.getProfile().getConsumer().toDto();
+        final Integer       userId                = consumer.getId();
+        final String        refundReferenceNumber = payin.getRefund().getReferenceNumber();
+
+        final Path   path = invoiceFileManager.resolvePath(userId, refundReferenceNumber);
+        final byte[] data = renderRefundInvoice(payin, customerDto);
+        this.save(path, data);
+
+        payin.setInvoicePrintedOn(ZonedDateTime.now());
+        this.payInRepository.saveAndFlush(payin);
+
+        return path.toString();
+    }
+
+    private byte[] renderRefundInvoice(PayInEntity payin, CustomerDto customerDto) throws IOException {
+        final String                payinReferenceNumber = payin.getReferenceNumber();
+        final String                fullName             = payin.getConsumer().getFullName();
+        final CustomerIndividualDto customer             = (CustomerIndividualDto) customerDto;
+        final String                address              = customer.getAddress().toString();
+        final String                country              = customer.getCountryOfResidence();
+
+        final BigDecimal            priceExclTax         = payin.getTotalPriceExcludingTax();
+        final BigDecimal            tax                  = payin.getTotalTax();
+        final BigDecimal            totalPrice           = payin.getTotalPrice();
+        final ZonedDateTime         orderDate            = payin.getExecutedOn();
+
+        // Initialize all variables that are related to the PDF formatting
+        final PDDocument    document = new PDDocument();
+        RenderContext.Fonts fonts;
+        byte[]              logo;
+
+        try (
+            InputStream logoIs           = resourceLoader.getResource(logoFilename).getInputStream();
+            InputStream regularFontIs    = resourceLoader.getResource(regularFont).getInputStream();
+            InputStream boldFontIs       = resourceLoader.getResource(boldFont).getInputStream();
+            InputStream italicFontIs     = resourceLoader.getResource(italicFont).getInputStream();
+            InputStream boldItalicFontIs = resourceLoader.getResource(boldItalicFont).getInputStream();
+        ) {
+            logo = IOUtils.toByteArray(logoIs);
+
+            final PDFont bold       = PDType0Font.load(document, boldFontIs);
+            final PDFont regular    = PDType0Font.load(document, regularFontIs);
+            final PDFont italic     = PDType0Font.load(document, italicFontIs);
+            final PDFont boldItalic = PDType0Font.load(document, boldItalicFontIs);
+
+            fonts = new Fonts(regular, bold, italic, boldItalic);
+        }
+
+        // Create rendering context
+        try (final RenderContext ctx = RenderContext.of(logger, document, logo, fonts)) {
+            /* Get title and subtitles */
+            final String title = "Invoice";
+
+            ctx.addPage();
+            final PDPage page = ctx.getPage();
+            fonts = ctx.getFonts();
+            final PDPageContentStream content = ctx.getContent();
+
+            final PDRectangle pageSize = page.getMediaBox();
+
+            /* Get the width and height of the page */
+            final float pageWidth = pageSize.getWidth();
+            // final float pageHeight = pageSize.getHeight();
+
+            drawLine(content, 0.5f, 60, 690, 0, pageWidth - 72);
+
+            content.beginText();
+            content.setFont(fonts.getTextBold(), titleFontSize);
+            content.newLineAtOffset(60, 670);
+            content.showText("Billing address");
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(460, 670);
+            content.showText("Sold by");
+            content.endText();
+
+            // Customer details
+
+            content.beginText();
+            content.setFont(fonts.getText(), textFontSize);
+            content.setLeading(20f);
+            content.newLineAtOffset(60, 650);
+            content.showText(fullName);
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(60, 635);
+            content.showText(address);
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(60, 620);
+            content.showText(country);
+            content.endText();
+
+            // Marketplace details
+
+            content.beginText();
+            content.newLineAtOffset(460, 650);
+            content.showText("Topio Market");
+            content.endText();
+
+            drawLine(content, 0.5f, 60, 600, 0, pageWidth - 72);
+
+            // Order details
+
+            content.beginText();
+            content.setFont(fonts.getTextBold(), titleFontSize);
+            content.newLineAtOffset(60, 580);
+            content.showText("Service billing details");
+            content.endText();
+
+            content.beginText();
+            content.setFont(fonts.getText(), textFontSize);
+            content.newLineAtOffset(60, 560);
+            content.showText("Payment date");
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(60, 540);
+            content.showText("Payment #");
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(200, 560);
+            content.showText(orderDate.toString());
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(200, 540);
+            content.showText(payinReferenceNumber);
+            content.endText();
+
+            drawLine(content, 0.5f, 60, 520, 0, pageWidth - 72);
+
+            // Invoice details
+
+            content.beginText();
+            content.setFont(fonts.getTextBold(), titleFontSize);
+            content.newLineAtOffset(60, 500);
+            content.showText("Invoice details");
+            content.endText();
+
+            content.beginText();
+            content.setFont(fonts.getTextBold(), textFontSize);
+            content.newLineAtOffset(60, 480);
+            content.showText("Description");
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(300, 480);
+            content.showText("Price (excl. VAT)");
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(400, 480);
+            content.showText("VAT");
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(470, 480);
+            content.showText("Total price");
+            content.endText();
+
+            // TODO: Add subscription / user service billing details
+            content.beginText();
+            content.setFont(fonts.getTextBold(), titleFontSize);
+            content.newLineAtOffset(300, 430);
+            content.showText("Invoice total");
+            content.endText();
+
+            content.beginText();
+            content.newLineAtOffset(470, 430);
+            content.showText(this.formatCurrency(totalPrice));
+            content.endText();
+
+            /* Add metadata, header and footer */
+            addMetadata(ctx);
+            addHeaderAndFooter(ctx, logoFilename, title);
+
+            // Release RenderContext before closing the document
+            ctx.close();
+            try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+                document.save(byteArrayOutputStream);
+                document.close();
+
+                return byteArrayOutputStream.toByteArray();
+            }
+        }
+    }
+    
     private String renderServicePayoffInvoice(UUID payinKey) throws IOException {
         final PayInEntity                         payin = payInRepository.findOneEntityByKey(payinKey).orElse(null);
         final List<PayInServiceBillingItemEntity> items = payin.getItems().stream()
@@ -334,7 +531,7 @@ public class DefaultInvoiceGeneratorService extends BaseInvoiceGeneratorService 
         final String        payinReferenceNumber = payin.getReferenceNumber();
 
         final Path   path = invoiceFileManager.resolvePath(userId, payinReferenceNumber);
-        final byte[] data = renderPDF(payin, items, customerDto);
+        final byte[] data = renderServicePayoffInvoice(payin, items, customerDto);
         this.save(path, data);
 
         payin.setInvoicePrintedOn(ZonedDateTime.now());
@@ -343,7 +540,7 @@ public class DefaultInvoiceGeneratorService extends BaseInvoiceGeneratorService 
         return path.toString();
     }
 
-    private byte[] renderPDF(PayInEntity payin, List<PayInServiceBillingItemEntity> items, CustomerDto customerDto) throws IOException {
+    private byte[] renderServicePayoffInvoice(PayInEntity payin, List<PayInServiceBillingItemEntity> items, CustomerDto customerDto) throws IOException {
         final String                payinReferenceNumber = payin.getReferenceNumber();
         final String                fullName             = payin.getConsumer().getFullName();
         final CustomerIndividualDto customer             = (CustomerIndividualDto) customerDto;
