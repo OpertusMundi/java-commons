@@ -184,7 +184,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
         sqlString += "from \"analytics\".payin_item_hist ";
 
         if (filters.size() > 0) {
-            sqlString += "where      " + String.join(" and ", filters) + " ";
+            sqlString += "where refund = false and " + String.join(" and ", filters) + " ";
         }
 
         if(!groupByFields.isEmpty()) {
@@ -279,13 +279,14 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
         apiSqlString	+= "from \"analytics\".payin_item_hist ";
         totalSqlString	+= "from \"analytics\".payin_item_hist ";
 
-        fileSqlString 	+= "where asset_type = 'ASSET' ";
-        apiSqlString	+= "where asset_type = 'SUBSCRIPTION' ";
+        fileSqlString 	+= "where refund = false and asset_type = 'ASSET' ";
+        apiSqlString	+= "where refund = false and asset_type = 'SUBSCRIPTION' ";
+        totalSqlString  += "where refund = false ";
 
         if (filters.size() > 0) {
         	fileSqlString 	+= "and " + String.join(" and ", filters) + " ";
         	apiSqlString	+= "and " + String.join(" and ", filters) + " ";
-        	totalSqlString	+= "where " + String.join(" and ", filters) + " ";
+        	totalSqlString	+= "and " + String.join(" and ", filters) + " ";
         }
 
         if (!groupByFields.isEmpty()) {
@@ -460,6 +461,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 				sqlString 	+= 	"select sum(payin_total_price) as price";
 				table 		= 	"\"analytics\".payin_item_hist";
 				filters.add("asset_type = 'SUBSCRIPTION'");
+				filters.add("refund = false");
 				break;
 			case SUBSCRIBER_LOCATION:
 				sqlString	+=	"select count(1) as count";
@@ -909,7 +911,7 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 	                assetStatistics = this.accountRepository.countUsersWithRolePerMonth(EnumRole.ROLE_PROVIDER, time.getMin().toString(), time.getMax().toString());
 	                break;
 	            case WEEK :
-	            	// TODO: Should be replaced with countUsersWithRolePerWeek (See AccountRepository.countUsersWithRolePerWeel comment)
+	            	// TODO: Should be replaced with countUsersWithRolePerWeek (See AccountRepository.countUsersWithRolePerWeek comment)
 	            	assetStatistics = this.accountRepository.countUsersWithRolePerMonth(EnumRole.ROLE_PROVIDER, time.getMin().toString(), time.getMax().toString());
 	                break;
 	            case DAY :
