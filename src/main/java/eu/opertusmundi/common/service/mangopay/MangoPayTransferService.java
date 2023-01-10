@@ -181,7 +181,7 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
                                 };
                             }
                         };
-                        this.walletService.updateCustomerWalletFunds(providerKey, EnumCustomerType.PROVIDER);
+                        this.walletService.refreshUserWallets(providerKey, EnumCustomerType.PROVIDER);
                     }
                 }
             }
@@ -190,7 +190,7 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
 
             // Update consumer wallet if at least one transfer exists
             if (!transfers.isEmpty()) {
-                this.walletService.updateCustomerWalletFunds(debitAccount.getKey(), EnumCustomerType.CONSUMER);
+                this.walletService.refreshUserWallets(debitAccount.getKey(), EnumCustomerType.CONSUMER);
             }
 
             return transfers;
@@ -365,7 +365,7 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
         result.setCreditedFunds(BigDecimal.valueOf(transfer.getCreditedFunds().getAmount()).divide(BigDecimal.valueOf(100)));
         result.setExecutedOn(this.timestampToDate(transfer.getExecutionDate()));
         result.setFees(BigDecimal.valueOf(transfer.getFees().getAmount()).divide(BigDecimal.valueOf(100)));
-        result.setId(transfer.getId());
+        result.setTransactionId(transfer.getId());
         result.setResultCode(transfer.getResultCode());
         result.setResultMessage(transfer.getResultMessage());
         result.setStatus(EnumTransactionStatus.from(transfer.getStatus()));

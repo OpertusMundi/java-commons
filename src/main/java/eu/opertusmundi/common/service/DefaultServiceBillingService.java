@@ -405,6 +405,7 @@ public class DefaultServiceBillingService implements ServiceBillingService {
             .dueDate(ctx.dates.getDateDue())
             .fromDate(ctx.dates.getDateFrom())
             .pricingModel(pricingModel)
+            .refunded(false)
             .skuTotalCalls(0)
             .skuTotalRows(0)
             .userService(service)
@@ -485,6 +486,7 @@ public class DefaultServiceBillingService implements ServiceBillingService {
             .dueDate(ctx.dates.getDateDue())
             .fromDate(ctx.dates.getDateFrom())
             .pricingModel(pricingModel.getModel())
+            .refunded(false)
             .skuTotalCalls(totalSkuCalls)
             .skuTotalRows(totalSkuRows)
             .subscription(subscription)
@@ -797,25 +799,25 @@ public class DefaultServiceBillingService implements ServiceBillingService {
         final var service        = serviceBilling.getUserService();
 
         Assert.isTrue(subscription != null || service != null, "Expected either a non-null subscription or user service");
-        
+
         final var year  = serviceBilling.getFromDate().getYear();
         final var month = serviceBilling.getFromDate().getMonthValue();
         final var type  = subscription == null
             ? EnumNotificationType.USER_SERVICE_BILLING_PAYOFF
-            : EnumNotificationType.SUBSCRIPTION_BILLING_PAYOFF;  
-        
+            : EnumNotificationType.SUBSCRIPTION_BILLING_PAYOFF;
+
         final var serviceKey    = subscription == null ? service.getKey() : subscription.getKey();
         final var idempotentKey = buildIdempotentKey(serviceKey, year, month, IDEMPOTENT_KEY_SUFFIX_PAYOFF);
 
         final var recipientKey = subscription == null
             ? service.getAccount().getParent() == null ? service.getAccount().getKey() : service.getAccount().getParent().getKey()
             : subscription.getConsumer().getKey();
-        
+
         final Map<String, Object> variables    = new HashMap<>();
         variables.put("intervalFrom", serviceBilling.getFromDate().format(dateFormat));
         variables.put("intervalTo", serviceBilling.getToDate().format(dateFormat));
         variables.put("amount", this.formatCurrency(serviceBilling.getTotalPrice()));
-        
+
         if (subscription != null) {
             final var assetId = subscription.getAssetId();
             final var assets  = this.catalogueService.findAllHistoryAndPublishedById(new String[]{assetId});

@@ -141,7 +141,6 @@ public class CardDirectPayInEntity extends PayInEntity {
         p.setInvoicePrinted(this.invoicePrintedOn != null);
         p.setInvoicePrintedOn(this.invoicePrintedOn);
         p.setKey(key);
-        p.setPayIn(payIn);
         p.setPaymentMethod(paymentMethod);
         p.setProviderKey(items.stream().map(i -> i.getProvider().getKey()).distinct().collect(Collectors.toList()));
         p.setReferenceNumber(referenceNumber);
@@ -150,6 +149,7 @@ public class CardDirectPayInEntity extends PayInEntity {
         p.setTotalPrice(totalPrice);
         p.setTotalPriceExcludingTax(totalPriceExcludingTax);
         p.setTotalTax(totalTax);
+        p.setTransactionId(payIn);
     }
 
     @Override
@@ -175,9 +175,11 @@ public class CardDirectPayInEntity extends PayInEntity {
         if (this.browserInfo != null) {
             p.setBrowserInfo(this.browserInfo.toDto());
         }
-
         if (includeDetails) {
             this.items.stream().map(i -> i.toConsumerDto(includeDetails)).forEach(p::addItem);
+        }
+        if (this.getRefund() != null) {
+            p.setRefund(this.getRefund().toDto(false));
         }
 
         return p;
@@ -196,6 +198,9 @@ public class CardDirectPayInEntity extends PayInEntity {
 
         if (includeDetails) {
             this.items.stream().map(e -> e.toProviderDto(includeDetails)).forEach(p::addItem);
+        }
+        if (this.getRefund() != null) {
+            p.setRefund(this.getRefund().toDto(false));
         }
 
         return p;
@@ -233,10 +238,12 @@ public class CardDirectPayInEntity extends PayInEntity {
         if (this.browserInfo != null) {
             p.setBrowserInfo(this.browserInfo.toDto());
         }
-
         if (includeDetails) {
             this.items.stream().map(e -> e.toHelpdeskDto(includeDetails)).forEach(p::addItem);
             this.statusHistory.stream().map(PayInStatusEntity::toDto).forEach(p::addStatusHistory);
+        }
+        if (this.getRefund() != null) {
+            p.setRefund(this.getRefund().toDto(true));
         }
 
         return p;

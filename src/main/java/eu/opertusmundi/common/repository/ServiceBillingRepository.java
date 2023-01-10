@@ -1,9 +1,7 @@
 package eu.opertusmundi.common.repository;
 
 import java.time.LocalDate;
-import java.time.temporal.WeekFields;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -161,7 +159,7 @@ public interface ServiceBillingRepository extends JpaRepository<ServiceBillingEn
             case HELPDESK -> e.map(s -> s.toHelpdeskDto(includeDetails));
         };
     }
-    
+
     default void updateTransfer(Integer id, TransferDto transfer) {
         Assert.notNull(transfer, "Expected a non-null transfer");
 
@@ -169,14 +167,7 @@ public interface ServiceBillingRepository extends JpaRepository<ServiceBillingEn
 
         Assert.notNull(e, "Expected a non-null service billing record");
 
-        e.setTransferCreditedFunds(transfer.getCreditedFunds());
-        e.setTransferDay(transfer.getExecutedOn().getDayOfMonth());
-        e.setTransferExecutedOn(transfer.getExecutedOn());
-        e.setTransferMonth(transfer.getExecutedOn().getMonthValue());
-        e.setTransferPlatformFees(transfer.getFees());
-        e.setTransferProviderId(transfer.getId());
-        e.setTransferWeek(transfer.getExecutedOn().get(WeekFields.of(Locale.getDefault()).weekOfYear()));
-        e.setTransferYear(transfer.getExecutedOn().getYear());
+        e.updateTransfer(transfer);
 
         this.saveAndFlush(e);
     }

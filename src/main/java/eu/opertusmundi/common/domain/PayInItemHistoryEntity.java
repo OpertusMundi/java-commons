@@ -123,4 +123,8 @@ public class PayInItemHistoryEntity {
     @Column(name = "`transfer_platform_fees`", columnDefinition = "numeric", precision = 20, scale = 6)
     private BigDecimal transferPlatformFees;
 
+    @NotNull
+    @Column(name = "refund")
+    private boolean refunded;
+
 }

@@ -49,8 +49,14 @@ public interface PayOutRepository extends JpaRepository<PayOutEntity, Integer> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM PayOut p WHERE p.payOut = :payOut")
-    Optional<PayOutEntity> findOneByPayOutId(@Param("payOut") String payOut);
+    Optional<PayOutEntity> findOneByTransactionIdForUpdate(String payOut);
 
+    @Query("SELECT p FROM PayOut p WHERE p.payOut = :payOut")
+    Optional<PayOutEntity> findOneByTransactionId(String payOut);
+
+    default Optional<PayOutDto> findOneObjectByTransactionId(String payOut) {
+        return this.findOneByTransactionId(payOut).map(e -> e.toDto(true));
+    }
 
     @Query("SELECT count(p) FROM PayOut p WHERE (p.status not in ('FAILED', 'SUCCEEDED')) and (p.provider.key = :userKey)")
     long countProviderPendingPayOuts(@Param("userKey") UUID userKey);

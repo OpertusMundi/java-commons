@@ -27,12 +27,10 @@ import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
 import eu.opertusmundi.common.model.payment.PayOutDto;
-import eu.opertusmundi.common.model.payment.RefundDto;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -89,6 +87,15 @@ public class PayOutEntity {
     @Getter
     @Setter
     private List<PayOutStatusEntity> statusHistory = new ArrayList<>();
+
+    /**
+     * Reference to refund object
+     */
+    @ManyToOne(targetEntity = RefundEntity.class, fetch = FetchType.LAZY)
+    @JoinColumn(name = "refund")
+    @Getter
+    @Setter
+    private RefundEntity refund;
 
     @Column(name = "`provider_payout`")
     @Getter
@@ -171,37 +178,6 @@ public class PayOutEntity {
     @Setter
     protected String resultMessage;
 
-    @Column(name = "`provider_refund`")
-    @Getter
-    @Setter
-    protected String refund;
-
-    @Column(name = "`provider_refund_created_on`")
-    @Getter
-    @Setter
-    private ZonedDateTime refundCreatedOn;
-
-    @Column(name = "`provider_refund_executed_on`")
-    @Getter
-    @Setter
-    private ZonedDateTime refundExecutedOn;
-
-    @Column(name = "`provider_refund_status`")
-    @Enumerated(EnumType.STRING)
-    @Getter
-    @Setter
-    protected EnumTransactionStatus refundStatus;
-
-    @Column(name = "`provider_refund_reason_type`")
-    @Getter
-    @Setter
-    protected String refundReasonType;
-
-    @Column(name = "`provider_refund_reason_message`")
-    @Getter
-    @Setter
-    protected String refundReasonMessage;
-
     public PayOutDto toDto() {
         return this.toDto(false);
     }
@@ -221,19 +197,8 @@ public class PayOutEntity {
         p.setStatus(status);
         p.setStatusUpdatedOn(statusUpdatedOn);
 
-        if(!StringUtils.isBlank(refund)) {
-            final RefundDto r = new RefundDto();
-
-            if (includeHelpdeskData) {
-                r.setRefund(refund);
-            }
-            r.setRefundCreatedOn(refundCreatedOn);
-            r.setRefundExecutedOn(refundExecutedOn);
-            r.setRefundReasonMessage(refundReasonMessage);
-            r.setRefundReasonType(refundReasonType);
-            r.setRefundStatus(refundStatus);
-
-            p.setRefund(r);
+        if (this.getRefund() != null) {
+            p.setRefund(this.getRefund().toDto(includeHelpdeskData));
         }
 
         if (includeHelpdeskData) {
@@ -242,9 +207,9 @@ public class PayOutEntity {
             p.setProcessDefinition(processDefinition);
             p.setProcessInstance(processInstance);
 
-            p.setProviderPayOut(payOut);
             p.setProviderResultCode(resultCode);
             p.setProviderResultMessage(resultMessage);
+            p.setTransactionId(payOut);
         }
 
         return p;

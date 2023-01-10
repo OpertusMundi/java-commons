@@ -14,24 +14,19 @@ import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @Setter
-public abstract class PayInDto {
+public abstract class PayInDto extends TransactionDto {
+
+    public PayInDto() {
+        super(EnumTransactionType.PAYIN);
+    }
 
     @JsonIgnore
     protected Integer id;
-
-    /**
-     * The payment provider transaction unique identifier
-     */
-    @JsonIgnore
-    protected String payIn;
 
     @JsonIgnore
     protected Integer consumerId;
@@ -41,9 +36,6 @@ public abstract class PayInDto {
 
     @JsonIgnore
     protected List<UUID> providerKey;
-
-    @Schema(description = "PayIn unique key")
-    protected UUID key;
 
     @Schema(description = "The total price of all PayIn items (the debited funds of the PayIn)")
     protected BigDecimal totalPrice;
@@ -60,15 +52,6 @@ public abstract class PayInDto {
     )
     protected String currency;
 
-    @Schema(description = "PayIn creation date")
-    protected ZonedDateTime createdOn;
-
-    @Schema(description = "PayIn execution date")
-    protected ZonedDateTime executedOn;
-
-    @Schema(description = "Transaction status")
-    protected EnumTransactionStatus status;
-
     @Hidden
     @ArraySchema(arraySchema = @Schema(
         description = "PayIn status history records"),
@@ -78,7 +61,7 @@ public abstract class PayInDto {
     )
     @JsonInclude(Include.NON_EMPTY)
     private List<PayInStatusDto> statusHistory = new ArrayList<>();
-    
+
     @Schema(description = "Date of transaction status last update")
     protected ZonedDateTime statusUpdatedOn;
 
@@ -93,9 +76,13 @@ public abstract class PayInDto {
 
     @Schema(description = "`true` if the invoice has been created")
     protected boolean invoicePrinted;
-    
+
+    @Schema(description = "PayIn refund")
+    @JsonInclude(Include.NON_NULL)
+    protected RefundDto refund;
+
     public void addStatusHistory(PayInStatusDto h) {
         this.statusHistory.add(h);
     }
-    
+
 }

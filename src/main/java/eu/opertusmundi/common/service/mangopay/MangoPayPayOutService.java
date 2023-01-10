@@ -25,7 +25,6 @@ import com.mangopay.core.enumerations.PayOutPaymentType;
 import com.mangopay.core.enumerations.PayoutMode;
 import com.mangopay.core.enumerations.TransactionType;
 import com.mangopay.entities.PayOut;
-import com.mangopay.entities.Refund;
 import com.mangopay.entities.subentities.PayOutPaymentDetailsBankWire;
 
 import eu.opertusmundi.common.domain.AccountEntity;
@@ -92,7 +91,7 @@ public class MangoPayPayOutService extends BaseMangoPayService implements PayOut
             }
 
             // Refresh provider's wallet from the payment provider
-            this.walletService.updateCustomerWalletFunds(command.getProviderKey(), EnumCustomerType.PROVIDER);
+            this.walletService.refreshUserWallets(command.getProviderKey(), EnumCustomerType.PROVIDER);
 
             // Funds must exist
             if (provider.getWalletFunds().compareTo(command.getDebitedFunds()) < 0) {
@@ -220,33 +219,11 @@ public class MangoPayPayOutService extends BaseMangoPayService implements PayOut
             this.accountRepository.saveAndFlush(account);
 
             // Update provider wallet
-            this.walletService.updateCustomerWalletFunds(payOutEntity.getProvider().getKey(), EnumCustomerType.PROVIDER);
+            this.walletService.refreshUserWallets(payOutEntity.getProvider().getKey(), EnumCustomerType.PROVIDER);
 
             return result;
         } catch (final Exception ex) {
             throw this.wrapException("Update PayIn", ex, payOutId);
-        }
-    }
-
-    @Override
-    public PayOutDto updatePayOutRefund(String refundId) throws PaymentException {
-        try {
-            final Refund refund = this.api.getRefundApi().get(refundId);
-
-            final PayOutEntity payOutEntity = this.ensurePayOut(refund.getInitialTransactionId());
-
-            payOutEntity.setRefund(refundId);
-            payOutEntity.setRefundCreatedOn(this.timestampToDate(refund.getCreationDate()));
-            payOutEntity.setRefundExecutedOn(this.timestampToDate(refund.getExecutionDate()));
-            payOutEntity.setRefundReasonMessage(refund.getRefundReason().getRefundReasonMessage());
-            payOutEntity.setRefundReasonType(refund.getRefundReason().getRefundReasonType().toString());
-            payOutEntity.setRefundStatus(EnumTransactionStatus.from(refund.getStatus()));
-
-            this.payOutRepository.saveAndFlush(payOutEntity);
-
-            return payOutEntity.toDto();
-        } catch (final Exception ex) {
-            throw this.wrapException("Update MANGOPAY Refund", ex, refundId);
         }
     }
 
@@ -307,7 +284,7 @@ public class MangoPayPayOutService extends BaseMangoPayService implements PayOut
     }
 
     private PayOutEntity ensurePayOut(String providerPayOutId) {
-        final PayOutEntity payOutEntity = this.payOutRepository.findOneByPayOutId(providerPayOutId).orElse(null);
+        final PayOutEntity payOutEntity = this.payOutRepository.findOneByTransactionIdForUpdate(providerPayOutId).orElse(null);
 
         if(payOutEntity == null) {
             throw new PaymentException(

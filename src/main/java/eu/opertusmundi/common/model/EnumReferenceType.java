@@ -6,6 +6,7 @@ public enum EnumReferenceType {
     ORDER   ("00"),
     PAYIN   ("01"),
     PAYOUT  ("02"),
+    REFUND  ("03"),
     ;
 
     private EnumReferenceType(String prefix) {

@@ -31,7 +31,7 @@ public interface WalletService {
     AccountDto createWallet(UserRegistrationCommand command) throws PaymentException;
 
     /**
-     * Refreshes all user wallets from remote payment provider
+     * Refreshes all customer wallets from the remote payment provider
      *
      * @param userKey
      * @return
@@ -40,14 +40,13 @@ public interface WalletService {
     AccountDto refreshUserWallets(UUID userKey) throws PaymentException;
 
     /**
-     * Updates wallet funds for the specified customer from the Payment Provider
-     * (MANGOPAY)
+     * Refreshes a customer wallet from the remote payment provider
      *
      * @param userKey
      * @param type
      * @return
      * @throws PaymentException
      */
-    WalletDto updateCustomerWalletFunds(UUID userKey, EnumCustomerType type) throws PaymentException;
+    WalletDto refreshUserWallets(UUID userKey, EnumCustomerType type) throws PaymentException;
 
 }

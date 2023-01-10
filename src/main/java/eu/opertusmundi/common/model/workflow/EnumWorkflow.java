@@ -19,6 +19,13 @@ public enum EnumWorkflow {
     CONSUMER_PURCHASE_ASSET_WITHOUT_PAYIN("consumer-purchase-asset-without-payin"   , EnumProcessInstanceResource.ORDER,  List.of(
         "workflow-process-order-without-payin"
     )),
+    /**
+     * Refund workflow
+     *
+     * <p>
+     * The business key format is {@code REFUND::<Event Type>::<Refund Id>.
+     */
+    CONSUMER_REFUND                      ("consumer-refund"                         , EnumProcessInstanceResource.REFUND),
     CONSUMER_REGISTRATION                ("consumer-registration"                   , EnumProcessInstanceResource.CONSUMER),
     CONSUMER_SERVICE_BILLING_PAYOFF      ("consumer-service-billing-payoff"         , EnumProcessInstanceResource.PAYIN,  List.of(
         "subscription-billing-consumer-payin"
@@ -56,7 +63,7 @@ public enum EnumWorkflow {
 
     @Getter
     private final String key;
-    
+
     @Getter
     private final List<String> keyVersions;
 
@@ -66,7 +73,7 @@ public enum EnumWorkflow {
     EnumWorkflow(String key) {
         this(key, null, Collections.emptyList());
     }
-    
+
     EnumWorkflow(String key, EnumProcessInstanceResource resourceType) {
         this(key, resourceType, Collections.emptyList());
     }

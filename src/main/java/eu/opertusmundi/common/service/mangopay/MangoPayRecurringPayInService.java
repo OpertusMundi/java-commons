@@ -170,7 +170,7 @@ public class MangoPayRecurringPayInService extends BaseMangoPayService implement
             }
 
             // Create database record
-            final PayInEntity          payIn  = payInRepository.findOneByPayInId(apiResponse.getId()).orElse(null);
+            final PayInEntity          payIn  = payInRepository.findOneByTransactionIdForUpdate(apiResponse.getId()).orElse(null);
             ConsumerCardDirectPayInDto result = null;
             if (payIn != null) {
                 result = (ConsumerCardDirectPayInDto) payIn.toConsumerDto(true);
@@ -178,7 +178,7 @@ public class MangoPayRecurringPayInService extends BaseMangoPayService implement
                 result = (ConsumerCardDirectPayInDto) this.payInRepository.createCardDirectPayInForOrder(ctx);
 
                 // Link PayIn record to order
-                this.orderRepository.setPayIn(command.getKey(), result.getPayIn(), command.getUserKey());
+                this.orderRepository.setPayIn(command.getKey(), result.getTransactionId(), command.getUserKey());
 
                 // Update order status if we have a valid response i.e.
                 // 3D-Secure validation was skipped
@@ -257,7 +257,7 @@ public class MangoPayRecurringPayInService extends BaseMangoPayService implement
             }
 
             // Create database record
-            final PayInEntity          payIn  = payInRepository.findOneByPayInId(apiResponse.getId()).orElse(null);
+            final PayInEntity          payIn  = payInRepository.findOneByTransactionIdForUpdate(apiResponse.getId()).orElse(null);
             ConsumerCardDirectPayInDto result = null;
             if (payIn != null) {
                 result = (ConsumerCardDirectPayInDto) payIn.toConsumerDto(true);

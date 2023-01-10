@@ -72,6 +72,7 @@ public interface PayInItemHistoryRepository extends JpaRepository<PayInItemHisto
         e.setPayInProviderId(payIn.getPayIn());
         e.setPayInWeek(payIn.getExecutedOn().get(WeekFields.of(Locale.getDefault()).weekOfYear()));
         e.setPayInYear(payIn.getExecutedOn().getYear());
+        e.setRefunded(false);
 
         this.saveAndFlush(e);
     }
@@ -88,9 +89,19 @@ public interface PayInItemHistoryRepository extends JpaRepository<PayInItemHisto
         history.setTransferExecutedOn(transfer.getExecutedOn());
         history.setTransferMonth(transfer.getExecutedOn().getMonthValue());
         history.setTransferPlatformFees(transfer.getFees());
-        history.setTransferProviderId(transfer.getId());
+        history.setTransferProviderId(transfer.getTransactionId());
         history.setTransferWeek(transfer.getExecutedOn().get(WeekFields.of(Locale.getDefault()).weekOfYear()));
         history.setTransferYear(transfer.getExecutedOn().getYear());
+
+        this.saveAndFlush(history);
+    }
+
+    default void refundTransfer(Integer id) {
+        final PayInItemHistoryEntity history = this.findOneById(id).orElse(null);
+
+        Assert.notNull(history, "Expected a non-null history record");
+
+        history.setRefunded(true);
 
         this.saveAndFlush(history);
     }

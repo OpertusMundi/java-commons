@@ -127,13 +127,27 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE p.payIn = :payIn")
-    Optional<PayInEntity> findOneByPayInId(String payIn);
+    Optional<PayInEntity> findOneByTransactionIdForUpdate(String payIn);
+
+    @Query("SELECT p FROM PayIn p JOIN FETCH p.items i WHERE p.payIn = :payIn")
+    Optional<PayInEntity> findOneByTransactionId(String payIn);
+
+    @Query("SELECT p FROM PayIn p WHERE p.refund.transactionId = :refundId")
+    Optional<PayInEntity> findOneByRefundTransactionId(String refundId);
+
+    default Optional<PayInDto> findOneObjectByTransactionId(String payIn) {
+        return this.findOneByTransactionId(payIn).map(e -> e.toHelpdeskDto(true));
+    }
 
     @Query("SELECT i FROM PayInItem i WHERE i.payin.key = :payInKey and i.provider.id = :userId and i.index = :index")
     Optional<PayInItemEntity> findOnePayInItemByProvider(Integer userId, UUID payInKey, Integer index);
 
     @Query("SELECT i FROM PayInItem i WHERE i.transfer = :transferId")
     Optional<PayInItemEntity> findOnePayInItemByTransferId(String transferId);
+
+    default Optional<HelpdeskPayInItemDto> findOneObjectPayInItemByTransferId(String transferId) {
+        return this.findOnePayInItemByTransferId(transferId).map(e -> e.toHelpdeskDto(true));
+    }
 
     /**
      * Query consumer PayIns
@@ -570,7 +584,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
      */
     @Transactional(readOnly = false)
     default HelpdeskPayInDto updatePayInStatus(PayInStatusUpdateCommand command) throws PaymentException {
-        final PayInEntity payIn = this.findOneByPayInId(command.getProviderPayInId()).orElse(null);
+        final PayInEntity payIn = this.findOneByTransactionIdForUpdate(command.getProviderPayInId()).orElse(null);
 
         // Update only on status changes
         if (payIn.getStatus() == command.getStatus()) {

@@ -557,7 +557,7 @@ public class MangoPayPayInService extends BaseMangoPayService implements PayInSe
             // Create database record
             final PayInDto result = this.payInRepository.createBankwirePayInForOrder(ctx);
             // Link PayIn record to order
-            this.orderRepository.setPayIn(command.getKey(), result.getPayIn(), account.getKey());
+            this.orderRepository.setPayIn(command.getKey(), result.getTransactionId(), account.getKey());
 
             return result;
         } catch (final Exception ex) {
@@ -595,7 +595,7 @@ public class MangoPayPayInService extends BaseMangoPayService implements PayInSe
             // Create database record
             final PayInDto result = this.payInRepository.createFreePayInForOrder(ctx);
             // Link PayIn record to order
-            this.orderRepository.setPayIn(command.getKey(), result.getPayIn(), account.getKey());
+            this.orderRepository.setPayIn(command.getKey(), result.getTransactionId(), account.getKey());
 
             return result;
         } catch (final Exception ex) {
@@ -875,7 +875,7 @@ public class MangoPayPayInService extends BaseMangoPayService implements PayInSe
                 result = (ConsumerCardDirectPayInDto) this.payInRepository.createCardDirectPayInForOrder(ctx);
 
                 // Link PayIn record to order
-                this.orderRepository.setPayIn(command.getKey(), result.getPayIn(), command.getUserKey());
+                this.orderRepository.setPayIn(command.getKey(), result.getTransactionId(), command.getUserKey());
 
                 // Update order status if we have a valid response i.e.
                 // 3D-Secure validation was skipped
@@ -966,7 +966,7 @@ public class MangoPayPayInService extends BaseMangoPayService implements PayInSe
 
             // Update consumer wallet if PayIn was successful
             if (result.getStatus() == EnumTransactionStatus.SUCCEEDED) {
-                this.walletService.updateCustomerWalletFunds(payInEntity.getConsumer().getKey(), EnumCustomerType.CONSUMER);
+                this.walletService.refreshUserWallets(payInEntity.getConsumer().getKey(), EnumCustomerType.CONSUMER);
             }
 
             // Update recurring PayIn registration status (if one is linked to
@@ -1112,7 +1112,7 @@ public class MangoPayPayInService extends BaseMangoPayService implements PayInSe
     }
 
     private PayInEntity ensurePayIn(String providerPayInId) {
-        final PayInEntity payInEntity = this.payInRepository.findOneByPayInId(providerPayInId).orElse(null);
+        final PayInEntity payInEntity = this.payInRepository.findOneByTransactionIdForUpdate(providerPayInId).orElse(null);
 
         if(payInEntity == null) {
             throw new PaymentException(

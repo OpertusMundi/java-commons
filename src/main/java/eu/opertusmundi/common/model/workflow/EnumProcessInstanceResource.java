@@ -9,6 +9,7 @@ public enum EnumProcessInstanceResource {
     PAYIN,
     PAYOUT,
     PROVIDER,
+    REFUND,
     USER_SERVICE,
     ;
 }

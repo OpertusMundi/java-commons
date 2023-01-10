@@ -3,6 +3,8 @@ package eu.opertusmundi.common.domain;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.time.temporal.WeekFields;
+import java.util.Locale;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -28,6 +30,7 @@ import eu.opertusmundi.common.model.account.EnumPayoffStatus;
 import eu.opertusmundi.common.model.payment.EnumBillableServiceType;
 import eu.opertusmundi.common.model.payment.ServiceBillingDto;
 import eu.opertusmundi.common.model.payment.ServiceUseStatsDto;
+import eu.opertusmundi.common.model.payment.TransferDto;
 import eu.opertusmundi.common.model.payment.consumer.ConsumerServiceBillingDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskServiceBillingDto;
 import eu.opertusmundi.common.model.payment.provider.ProviderServiceBillingDto;
@@ -72,7 +75,7 @@ public class ServiceBillingEntity {
     @ManyToOne(targetEntity = AccountEntity.class)
     @JoinColumn(name = "`billed_account`", nullable = false)
     private AccountEntity billedAccount;
-    
+
     @ManyToOne(targetEntity = AccountSubscriptionEntity.class)
     @JoinColumn(name = "`subscription`", nullable = false)
     private AccountSubscriptionEntity subscription;
@@ -171,7 +174,33 @@ public class ServiceBillingEntity {
 
     @Column(name = "`transfer_platform_fees`", columnDefinition = "numeric", precision = 20, scale = 6)
     private BigDecimal transferPlatformFees;
-    
+
+    @NotNull
+    @Column(name = "refund")
+    private boolean refunded;
+
+    public void updateTransfer(TransferDto transfer) {
+        transferCreditedFunds = transfer.getCreditedFunds();
+        transferDay           = transfer.getExecutedOn().getDayOfMonth();
+        transferExecutedOn    = transfer.getExecutedOn();
+        transferMonth         = transfer.getExecutedOn().getMonthValue();
+        transferPlatformFees  = transfer.getFees();
+        transferProviderId    = transfer.getTransactionId();
+        transferWeek          = transfer.getExecutedOn().get(WeekFields.of(Locale.getDefault()).weekOfYear());
+        transferYear          = transfer.getExecutedOn().getYear();
+    }
+
+    public void resetTransfer() {
+        transferCreditedFunds = null;
+        transferDay           = null;
+        transferExecutedOn    = null;
+        transferMonth         = null;
+        transferPlatformFees  = null;
+        transferProviderId    = null;
+        transferWeek          = null;
+        transferYear          = null;
+    }
+
     private void updateDto(ServiceBillingDto s) {
         s.setCreatedOn(createdOn);
         s.setDueDate(dueDate);

@@ -160,7 +160,7 @@ public class MangoPayWalletService extends BaseMangoPayService implements Wallet
     }
 
     @Override
-    public WalletDto updateCustomerWalletFunds(UUID userKey, EnumCustomerType type) throws PaymentException {
+    public WalletDto refreshUserWallets(UUID userKey, EnumCustomerType type) throws PaymentException {
         try {
             final AccountEntity  account  = this.accountRepository.findOneByKey(userKey).orElse(null);
             final CustomerEntity customer = type == EnumCustomerType.CONSUMER ? account.getConsumer() : account.getProvider();

@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import eu.opertusmundi.common.model.account.CustomerDto;
 import eu.opertusmundi.common.model.payment.PayInDto;
+import eu.opertusmundi.common.model.payment.RefundDto;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -78,6 +79,9 @@ public class HelpdeskPayInDto extends PayInDto {
 
     @Schema(description = "Applied 3DS version")
     private String applied3dsVersion;
+
+    @Schema(description = "PayIn refund")
+    protected RefundDto refund;
 
     public void addItem(HelpdeskPayInItemDto i) {
         this.items.add(i);

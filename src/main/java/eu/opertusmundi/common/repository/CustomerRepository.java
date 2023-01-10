@@ -28,4 +28,7 @@ public interface CustomerRepository extends JpaRepository<CustomerEntity, Intege
     @Query("SELECT c FROM Customer c WHERE c.paymentProviderUser = :paymentProviderUser")
     Optional<CustomerEntity> findCustomerByProviderUserId(String paymentProviderUser);
 
+    @Query("SELECT c FROM Customer c WHERE c.paymentProviderWallet = :paymentProviderWallet")
+    Optional<CustomerEntity> findCustomerByProviderWalletId(String paymentProviderWallet);
+
 }

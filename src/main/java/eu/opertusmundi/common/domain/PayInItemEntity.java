@@ -81,11 +81,20 @@ public abstract class PayInItemEntity {
     @Setter
     protected String transfer;
 
+    /**
+     * Reference to refund object
+     */
+    @ManyToOne(targetEntity = RefundEntity.class, fetch = FetchType.LAZY)
+    @JoinColumn(name = "transfer_refund")
+    @Getter
+    @Setter
+    protected RefundEntity transferRefund;
+
     @NotNull
     @NaturalId
     @Column(name = "transfer_key", updatable = false, columnDefinition = "uuid")
     @Getter
-    private final UUID transferKey = UUID.randomUUID();
+    protected final UUID transferKey = UUID.randomUUID();
 
     @Column(name = "`transfer_credited_funds`", columnDefinition = "numeric", precision = 20, scale = 6)
     @Getter
@@ -124,7 +133,7 @@ public abstract class PayInItemEntity {
     protected String transferResultMessage;
 
     public void updateTransfer(TransferDto t) {
-        this.transfer              = t.getId();
+        this.transfer              = t.getTransactionId();
         this.transferCreatedOn     = t.getCreatedOn();
         this.transferCreditedFunds = t.getCreditedFunds();
         this.transferExecutedOn    = t.getExecutedOn();
@@ -151,9 +160,9 @@ public abstract class PayInItemEntity {
         t.setCreditedFunds(transferCreditedFunds);
         t.setExecutedOn(transferExecutedOn);
         t.setFees(transferFees);
-        t.setId(transfer);
         t.setKey(transferKey);
         t.setStatus(transferStatus);
+        t.setTransactionId(transfer);
 
         if (includeHelpdeskData) {
             t.setProviderId(transfer);

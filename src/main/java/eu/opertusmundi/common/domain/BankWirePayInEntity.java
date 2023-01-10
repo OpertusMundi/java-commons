@@ -65,7 +65,6 @@ public class BankWirePayInEntity extends PayInEntity {
         p.setInvoicePrinted(this.invoicePrintedOn != null);
         p.setInvoicePrintedOn(this.invoicePrintedOn);
         p.setKey(key);
-        p.setPayIn(payIn);
         p.setPaymentMethod(paymentMethod);
         p.setProviderKey(items.stream().map(i -> i.getProvider().getKey()).distinct().collect(Collectors.toList()));
         p.setReferenceNumber(referenceNumber);
@@ -74,6 +73,7 @@ public class BankWirePayInEntity extends PayInEntity {
         p.setTotalPrice(totalPrice);
         p.setTotalPriceExcludingTax(totalPriceExcludingTax);
         p.setTotalTax(totalTax);
+        p.setTransactionId(payIn);
     }
 
     @Override

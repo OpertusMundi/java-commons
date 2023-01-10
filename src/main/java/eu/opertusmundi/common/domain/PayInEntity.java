@@ -118,6 +118,15 @@ public abstract class PayInEntity {
     @Setter
     protected List<PayInStatusEntity> statusHistory = new ArrayList<>();
 
+    /**
+     * Reference to refund object
+     */
+    @ManyToOne(targetEntity = RefundEntity.class, fetch = FetchType.LAZY)
+    @JoinColumn(name = "refund")
+    @Getter
+    @Setter
+    protected RefundEntity refund;
+
     @NotNull
     @Column(name = "`total_price`", columnDefinition = "numeric", precision = 20, scale = 6)
     @Getter
@@ -191,7 +200,7 @@ public abstract class PayInEntity {
     @Getter
     @Setter
     protected String resultMessage;
-    
+
     @Column(name = "`invoice_printed_on`")
     @Getter
     @Setter

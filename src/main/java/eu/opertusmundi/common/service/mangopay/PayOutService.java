@@ -50,15 +50,6 @@ public interface PayOutService {
     PayOutDto updatePayOut(UUID payOutKey, String payOutId) throws PaymentException;
 
     /**
-     * Update PayOut refund
-     *
-     * @param refundId
-     * @return
-     * @throws PaymentException
-     */
-    PayOutDto updatePayOutRefund(String refundId) throws PaymentException;
-
-    /**
      * Get provider PayOut by key
      *
      * @param userId
