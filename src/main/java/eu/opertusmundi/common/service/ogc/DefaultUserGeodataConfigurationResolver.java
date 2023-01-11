@@ -59,7 +59,7 @@ public class DefaultUserGeodataConfigurationResolver implements UserGeodataConfi
     @Cacheable(
         cacheNames = "geodata-configuration",
         cacheManager = "defaultCacheManager",
-        key = "'account-' + #key"
+        key = "'account-' + #key + '-' + #workspaceType"
     )
     public UserGeodataConfiguration resolveFromUserKey(UUID key, EnumGeodataWorkspace workspaceType) {
         final AccountDto account            = this.accountRepository.findOneByKeyObject(key).get();

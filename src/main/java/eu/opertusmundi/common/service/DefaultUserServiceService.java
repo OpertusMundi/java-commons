@@ -146,7 +146,7 @@ public class DefaultUserServiceService implements UserServiceService {
         final long                 count   = items.getTotalElements();
         final List<UserServiceDto> records = items.getContent();
 
-        this.injectProperties(items.getContent());
+        this.injectProperties(records);
 
         return PageResultDto.of(pageIndex, pageSize, records, count);
     }
@@ -568,8 +568,6 @@ public class DefaultUserServiceService implements UserServiceService {
         } catch (final JsonProcessingException ex) {
             throw new ServiceException(BasicMessageCode.SerializationError, "Failed to parse the pricing model for private OGC services", ex);
         }
-
-
     }
 
     private void updateIngestionData(UserServiceDto service) {
