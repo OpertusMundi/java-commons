@@ -82,7 +82,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Integer>
 //				 + "GROUP BY YEAR(grantedAt), MONTH(r.grantedAt)")
 //		List<BigDecimalDataPoint> countUsersWithRolePerWeek(EnumRole role, String start, String end);
 
-	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(YEAR(grantedAt), MONTH(r.grantedAt), DAY(r.grantedAt), CAST(COUNT(DISTINCT r.account) AS java.math.BigDecimal)) "
+	@Query("SELECT new eu.opertusmundi.common.model.analytics.BigDecimalDataPoint(YEAR(grantedAt), MONTH(r.grantedAt), MONTH(r.grantedAt), DAY(r.grantedAt), CAST(COUNT(DISTINCT r.account) AS java.math.BigDecimal)) "
 				 + "FROM AccountRole r WHERE r.role = :role "
 				 + "AND to_char(r.grantedAt, 'yyyy-mm-dd') >= :start AND to_char(r.grantedAt, 'yyyy-mm-dd') <= :end "
 				 + "GROUP BY YEAR(grantedAt), MONTH(r.grantedAt), DAY(r.grantedAt)")
