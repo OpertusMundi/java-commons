@@ -148,13 +148,14 @@ public class ContractParametersDto {
         }
 
         public static PricingModel from(EffectivePricingModelDto c) {
-            final PricingModel 	result 	= new PricingModel();
-            final DecimalFormat df    	= new DecimalFormat("#,##0.00");
+            final var result = new PricingModel();
+            final var df     = new DecimalFormat("#,##0.00");
+            final var model  = c.getModel();
 
-            result.pricingModelType		= c.getModel().getType();
+            result.pricingModelType		= model.getType();
 
             if (result.pricingModelType == EnumPricingModel.FIXED) {
-                final FixedPricingModelCommandDto fixedPricingModelCommandDto = (FixedPricingModelCommandDto) c.getModel();
+                final FixedPricingModelCommandDto fixedPricingModelCommandDto = (FixedPricingModelCommandDto) model;
                 final Integer yearsOfUpdates	= fixedPricingModelCommandDto.getYearsOfUpdates();
 
                 if (yearsOfUpdates == null || yearsOfUpdates == 0) {
@@ -169,7 +170,7 @@ public class ContractParametersDto {
             	result.discountRates		= null;
 
             } else if (result.pricingModelType == EnumPricingModel.FIXED_PER_ROWS) {
-                final FixedRowPricingModelCommandDto fixedRowPricingModelCommandDto = (FixedRowPricingModelCommandDto) c.getModel();
+                final FixedRowPricingModelCommandDto fixedRowPricingModelCommandDto = (FixedRowPricingModelCommandDto) model;
                 result.pricingModelDescription = "The product includes a subset per row of the current version of the asset"
                 								 + ", based on the defined area of interest"
                 								 + ", with no access to updates.";
@@ -178,7 +179,7 @@ public class ContractParametersDto {
             	result.discountRates		= fixedRowPricingModelCommandDto.getDiscountRates();
 
             } else if (result.pricingModelType == EnumPricingModel.FIXED_FOR_POPULATION) {
-                final FixedPopulationPricingModelCommandDto fixedPopulationPricingModelCommandDto = (FixedPopulationPricingModelCommandDto) c.getModel();
+                final FixedPopulationPricingModelCommandDto fixedPopulationPricingModelCommandDto = (FixedPopulationPricingModelCommandDto) model;
                 result.pricingModelDescription = "The product includes a subset per population coverage of the current version of the asset"
                 								 + ", based on the defined area of interest"
                 								 + ", with no access to updates.";
@@ -188,7 +189,7 @@ public class ContractParametersDto {
             }
             
             else if (result.pricingModelType == EnumPricingModel.PER_CALL) {
-                final PerCallPricingModelCommandDto perCallPricingModelCommandDto = (PerCallPricingModelCommandDto) c.getModel();
+                final PerCallPricingModelCommandDto perCallPricingModelCommandDto = (PerCallPricingModelCommandDto) model;
                 result.pricingModelDescription = "The product includes access to the current version of the asset"
                 								 + ", based on the purchased calls"
                 								 + ", with no access to updates.";
@@ -197,7 +198,7 @@ public class ContractParametersDto {
             	result.prepaidTiers 		= perCallPricingModelCommandDto.getPrePaidTiers();
             }
             else if (result.pricingModelType == EnumPricingModel.PER_ROW) {
-                final PerRowPricingModelCommandDto perRowPricingModelCommandDto = (PerRowPricingModelCommandDto) c.getModel();
+                final PerRowPricingModelCommandDto perRowPricingModelCommandDto = (PerRowPricingModelCommandDto) model;
                 result.pricingModelDescription = "The product includes a subset of the current version of the asset"
                 								 + ", based on the purchased rows"
                 								 + ", with no access to updates.";
@@ -206,7 +207,7 @@ public class ContractParametersDto {
             	result.prepaidTiers 		= perRowPricingModelCommandDto.getPrePaidTiers();
             }
             else if (result.pricingModelType == EnumPricingModel.SENTINEL_HUB_SUBSCRIPTION) {
-                final SHSubscriptionPricingModelCommandDto sHSubscriptionPricingModelCommandDto = (SHSubscriptionPricingModelCommandDto) c.getModel();
+                final SHSubscriptionPricingModelCommandDto sHSubscriptionPricingModelCommandDto = (SHSubscriptionPricingModelCommandDto) model;
                 result.pricingModelDescription = "The product includes access to the asset"
                 								 + ", based on the sentinel hub subscription model";
             	result.annualPrice			= df.format(sHSubscriptionPricingModelCommandDto.getAnnualPriceExcludingTax());
@@ -214,16 +215,26 @@ public class ContractParametersDto {
             	result.pricePerPopulation	= null;
             }
             else if (result.pricingModelType == EnumPricingModel.SENTINEL_HUB_IMAGES) {
-                final SHImagePricingModelCommandDto SHImagePricingModelCommandDto = (SHImagePricingModelCommandDto) c.getModel();
+                final SHImagePricingModelCommandDto SHImagePricingModelCommandDto = (SHImagePricingModelCommandDto) model;
                 result.pricingModelDescription = "The product includes access to the asset"
 						 						+ ", based on the sentinel hub subscription model";
             }
 
-            result.domainRestrictions				= c.getModel().getDomainRestrictions();
-            result.consumerRestrictionContinents	= c.getModel().getConsumerRestrictionContinents();
-            result.consumerRestrictionCountries		= c.getModel().getConsumerRestrictionCountries();
-            result.coverageRestrictionContinents	= c.getModel().getCoverageRestrictionContinents();
-            result.coverageRestrictionCountries		= c.getModel().getCoverageRestrictionCountries();
+            result.domainRestrictions            = model.getDomainRestrictions() == null 
+                ? new String[]{} 
+                : model.getDomainRestrictions();
+            result.consumerRestrictionContinents = model.getConsumerRestrictionContinents() == null
+                ? new EnumContinent[]{}
+                : model.getConsumerRestrictionContinents();
+            result.consumerRestrictionCountries  = model.getConsumerRestrictionCountries() == null
+                ? new String[]{}
+                : model.getConsumerRestrictionCountries();
+            result.coverageRestrictionContinents = model.getCoverageRestrictionContinents() == null
+                ? new EnumContinent[]{}
+                : model.getCoverageRestrictionContinents();
+            result.coverageRestrictionCountries  = model.getCoverageRestrictionCountries() == null
+                ? new String[]{}
+                : model.getCoverageRestrictionCountries();
             result.totalPrice                    	= df.format(c.getQuotation().getTotalPrice());
             result.totalPriceExcludingTax        	= df.format(c.getQuotation().getTotalPriceExcludingTax());
 

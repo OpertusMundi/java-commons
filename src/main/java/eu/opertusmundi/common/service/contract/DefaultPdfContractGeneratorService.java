@@ -610,7 +610,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 
         return lines;
     }
-    
+
     private String normalizeText(String text) {
     	return text.replace("\n", "").replace("\r", "").replace("\u00A0", "");
     }
@@ -930,7 +930,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     	}
     	return string;
     }
-    
+
     private static String prepaidTiersToString(List<PrePaidTierDto> prepaidTiers, String units) {
     	String string 	= "";
     	final DecimalFormat df 	= new DecimalFormat("#,##0.00");
@@ -945,7 +945,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     	}
     	return string;
     }
-    
+
     private Block generateDeliveryMethodBlock(EnumDeliveryMethod deliveryMethod) {
     	Block block = null;
     	String text = "";
@@ -960,23 +960,25 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		text = "Delivery will take place via physical media delivery directly by Supplier within three (3) working days following a proof of payment of the applicable price.";
     		block = generateSingleStylePricingModelBlock(text, NORMAL);
 		}
-		
+
 		return block;
     }
 
     private Section generatePricingModelRestrictions(Section section, Block block, PricingModel pricingModel) {
     	String text = "";
-		if (pricingModel.getDomainRestrictions().length 			== 0 &&
-    			pricingModel.getConsumerRestrictionContinents().length	== 0 &&
-    			pricingModel.getConsumerRestrictionCountries().length	== 0 &&
-    			pricingModel.getCoverageRestrictionContinents().length	== 0 &&
-    			pricingModel.getCoverageRestrictionCountries().length	== 0) {
-        		text = "-" + " No restrictions.";
-        		block = generateSingleStylePricingModelBlock(text, NORMAL);
-        		section.getBlocks().add(block);
+
+		if (pricingModel.getDomainRestrictions().length == 0 &&
+    		pricingModel.getConsumerRestrictionContinents().length == 0 &&
+    		pricingModel.getConsumerRestrictionCountries().length == 0 &&
+    		pricingModel.getCoverageRestrictionContinents().length == 0 &&
+    		pricingModel.getCoverageRestrictionCountries().length == 0
+		) {
+            text  = "-" + " No restrictions.";
+            block = generateSingleStylePricingModelBlock(text, NORMAL);
+            section.getBlocks().add(block);
     	} else {
     		if (pricingModel.getDomainRestrictions().length > 0) {
-    			
+
     			keywords.put("[DomainRestrictions]", restrictionsToString(pricingModel.getDomainRestrictions()));
     	   		text = "-" + " Domain restrictions: " + "[DomainRestrictions].";
     	   		block = generateMultiStylePricingModelBlock(text);
@@ -1047,11 +1049,11 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		if (deliveryMethod != null) {
 	    		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);
 	    		section.getBlocks().add(block);
-	
+
 	    		block = generateDeliveryMethodBlock(deliveryMethod);
 	    		section.getBlocks().add(block);
     		}
-    		
+
     		/* Add restrictions*/
     		block = generateSingleStylePricingModelBlock(partRestriction, BOLD);
     		section.getBlocks().add(block);
@@ -1087,7 +1089,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		if (deliveryMethod != null) {
 	    		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);
 	    		section.getBlocks().add(block);
-	
+
 	    		block = generateDeliveryMethodBlock(deliveryMethod);
 	    		section.getBlocks().add(block);
     		}
@@ -1127,7 +1129,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		if (deliveryMethod != null) {
 	    		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);
 	    		section.getBlocks().add(block);
-	
+
 	    		block = generateDeliveryMethodBlock(deliveryMethod);
 	    		section.getBlocks().add(block);
     		}
@@ -1137,7 +1139,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		section.getBlocks().add(block);
     		section = generatePricingModelRestrictions(section, block, pricingModel);
     	}
-    	
+
     	/* Per call*/
     	else if (pricingModel.getPricingModelType() == EnumPricingModel.PER_CALL) {
     		/* Add applicable price*/
@@ -1158,7 +1160,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 	    		text = "-" + " Discount rate applied: [PricingModelDiscount].";
 	    		block = generateMultiStylePricingModelBlock(text);
 	    		section.getBlocks().add(block);
-    		}	
+    		}
 
     		keywords.put("[PrepaidTiers]", prepaidTiersToString(pricingModel.getPrepaidTiers(), "calls"));
     		text = "-" + " Prepaid tiers discount: [PrepaidTiers].";
@@ -1174,7 +1176,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		if (deliveryMethod != null) {
 	    		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);
 	    		section.getBlocks().add(block);
-	
+
 	    		block = generateDeliveryMethodBlock(deliveryMethod);
 	    		section.getBlocks().add(block);
     		}
@@ -1184,7 +1186,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		section.getBlocks().add(block);
     		section = generatePricingModelRestrictions(section, block, pricingModel);
     	}
-    	
+
     	/* Per rows*/
     	else if (pricingModel.getPricingModelType() == EnumPricingModel.PER_ROW) {
     		/* Add applicable price*/
@@ -1206,7 +1208,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
 	    		block = generateMultiStylePricingModelBlock(text);
 	    		section.getBlocks().add(block);
     		}
-    		
+
     		keywords.put("[PrepaidTiers]", prepaidTiersToString(pricingModel.getPrepaidTiers(), "rows"));
     		text = "-" + " Prepaid tiers discount: [PrepaidTiers].";
     		block = generateMultiStylePricingModelBlock(text);
@@ -1221,7 +1223,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		if (deliveryMethod != null) {
 	    		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);
 	    		section.getBlocks().add(block);
-	
+
 	    		block = generateDeliveryMethodBlock(deliveryMethod);
 	    		section.getBlocks().add(block);
     		}
@@ -1231,7 +1233,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		section.getBlocks().add(block);
     		section = generatePricingModelRestrictions(section, block, pricingModel);
     	}
-    	
+
     	/* Sentinel hub subscription*/
     	else if (pricingModel.getPricingModelType() == EnumPricingModel.SENTINEL_HUB_SUBSCRIPTION) {
     		/* Add applicable price*/
@@ -1246,7 +1248,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		text = "-" + "Monthly price: [MonthlyPriceExclTax] Euros.";
     		block = generateMultiStylePricingModelBlock(text);
     		section.getBlocks().add(block);
-    		
+
     		keywords.put("[AnnualPriceExclTax]", pricingModel.getAnnualPrice());
     		text = "-" + "Annual price: [AnnualPriceExclTax] Euros.";
     		block = generateMultiStylePricingModelBlock(text);
@@ -1261,7 +1263,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		if (deliveryMethod != null) {
 	    		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);
 	    		section.getBlocks().add(block);
-	
+
 	    		block = generateDeliveryMethodBlock(deliveryMethod);
 	    		section.getBlocks().add(block);
     		}
@@ -1271,7 +1273,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		section.getBlocks().add(block);
     		section = generatePricingModelRestrictions(section, block, pricingModel);
     	}
-    	
+
     	/* Free asset */
     	else if (pricingModel.getPricingModelType() == EnumPricingModel.FREE) {
     		/* Add applicable price*/
@@ -1286,7 +1288,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		if (deliveryMethod != null) {
 	    		block = generateSingleStylePricingModelBlock(partDelivery, BOLD);
 	    		section.getBlocks().add(block);
-	
+
 	    		block = generateDeliveryMethodBlock(deliveryMethod);
 	    		section.getBlocks().add(block);
     		}
@@ -1311,7 +1313,7 @@ public class DefaultPdfContractGeneratorService implements PdfContractGeneratorS
     		/* Add Delivery*/
 	    	block = generateSingleStylePricingModelBlock(partDelivery, BOLD);
 	    	section.getBlocks().add(block);
-	    	
+
     		text = "[Delivery information]";
 	    	block = generateSingleStylePricingModelBlock(text, NORMAL);
 	    	section.getBlocks().add(block);
