@@ -3,12 +3,12 @@ package eu.opertusmundi.common.model.payment;
 import lombok.Getter;
 
 public enum EnumTransferSortField {
-    CREATED_ON("transferCreatedOn"),
-    EXECUTED_ON("transferExecutedOn"),
+    CREATED_ON("transfer.creationDate"),
+    EXECUTED_ON("transfer.executionDate"),
     REFERENCE_NUMBER("payin.referenceNumber"),
-    STATUS("transferStatus"),
-    FUNDS("transferCreditedFunds"),
-    FEES("transferFees"),
+    STATUS("transfer.transactionStatus"),
+    FUNDS("transfer.creditedFunds"),
+    FEES("transfer.fees"),
     ;
 
     @Getter

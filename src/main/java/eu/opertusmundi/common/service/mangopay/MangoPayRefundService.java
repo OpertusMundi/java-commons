@@ -133,7 +133,6 @@ public class MangoPayRefundService extends BaseMangoPayService implements Refund
                     PaymentMessageCode.ENUM_MEMBER_NOT_SUPPORTED,
                     String.format("Refund event type not supported [eventType=%s, refundId=%s]", eventType, refundId)
                 );
-
         }
     }
 
@@ -166,9 +165,9 @@ public class MangoPayRefundService extends BaseMangoPayService implements Refund
      * Refunds an order item for a PayIn refund.
      *
      * <p>
-     * A PayIn always refers to a single order item. The item transfer
-     * properties are updated during a Transfer refund. This method updates only
-     * the table used for analytics.
+     * A PayIn always refers to a single order item. The item transfer is updated
+     * during a Transfer refund. This method updates only the table used for
+     * analytics.
      *
      * @param refund
      * @param payIn
@@ -192,7 +191,7 @@ public class MangoPayRefundService extends BaseMangoPayService implements Refund
         payIn.getItems().stream()
             .filter(i -> i.getType() == EnumPaymentItemType.SERVICE_BILLING)
             .map(e -> (PayInServiceBillingItemEntity) e)
-            .map(e->e.getServiceBilling())
+            .map(e -> e.getServiceBilling())
             .forEach(i -> {
                 i.setStatus(EnumPayoffStatus.DUE);
                 i.setPayin(null);
@@ -203,14 +202,14 @@ public class MangoPayRefundService extends BaseMangoPayService implements Refund
     private TransactionDto createTransferRefund(EventType eventType, String refundId) throws PaymentException {
         try {
             final var refundObject    = this.ensureRefund(refundId, InitialTransactionType.TRANSFER);
-            final var payInItemEntity = this.ensurePayInItem(refundObject.getInitialTransactionId());
+            final var payInItemEntity = this.ensureTransferPayInItem(refundObject.getInitialTransactionId());
             var       payInEntity     = payInItemEntity.getPayin();
             if (refundObject.getStatus() != TransactionStatus.SUCCEEDED) {
                 return payInItemEntity.getPayin().toHelpdeskDto(true);
             }
 
             final var refundEntity = this.createRefund(refundObject);
-            payInItemEntity.setTransferRefund(refundEntity);
+            payInItemEntity.getTransfer().setRefund(refundEntity);
             payInEntity = this.payInRepository.saveAndFlush(payInEntity);
 
             // Refund order item or service billing record
@@ -233,18 +232,6 @@ public class MangoPayRefundService extends BaseMangoPayService implements Refund
      * A transfer always refers to a single PayIn item. This method handles
      * PayIn items of type {@link EnumPaymentItemType#ORDER}.
      *
-     * <p>
-     * An item is updated only if the values of
-     * {@link PayInItemEntity#getTransfer()} are equal to
-     * {@link RefundEntity#getInitialTransactionId()}
-     *
-     * <p>
-     * Refunding an order item requires two actions:
-     * <ul>
-     * <li>Update order PayIn item with a reference to the refund entity</li>
-     * <li>Update PayIn history table and mark the specific item as refunded</li>
-     * </ul>
-     *
      * @param refund
      * @param payIn
      */
@@ -253,10 +240,6 @@ public class MangoPayRefundService extends BaseMangoPayService implements Refund
             .filter(i -> i.getType() == EnumPaymentItemType.ORDER)
             .map(e -> (PayInOrderItemEntity) e)
             .forEach(i -> {
-                if (!i.getTransfer().equalsIgnoreCase(refund.getInitialTransactionId())) {
-                    return;
-                }
-                i.setTransferRefund(refund);
                 this.payInItemHistoryRepository.refundTransfer(i.getId());
             });
     }
@@ -268,18 +251,6 @@ public class MangoPayRefundService extends BaseMangoPayService implements Refund
      * A transfer always refers to a single PayIn item. This method handles
      * PayIn items of type {@link EnumPaymentItemType#SERVICE_BILLING}.
      *
-     * <p>
-     * An item is updated only if the values of
-     * {@link PayInItemEntity#getTransfer()} are equal to
-     * {@link RefundEntity#getInitialTransactionId()}
-     *
-     * <p>
-     * Refunding a service billing record requires two actions:
-     * <ul>
-     * <li>Update order PayIn item with a reference to the refund entity</li>
-     * <li>Mark the service billing record as refunded</li>
-     * </ul>
-     *
      * @param refund
      * @param payIn
      */
@@ -288,10 +259,6 @@ public class MangoPayRefundService extends BaseMangoPayService implements Refund
             .filter(i -> i.getType() == EnumPaymentItemType.SERVICE_BILLING)
             .map(e -> (PayInServiceBillingItemEntity) e)
             .forEach(i -> {
-                if (!i.getTransfer().equalsIgnoreCase(refund.getInitialTransactionId())) {
-                    return;
-                }
-                i.setTransferRefund(refund);
                 i.getServiceBilling().setRefunded(true);
             });
     }
@@ -403,7 +370,7 @@ public class MangoPayRefundService extends BaseMangoPayService implements Refund
         return e;
     }
 
-    private PayInItemEntity ensurePayInItem(String transactionId) {
+    private PayInItemEntity ensureTransferPayInItem(String transactionId) {
         final var e = this.payInRepository.findOnePayInItemByTransferId(transactionId).orElse(null);
 
         if(e == null) {

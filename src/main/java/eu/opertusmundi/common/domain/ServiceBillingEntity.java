@@ -30,7 +30,6 @@ import eu.opertusmundi.common.model.account.EnumPayoffStatus;
 import eu.opertusmundi.common.model.payment.EnumBillableServiceType;
 import eu.opertusmundi.common.model.payment.ServiceBillingDto;
 import eu.opertusmundi.common.model.payment.ServiceUseStatsDto;
-import eu.opertusmundi.common.model.payment.TransferDto;
 import eu.opertusmundi.common.model.payment.consumer.ConsumerServiceBillingDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskServiceBillingDto;
 import eu.opertusmundi.common.model.payment.provider.ProviderServiceBillingDto;
@@ -179,15 +178,15 @@ public class ServiceBillingEntity {
     @Column(name = "refund")
     private boolean refunded;
 
-    public void updateTransfer(TransferDto transfer) {
+    public void updateTransfer(TransferEntity transfer) {
         transferCreditedFunds = transfer.getCreditedFunds();
-        transferDay           = transfer.getExecutedOn().getDayOfMonth();
-        transferExecutedOn    = transfer.getExecutedOn();
-        transferMonth         = transfer.getExecutedOn().getMonthValue();
+        transferDay           = transfer.getExecutionDate().getDayOfMonth();
+        transferExecutedOn    = transfer.getExecutionDate();
+        transferMonth         = transfer.getExecutionDate().getMonthValue();
         transferPlatformFees  = transfer.getFees();
         transferProviderId    = transfer.getTransactionId();
-        transferWeek          = transfer.getExecutedOn().get(WeekFields.of(Locale.getDefault()).weekOfYear());
-        transferYear          = transfer.getExecutedOn().getYear();
+        transferWeek          = transfer.getExecutionDate().get(WeekFields.of(Locale.getDefault()).weekOfYear());
+        transferYear          = transfer.getExecutionDate().getYear();
     }
 
     public void resetTransfer() {

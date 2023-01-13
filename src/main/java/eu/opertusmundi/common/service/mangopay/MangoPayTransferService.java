@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,18 +23,23 @@ import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
 import eu.opertusmundi.common.domain.PayInServiceBillingItemEntity;
+import eu.opertusmundi.common.domain.TransferEntity;
 import eu.opertusmundi.common.model.EnumSetting;
 import eu.opertusmundi.common.model.account.EnumCustomerType;
 import eu.opertusmundi.common.model.order.EnumOrderStatus;
+import eu.opertusmundi.common.model.payment.EnumTransactionNature;
 import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
+import eu.opertusmundi.common.model.payment.EnumTransactionType;
 import eu.opertusmundi.common.model.payment.PaymentException;
 import eu.opertusmundi.common.model.payment.PaymentMessageCode;
 import eu.opertusmundi.common.model.payment.TransferDto;
 import eu.opertusmundi.common.repository.AccountRepository;
+import eu.opertusmundi.common.repository.CustomerRepository;
 import eu.opertusmundi.common.repository.PayInItemHistoryRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
 import eu.opertusmundi.common.repository.ServiceBillingRepository;
 import eu.opertusmundi.common.repository.SettingRepository;
+import eu.opertusmundi.common.repository.TransferRepository;
 
 @Service
 @Transactional
@@ -43,28 +47,33 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
 
     private static final Logger logger = LoggerFactory.getLogger(MangoPayTransferService.class);
 
-    @Autowired
+    private final CustomerRepository         customerRepository;
     private final PayInRepository            payInRepository;
     private final PayInItemHistoryRepository payInItemHistoryRepository;
     private final ServiceBillingRepository   serviceBillingRepository;
     private final SettingRepository          settingRepository;
+    private final TransferRepository         transferRepository;
     private final WalletService              walletService;
 
     @Autowired
     public MangoPayTransferService(
         AccountRepository             accountRepository,
+        CustomerRepository            customerRepository,
         PayInRepository               payInRepository,
         PayInItemHistoryRepository    payInItemHistoryRepository,
         ServiceBillingRepository      serviceBillingRepository,
         SettingRepository             settingRepository,
+        TransferRepository            transferRepository,
         WalletService                 walletService
     ) {
         super(accountRepository);
 
+        this.customerRepository         = customerRepository;
         this.payInRepository            = payInRepository;
         this.payInItemHistoryRepository = payInItemHistoryRepository;
         this.serviceBillingRepository   = serviceBillingRepository;
         this.settingRepository          = settingRepository;
+        this.transferRepository         = transferRepository;
         this.walletService              = walletService;
     }
 
@@ -106,14 +115,14 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
 
             // Process every item
             for (final PayInItemEntity item : payIn.getItems()) {
-                if (!StringUtils.isBlank(item.getTransfer())) {
+                if (item.getTransfer() != null) {
                     // If a valid transfer transaction identifier exists, this
                     // is a retry operation
-                    transfers.add(item.toTransferDto(true));
+                    transfers.add(item.getTransfer().toDto(true));
                     continue;
                 }
-                final String idempotencyKey = item.getTransferKey().toString();
-                TransferDto  transfer       = null;
+                final String idempotencyKey = item.getKey().toString();
+                Transfer     transfer       = null;
                 switch (item.getType()) {
                     case ORDER :
                         transfer = this.createTransferForOrder(
@@ -134,23 +143,24 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
                 }
 
                 if (transfer != null) {
-                    // Update item
-                    item.updateTransfer(transfer);
+                    final var transferEntity = this.createTopioTransfer(transfer);
 
-                    // If transfer is successful, update item history record
-                    if (transfer.getStatus() == EnumTransactionStatus.SUCCEEDED) {
+                    // If the transfer is successful, update (a) the payIn item,
+                    // (b) the provider wallets and (c) analytics
+                    if (transferEntity.getTransactionStatus() == EnumTransactionStatus.SUCCEEDED) {
+                        item.setTransfer(transferEntity);
+
                         switch (item.getType()) {
                             case ORDER :
-                                // For order items, transfer data is stored with
-                                // payment analytics data
-                                this.payInItemHistoryRepository.updateTransfer(item.getId(), transfer);
+                                // Update analytics
+                                this.payInItemHistoryRepository.updateTransfer(item.getId(), transferEntity);
                                 break;
 
                             case SERVICE_BILLING :
-                                // For service billing items, transfer data is
-                                // stored with the billing record
+                                // For service billing items, analytics data is
+                                // stored within the service billing entity
                                 final var serviceItem = (PayInServiceBillingItemEntity) item;
-                                this.serviceBillingRepository.updateTransfer(serviceItem.getServiceBilling().getId(), transfer);
+                                this.serviceBillingRepository.updateTransfer(serviceItem.getServiceBilling().getId(), transferEntity);
                                 break;
 
                             default :
@@ -159,13 +169,7 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
                                     payInKey, item.getId(), item.getType())
                                 );
                         }
-                    }
 
-                    transfer.setKey(item.getTransferKey());
-                    transfers.add(transfer);
-
-                    // Update provider wallet
-                    if (transfer.getStatus() == EnumTransactionStatus.SUCCEEDED) {
                         final UUID providerKey = switch (item.getType()) {
                             case ORDER ->
                                 item.getProvider().getKey();
@@ -183,6 +187,14 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
                         };
                         this.walletService.refreshUserWallets(providerKey, EnumCustomerType.PROVIDER);
                     }
+                    if (transferEntity.getTransactionStatus() == EnumTransactionStatus.FAILED) {
+                        // Reset payIn item key to create a new Transfer on next
+                        // try since the key is used as the idempotent key for
+                        // the MANGOPAY operation
+                        item.setKey(UUID.randomUUID());
+                    }
+
+                    transfers.add(transferEntity.toDto(true));
                 }
             }
 
@@ -199,7 +211,7 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
         }
     }
 
-    private TransferDto createTransferForOrder(
+    private Transfer createTransferForOrder(
         String idempotencyKey, UUID payInKey, PayInOrderItemEntity item, CustomerEntity debitCustomer, BigDecimal feePercent
     ) throws Exception {
         Assert.isTrue(item.getOrder() != null, "Expected a non-null order");
@@ -225,23 +237,21 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
         }
 
         // Check if this is a retry operation
-        Transfer transferResponse = this.<Transfer>getResponse(idempotencyKey);
+        Transfer transfer = this.<Transfer>getResponse(idempotencyKey);
 
         // Create a new transfer if needed
-        if (transferResponse == null) {
-            final Transfer transferRequest = this.createTransfer(
+        if (transfer == null) {
+            final Transfer transferRequest = this.createMangopayTransfer(
                 idempotencyKey, debitCustomer, creditCustomer, amount, fees
             );
 
-            transferResponse = this.api.getTransferApi().create(idempotencyKey, transferRequest);
+            transfer = this.api.getTransferApi().create(idempotencyKey, transferRequest);
         }
 
-        final TransferDto result = this.transferResponseToDto(transferResponse);
-
-        return result;
+        return transfer;
     }
 
-    private TransferDto createTransferForServiceBilling(
+    private Transfer createTransferForServiceBilling(
         String idempotencyKey, UUID payInKey, PayInServiceBillingItemEntity item, CustomerEntity debitCustomer,
         BigDecimal feePercent, Integer topioAccountId
     ) throws Exception {
@@ -293,20 +303,18 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
         }
 
         // Check if this is a retry operation
-        Transfer transferResponse = this.<Transfer>getResponse(idempotencyKey);
+        Transfer transfer = this.<Transfer>getResponse(idempotencyKey);
 
         // Create a new transfer if needed
-        if (transferResponse == null) {
-            final Transfer transferRequest = this.createTransfer(
+        if (transfer == null) {
+            final Transfer transferRequest = this.createMangopayTransfer(
                 idempotencyKey, debitCustomer, creditCustomer, amount, fees
             );
 
-            transferResponse = this.api.getTransferApi().create(idempotencyKey, transferRequest);
+            transfer = this.api.getTransferApi().create(idempotencyKey, transferRequest);
         }
 
-        final TransferDto result = this.transferResponseToDto(transferResponse);
-
-        return result;
+        return transfer;
     }
 
     @Override
@@ -314,29 +322,29 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
         try {
             final PayInItemEntity payInItemEntity = this.ensurePayInItemTransfer(transferId);
             final PayInEntity     payInEntity     = payInItemEntity.getPayin();
+            TransferEntity        transferEntity  = payInItemEntity.getTransfer();
 
-            final Transfer    transferResponse = this.api.getTransferApi().get(transferId);
-            final TransferDto transferObject   = this.transferResponseToDto(transferResponse);
+            final Transfer transferObject = this.api.getTransferApi().get(transferId);
 
             // Handle redundant updates
-            if (payInItemEntity.getTransferStatus() == transferObject.getStatus()) {
+            if (transferEntity.getTransactionStatus() == EnumTransactionStatus.from(transferObject.getStatus())) {
                 return;
             }
 
-            // Update item
-            payInItemEntity.updateTransfer(transferObject);
+            transferEntity = this.createTopioTransfer(transferObject);
+            payInItemEntity.setTransfer(transferEntity);
 
             this.payInRepository.saveAndFlush(payInEntity);
 
             // Always update history when a transfer is updated. A failed
             // transfer may be retried and succeed.
-            payInItemHistoryRepository.updateTransfer(payInItemEntity.getId(), transferObject);
+            payInItemHistoryRepository.updateTransfer(payInItemEntity.getId(), transferEntity);
         } catch (final Exception ex) {
             throw this.wrapException("Update Transfer", ex, transferId);
         }
     }
 
-    private Transfer createTransfer(
+    private Transfer createMangopayTransfer(
         String idempotentKey, CustomerEntity debitCustomer, CustomerEntity creditCustomer, BigDecimal amount, BigDecimal fees
     ) {
         final String debitUserId    = debitCustomer.getPaymentProviderUser();
@@ -357,20 +365,43 @@ public class MangoPayTransferService extends BaseMangoPayService implements Tran
         return result;
     }
 
+    private TransferEntity createTopioTransfer(Transfer transfer) throws PaymentException {
+        try {
+            TransferEntity e = this.transferRepository.findOneByTransactionId(transfer.getId()).orElse(null);
+            if (e == null) {
+                e = new TransferEntity();
+            }
 
-    private TransferDto transferResponseToDto(Transfer transfer) {
-        final TransferDto result = new TransferDto();
+            final var consumer = this.customerRepository.findCustomerByProviderWalletId(transfer.getDebitedWalletId())
+                    .map(c -> c.getAccount()).orElse(null);
+            final var provider = this.customerRepository.findCustomerByProviderWalletId(transfer.getCreditedWalletId())
+                    .map(c -> c.getAccount()).orElse(null);
 
-        result.setCreatedOn(this.timestampToDate(transfer.getCreationDate()));
-        result.setCreditedFunds(BigDecimal.valueOf(transfer.getCreditedFunds().getAmount()).divide(BigDecimal.valueOf(100)));
-        result.setExecutedOn(this.timestampToDate(transfer.getExecutionDate()));
-        result.setFees(BigDecimal.valueOf(transfer.getFees().getAmount()).divide(BigDecimal.valueOf(100)));
-        result.setTransactionId(transfer.getId());
-        result.setResultCode(transfer.getResultCode());
-        result.setResultMessage(transfer.getResultMessage());
-        result.setStatus(EnumTransactionStatus.from(transfer.getStatus()));
+            e.setAuthorId(transfer.getAuthorId());
+            e.setConsumer(consumer);
+            e.setCreationDate(timestampToDate(transfer.getCreationDate()));
+            e.setCreditedFunds(BigDecimal.valueOf(transfer.getCreditedFunds().getAmount()).divide(BigDecimal.valueOf(100L)));
+            e.setCreditedUserId(transfer.getCreditedUserId());
+            e.setCreditedWalletId(transfer.getDebitedWalletId());
+            e.setCurrency(transfer.getCreditedFunds().getCurrency().toString());
+            e.setDebitedFunds(BigDecimal.valueOf(transfer.getDebitedFunds().getAmount()).divide(BigDecimal.valueOf(100L)));
+            e.setDebitedWalletId(transfer.getDebitedWalletId());
+            e.setExecutionDate(timestampToDate(transfer.getExecutionDate()));
+            e.setFees(BigDecimal.valueOf(transfer.getFees().getAmount()).divide(BigDecimal.valueOf(100L)));
+            e.setProvider(provider);
+            e.setResultCode(transfer.getResultCode());
+            e.setResultMessage(transfer.getResultMessage());
+            e.setTransactionId(transfer.getId());
+            e.setTransactionNature(EnumTransactionNature.from(transfer.getNature()));
+            e.setTransactionStatus(EnumTransactionStatus.from(transfer.getStatus()));
+            e.setTransactionType(EnumTransactionType.from(transfer.getType()));
 
-        return result;
+            e = this.transferRepository.saveAndFlush(e);
+
+            return e;
+        } catch (final PaymentException ex) {
+            throw ex;
+        }
     }
 
     private PayInItemEntity ensurePayInItemTransfer(String transferId) {

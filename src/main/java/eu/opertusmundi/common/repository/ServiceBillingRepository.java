@@ -16,11 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import eu.opertusmundi.common.domain.ServiceBillingEntity;
+import eu.opertusmundi.common.domain.TransferEntity;
 import eu.opertusmundi.common.model.EnumView;
 import eu.opertusmundi.common.model.account.EnumPayoffStatus;
 import eu.opertusmundi.common.model.payment.EnumBillableServiceType;
 import eu.opertusmundi.common.model.payment.ServiceBillingDto;
-import eu.opertusmundi.common.model.payment.TransferDto;
 
 @Repository
 @Transactional(readOnly = true)
@@ -160,7 +160,7 @@ public interface ServiceBillingRepository extends JpaRepository<ServiceBillingEn
         };
     }
 
-    default void updateTransfer(Integer id, TransferDto transfer) {
+    default void updateTransfer(Integer id, TransferEntity transfer) {
         Assert.notNull(transfer, "Expected a non-null transfer");
 
         final ServiceBillingEntity e = this.findById(id).orElse(null);

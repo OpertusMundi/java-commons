@@ -33,10 +33,10 @@ import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
 import eu.opertusmundi.common.domain.PayInRecurringRegistrationEntity;
-import eu.opertusmundi.common.domain.PayInStatusEntity;
 import eu.opertusmundi.common.domain.PayInServiceBillingItemEntity;
-import eu.opertusmundi.common.domain.ShippingAddressEmbeddable;
+import eu.opertusmundi.common.domain.PayInStatusEntity;
 import eu.opertusmundi.common.domain.ServiceBillingEntity;
+import eu.opertusmundi.common.domain.ShippingAddressEmbeddable;
 import eu.opertusmundi.common.model.EnumReferenceType;
 import eu.opertusmundi.common.model.EnumRole;
 import eu.opertusmundi.common.model.payment.BankwirePayInCommand;
@@ -142,7 +142,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     @Query("SELECT i FROM PayInItem i WHERE i.payin.key = :payInKey and i.provider.id = :userId and i.index = :index")
     Optional<PayInItemEntity> findOnePayInItemByProvider(Integer userId, UUID payInKey, Integer index);
 
-    @Query("SELECT i FROM PayInItem i WHERE i.transfer = :transferId")
+    @Query("SELECT i FROM PayInItem i WHERE i.transfer.transactionId = :transferId")
     Optional<PayInItemEntity> findOnePayInItemByTransferId(String transferId);
 
     default Optional<HelpdeskPayInItemDto> findOneObjectPayInItemByTransferId(String transferId) {
@@ -245,7 +245,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     @Query(
         "SELECT i "
       + "FROM   PayInItem i "
-      + "WHERE (i.transferStatus in :status or :status is null) and "
+      + "WHERE (i.transfer.transactionStatus in :status or :status is null) and "
       + "      (cast(:providerKey as org.hibernate.type.UUIDCharType) IS NULL or i.provider.key = :providerKey) and "
       + "      (i.transfer is not null) and "
       + "      (:referenceNumber IS NULL or i.payin.referenceNumber = :referenceNumber) "

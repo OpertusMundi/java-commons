@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.domain;
 
+import java.util.UUID;
+
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
@@ -23,6 +25,7 @@ public class PayInOrderItemEntity extends PayInItemEntity {
     public PayInOrderItemEntity() {
         super();
 
+        this.key  = UUID.randomUUID();
         this.type = EnumPaymentItemType.ORDER;
     }
 
@@ -58,8 +61,8 @@ public class PayInOrderItemEntity extends PayInItemEntity {
 
         i.setOrder(this.order.toProviderDto(includeDetails));
 
-        if (includeDetails) {
-            i.setTransfer(this.toTransferDto(false));
+        if (includeDetails && this.getTransfer() != null) {
+            i.setTransfer(this.getTransfer().toDto(false));
         }
 
         return i;
@@ -72,7 +75,9 @@ public class PayInOrderItemEntity extends PayInItemEntity {
         this.updateDto(i);
 
         i.setOrder(this.order.toHelpdeskDto(includeDetails));
-        i.setTransfer(this.toTransferDto(true));
+        if (this.getTransfer() != null) {
+            i.setTransfer(this.getTransfer().toDto(true));
+        }
 
         return i;
     }

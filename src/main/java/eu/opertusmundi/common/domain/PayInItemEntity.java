@@ -1,7 +1,5 @@
 package eu.opertusmundi.common.domain;
 
-import java.math.BigDecimal;
-import java.time.ZonedDateTime;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -22,12 +20,9 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.payment.EnumPaymentItemType;
-import eu.opertusmundi.common.model.payment.EnumTransactionStatus;
-import eu.opertusmundi.common.model.payment.TransferDto;
 import eu.opertusmundi.common.model.payment.consumer.ConsumerPayInItemDto;
 import eu.opertusmundi.common.model.payment.helpdesk.HelpdeskPayInItemDto;
 import eu.opertusmundi.common.model.payment.provider.ProviderPayInItemDto;
@@ -48,15 +43,19 @@ public abstract class PayInItemEntity {
     protected Integer id;
 
     @NotNull
+    @NaturalId
+    @Column(name = "`key`", updatable = false, columnDefinition = "uuid")
+    @Getter
+    @Setter
+    protected UUID key;
+    
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payin", nullable = false)
     @Getter
     @Setter
     protected PayInEntity payin;
 
-    /**
-     * Reference to the provider account for the specific item
-     */
     @NotNull
     @ManyToOne(targetEntity = AccountEntity.class, fetch = FetchType.LAZY)
     @JoinColumn(name = "provider", nullable = false)
@@ -76,101 +75,16 @@ public abstract class PayInItemEntity {
     @Getter
     protected EnumPaymentItemType type;
 
-    @Column(name = "`transfer`")
+    @ManyToOne(targetEntity = TransferEntity.class, fetch = FetchType.LAZY)
+    @JoinColumn(name = "transfer")
     @Getter
     @Setter
-    protected String transfer;
-
-    /**
-     * Reference to refund object
-     */
-    @ManyToOne(targetEntity = RefundEntity.class, fetch = FetchType.LAZY)
-    @JoinColumn(name = "transfer_refund")
-    @Getter
-    @Setter
-    protected RefundEntity transferRefund;
-
-    @NotNull
-    @NaturalId
-    @Column(name = "transfer_key", updatable = false, columnDefinition = "uuid")
-    @Getter
-    protected final UUID transferKey = UUID.randomUUID();
-
-    @Column(name = "`transfer_credited_funds`", columnDefinition = "numeric", precision = 20, scale = 6)
-    @Getter
-    @Setter
-    protected BigDecimal transferCreditedFunds;
-
-    @Column(name = "`transfer_platform_fees`", columnDefinition = "numeric", precision = 20, scale = 6)
-    @Getter
-    @Setter
-    protected BigDecimal transferFees;
-
-    @Column(name = "`transfer_status`")
-    @Enumerated(EnumType.STRING)
-    @Getter
-    @Setter
-    protected EnumTransactionStatus transferStatus;
-
-    @Column(name = "`transfer_created_on`")
-    @Getter
-    @Setter
-    protected ZonedDateTime transferCreatedOn;
-
-    @Column(name = "`transfer_executed_on`")
-    @Getter
-    @Setter
-    protected ZonedDateTime transferExecutedOn;
-
-    @Column(name = "`transfer_result_code`")
-    @Getter
-    @Setter
-    protected String transferResultCode;
-
-    @Column(name = "`transfer_result_message`")
-    @Getter
-    @Setter
-    protected String transferResultMessage;
-
-    public void updateTransfer(TransferDto t) {
-        this.transfer              = t.getTransactionId();
-        this.transferCreatedOn     = t.getCreatedOn();
-        this.transferCreditedFunds = t.getCreditedFunds();
-        this.transferExecutedOn    = t.getExecutedOn();
-        this.transferFees          = t.getFees();
-        this.transferResultCode    = t.getResultCode();
-        this.transferResultMessage = t.getResultMessage();
-        this.transferStatus        = t.getStatus();
-    }
+    protected TransferEntity transfer;
 
     public abstract ConsumerPayInItemDto toConsumerDto(boolean includeDetails);
 
     public abstract ProviderPayInItemDto toProviderDto(boolean includeDetails);
 
     public abstract HelpdeskPayInItemDto toHelpdeskDto(boolean includeDetails);
-
-    public TransferDto toTransferDto(boolean includeHelpdeskData) {
-        final TransferDto t = new TransferDto();
-
-        if (StringUtils.isBlank(transfer)) {
-            return null;
-        }
-
-        t.setCreatedOn(transferCreatedOn);
-        t.setCreditedFunds(transferCreditedFunds);
-        t.setExecutedOn(transferExecutedOn);
-        t.setFees(transferFees);
-        t.setKey(transferKey);
-        t.setStatus(transferStatus);
-        t.setTransactionId(transfer);
-
-        if (includeHelpdeskData) {
-            t.setProviderId(transfer);
-            t.setResultCode(transferResultCode);
-            t.setResultMessage(transferResultMessage);
-        }
-
-        return t;
-    }
 
 }

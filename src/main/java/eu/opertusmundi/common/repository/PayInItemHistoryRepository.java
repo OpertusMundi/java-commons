@@ -15,7 +15,7 @@ import eu.opertusmundi.common.domain.PayInEntity;
 import eu.opertusmundi.common.domain.PayInItemEntity;
 import eu.opertusmundi.common.domain.PayInItemHistoryEntity;
 import eu.opertusmundi.common.domain.PayInOrderItemEntity;
-import eu.opertusmundi.common.model.payment.TransferDto;
+import eu.opertusmundi.common.domain.TransferEntity;
 
 @Repository
 @Transactional(readOnly = false)
@@ -77,7 +77,7 @@ public interface PayInItemHistoryRepository extends JpaRepository<PayInItemHisto
         this.saveAndFlush(e);
     }
 
-    default void updateTransfer(Integer id, TransferDto transfer) {
+    default void updateTransfer(Integer id, TransferEntity transfer) {
         Assert.notNull(transfer, "Expected a non-null transfer");
 
         final PayInItemHistoryEntity history = this.findOneById(id).orElse(null);
@@ -85,13 +85,13 @@ public interface PayInItemHistoryRepository extends JpaRepository<PayInItemHisto
         Assert.notNull(history, "Expected a non-null history record");
 
         history.setTransferCreditedFunds(transfer.getCreditedFunds());
-        history.setTransferDay(transfer.getExecutedOn().getDayOfMonth());
-        history.setTransferExecutedOn(transfer.getExecutedOn());
-        history.setTransferMonth(transfer.getExecutedOn().getMonthValue());
+        history.setTransferDay(transfer.getExecutionDate().getDayOfMonth());
+        history.setTransferExecutedOn(transfer.getExecutionDate());
+        history.setTransferMonth(transfer.getExecutionDate().getMonthValue());
         history.setTransferPlatformFees(transfer.getFees());
         history.setTransferProviderId(transfer.getTransactionId());
-        history.setTransferWeek(transfer.getExecutedOn().get(WeekFields.of(Locale.getDefault()).weekOfYear()));
-        history.setTransferYear(transfer.getExecutedOn().getYear());
+        history.setTransferWeek(transfer.getExecutionDate().get(WeekFields.of(Locale.getDefault()).weekOfYear()));
+        history.setTransferYear(transfer.getExecutionDate().getYear());
 
         this.saveAndFlush(history);
     }
