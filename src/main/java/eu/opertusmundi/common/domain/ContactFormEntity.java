@@ -19,6 +19,7 @@ import org.hibernate.annotations.NaturalId;
 
 import eu.opertusmundi.common.model.message.ContactFormDto;
 import eu.opertusmundi.common.model.message.EnumContactFormStatus;
+import eu.opertusmundi.common.model.message.EnumContactFormType;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -41,6 +42,14 @@ public class ContactFormEntity {
     @Column(name = "key", updatable = false, columnDefinition = "uuid")
     @Setter(AccessLevel.PRIVATE)
     private UUID key = UUID.randomUUID();
+
+    @NotNull
+    @Column(name = "`type`", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private EnumContactFormType type;
+
+    @Column(name = "`country_code`", length = 2)
+    private String countryCode;
 
     @Column(name = "`company_name`", length = 64)
     private String companyName;
@@ -98,6 +107,7 @@ public class ContactFormEntity {
         final ContactFormDto f = new ContactFormDto();
 
         f.setCompanyName(companyName);
+        f.setCountryCode(countryCode);
         f.setCreatedAt(createdAt);
         f.setEmail(email);
         f.setFirstName(firstName);
@@ -109,6 +119,7 @@ public class ContactFormEntity {
         f.setPhoneNumber(phoneNumber);
         f.setPrivacyTermsAccepted(privacyTermsAccepted);
         f.setStatus(status);
+        f.setType(type);
         f.setUpdatedAt(updatedAt);
 
         if (includeHelpdeskData) {

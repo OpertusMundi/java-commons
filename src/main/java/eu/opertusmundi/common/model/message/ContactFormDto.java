@@ -26,17 +26,19 @@ public class ContactFormDto {
     @Schema(hidden = true)
     private String processInstance;
 
-    private UUID                  key;
     private String                companyName;
-    private String                firstName;
-    private String                lastName;
+    private String                countryCode;
+    private ZonedDateTime         createdAt;
     private String                email;
+    private String                firstName;
+    private UUID                  key;
+    private String                lastName;
+    private String                message;
     private String                phoneCountryCode;
     private String                phoneNumber;
-    private String                message;
-    private ZonedDateTime         createdAt;
-    private ZonedDateTime         updatedAt;
-    private EnumContactFormStatus status;
     private boolean               privacyTermsAccepted;
+    private EnumContactFormStatus status;
+    private EnumContactFormType   type;
+    private ZonedDateTime         updatedAt;
 
 }

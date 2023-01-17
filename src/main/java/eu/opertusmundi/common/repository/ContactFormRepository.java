@@ -32,7 +32,7 @@ public interface ContactFormRepository extends JpaRepository<ContactFormEntity, 
     Page<ContactFormEntity> findAll(
         String email, EnumContactFormStatus status, ZonedDateTime createdAtFrom, ZonedDateTime createdAtTo, Pageable pageable
     );
-    
+
     @Query("SELECT count(f) from ContactForm f where status = :status")
     Long countFormsWithStatus(EnumContactFormStatus status);
 
@@ -41,6 +41,7 @@ public interface ContactFormRepository extends JpaRepository<ContactFormEntity, 
         final var e = new ContactFormEntity();
 
         e.setCompanyName(command.getCompanyName());
+        e.setCountryCode(command.getCountryCode());
         e.setEmail(command.getEmail());
         e.setFirstName(command.getFirstName());
         e.setLastName(command.getLastName());
@@ -49,6 +50,7 @@ public interface ContactFormRepository extends JpaRepository<ContactFormEntity, 
         e.setPhoneNumber(command.getPhoneNumber());
         e.setPrivacyTermsAccepted(true);
         e.setStatus(EnumContactFormStatus.PENDING);
+        e.setType(command.getType());
         e.setUpdatedAt(e.getCreatedAt());
 
         this.saveAndFlush(e);
@@ -57,7 +59,7 @@ public interface ContactFormRepository extends JpaRepository<ContactFormEntity, 
 
     @Transactional(readOnly = false)
     default ContactFormDto completeForm(UUID formKey) {
-        var e = this.findOneByKey(formKey).orElse(null);
+        final var e = this.findOneByKey(formKey).orElse(null);
         if (e == null) {
             throw new ServiceException("Form was not found");
         }
