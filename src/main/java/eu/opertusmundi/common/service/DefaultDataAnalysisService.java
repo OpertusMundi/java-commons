@@ -454,12 +454,16 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
 			case COUNT_SUBSCRIBERS:
 				sqlString	+= "select count(distinct consumer) as count";
 				table	  	=  "\"web\".account_subscription";
+				selectFields.add("asset");
+				groupByFields.add("asset");
 				break;
 			case COUNT_CALLS:
 				break;
 			case EARNINGS:
 				sqlString 	+= 	"select sum(payin_total_price) as price";
 				table 		= 	"\"analytics\".payin_item_hist";
+				selectFields.add("asset_pid");
+				groupByFields.add("asset_pid");
 				filters.add("asset_type = 'SUBSCRIPTION'");
 				filters.add("refund = false");
 				break;
@@ -702,8 +706,11 @@ public class DefaultDataAnalysisService implements DataAnalysisService, Initiali
             }
         }
 
-        // Group by segment in case of SUBSCRIBER_SEGMENT
-        if (query.getMetric() == EnumMetric.SUBSCRIBER_SEGMENT) {
+        if (query.getMetric() == EnumMetric.COUNT_SUBSCRIBERS) {
+        	p.setAsset((String) o[index++]);
+        } else if (query.getMetric() == EnumMetric.EARNINGS) {
+        	p.setAsset((String) o[index++]);
+        } else if (query.getMetric() == EnumMetric.SUBSCRIBER_SEGMENT) {
         	p.setSegment((String) o[index++]);
         } else if (query.getMetric() == EnumMetric.SUBSCRIBER_LOCATION) {
         	p.setLocation(DataPoint.Location.of((String) o[index++]));
