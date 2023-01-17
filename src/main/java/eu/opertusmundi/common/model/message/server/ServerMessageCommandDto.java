@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.model.message.server;
 
+import java.util.Map;
 import java.util.UUID;
 
 import eu.opertusmundi.common.model.message.EnumMessageType;
@@ -16,20 +17,22 @@ public class ServerMessageCommandDto extends ServerBaseMessageCommandDto {
     }
 
     @Builder
-    public ServerMessageCommandDto(UUID recipient, String text, UUID sender, UUID thread, String idempotentKey) {
+    public ServerMessageCommandDto(
+        UUID recipient, String subject, String text, UUID sender, UUID thread, String idempotentKey, Map<String, String> attributes
+    ) {
         super(EnumMessageType.MESSAGE, recipient, text);
 
-        this.sender        = sender;
-        this.thread        = thread;
+        this.attributes    = attributes;
         this.idempotentKey = idempotentKey;
+        this.sender        = sender;
+        this.subject       = subject;
+        this.thread        = thread;
     }
 
-    private String idempotentKey;
-
-    private UUID sender;
-
-    private UUID thread;
-
-    private String subject;
+    private Map<String, String> attributes;
+    private String              idempotentKey;
+    private UUID                sender;
+    private String              subject;
+    private UUID                thread;
 
 }

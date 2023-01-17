@@ -264,12 +264,13 @@ public class DefaultMessageService implements MessageService {
     @Override
     public ClientMessageDto sendMessage(UUID senderKey, UUID recipientKey, ClientMessageCommandDto clientMessage) {
         try {
-            final ServerMessageCommandDto serverMessage = new ServerMessageCommandDto();
-
-            serverMessage.setSender(senderKey);
-            serverMessage.setRecipient(recipientKey);
-            serverMessage.setSubject(clientMessage.getSubject());
-            serverMessage.setText(clientMessage.getText());
+            final ServerMessageCommandDto serverMessage = ServerMessageCommandDto.builder()
+                .attributes(clientMessage.getAttributes())
+                .sender(senderKey)
+                .recipient(recipientKey)
+                .subject(clientMessage.getSubject())
+                .text(clientMessage.getText())
+                .build();
 
             final ResponseEntity<RestResponse<ServerMessageDto>> e               = this.messageClient.getObject().sendMessage(serverMessage);
             final RestResponse<ServerMessageDto>                 serviceResponse = e.getBody();

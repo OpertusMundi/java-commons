@@ -1,5 +1,7 @@
 package eu.opertusmundi.common.model.message.client;
 
+import java.util.Map;
+
 import javax.validation.constraints.NotEmpty;
 
 import lombok.AllArgsConstructor;
@@ -17,5 +19,7 @@ public class ClientMessageCommandDto {
 
     @NotEmpty
     private String text;
+
+    private Map<String, String> attributes;
 
 }

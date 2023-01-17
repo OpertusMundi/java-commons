@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import eu.opertusmundi.common.model.message.EnumMessageType;
 import eu.opertusmundi.common.model.message.server.ServerMessageDto;
@@ -23,6 +24,7 @@ public class ClientMessageDto extends ClientBaseMessageDto {
     public static ClientMessageDto from(ServerMessageDto m) {
         final ClientMessageDto c = new ClientMessageDto();
 
+        c.setAttributes(m.getAttributes());
         c.setCreatedAt(m.getCreatedAt());
         c.setId(m.getId());
         c.setSenderId(m.getSender());
@@ -62,6 +64,10 @@ public class ClientMessageDto extends ClientBaseMessageDto {
     @Schema(description = "Number of thread unread messages. Available only if view is `THREAD_ONLY` or `THREAD_ONLY_UNREAD`")
     @JsonInclude(Include.NON_NULL)
     private Integer threadCountUnread;
+
+    @Schema(description = "Application specific message attributes")
+    @JsonInclude(Include.NON_NULL)
+    private ObjectNode attributes;
 
 
 }
