@@ -8,6 +8,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import eu.opertusmundi.common.model.account.CustomerDto;
+import eu.opertusmundi.common.model.account.CustomerProfessionalDto;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,6 +26,17 @@ public class RefundDto {
 
     @Schema(description = "Refund unique identifier")
     private UUID key;
+
+    @Schema(description = "Topio reference number")
+    private String referenceNumber;
+
+    @Schema(description = "Topio consumer")
+    @JsonInclude(Include.NON_NULL)
+    private CustomerDto consumer;
+
+    @Schema(description = "Topio provider")
+    @JsonInclude(Include.NON_NULL)
+    private CustomerProfessionalDto provider;
 
     @Schema(description = "The amount of the debited funds")
     private BigDecimal debitedFunds;
@@ -85,6 +98,9 @@ public class RefundDto {
     @Schema(description = "The initial transaction ID", hidden = true)
     private String initialTransactionId;
 
+    @Schema(description = "The initial Topio transaction key")
+    private UUID initialTransactionKey;
+    
     @Schema(description = "The initial transaction type")
     private EnumTransactionType initialTransactionType;
 

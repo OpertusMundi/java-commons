@@ -53,7 +53,7 @@ public class RefundEntity {
 
     @Column(name = "`reference_number`")
     private String referenceNumber;
-    
+
     @ManyToOne(targetEntity = HelpdeskAccountEntity.class, fetch = FetchType.LAZY)
     @JoinColumn(name = "initiator")
     private HelpdeskAccountEntity initiator;
@@ -134,6 +134,10 @@ public class RefundEntity {
     private String initialTransactionId;
 
     @NotNull
+    @Column(name = "`initial_transaction_key`")
+    private UUID initialTransactionKey;
+
+    @NotNull
     @Column(name = "`initial_transaction_type`")
     @Enumerated(EnumType.STRING)
     private EnumTransactionType initialTransactionType;
@@ -161,6 +165,13 @@ public class RefundEntity {
             r.setId(id);
             r.setInitialTransactionId(initialTransactionId);
             r.setTransactionId(transactionId);
+
+            if (this.getConsumer() != null && this.getConsumer().getConsumer() != null) {
+                r.setConsumer(this.getConsumer().getConsumer().toDto());
+            }
+            if (this.getProvider() != null && this.getProvider().getProvider() != null) {
+                r.setProvider(this.getProvider().getProvider().toDto());
+            }
         }
 
         r.setCreationDate(creationDate);
@@ -169,8 +180,10 @@ public class RefundEntity {
         r.setDebitedFunds(debitedFunds);
         r.setExecutionDate(executionDate);
         r.setFees(fees);
+        r.setInitialTransactionKey(initialTransactionKey);
         r.setInitialTransactionType(initialTransactionType);
         r.setKey(key);
+        r.setReferenceNumber(referenceNumber);
         r.setRefundReasonMessage(refundReasonMessage);
         r.setRefundReasonType(refundReasonType);
         r.setResultCode(resultCode);

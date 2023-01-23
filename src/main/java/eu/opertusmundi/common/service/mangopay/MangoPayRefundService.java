@@ -144,7 +144,7 @@ public class MangoPayRefundService extends BaseMangoPayService implements Refund
                 return payInEntity.toHelpdeskDto(true);
             }
 
-            final var refundEntity = this.createRefund(refundObject);
+            final var refundEntity = this.createRefund(payInEntity.getKey(), refundObject);
             payInEntity.setRefund(refundEntity);
             payInEntity = this.payInRepository.saveAndFlush(payInEntity);
 
@@ -208,7 +208,7 @@ public class MangoPayRefundService extends BaseMangoPayService implements Refund
                 return payInItemEntity.getPayin().toHelpdeskDto(true);
             }
 
-            final var refundEntity = this.createRefund(refundObject);
+            final var refundEntity = this.createRefund(payInEntity.getKey(), refundObject);
             payInItemEntity.getTransfer().setRefund(refundEntity);
             payInEntity = this.payInRepository.saveAndFlush(payInEntity);
 
@@ -271,7 +271,7 @@ public class MangoPayRefundService extends BaseMangoPayService implements Refund
                 return payOutEntity.toDto(true);
             }
 
-            final var refundEntity = this.createRefund(refundObject);
+            final var refundEntity = this.createRefund(payOutEntity.getKey(), refundObject);
             payOutEntity.setRefund(refundEntity);
 
             final var updatePayOutEntity = this.payOutRepository.saveAndFlush(payOutEntity);
@@ -285,7 +285,7 @@ public class MangoPayRefundService extends BaseMangoPayService implements Refund
         return String.format("REFUND::%s::%s", eventType, refundId);
     }
 
-    private RefundEntity createRefund(Refund refund) throws PaymentException {
+    private RefundEntity createRefund(UUID initialTransactionKey, Refund refund) throws PaymentException {
         try {
             RefundEntity e = this.refundRepository.findOneByTransactionId(refund.getId()).orElse(null);
             if (e == null) {
@@ -311,6 +311,7 @@ public class MangoPayRefundService extends BaseMangoPayService implements Refund
             e.setExecutionDate(timestampToDate(refund.getExecutionDate()));
             e.setFees(BigDecimal.valueOf(refund.getFees().getAmount()).divide(BigDecimal.valueOf(100L)));
             e.setInitialTransactionId(refund.getInitialTransactionId());
+            e.setInitialTransactionKey(initialTransactionKey);
             e.setInitialTransactionType(EnumTransactionType.from(refund.getInitialTransactionType()));
             e.setProvider(provider);
             e.setRefundReasonMessage(refund.getRefundReason().getRefundReasonMessage());

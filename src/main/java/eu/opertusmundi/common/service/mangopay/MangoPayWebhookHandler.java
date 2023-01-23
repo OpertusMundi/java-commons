@@ -18,6 +18,7 @@ import eu.opertusmundi.common.model.payment.PaymentMessageCode;
 public class MangoPayWebhookHandler {
 
     private final CustomerVerificationService customerVerificationService;
+    private final DisputeService              disputeService;
     private final PayInService                paymentService;
     private final PayOutService               payoutService;
     private final RefundService               refundService;
@@ -27,6 +28,7 @@ public class MangoPayWebhookHandler {
     @Autowired
     public MangoPayWebhookHandler(
         CustomerVerificationService customerVerificationService,
+        DisputeService              disputeService,
         PayInService                paymentService,
         PayOutService               payoutService,
         RefundService               refundService,
@@ -34,6 +36,7 @@ public class MangoPayWebhookHandler {
         UserService                 userService
     ) {
         this.customerVerificationService = customerVerificationService;
+        this.disputeService              = disputeService;
         this.paymentService              = paymentService;
         this.payoutService               = payoutService;
         this.refundService               = refundService;
@@ -76,6 +79,15 @@ public class MangoPayWebhookHandler {
             case PAYOUT_REFUND_SUCCEEDED :
             case PAYOUT_REFUND_FAILED :
                 this.refundService.start(eventType, resourceId);
+                break;
+
+            case DISPUTE_CREATED :
+            case DISPUTE_ACTION_REQUIRED :
+            case DISPUTE_FURTHER_ACTION_REQUIRED :
+            case DISPUTE_SENT_TO_BANK :
+            case DISPUTE_SUBMITTED :
+            case DISPUTE_CLOSED :
+                this.disputeService.createDispute(eventType, resourceId);
                 break;
 
             case UBO_DECLARATION_REFUSED :
