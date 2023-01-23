@@ -15,9 +15,13 @@ public enum EnumExternalDataProviderRole {
      * Sentinel Hub {@link https://www.sentinel-hub.com/}
      */
     ROLE_SENTINEL_HUB("Sentinel Hub data provider"),
+    /**
+     * WiGeoGIS {@link https://www.wigeogis.com/en/home}
+     */
+    ROLE_WIGEOGIS("WiGeoGIS service provider"),
     ;
 
-    private EnumExternalDataProviderRole(String description) {
+    EnumExternalDataProviderRole(String description) {
         this.description = description;
     }
 
