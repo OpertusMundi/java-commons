@@ -19,6 +19,7 @@ import eu.opertusmundi.common.model.account.AccountTicketCommandDto;
 import eu.opertusmundi.common.model.account.AccountTicketDto;
 import eu.opertusmundi.common.model.account.EnumTicketStatus;
 import eu.opertusmundi.common.model.message.client.ClientMessageCommandDto;
+import eu.opertusmundi.common.model.payment.PayInDto;
 import eu.opertusmundi.common.repository.AccountTicketRepository;
 import eu.opertusmundi.common.repository.OrderRepository;
 import eu.opertusmundi.common.repository.PayInRepository;
@@ -113,9 +114,14 @@ public class DefaultTicketService implements TicketService {
 
         switch (c.getType()) {
             case ORDER : {
-                final var order = this.orderRepository
-                    .findObjectByKeyAndConsumerAndStatusNotCreated(c.getUserKey(), c.getResourceKey())
-                    .orElse(null);
+                final var order = switch (c.getCustomerType()) {
+                    case CONSUMER -> this.orderRepository
+                        .findObjectByKeyAndConsumerAndStatusNotCreated(c.getUserKey(), c.getResourceKey())
+                        .orElse(null);
+                    case PROVIDER -> this.orderRepository
+                        .findObjectByProviderAndKey(c.getUserKey(), c.getResourceKey())
+                        .orElse(null);
+                };
                 if (order == null) {
                     throw new ServiceException(BasicMessageCode.RecordNotFound, "Order was not found");
                 }
@@ -124,9 +130,12 @@ public class DefaultTicketService implements TicketService {
                 break;
             }
             case PAYIN : {
-                final var payIn = this.payInRepository
-                    .findOneByConsumerKeyAndKey(c.getUserKey(), c.getResourceKey())
-                    .orElse(null);
+                final PayInDto payIn = switch (c.getCustomerType()) {
+                    case CONSUMER -> this.payInRepository
+                        .findOneObjectByConsumerKeyAndKey(c.getUserKey(), c.getResourceKey())
+                        .orElse(null);
+                    case PROVIDER -> throw new ServiceException(BasicMessageCode.NotImplemented, "Operation is not supported");
+                };
                 if (payIn == null) {
                     throw new ServiceException(BasicMessageCode.RecordNotFound, "Order was not found");
                 }

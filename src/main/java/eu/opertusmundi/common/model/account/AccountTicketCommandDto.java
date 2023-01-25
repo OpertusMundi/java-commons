@@ -24,6 +24,9 @@ public class AccountTicketCommandDto {
     @JsonIgnore
     private String subject;
 
+    @JsonIgnore
+    private EnumCustomerType customerType;
+
     @Schema(description = "Key of the referenced resource e.g. the order key")
     @NotNull
     private UUID resourceKey;

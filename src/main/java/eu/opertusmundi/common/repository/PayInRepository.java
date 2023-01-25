@@ -125,6 +125,10 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     )
     Optional<PayInEntity> findOneByConsumerKeyAndKey(UUID userKey, UUID payInKey);
 
+    default Optional<PayInDto> findOneObjectByConsumerKeyAndKey(UUID userKey, UUID payInKey) {
+        return this.findOneByConsumerKeyAndKey(userKey, payInKey).map(e -> e.toConsumerDto(false));
+    }
+
     /**
      * Find a prepared PayIn
      *
