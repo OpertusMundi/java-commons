@@ -327,6 +327,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 draftCommand.setAutomatedMetadata(null);
                 draftCommand.setDataProfilingEnabled(true);
                 draftCommand.setIngestionInfo(null);
+                draftCommand.setIprProtectionEnabled(false);
                 draftCommand.setPublisherKey(command.getPublisherKey());
                 draftCommand.setTitle(feature.getProperties().getTitle());
                 // TODO: Set default version number
@@ -379,6 +380,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             draftCommand.setDataProfilingEnabled(true);
             draftCommand.setDeliveryMethod(EnumDeliveryMethod.DIGITAL_PLATFORM);
             draftCommand.setIngestionInfo(null);
+            draftCommand.setIprProtectionEnabled(false);
             draftCommand.setOpenDataset(false);
             draftCommand.setOwnerKey(command.getOwnerKey());
             draftCommand.setParentDataSourceId(command.getPid());
@@ -451,6 +453,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
             draftCommand.setDataProfilingEnabled(true);
             draftCommand.setDeliveryMethod(EnumDeliveryMethod.DIGITAL_PLATFORM);
             draftCommand.setFormat(command.getFormat());
+            draftCommand.setIprProtectionEnabled(false);
             draftCommand.setOwnerKey(command.getOwnerKey());
             draftCommand.setPublisherKey(command.getPublisherKey());
             draftCommand.setSpatialDataServiceType(command.getServiceType());
@@ -814,6 +817,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                     .variableAsString("publisherKey", command.getPublisherKey().toString())
                     .variableAsString("type", command.getType().toString())
                     .variableAsBoolean("dataProfilingEnabled", command.isDataProfilingEnabled())
+                    .variableAsBoolean("iprProtectionEnabled", command.isIprProtectionEnabled())
                     .variableAsString("status", newStatus.toString())
                     .variableAsString("assetTitle", draft.getTitle())
                     .variableAsString("assetVersion", draft.getVersion())

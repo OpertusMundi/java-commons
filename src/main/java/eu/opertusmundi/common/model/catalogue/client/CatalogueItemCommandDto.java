@@ -132,6 +132,13 @@ public final class CatalogueItemCommandDto extends BaseCatalogueItemDto implemen
     )
     private boolean dataProfilingEnabled = true;
 
+    @Schema(
+        description = "`true` if the IPR protection feature is enabled. Currently this feature is only supported for assets "
+                    + "of type `TABULAR` and `VECTOR`",
+        defaultValue = "false"
+    )
+    private boolean iprProtectionEnabled = false;
+
     @ArraySchema(
         arraySchema = @Schema(
             description = "Supported pricing models"

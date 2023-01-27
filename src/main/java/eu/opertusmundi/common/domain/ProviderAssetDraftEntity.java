@@ -158,6 +158,11 @@ public class ProviderAssetDraftEntity {
     @Setter
     private boolean dataProfilingEnabled;
 
+    @Column(name = "`ipr_protection_enabled`")
+    @Getter
+    @Setter
+    private boolean iprProtectionEnabled;
+
     @Column(name = "`created_on`", nullable = false)
     @Getter
     private final ZonedDateTime createdOn = ZonedDateTime.now();
@@ -210,6 +215,7 @@ public class ProviderAssetDraftEntity {
         a.setHelpdeskErrorMessage(helpdeskErrorMessage);
         a.setHelpdeskRejectionReason(this.helpdeskRejectionReason);
         a.setId(id);
+        a.setIprProtectionEnabled(iprProtectionEnabled);
         a.setKey(this.key);
         a.setModifiedOn(this.modifiedOn);
         a.setOwner(this.getVendorAccount() == null ? this.getAccount().getKey() : this.getVendorAccount().getKey());

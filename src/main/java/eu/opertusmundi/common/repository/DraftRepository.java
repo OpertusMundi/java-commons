@@ -223,6 +223,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         draft.setAccount(account);
         draft.setCommand(command);
         draft.setDataProfilingEnabled(command.isDataProfilingEnabled());
+        draft.setIprProtectionEnabled(command.isIprProtectionEnabled());
 
         draft.setModifiedOn(now);
         if (processDefinition != null) {

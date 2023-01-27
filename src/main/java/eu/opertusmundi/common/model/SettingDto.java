@@ -27,4 +27,11 @@ public class SettingDto {
         return Boolean.parseBoolean(this.value);
     }
 
+    public Integer asInteger() {
+        if (this.type != EnumSettingType.NUMERIC) {
+            return null;
+        }
+        return Integer.parseInt(this.value);
+    }
+
 }

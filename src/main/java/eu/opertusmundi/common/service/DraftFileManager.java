@@ -39,7 +39,15 @@ public interface DraftFileManager {
 
     void deleteContractAnnex(UUID publisherKey, UUID draftKey, String fileName) throws FileSystemException, AssetRepositoryException;
 
-    Path resolveResourcePath(UUID publisherKey, UUID draftKey, String fileName) throws FileSystemException, AssetRepositoryException;
+    default Path resolveResourcePath(
+        UUID publisherKey, UUID draftKey, String fileName
+    ) throws FileSystemException, AssetRepositoryException {
+        return this.resolveResourcePath(publisherKey, draftKey, fileName, false, true);
+    }
+    
+    Path resolveResourcePath(
+        UUID publisherKey, UUID draftKey, String fileName, boolean withIprProtection, boolean throwIfNotExists
+    ) throws FileSystemException, AssetRepositoryException;
 
     Path resolveAdditionalResourcePath(UUID publisherKey, UUID draftKey, String fileName) throws FileSystemException, AssetRepositoryException;
 

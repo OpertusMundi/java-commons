@@ -1,5 +1,12 @@
 package eu.opertusmundi.common.service;
 
+import static eu.opertusmundi.common.model.asset.AssetResourcePaths.ADDITIONAL_RESOURCE_PATH;
+import static eu.opertusmundi.common.model.asset.AssetResourcePaths.CONTRACT_ANNEX_PATH;
+import static eu.opertusmundi.common.model.asset.AssetResourcePaths.CONTRACT_PATH;
+import static eu.opertusmundi.common.model.asset.AssetResourcePaths.IPR_RESOURCE_PATH;
+import static eu.opertusmundi.common.model.asset.AssetResourcePaths.METADATA_PATH;
+import static eu.opertusmundi.common.model.asset.AssetResourcePaths.RESOURCE_PATH;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -28,22 +35,18 @@ public class DefaultAssetFileManager implements AssetFileManager {
 
     private static final Logger assetRepositoryLogger = LoggerFactory.getLogger("ASSET_REPOSITORY");
 
-    private static final String RESOURCE_PATH = "/resources";
-
-    private static final String ADDITIONAL_RESOURCE_PATH = "/additional-resources";
-
-    private static final String CONTRACT_PATH = "/contract";
-
-    private static final String CONTRACT_ANNEX_PATH = "/contract/annexes";
-
-    private static final String METADATA_PATH = "/metadata";
-
     @Autowired
     private DefaultAssetFileNamingStrategy fileNamingStrategy;
 
     @Override
     public Path resolveResourcePath(String pid, String fileName) throws FileSystemException, AssetRepositoryException {
-        return this.resolveResourcePath(pid, RESOURCE_PATH, fileName);
+        // Always check if an IPR protected resource exists
+        final var protectedResource = this.resolveResourcePath(pid, IPR_RESOURCE_PATH, fileName, false);
+        if (protectedResource.toFile().exists()) {
+            return protectedResource;
+        }
+
+        return this.resolveResourcePath(pid, RESOURCE_PATH, fileName, true);
     }
 
     @Override
@@ -133,15 +136,17 @@ public class DefaultAssetFileManager implements AssetFileManager {
 
     @Override
     public Path resolveAdditionalResourcePath(String pid, String fileName) throws FileSystemException, AssetRepositoryException {
-        return this.resolveResourcePath(pid, ADDITIONAL_RESOURCE_PATH, fileName);
+        return this.resolveResourcePath(pid, ADDITIONAL_RESOURCE_PATH, fileName, true);
     }
 
     @Override
     public Path resolveContractAnnexPath(String pid, String fileName) throws FileSystemException, AssetRepositoryException {
-        return this.resolveResourcePath(pid, CONTRACT_ANNEX_PATH, fileName);
+        return this.resolveResourcePath(pid, CONTRACT_ANNEX_PATH, fileName, true);
     }
 
-    private Path resolveResourcePath(String pid, String path, String fileName) throws FileSystemException, AssetRepositoryException {
+    private Path resolveResourcePath(
+        String pid, String path, String fileName, boolean throwIfNotExists
+    ) throws FileSystemException, AssetRepositoryException {
         Assert.isTrue(!StringUtils.isBlank(pid), "Expected a non-empty pid");
         Assert.isTrue(!StringUtils.isBlank(fileName), "Expected a non-empty file name");
 
@@ -151,7 +156,7 @@ public class DefaultAssetFileManager implements AssetFileManager {
             final Path                           absolutePath = this.fileNamingStrategy.resolvePath(ctx, relativePath);
             final File                           file         = absolutePath.toFile();
 
-            if (!file.exists()) {
+            if (throwIfNotExists && !file.exists()) {
                 throw new FileSystemException(FileSystemMessageCode.PATH_NOT_FOUND, "File does not exist");
             }
 

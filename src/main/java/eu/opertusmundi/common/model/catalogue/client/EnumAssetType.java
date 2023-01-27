@@ -38,16 +38,17 @@ public enum EnumAssetType {
         Arrays.asList(EnumPricingModel.FREE, EnumPricingModel.PER_CALL, EnumPricingModel.PER_ROW),
         Arrays.asList(EnumDeliveryMethod.DIGITAL_PLATFORM),
         true,
+        false,
         false
     ),
     /**
      * Tabular dataset
      */
-    TABULAR                         (true,  "tabular",  EnumOrderItemType.ASSET,        "Tabular data"),
+    TABULAR                         (true,  "tabular",  EnumOrderItemType.ASSET,        "Tabular data",   true),
     /**
      * Vector dataset
      */
-    VECTOR                          (true,  "vector",   EnumOrderItemType.ASSET,        "Vector dataset"),
+    VECTOR                          (true,  "vector",   EnumOrderItemType.ASSET,        "Vector dataset", true),
 
     // Extended asset types for Sentinel Hub integration
 
@@ -65,6 +66,7 @@ public enum EnumAssetType {
         Arrays.asList(EnumPricingModel.SENTINEL_HUB_SUBSCRIPTION),
         Arrays.asList(EnumDeliveryMethod.DIGITAL_PROVIDER),
         true,
+        false,
         false
     ),
     /**
@@ -80,6 +82,7 @@ public enum EnumAssetType {
         EnumRole.ROLE_SENTINEL_HUB,
         Arrays.asList(EnumPricingModel.SENTINEL_HUB_IMAGES),
         Arrays.asList(EnumDeliveryMethod.DIGITAL_PROVIDER),
+        false,
         false,
         false
     ),
@@ -152,13 +155,29 @@ public enum EnumAssetType {
     @Getter
     private final boolean dynamicPricingModels;
 
+    /**
+     * True if the IPR protection feature is supported
+     */
+    @Getter
+    private final boolean iprSupported;
+
     EnumAssetType(
         boolean primary,
         String value,
         EnumOrderItemType orderItemType,
         String description
     ) {
-        this(primary, false, value, orderItemType, description, true, null, Collections.emptyList(), Collections.emptyList(), true, true);
+        this(primary, false, value, orderItemType, description, true, null, Collections.emptyList(), Collections.emptyList(), true, true, false);
+    }
+
+    EnumAssetType(
+        boolean primary,
+        String value,
+        EnumOrderItemType orderItemType,
+        String description,
+        boolean iprSupported
+    ) {
+        this(primary, false, value, orderItemType, description, true, null, Collections.emptyList(), Collections.emptyList(), true, true, iprSupported);
     }
 
     EnumAssetType(
@@ -172,12 +191,14 @@ public enum EnumAssetType {
         List<EnumPricingModel> allowedPricingModels,
         List<EnumDeliveryMethod> allowedDeliveryMethods,
         boolean registeredOnPurchase,
-        boolean resourceDownloadAllowed
+        boolean resourceDownloadAllowed,
+        boolean iprSupported
     ) {
         this.allowedPricingModels    = allowedPricingModels;
         this.allowedDeliveryMethods  = allowedDeliveryMethods;
         this.description             = description;
         this.dynamicPricingModels    = dynamicPricingModels;
+        this.iprSupported            = iprSupported;
         this.orderItemType           = orderItemType;
         this.primary                 = primary;
         this.registeredOnPurchase    = registeredOnPurchase;

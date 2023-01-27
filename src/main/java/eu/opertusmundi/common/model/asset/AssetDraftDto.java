@@ -33,10 +33,10 @@ public class AssetDraftDto {
     private String processInstance;
 
     @Schema(description=
-          "Draft unique identifier. "
-        + "Also the key for the catalogue draft record. "
-        + "If the draft is submitted and a workflow instance "
-        + "is initialized, it is used as the business key"
+        "Draft unique identifier. "
+      + "Also the key for the catalogue draft record. "
+      + "If the draft is submitted and a workflow instance "
+      + "is initialized, it is used as the business key"
     )
     private UUID key;
 
@@ -78,6 +78,12 @@ public class AssetDraftDto {
 
     @Schema(description = "`true` if the data profiling task should be executed during the asset publish workflow")
     private boolean dataProfilingEnabled;
+
+    @Schema(description =
+        "`true` if the IPR protection feature is enabled. Currently this feature is only supported for assets "
+      + "of type `TABULAR` and `VECTOR`"
+    )
+    private boolean iprProtectionEnabled;
 
     @Schema(description = "`True` if the geometry has been set by automated metadata")
     private boolean computedGeometry;

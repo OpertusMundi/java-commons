@@ -1,5 +1,12 @@
 package eu.opertusmundi.common.service;
 
+import static eu.opertusmundi.common.model.asset.AssetResourcePaths.ADDITIONAL_RESOURCE_PATH;
+import static eu.opertusmundi.common.model.asset.AssetResourcePaths.CONTRACT_ANNEX_PATH;
+import static eu.opertusmundi.common.model.asset.AssetResourcePaths.CONTRACT_PATH;
+import static eu.opertusmundi.common.model.asset.AssetResourcePaths.IPR_RESOURCE_PATH;
+import static eu.opertusmundi.common.model.asset.AssetResourcePaths.METADATA_PATH;
+import static eu.opertusmundi.common.model.asset.AssetResourcePaths.RESOURCE_PATH;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,23 +45,12 @@ import eu.opertusmundi.common.model.contract.provider.ProviderUploadContractComm
 import eu.opertusmundi.common.model.file.FileDto;
 import eu.opertusmundi.common.model.file.FileSystemException;
 import eu.opertusmundi.common.model.file.FileSystemMessageCode;
-
 @Service
 public class DefaultDraftFileManager implements DraftFileManager {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultDraftFileManager.class);
 
     private static final Logger draftRepositoryLogger = LoggerFactory.getLogger("DRAFT_REPOSITORY");
-
-    private static final String RESOURCE_PATH = "/resources";
-
-    private static final String ADDITIONAL_RESOURCE_PATH = "/additional-resources";
-
-    private static final String METADATA_PATH = "/metadata";
-
-    private static final String CONTRACT_PATH = "/contract";
-
-    private static final String CONTRACT_ANNEX_PATH = "/contract/annexes";
 
     private static final Set<PosixFilePermission> DEFAULT_DIRECTORY_PERMISSIONS = PosixFilePermissions.fromString("rwxrwxr-x");
 
@@ -289,8 +285,8 @@ public class DefaultDraftFileManager implements DraftFileManager {
     }
 
     @Override
-    public Path resolveResourcePath(UUID publisherKey, UUID draftKey, String fileName) throws FileSystemException, AssetRepositoryException {
-        return this.resolveResourcePath(publisherKey, draftKey, RESOURCE_PATH, fileName);
+    public Path resolveResourcePath(UUID publisherKey, UUID draftKey, String fileName, boolean withIprProtection, boolean throwIfNotExists) throws FileSystemException, AssetRepositoryException {
+        return this.resolveResourcePath(publisherKey, draftKey, withIprProtection ? IPR_RESOURCE_PATH : RESOURCE_PATH, fileName, throwIfNotExists);
     }
 
     @Override
@@ -318,7 +314,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
 
     @Override
     public Path resolveAdditionalResourcePath(UUID publisherKey, UUID draftKey, String fileName) throws FileSystemException, AssetRepositoryException {
-        return this.resolveResourcePath(publisherKey, draftKey, ADDITIONAL_RESOURCE_PATH, fileName);
+        return this.resolveResourcePath(publisherKey, draftKey, ADDITIONAL_RESOURCE_PATH, fileName, true);
     }
 
     @Override
@@ -351,10 +347,12 @@ public class DefaultDraftFileManager implements DraftFileManager {
 
     @Override
     public Path resolveContractAnnexPath(UUID publisherKey, UUID draftKey, String fileName) throws FileSystemException, AssetRepositoryException {
-        return this.resolveResourcePath(publisherKey, draftKey, CONTRACT_ANNEX_PATH, fileName);
+        return this.resolveResourcePath(publisherKey, draftKey, CONTRACT_ANNEX_PATH, fileName, true);
     }
 
-    private Path resolveResourcePath(UUID publisherKey, UUID draftKey, String path, String fileName) throws FileSystemException, AssetRepositoryException {
+    private Path resolveResourcePath(
+        UUID publisherKey, UUID draftKey, String path, String fileName, boolean throwIfNotExists
+    ) throws FileSystemException, AssetRepositoryException {
         Assert.notNull(publisherKey, "Expected a non-null publisher key");
         Assert.notNull(draftKey, "Expected a non-null draft key");
         Assert.hasText(fileName, "Expected a non-empty file name");
@@ -365,7 +363,7 @@ public class DefaultDraftFileManager implements DraftFileManager {
             final Path                           absolutePath = this.draftNamingStrategy.resolvePath(ctx, relativePath);
             final File                           file         = absolutePath.toFile();
 
-            if (!file.exists()) {
+            if (throwIfNotExists && !file.exists()) {
                 throw new FileSystemException(FileSystemMessageCode.PATH_NOT_FOUND, "File does not exist");
             }
 

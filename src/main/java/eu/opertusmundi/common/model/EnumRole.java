@@ -6,6 +6,10 @@ public enum EnumRole {
     // Marketplace roles
 
     /**
+     * Topio default role
+     */
+    ROLE_TOPIO,
+    /**
      * Default role. Required for successful login
      */
     ROLE_USER,
