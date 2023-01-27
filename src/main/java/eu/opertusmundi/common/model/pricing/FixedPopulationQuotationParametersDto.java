@@ -1,7 +1,6 @@
 package eu.opertusmundi.common.model.pricing;
 
 import java.io.Serializable;
-import java.util.List;
 
 import javax.validation.constraints.NotEmpty;
 
@@ -33,6 +32,6 @@ public class FixedPopulationQuotationParametersDto extends QuotationParametersDt
     @Getter
     @Setter
     @NotEmpty
-    private List<String> nuts;
+    private String[] nuts;
 
 }

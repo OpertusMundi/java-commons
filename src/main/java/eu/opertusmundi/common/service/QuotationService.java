@@ -63,10 +63,12 @@ public interface QuotationService {
      * Compute a quotation for the specified service pricing model and use
      * statistics
      *
+     * @param asset
+     * @param model
      * @param stats
      * @return
      * @throws QuotationException if the model does not support services or computation fails
      */
-    QuotationDto createQuotation(BasePricingModelCommandDto model, ServiceUseStatsDto stats) throws QuotationException;
+    QuotationDto createQuotation(CatalogueItemDto asset, BasePricingModelCommandDto model, ServiceUseStatsDto stats) throws QuotationException;
 
 }

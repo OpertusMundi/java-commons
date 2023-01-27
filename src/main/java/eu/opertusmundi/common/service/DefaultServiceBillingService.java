@@ -394,7 +394,7 @@ public class DefaultServiceBillingService implements ServiceBillingService {
         final PerCallPricingModelCommandDto pricingModel = this.getPrivateServicePricingModel();
 
         // Compute quotation (exclude prepaid rows/calls)
-        final QuotationDto quotation = this.quotationService.createQuotation(pricingModel, subStats);
+        final QuotationDto quotation = this.quotationService.createQuotation(null, pricingModel, subStats);
 
         // Add billing record
         final ZonedDateTime now = ZonedDateTime.now();
@@ -475,7 +475,8 @@ public class DefaultServiceBillingService implements ServiceBillingService {
         this.accountSubscriptionRepository.saveAndFlush(subscription);
 
         // Compute quotation (exclude prepaid rows/calls)
-        final QuotationDto quotation = this.quotationService.createQuotation(pricingModel.getModel(), subStats);
+        final var          assets    = this.catalogueService.findAllHistoryAndPublishedById(new String[]{orderItem.getAssetId()});
+        final QuotationDto quotation = this.quotationService.createQuotation(assets.get(0), pricingModel.getModel(), subStats);
 
         // Add billing record
         final ZonedDateTime now = ZonedDateTime.now();

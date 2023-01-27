@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,7 @@ import eu.opertusmundi.common.model.pricing.QuotationException;
 import eu.opertusmundi.common.model.pricing.QuotationMessageCode;
 import eu.opertusmundi.common.model.pricing.QuotationParametersDto;
 import eu.opertusmundi.common.model.pricing.SystemQuotationParametersDto;
+import eu.opertusmundi.common.repository.NutsRegionRepository;
 import eu.opertusmundi.common.service.integration.DataProviderManager;
 import io.jsonwebtoken.lang.Assert;
 
@@ -32,11 +34,16 @@ public class DefaultQuotationService implements QuotationService {
     // TODO: Set from configuration
     private final BigDecimal tax = new BigDecimal(24);
 
-    private final DataProviderManager dataProviderManager;
+    private final DataProviderManager  dataProviderManager;
+    private final NutsRegionRepository regionRepository;
 
     @Autowired
-    public DefaultQuotationService(DataProviderManager dataProviderManager) {
+    public DefaultQuotationService(
+        DataProviderManager  dataProviderManager,
+        NutsRegionRepository regionRepository
+    ) {
         this.dataProviderManager = dataProviderManager;
+        this.regionRepository    = regionRepository;
     }
 
     @Override
@@ -67,7 +74,7 @@ public class DefaultQuotationService implements QuotationService {
             }
 
             // Get system parameters
-            final SystemQuotationParametersDto systemParams = this.getSystemParameters(model, userParams);
+            final SystemQuotationParametersDto systemParams = this.getSystemParameters(asset, model, userParams);
 
             // Validate parameters
             this.validate(model, userParams, ignoreMissing);
@@ -92,7 +99,7 @@ public class DefaultQuotationService implements QuotationService {
     public List<EffectivePricingModelDto> createQuotation(CatalogueItemDto asset) throws QuotationException {
         return asset.getPricingModels().stream()
             .map(m -> {
-                final SystemQuotationParametersDto systemParams = this.getSystemParameters(m, null);
+                final SystemQuotationParametersDto systemParams = this.getSystemParameters(asset, m, null);
 
                 // Compute default quotations without parameters. No
                 // parameter validation is required. Some pricing model may
@@ -103,7 +110,7 @@ public class DefaultQuotationService implements QuotationService {
     }
 
     @Override
-    public QuotationDto createQuotation(BasePricingModelCommandDto model, ServiceUseStatsDto stats) throws QuotationException {
+    public QuotationDto createQuotation(CatalogueItemDto asset, BasePricingModelCommandDto model, ServiceUseStatsDto stats) throws QuotationException {
         if (!model.getType().isUseStatsSupported()) {
             throw new QuotationException(
                 QuotationMessageCode.QUOTATION_NOT_SUPPORTED,
@@ -112,7 +119,7 @@ public class DefaultQuotationService implements QuotationService {
         }
 
         // Get system parameters
-        final SystemQuotationParametersDto systemParams = this.getSystemParameters(model, null);
+        final SystemQuotationParametersDto systemParams = this.getSystemParameters(asset, model, null);
 
         final QuotationDto result = model.compute(stats, systemParams);
 
@@ -128,14 +135,14 @@ public class DefaultQuotationService implements QuotationService {
      * @return
      */
     private SystemQuotationParametersDto getSystemParameters(
-        BasePricingModelCommandDto model, @Nullable QuotationParametersDto userParams
+        CatalogueItemDto asset, BasePricingModelCommandDto model, @Nullable QuotationParametersDto userParams
     ) {
         switch (model.getType()) {
             case FIXED_PER_ROWS :
                 return this.getRowCount(model, userParams);
 
             case FIXED_FOR_POPULATION :
-                return this.getPopulation(model, userParams);
+                return this.getPopulation(asset, model, userParams);
 
             default :
                 // No operation
@@ -160,18 +167,37 @@ public class DefaultQuotationService implements QuotationService {
         return null;
     }
 
-    private SystemQuotationParametersDto getPopulation(BasePricingModelCommandDto model, @Nullable QuotationParametersDto params) {
-        // TODO: Compute population based on NUTS codes
-
+    private SystemQuotationParametersDto getPopulation(
+        CatalogueItemDto asset, BasePricingModelCommandDto model, @Nullable QuotationParametersDto params
+    ) {
         if (params == null) {
             return null;
         }
 
         Assert.isInstanceOf(FixedPopulationQuotationParametersDto.class, params);
 
+        final var geometry = asset.getGeometry();
+        if (geometry == null) {
+            return null;
+        }
+
         final FixedPopulationQuotationParametersDto typedParams = (FixedPopulationQuotationParametersDto) params;
-        if (typedParams.getNuts() != null && typedParams.getNuts().size() > 0) {
-            return SystemQuotationParametersDto.ofPopulation(tax, 500000L, 20);
+        if (ArrayUtils.isNotEmpty(typedParams.getNuts())) {
+            final var regions             = regionRepository.findByCode(typedParams.getNuts());
+            long      selectionPopulation = 0;
+            long      totalPopulation     = 0;
+            for (final var r : regions) {
+                final var regionArea = r.getGeometry().getArea();
+                totalPopulation += r.getPopulation();
+
+                final var intersection     = geometry.intersection(r.getGeometry());
+                final var intersectionArea = intersection.getArea();
+                selectionPopulation += Math.round((intersectionArea / regionArea) * r.getPopulation());
+            }
+
+            final int populationPercent = (int) (100 * selectionPopulation / totalPopulation);
+
+            return SystemQuotationParametersDto.ofPopulation(tax, selectionPopulation, populationPercent);
         }
         return null;
     }

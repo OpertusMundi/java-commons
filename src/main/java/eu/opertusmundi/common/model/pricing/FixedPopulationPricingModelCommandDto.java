@@ -12,7 +12,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 import eu.opertusmundi.common.model.payment.ServiceUseStatsDto;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -23,6 +23,8 @@ import lombok.Setter;
 public class FixedPopulationPricingModelCommandDto extends BasePricingModelCommandDto {
 
     private static final long serialVersionUID = 1L;
+
+    private static int POPULATION_STEP = 10000;
 
     public FixedPopulationPricingModelCommandDto() {
         super(EnumPricingModel.FIXED_FOR_POPULATION);
@@ -99,7 +101,7 @@ public class FixedPopulationPricingModelCommandDto extends BasePricingModelComma
 
         final FixedPopulationQuotationParametersDto typedParams = (FixedPopulationQuotationParametersDto) params;
 
-        if (!ignoreMissing && CollectionUtils.isEmpty(typedParams.getNuts())) {
+        if (!ignoreMissing && ArrayUtils.isEmpty(typedParams.getNuts())) {
             throw new QuotationException(QuotationMessageCode.NO_NUTS_SELECTED, "At least a region must be selected");
         }
     }
@@ -121,8 +123,10 @@ public class FixedPopulationPricingModelCommandDto extends BasePricingModelComma
                     }
                 }
             }
+
             quotation.setTotalPriceExcludingTax(this.getPrice()
                 .multiply(BigDecimal.valueOf(systemParams.getPopulation()))
+                .divide(new BigDecimal(POPULATION_STEP))
                 .multiply(BigDecimal.valueOf(100).subtract(discount))
                 .divide(new BigDecimal(100))
                 .setScale(2, RoundingMode.HALF_UP)
