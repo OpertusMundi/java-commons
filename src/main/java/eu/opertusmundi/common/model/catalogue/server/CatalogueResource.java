@@ -46,6 +46,15 @@ public class CatalogueResource implements Serializable {
      * File resource properties
      */
 
+    @JsonInclude(Include.NON_NULL)
+    private EnumAssetType category;
+
+    @JsonInclude(Include.NON_EMPTY)
+    private String delimiter;
+
+    @JsonInclude(Include.NON_NULL)
+    private String encoding;
+
     @JsonProperty("filename")
     @JsonInclude(Include.NON_NULL)
     private String fileName;
@@ -53,55 +62,47 @@ public class CatalogueResource implements Serializable {
     @JsonInclude(Include.NON_NULL)
     private String format;
 
-    @JsonInclude(Include.NON_NULL)
-    private String encoding;
+    @JsonInclude(Include.NON_EMPTY)
+    private String geometry;
 
-    @JsonInclude(Include.NON_NULL)
-    private Long size;
+    @JsonInclude(Include.NON_EMPTY)
+    private String latitude;
 
-    @JsonInclude(Include.NON_NULL)
-    private EnumAssetType category;
+    @JsonInclude(Include.NON_EMPTY)
+    private String longitude;
 
     @JsonInclude(Include.NON_NULL)
     private ZonedDateTime modifiedOn;
+
+    @JsonInclude(Include.NON_NULL)
+    private Long size;
 
     /**
      * Service resource properties
      */
 
     @JsonInclude(Include.NON_NULL)
-    private EnumSpatialDataServiceType serviceType;
-
-    @JsonInclude(Include.NON_NULL)
-    private String endpoint;
-
-    @JsonInclude(Include.NON_NULL)
     private Attributes attributes;
 
-    @JsonInclude(Include.NON_EMPTY)
-    private List<String> crs;
-
-    @JsonInclude(Include.NON_EMPTY)
-    @JsonProperty("style")
-    private List<LayerStyle> styles;
+    @JsonInclude(Include.NON_NULL)
+    private String attribution;
 
     @JsonInclude(Include.NON_NULL)
     private Geometry bbox;
+
+    @JsonInclude(Include.NON_EMPTY)
+    private List<String> crs;
 
     @JsonProperty("dimension")
     @JsonInclude(Include.NON_EMPTY)
     private List<Dimension> dimensions;
 
-    @JsonProperty("output_formats")
-    @JsonInclude(Include.NON_EMPTY)
-    private List<String> outputFormats;
+    @JsonInclude(Include.NON_NULL)
+    private String endpoint;
 
     @JsonProperty("filter_capabilities")
     @JsonInclude(Include.NON_EMPTY)
     private List<String> filterCapabilities;
-
-    @JsonInclude(Include.NON_NULL)
-    private String attribution;
 
     @JsonProperty("min_scale")
     @JsonInclude(Include.NON_NULL)
@@ -110,6 +111,17 @@ public class CatalogueResource implements Serializable {
     @JsonProperty("max_scale")
     @JsonInclude(Include.NON_NULL)
     private Double maxScale;
+
+    @JsonProperty("output_formats")
+    @JsonInclude(Include.NON_EMPTY)
+    private List<String> outputFormats;
+
+    @JsonInclude(Include.NON_NULL)
+    private EnumSpatialDataServiceType serviceType;
+
+    @JsonInclude(Include.NON_EMPTY)
+    @JsonProperty("style")
+    private List<LayerStyle> styles;
 
     @JsonProperty("tile_sets")
     @JsonInclude(Include.NON_EMPTY)

@@ -92,6 +92,18 @@ public class AssetResourceEntity {
     @Column(name = "`crs`")
     private String crs;
 
+    @Column(name = "`delimiter`")
+    private String delimiter;
+
+    @Column(name = "`geometry`")
+    private String geometry;
+
+    @Column(name = "`latitude`")
+    private String latitude;
+
+    @Column(name = "`longitude`")
+    private String longitude;
+
     @Column(name = "`source`")
     @Enumerated(EnumType.STRING)
     private EnumResourceSource source;
@@ -103,7 +115,9 @@ public class AssetResourceEntity {
     private String path;
 
     public FileResourceDto toDto() {
-        return new FileResourceDto(key, parentId, category, crs, encoding, fileName, format, createdOn, path, size, source);
+        return new FileResourceDto(
+            key, parentId, category, crs, delimiter, encoding, fileName, format, geometry, latitude, longitude, createdOn, path, size, source
+        );
     }
 
 }
