@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import eu.opertusmundi.common.feign.client.DiscoveryServiceFeignClient;
@@ -11,6 +12,7 @@ import eu.opertusmundi.common.model.catalogue.CatalogueServiceException;
 import eu.opertusmundi.common.model.discovery.client.ClientJoinableResultDto;
 import eu.opertusmundi.common.model.discovery.client.ClientRelatedResultDto;
 
+@ConditionalOnProperty(name = "opertusmundi.feign.discovery.url", matchIfMissing = true)
 @Service
 public class DefaultDiscoveryService implements DiscoveryService {
 

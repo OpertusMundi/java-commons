@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.feign.client;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import eu.opertusmundi.common.model.discovery.server.ServerJoinableTableResultDto;
 import eu.opertusmundi.common.model.discovery.server.ServerRelatedTableResultDto;
 
+@ConditionalOnProperty(name = "opertusmundi.feign.discovery.url", matchIfMissing = true)
 @FeignClient(
     name = "discovery-service",
     url = "${opertusmundi.feign.discovery.url}"
