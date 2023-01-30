@@ -81,10 +81,10 @@ public abstract class PayInItemEntity {
     @Setter
     protected TransferEntity transfer;
 
-    public abstract ConsumerPayInItemDto toConsumerDto(boolean includeDetails);
+    public abstract ConsumerPayInItemDto toConsumerDto(boolean includeDetails, boolean includePayIn);
 
-    public abstract ProviderPayInItemDto toProviderDto(boolean includeDetails);
+    public abstract ProviderPayInItemDto toProviderDto(boolean includeDetails, boolean includePayIn);
 
-    public abstract HelpdeskPayInItemDto toHelpdeskDto(boolean includeDetails);
+    public abstract HelpdeskPayInItemDto toHelpdeskDto(boolean includeDetails, boolean includePayIn);
 
 }

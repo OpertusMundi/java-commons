@@ -43,7 +43,7 @@ public class PayInServiceBillingItemEntity extends PayInItemEntity {
     }
 
     @Override
-    public ConsumerPayInItemDto toConsumerDto(boolean includeDetails) {
+    public ConsumerPayInItemDto toConsumerDto(boolean includeDetails, boolean includePayIn) {
         final ConsumerServiceBillingPayInItemDto i = new ConsumerServiceBillingPayInItemDto();
 
         this.updateDto(i);
@@ -54,7 +54,7 @@ public class PayInServiceBillingItemEntity extends PayInItemEntity {
     }
 
     @Override
-    public ProviderPayInItemDto toProviderDto(boolean includeDetails) {
+    public ProviderPayInItemDto toProviderDto(boolean includeDetails, boolean includePayIn) {
         final ProviderServiceBillingPayInItemDto i = new ProviderServiceBillingPayInItemDto();
 
         this.updateDto(i);
@@ -68,7 +68,7 @@ public class PayInServiceBillingItemEntity extends PayInItemEntity {
     }
 
     @Override
-    public HelpdeskPayInItemDto toHelpdeskDto(boolean includeDetails) {
+    public HelpdeskPayInItemDto toHelpdeskDto(boolean includeDetails, boolean includePayIn) {
         final HelpdeskServiceBillingPayInItemDto i = new HelpdeskServiceBillingPayInItemDto();
 
         this.updateDto(i);

@@ -78,7 +78,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     Optional<OrderEntity> findEntityByConsumerAndKey(UUID consumerKey, UUID orderKey);
 
     default Optional<ConsumerOrderDto> findObjectByConsumerAndKey(UUID consumerKey, UUID orderKey) {
-        return this.findEntityByConsumerAndKey(consumerKey, orderKey).map(o -> o.toConsumerDto(true, false));
+        return this.findEntityByConsumerAndKey(consumerKey, orderKey).map(o -> o.toConsumerDto(true, false, true));
     }
 
     /**
@@ -99,7 +99,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     Optional<OrderEntity> findEntityByProviderAndKeyAndStatusNotCreated(UUID providerKey, UUID orderKey);
 
     default Optional<ProviderOrderDto> findObjectByProviderAndKeyAndStatusNotCreated(UUID providerKey, UUID orderKey) {
-        return this.findEntityByProviderAndKeyAndStatusNotCreated(providerKey, orderKey).map(o -> o.toProviderDto(true));
+        return this.findEntityByProviderAndKeyAndStatusNotCreated(providerKey, orderKey).map(o -> o.toProviderDto(true, true));
     }
 
     /**
@@ -120,7 +120,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
     Optional<OrderEntity> findEntityByProviderAndKey(UUID providerKey, UUID orderKey);
 
     default Optional<ProviderOrderDto> findObjectByProviderAndKey(UUID providerKey, UUID orderKey) {
-        return this.findEntityByProviderAndKey(providerKey, orderKey).map(o -> o.toProviderDto(true));
+        return this.findEntityByProviderAndKey(providerKey, orderKey).map(o -> o.toProviderDto(true, true));
     }
 
     @Query("SELECT  distinct o "
@@ -201,7 +201,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
             StringUtils.isBlank(referenceNumber) ? null : referenceNumber,
             status != null && status.size() > 0 ? status : null,
             pageable
-        ).map(e -> e.toHelpdeskDto(includeDetails));
+        ).map(e -> e.toHelpdeskDto(includeDetails, true));
     }
 
     default Page<ConsumerOrderDto> findAllObjectsForConsumer(
@@ -214,7 +214,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
             StringUtils.isBlank(referenceNumber) ? null : referenceNumber,
             status != null && status.size() > 0 ? status : null,
             pageable
-        ).map(e -> e.toConsumerDto(includeItemDetails, includeProviderDetails));
+        ).map(e -> e.toConsumerDto(includeItemDetails, includeProviderDetails, true));
     }
 
     default Page<ProviderOrderDto> findAllObjectsForProvider(
@@ -227,15 +227,15 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
             StringUtils.isBlank(referenceNumber) ? null : referenceNumber,
             status != null && status.size() > 0 ? status : null,
             pageable
-        ).map(e -> e.toProviderDto(includeDetails));
+        ).map(e -> e.toProviderDto(includeDetails, true));
     }
 
     default Optional<HelpdeskOrderDto> findOrderObjectByKey(UUID key) {
-        return this.findByKey(key).map(o -> o.toHelpdeskDto(true));
+        return this.findByKey(key).map(o -> o.toHelpdeskDto(true, true));
     }
 
     default Optional<ConsumerOrderDto> findObjectByKeyAndConsumerAndStatusNotCreated(UUID consumerKey, UUID orderKey) {
-        return this.findByConsumerAndKeyAndStatusNotCreated(consumerKey, orderKey).map(o -> o.toConsumerDto(true, true));
+        return this.findByConsumerAndKeyAndStatusNotCreated(consumerKey, orderKey).map(o -> o.toConsumerDto(true, true, true));
     }
 
     @Transactional(readOnly = false)
@@ -301,7 +301,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
         this.saveAndFlush(order);
 
-        return order.toConsumerDto(true, true);
+        return order.toConsumerDto(true, true, true);
     }
 
     @Transactional(readOnly = false)
@@ -421,7 +421,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
             this.saveAndFlush(order);
         }
 
-        return order.toProviderDto(true);
+        return order.toProviderDto(true, true);
     }
 
     @Transactional(readOnly = false)
@@ -448,7 +448,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
             this.saveAndFlush(order);
         }
 
-        return order.toProviderDto(true);
+        return order.toProviderDto(true, true);
     }
 
     @Transactional(readOnly = false)
@@ -475,7 +475,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
             this.saveAndFlush(order);
         }
 
-        return order.toProviderDto(true);
+        return order.toProviderDto(true, true);
     }
 
     @Transactional(readOnly = false)
@@ -503,7 +503,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
 
         this.saveAndFlush(order);
 
-        return order.toConsumerDto(true, true);
+        return order.toConsumerDto(true, true, true);
     }
 
     @Transactional(readOnly = false)
@@ -532,7 +532,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
             this.saveAndFlush(order);
         }
 
-        return order.toProviderDto(true);
+        return order.toProviderDto(true, true);
     }
 
     @Transactional(readOnly = false)
@@ -562,7 +562,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Integer> {
             this.saveAndFlush(order);
         }
 
-        return order.toConsumerDto(true, true);
+        return order.toConsumerDto(true, true, true);
     }
 
 }

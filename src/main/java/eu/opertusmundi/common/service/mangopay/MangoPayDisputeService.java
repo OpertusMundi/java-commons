@@ -52,7 +52,7 @@ public class MangoPayDisputeService extends BaseMangoPayService implements Dispu
             final var payInEntity   = this.ensurePayIn(disputeObject.getInitialTransactionId());
             final var disputeEntity = this.createDispute(disputeObject, payInEntity);
 
-            return disputeEntity.toDto(true);
+            return disputeEntity.toDto(true, true);
         } catch (final PaymentException ex) {
             throw ex;
         } catch (final Exception ex) {

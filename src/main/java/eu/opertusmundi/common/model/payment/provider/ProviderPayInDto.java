@@ -11,7 +11,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import eu.opertusmundi.common.model.account.ConsumerDto;
 import eu.opertusmundi.common.model.payment.PayInDto;
-import eu.opertusmundi.common.model.payment.RefundDto;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -53,9 +52,6 @@ public class ProviderPayInDto extends PayInDto {
     @Schema(description = "PayIn consumer customer")
     @JsonInclude(Include.NON_NULL)
     private ConsumerDto consumer;
-
-    @Schema(description = "PayIn refund")
-    protected RefundDto refund;
 
     public void addItem(ProviderPayInItemDto i) {
         this.items.add(i);

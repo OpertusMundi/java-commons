@@ -43,23 +43,23 @@ public class PayInOrderItemEntity extends PayInItemEntity {
     }
 
     @Override
-    public ConsumerPayInItemDto toConsumerDto(boolean includeDetails) {
+    public ConsumerPayInItemDto toConsumerDto(boolean includeDetails, boolean includePayIn) {
         final ConsumerOrderPayInItemDto i = new ConsumerOrderPayInItemDto();
 
         this.updateDto(i);
 
-        i.setOrder(this.order.toConsumerDto(includeDetails, true));
+        i.setOrder(this.order.toConsumerDto(includeDetails, true, includePayIn));
 
         return i;
     }
 
     @Override
-    public ProviderPayInItemDto toProviderDto(boolean includeDetails) {
+    public ProviderPayInItemDto toProviderDto(boolean includeDetails, boolean includePayIn) {
         final ProviderOrderPayInItemDto i = new ProviderOrderPayInItemDto();
 
         this.updateDto(i);
 
-        i.setOrder(this.order.toProviderDto(includeDetails));
+        i.setOrder(this.order.toProviderDto(includeDetails, includePayIn));
 
         if (includeDetails && this.getTransfer() != null) {
             i.setTransfer(this.getTransfer().toDto(false));
@@ -69,12 +69,12 @@ public class PayInOrderItemEntity extends PayInItemEntity {
     }
 
     @Override
-    public HelpdeskPayInItemDto toHelpdeskDto(boolean includeDetails) {
+    public HelpdeskPayInItemDto toHelpdeskDto(boolean includeDetails, boolean includePayIn) {
         final HelpdeskOrderPayInItemDto i = new HelpdeskOrderPayInItemDto();
 
         this.updateDto(i);
 
-        i.setOrder(this.order.toHelpdeskDto(includeDetails));
+        i.setOrder(this.order.toHelpdeskDto(includeDetails, includePayIn));
         if (this.getTransfer() != null) {
             i.setTransfer(this.getTransfer().toDto(true));
         }

@@ -87,7 +87,7 @@ public class BankWirePayInEntity extends PayInEntity {
         if (includeDetails) {
             p.setBankAccount(bankAccount.toDto());
 
-            this.items.stream().map(e -> e.toConsumerDto(includeDetails)).forEach(p::addItem);
+            this.items.stream().map(e -> e.toConsumerDto(includeDetails, false)).forEach(p::addItem);
         }
 
         return p;
@@ -105,7 +105,7 @@ public class BankWirePayInEntity extends PayInEntity {
         if (includeDetails) {
             p.setBankAccount(bankAccount.toDto());
 
-            this.items.stream().map(e -> e.toProviderDto(includeDetails)).forEach(p::addItem);
+            this.items.stream().map(e -> e.toProviderDto(includeDetails, false)).forEach(p::addItem);
         }
 
         return p;
@@ -128,7 +128,7 @@ public class BankWirePayInEntity extends PayInEntity {
         if (includeDetails) {
             p.setBankAccount(bankAccount.toDto());
 
-            this.items.stream().map(e -> e.toHelpdeskDto(includeDetails)).forEach(p::addItem);
+            this.items.stream().map(e -> e.toHelpdeskDto(includeDetails, false)).forEach(p::addItem);
             this.statusHistory.stream().map(PayInStatusEntity::toDto).forEach(p::addStatusHistory);
         }
 

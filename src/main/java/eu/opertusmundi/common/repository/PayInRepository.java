@@ -169,7 +169,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
     Optional<PayInItemEntity> findOnePayInItemByTransferId(String transferId);
 
     default Optional<HelpdeskPayInItemDto> findOneObjectPayInItemByTransferId(String transferId) {
-        return this.findOnePayInItemByTransferId(transferId).map(e -> e.toHelpdeskDto(true));
+        return this.findOnePayInItemByTransferId(transferId).map(e -> e.toHelpdeskDto(true, true));
     }
 
     /**
@@ -227,7 +227,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
             userKey, referenceNumber, status, pageable
         );
 
-        return page.map(e -> e.toHelpdeskDto(true));
+        return page.map(e -> e.toHelpdeskDto(true, true));
     }
 
 
@@ -293,7 +293,7 @@ public interface PayInRepository extends JpaRepository<PayInEntity, Integer> {
             pageable
         );
 
-        return page.map(i -> i.toHelpdeskDto(true));
+        return page.map(i -> i.toHelpdeskDto(true, true));
     }
 
     @Modifying

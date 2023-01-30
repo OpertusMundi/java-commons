@@ -52,7 +52,7 @@ public class FreePayInEntity extends PayInEntity {
         this.updateDto(p);
 
         if (includeDetails) {
-            this.items.stream().map(e -> e.toConsumerDto(includeDetails)).forEach(p::addItem);
+            this.items.stream().map(e -> e.toConsumerDto(includeDetails, false)).forEach(p::addItem);
         }
 
         return p;
@@ -67,7 +67,7 @@ public class FreePayInEntity extends PayInEntity {
         p.setConsumer(consumer.getConsumer().toConsumerDto());
 
         if (includeDetails) {
-            this.items.stream().map(e -> e.toProviderDto(includeDetails)).forEach(p::addItem);
+            this.items.stream().map(e -> e.toProviderDto(includeDetails, false)).forEach(p::addItem);
         }
 
         return p;
@@ -87,7 +87,7 @@ public class FreePayInEntity extends PayInEntity {
         p.setProviderResultMessage(resultMessage);
 
         if (includeDetails) {
-            this.items.stream().map(e -> e.toHelpdeskDto(includeDetails)).forEach(p::addItem);
+            this.items.stream().map(e -> e.toHelpdeskDto(includeDetails, false)).forEach(p::addItem);
             this.statusHistory.stream().map(PayInStatusEntity::toDto).forEach(p::addStatusHistory);
         }
 

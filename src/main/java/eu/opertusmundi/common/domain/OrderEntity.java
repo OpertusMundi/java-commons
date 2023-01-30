@@ -200,7 +200,7 @@ public class OrderEntity {
         o.setVettingRequired(vettingRequired);
     }
 
-    public ConsumerOrderDto toConsumerDto(boolean includeItemDetails, boolean includeProviderDetails) {
+    public ConsumerOrderDto toConsumerDto(boolean includeItemDetails, boolean includeProviderDetails, boolean includePayIn) {
         final ConsumerOrderDto o = new ConsumerOrderDto();
 
         this.updateDto(o);
@@ -212,7 +212,7 @@ public class OrderEntity {
         return o;
     }
 
-    public ProviderOrderDto toProviderDto(boolean includeDetails) {
+    public ProviderOrderDto toProviderDto(boolean includeDetails, boolean includePayIn) {
         final ProviderOrderDto o = new ProviderOrderDto();
 
         this.updateDto(o);
@@ -226,7 +226,7 @@ public class OrderEntity {
         return o;
     }
 
-    public HelpdeskOrderDto toHelpdeskDto(boolean includeDetails) {
+    public HelpdeskOrderDto toHelpdeskDto(boolean includeDetails, boolean includePayIn) {
         final HelpdeskOrderDto o = new HelpdeskOrderDto();
 
         this.updateDto(o);

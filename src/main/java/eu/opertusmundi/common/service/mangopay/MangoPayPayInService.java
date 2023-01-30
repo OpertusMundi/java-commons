@@ -444,7 +444,7 @@ public class MangoPayPayInService extends BaseMangoPayService implements PayInSe
     public ProviderPayInItemDto getProviderPayInItem(Integer userId, UUID payInKey, Integer index) {
         final PayInItemEntity item = this.payInRepository.findOnePayInItemByProvider(userId, payInKey, index).orElse(null);
 
-        return item == null ? null : item.toProviderDto(true);
+        return item == null ? null : item.toProviderDto(true, true);
     }
 
     @Override
@@ -488,7 +488,7 @@ public class MangoPayPayInService extends BaseMangoPayService implements PayInSe
 
         final long                       count   = page.getTotalElements();
         final List<ProviderPayInItemDto> records = page.getContent().stream()
-            .map(p -> p.toProviderDto(false))
+            .map(p -> p.toProviderDto(false, true))
             .collect(Collectors.toList());
 
         return PageResultDto.of(pageIndex, pageSize, records, count);

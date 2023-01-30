@@ -47,6 +47,7 @@ public class DisputeDto {
     private String statusMessage;
 
     @Schema(description = "The deadline by which you must contest the dispute (if you wish to contest it)")
+    @JsonInclude(Include.NON_NULL)
     private ZonedDateTime contestDeadlineDate;
 
     @Schema(description = "The amount of funds that were disputed")

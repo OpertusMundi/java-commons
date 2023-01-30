@@ -122,13 +122,12 @@ public class DisputeEntity {
     private EnumTransactionType initialTransactionType;
 
     public DisputeDto toDto() {
-        return this.toDto(false);
+        return this.toDto(false, false);
     }
 
-    public DisputeDto toDto(boolean includeHelpdeskDetails) {
+    public DisputeDto toDto(boolean includeHelpdeskDetails, boolean includePayIn) {
         final DisputeDto d = new DisputeDto();
 
-        d.setContestDeadlineDate(contestDeadlineDate);
         d.setContestedFunds(contestedFunds);
         d.setCreationDate(creationDate);
         d.setDisputedFunds(disputedFunds);
@@ -144,13 +143,15 @@ public class DisputeEntity {
         d.setType(type);
 
         if (includeHelpdeskDetails) {
+            d.setContestDeadlineDate(contestDeadlineDate);
             d.setInitialTransactionId(initialTransactionId);
-            d.setPayin(this.getPayin().toHelpdeskDto(includeHelpdeskDetails));
             d.setRepudiationId(repudiationId);
             d.setResultCode(resultCode);
             d.setResultMessage(resultMessage);
             d.setTransactionId(transactionId);
-        } else {
+        }
+
+        if (includePayIn) {
             d.setPayin(this.getPayin().toConsumerDto(includeHelpdeskDetails));
         }
 

@@ -31,7 +31,7 @@ public interface DisputeRepository extends JpaRepository<DisputeEntity, Integer>
     default Page<DisputeDto> findAllObjects(Set<EnumDisputeStatus> status, Pageable pageable) {
         final var result = this
             .findAllEntities(status, pageable)
-            .map(e -> e.toDto(true));
+            .map(e -> e.toDto(true, true));
 
         return result;
     }

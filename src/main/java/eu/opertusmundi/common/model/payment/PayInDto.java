@@ -81,6 +81,10 @@ public abstract class PayInDto extends TransactionDto {
     @JsonInclude(Include.NON_NULL)
     protected RefundDto refund;
 
+    @Schema(description = "PayIn dispute")
+    @JsonInclude(Include.NON_NULL)
+    protected DisputeDto dispute;
+
     public void addStatusHistory(PayInStatusDto h) {
         this.statusHistory.add(h);
     }

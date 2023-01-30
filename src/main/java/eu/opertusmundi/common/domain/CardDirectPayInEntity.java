@@ -13,6 +13,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
@@ -33,26 +34,25 @@ import lombok.Setter;
 @Entity(name = "CardDirectPayIn")
 @Table(schema = "billing", name = "`payin_card_direct`")
 @DiscriminatorValue(value = "CARD_DIRECT")
+@Getter
+@Setter
 public class CardDirectPayInEntity extends PayInEntity {
 
     public CardDirectPayInEntity() {
         super(EnumPaymentMethod.CARD_DIRECT);
     }
 
+    @OneToOne(mappedBy = "payin", fetch = FetchType.EAGER)
+    private DisputeEntity dispute;
+    
     @Column(name = "`alias`")
-    @Getter
-    @Setter
     private String alias;
 
     @Column(name = "`card`")
-    @Getter
-    @Setter
     private String card;
 
     @Length(max = 10)
     @Column(name = "`statement_descriptor`", length = 10)
-    @Getter
-    @Setter
     private String statementDescriptor;
 
     @Embedded
@@ -66,8 +66,6 @@ public class CardDirectPayInEntity extends PayInEntity {
         @AttributeOverride(name = "postalCode", column = @Column(name = "`billing_address_postal_code`")),
         @AttributeOverride(name = "country",    column = @Column(name = "`billing_address_country`")),
     })
-    @Getter
-    @Setter
     private BillingAddressEmbeddable billingAddress;
 
     @Embedded
@@ -81,8 +79,6 @@ public class CardDirectPayInEntity extends PayInEntity {
         @AttributeOverride(name = "postalCode", column = @Column(name = "`shipping_address_postal_code`")),
         @AttributeOverride(name = "country",    column = @Column(name = "`shipping_address_country`")),
     })
-    @Getter
-    @Setter
     private ShippingAddressEmbeddable shippingAddress;
 
     @Embedded
@@ -96,23 +92,15 @@ public class CardDirectPayInEntity extends PayInEntity {
         @AttributeOverride(name = "timeZoneOffset", column = @Column(name = "`browser_info_time_zone_offset`")),
         @AttributeOverride(name = "userAgent",      column = @Column(name = "`browser_info_user_agent`")),
     })
-    @Getter
-    @Setter
     private BrowserInfoEmbeddable browserInfo;
 
     @Column(name = "`requested_3ds_version`")
-    @Getter
-    @Setter
     private String requested3dsVersion;
 
     @Column(name = "`applied_3ds_version`")
-    @Getter
-    @Setter
     private String applied3dsVersion;
 
     @Column(name = "`ip_address`")
-    @Getter
-    @Setter
     private String ipAddress;
 
     /**
@@ -120,15 +108,11 @@ public class CardDirectPayInEntity extends PayInEntity {
      */
     @ManyToOne(targetEntity = PayInRecurringRegistrationEntity.class, fetch = FetchType.LAZY)
     @JoinColumn(name = "recurring_registration", nullable = false)
-    @Getter
-    @Setter
     private PayInRecurringRegistrationEntity recurringPayment;
 
     @NotNull
     @Column(name = "`recurring_type`")
     @Enumerated(EnumType.STRING)
-    @Getter
-    @Setter
     private EnumRecurringPaymentType recurringPaymentType;
 
     public void updateDto(PayInDto p) {
@@ -176,10 +160,13 @@ public class CardDirectPayInEntity extends PayInEntity {
             p.setBrowserInfo(this.browserInfo.toDto());
         }
         if (includeDetails) {
-            this.items.stream().map(i -> i.toConsumerDto(includeDetails)).forEach(p::addItem);
+            this.items.stream().map(i -> i.toConsumerDto(includeDetails, false)).forEach(p::addItem);
         }
         if (this.getRefund() != null) {
             p.setRefund(this.getRefund().toDto(false));
+        }
+        if (this.getDispute() != null) {
+            p.setDispute(this.getDispute().toDto(false, false));
         }
 
         return p;
@@ -197,10 +184,13 @@ public class CardDirectPayInEntity extends PayInEntity {
         p.setStatementDescriptor(statementDescriptor);
 
         if (includeDetails) {
-            this.items.stream().map(e -> e.toProviderDto(includeDetails)).forEach(p::addItem);
+            this.items.stream().map(e -> e.toProviderDto(includeDetails, false)).forEach(p::addItem);
         }
         if (this.getRefund() != null) {
             p.setRefund(this.getRefund().toDto(false));
+        }
+        if (this.getDispute() != null) {
+            p.setDispute(this.getDispute().toDto(false, false));
         }
 
         return p;
@@ -239,11 +229,14 @@ public class CardDirectPayInEntity extends PayInEntity {
             p.setBrowserInfo(this.browserInfo.toDto());
         }
         if (includeDetails) {
-            this.items.stream().map(e -> e.toHelpdeskDto(includeDetails)).forEach(p::addItem);
+            this.items.stream().map(e -> e.toHelpdeskDto(true, false)).forEach(p::addItem);
             this.statusHistory.stream().map(PayInStatusEntity::toDto).forEach(p::addStatusHistory);
         }
         if (this.getRefund() != null) {
             p.setRefund(this.getRefund().toDto(true));
+        }
+        if (this.getDispute() != null) {
+            p.setDispute(this.getDispute().toDto(true, false));
         }
 
         return p;
