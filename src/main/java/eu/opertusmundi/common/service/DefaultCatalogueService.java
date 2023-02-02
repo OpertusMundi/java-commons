@@ -459,6 +459,41 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     @Override
+    public CatalogueItemDetailsDto findOne(String id) throws CatalogueServiceException {
+        try {
+            final ResponseEntity<CatalogueResponse<CatalogueFeature>> e = this.catalogueClient.getObject().findOneById(id);
+
+            final CatalogueResponse<CatalogueFeature> catalogueResponse = e.getBody();
+
+            if (!catalogueResponse.isSuccess()) {
+                throw CatalogueServiceException.fromService(catalogueResponse.getMessage());
+            }
+
+            // Convert feature to catalogue item
+            final CatalogueFeature        feature = catalogueResponse.getResult();
+            final CatalogueItemDetailsDto item    = this.featureToItem(null, feature, feature.getProperties().getPublisherId(), true);
+
+            // Check ownership
+            this.checkAssetOwnership(null, id, item);
+
+            return item;
+        } catch (final FeignException fex) {
+            // Convert 404 errors to empty results
+            if (fex.status() == HttpStatus.NOT_FOUND.value()) {
+                return null;
+            }
+
+            logger.error("Operation has failed", fex);
+
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage(), fex);
+        } catch (final Exception ex) {
+            logger.error("Operation has failed", ex);
+
+            throw CatalogueServiceException.wrap(ex);
+        }
+    }
+
+    @Override
     public CatalogueItemDetailsDto findOne(
         RequestContext ctx, String id, UUID publisherKey, boolean includeAutomatedMetadata
     ) throws CatalogueServiceException {

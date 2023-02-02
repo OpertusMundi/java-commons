@@ -17,4 +17,15 @@ public class Shard {
      */
     private String endpoint;
 
+    private PostGis postGis;
+
+    @Getter
+    @Setter
+    public static class PostGis {
+        private String url;
+        private String driver = "org.postgresql.Driver";
+        private String userName;
+        private String password;
+    }
+
 }

@@ -362,10 +362,7 @@ public interface DraftRepository extends JpaRepository<ProviderAssetDraftEntity,
         if (draft == null) {
             throw new AssetDraftException(AssetMessageCode.DRAFT_NOT_FOUND);
         }
-
-        final EnumProviderAssetDraftStatus expectedStatus = draft.getCommand().getType() == EnumAssetType.SERVICE
-            ? EnumProviderAssetDraftStatus.SUBMITTED
-            : EnumProviderAssetDraftStatus.POST_PROCESSING;
+        final EnumProviderAssetDraftStatus expectedStatus = EnumProviderAssetDraftStatus.SUBMITTED;
 
         if (draft.getStatus() != expectedStatus) {
             throw new AssetDraftException(

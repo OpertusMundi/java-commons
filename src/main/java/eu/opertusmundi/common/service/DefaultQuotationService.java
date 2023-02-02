@@ -11,11 +11,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
+import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.payment.ServiceUseStatsDto;
 import eu.opertusmundi.common.model.pricing.BasePricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.EffectivePricingModelDto;
 import eu.opertusmundi.common.model.pricing.FixedPopulationQuotationParametersDto;
+import eu.opertusmundi.common.model.pricing.FixedRowPricingModelCommandDto;
 import eu.opertusmundi.common.model.pricing.FixedRowQuotationParametersDto;
 import eu.opertusmundi.common.model.pricing.QuotationDto;
 import eu.opertusmundi.common.model.pricing.QuotationException;
@@ -36,14 +38,17 @@ public class DefaultQuotationService implements QuotationService {
 
     private final DataProviderManager  dataProviderManager;
     private final NutsRegionRepository regionRepository;
+    private final TableRowCountService tableRowCountService;
 
     @Autowired
     public DefaultQuotationService(
         DataProviderManager  dataProviderManager,
-        NutsRegionRepository regionRepository
+        NutsRegionRepository regionRepository,
+        TableRowCountService tableRowCountService
     ) {
-        this.dataProviderManager = dataProviderManager;
-        this.regionRepository    = regionRepository;
+        this.dataProviderManager  = dataProviderManager;
+        this.regionRepository     = regionRepository;
+        this.tableRowCountService = tableRowCountService;
     }
 
     @Override
@@ -110,7 +115,9 @@ public class DefaultQuotationService implements QuotationService {
     }
 
     @Override
-    public QuotationDto createQuotation(CatalogueItemDto asset, BasePricingModelCommandDto model, ServiceUseStatsDto stats) throws QuotationException {
+    public QuotationDto createQuotation(
+        CatalogueItemDto asset, BasePricingModelCommandDto model, ServiceUseStatsDto stats
+    ) throws QuotationException {
         if (!model.getType().isUseStatsSupported()) {
             throw new QuotationException(
                 QuotationMessageCode.QUOTATION_NOT_SUPPORTED,
@@ -139,7 +146,7 @@ public class DefaultQuotationService implements QuotationService {
     ) {
         switch (model.getType()) {
             case FIXED_PER_ROWS :
-                return this.getRowCount(model, userParams);
+                return this.getRowCount(asset, model, userParams);
 
             case FIXED_FOR_POPULATION :
                 return this.getPopulation(asset, model, userParams);
@@ -150,18 +157,22 @@ public class DefaultQuotationService implements QuotationService {
         }
     }
 
-    private SystemQuotationParametersDto getRowCount(BasePricingModelCommandDto model, @Nullable QuotationParametersDto params) {
-        // TODO: Compute rows based on NUTS codes
-
+    private SystemQuotationParametersDto getRowCount(
+        CatalogueItemDto asset, BasePricingModelCommandDto model, @Nullable QuotationParametersDto params
+    ) {
         if (params == null) {
             return null;
         }
 
+        Assert.isInstanceOf(FixedRowPricingModelCommandDto.class, model);
         Assert.isInstanceOf(FixedRowQuotationParametersDto.class, params);
 
+        final FixedRowPricingModelCommandDto typedModel  = (FixedRowPricingModelCommandDto) model;
         final FixedRowQuotationParametersDto typedParams = (FixedRowQuotationParametersDto) params;
-        if (typedParams.getNuts() != null && typedParams.getNuts().size() > 0) {
-            return SystemQuotationParametersDto.ofRows(tax, 10000L);
+        if (ArrayUtils.isNotEmpty(typedParams.getNuts()) && asset instanceof final CatalogueItemDetailsDto assetDetails) {
+            final var count          = this.tableRowCountService.countRows(assetDetails, typedParams.getNuts());
+            final var effectiveCount = count > typedModel.getMinRows() ? count : typedModel.getMinRows();
+            return SystemQuotationParametersDto.ofRows(tax, effectiveCount);
         }
 
         return null;

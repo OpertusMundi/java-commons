@@ -153,6 +153,15 @@ public interface CatalogueService {
     /**
      * Find one published item by its unique PID
      *
+     * @param id
+     * @return
+     * @throws CatalogueServiceException
+     */
+    CatalogueItemDetailsDto findOne(String id) throws CatalogueServiceException;
+
+    /**
+     * Find one published item by its unique PID
+     *
      * @param ctx
      * @param id
      * @param publisherKey

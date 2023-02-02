@@ -10,6 +10,8 @@ import javax.validation.constraints.Digits;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import eu.opertusmundi.common.model.payment.ServiceUseStatsDto;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -75,7 +77,7 @@ public class FixedRowPricingModelCommandDto extends BasePricingModelCommandDto {
 
         final FixedRowQuotationParametersDto typedParams = (FixedRowQuotationParametersDto) params;
 
-        if (typedParams.getNuts() == null || typedParams.getNuts().isEmpty()) {
+        if (ArrayUtils.isEmpty(typedParams.getNuts())) {
             throw new QuotationException(QuotationMessageCode.NO_NUTS_SELECTED, "At least a region must be selected");
         }
     }
