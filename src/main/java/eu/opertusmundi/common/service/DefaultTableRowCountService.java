@@ -4,9 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.locationtech.jts.io.WKTWriter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -18,7 +16,6 @@ import eu.opertusmundi.common.model.asset.EnumResourceType;
 import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.geodata.EnumGeodataWorkspace;
-import eu.opertusmundi.common.repository.NutsRegionRepository;
 import eu.opertusmundi.common.service.ogc.UserGeodataConfigurationResolver;
 
 @Service
@@ -27,7 +24,6 @@ public class DefaultTableRowCountService implements TableRowCountService {
     private final static String DEFAULT_CRS = "4326";
 
     private final GeodataConfiguration             geodataConfiguration;
-    private final NutsRegionRepository             regionRepository;
     private final UserGeodataConfigurationResolver geodataConfigurationResolver;
 
     private final Map<String, JdbcTemplate> jdbcTemplates = new HashMap<>();
@@ -35,26 +31,14 @@ public class DefaultTableRowCountService implements TableRowCountService {
     @Autowired
     public DefaultTableRowCountService(
         GeodataConfiguration geodataConfiguration,
-        NutsRegionRepository regionRepository,
         UserGeodataConfigurationResolver geodataConfigurationResolver
     ) {
         this.geodataConfiguration         = geodataConfiguration;
         this.geodataConfigurationResolver = geodataConfigurationResolver;
-        this.regionRepository             = regionRepository;
     }
 
     @Override
     public long countRows(CatalogueItemDetailsDto asset, String[] nutCodes) {
-        // Convert nut codes to geometries in WKT format
-        final WKTWriter wktWriter = new WKTWriter();
-        final var       args      = regionRepository.findByCode(nutCodes).stream()
-            .map(r -> wktWriter.write(r.getGeometry()))
-            .toArray();
-
-        if (ArrayUtils.isEmpty(args)) {
-            return 0L;
-        }
-
         // Get ingestion data
         final var ingestInfo = asset.getIngestionInfo();
 
@@ -67,6 +51,8 @@ public class DefaultTableRowCountService implements TableRowCountService {
             .filter(r -> r.getId().equals(ingestedResource.getKey()))
             .findFirst()
             .get();
+        final var nutsSchema       = this.geodataConfiguration.getNuts().getSchema();
+        final var nutsTableName    = this.geodataConfiguration.getNuts().getTableName();
         final var schema           = ingestedResource.getSchema();
         final var tableName        = ingestedResource.getTableName();
         var       crs              = StringUtils.isBlank(initialResource.getCrs()) ? DEFAULT_CRS : initialResource.getCrs();
@@ -76,14 +62,17 @@ public class DefaultTableRowCountService implements TableRowCountService {
         final var jdbcTemplate = this.resolveTemplateFromEndpoint(asset.getPublisherId());
 
         // Build query
-        var queryTemplate = """
-           select count(*) from "%1$s"."%2$s"
-           where
+        final var queryTemplate = """
+           select distinct count(t.*)
+           from   "%1$s"."%2$s" t
+                    inner join "%3$s"."%4$s" n
+                      on ST_Intersects(ST_Transform(ST_SetSRID(t.geom, %5$s), %6$s), ST_SetSRID(n.geom, %6$s))
+           where  n.nuts_id in (%7$s)
         """;
-        queryTemplate += StringUtils.repeat(" ST_Intersects(ST_Transform(ST_SetSRID(geom, %3$s), %4$s), ST_GeomFromText(?, %4$s)) ",  " or ", args.length);
+        final var params        = StringUtils.repeat("?", ",", nutCodes.length);
+        final var query         = String.format(queryTemplate, schema, tableName, nutsSchema, nutsTableName, crs, DEFAULT_CRS, params);
 
-        final var  query  = String.format(queryTemplate, schema, tableName, crs, DEFAULT_CRS);
-        final Long result = jdbcTemplate.queryForObject(query, Long.class, args);
+        final Long result = jdbcTemplate.queryForObject(query, Long.class, (Object[]) nutCodes);
 
         return result;
     }

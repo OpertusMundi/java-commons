@@ -28,4 +28,23 @@ public class GeodataConfiguration {
             .findFirst()
             .orElse(null);
     }
+
+    @Getter
+    @Setter
+    public static class PostGis {
+        private String url;
+        private String driver = "org.postgresql.Driver";
+        private String userName;
+        private String password;
+    }
+
+    private NutsConfig nuts;
+
+    @Getter
+    @Setter
+    public static class NutsConfig {
+
+        private String schema;
+        private String tableName;
+    }
 }

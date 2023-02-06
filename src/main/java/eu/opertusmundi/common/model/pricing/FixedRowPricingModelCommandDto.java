@@ -86,7 +86,7 @@ public class FixedRowPricingModelCommandDto extends BasePricingModelCommandDto {
     public EffectivePricingModelDto compute(QuotationParametersDto userParams, SystemQuotationParametersDto systemParams) {
         this.checkUserParametersType(userParams);
 
-        if (systemParams != null && systemParams.getRows() != null) {
+        if (systemParams != null && systemParams.getSelectedRows() != null) {
             final QuotationDto quotation = new QuotationDto();
             BigDecimal         discount  = BigDecimal.ZERO;
 
@@ -94,13 +94,13 @@ public class FixedRowPricingModelCommandDto extends BasePricingModelCommandDto {
 
             if (this.discountRates != null) {
                 for (final DiscountRateDto r : this.discountRates) {
-                    if (systemParams.getRows() > r.getCount()) {
+                    if (systemParams.getSelectedRows() > r.getCount()) {
                         discount = r.getDiscount();
                     }
                 }
             }
             quotation.setTotalPriceExcludingTax(this.getPrice()
-                .multiply(BigDecimal.valueOf(systemParams.getRows()))
+                .multiply(BigDecimal.valueOf(systemParams.getSelectedRows()))
                 .multiply(BigDecimal.valueOf(100).subtract(discount))
                 .divide(new BigDecimal(100))
                 .setScale(2, RoundingMode.HALF_UP)

@@ -171,8 +171,9 @@ public class DefaultQuotationService implements QuotationService {
         final FixedRowQuotationParametersDto typedParams = (FixedRowQuotationParametersDto) params;
         if (ArrayUtils.isNotEmpty(typedParams.getNuts()) && asset instanceof final CatalogueItemDetailsDto assetDetails) {
             final var count          = this.tableRowCountService.countRows(assetDetails, typedParams.getNuts());
+            final var totalRows      = asset.getAutomatedMetadata().get(0).get("featureCount").asLong();
             final var effectiveCount = count > typedModel.getMinRows() ? count : typedModel.getMinRows();
-            return SystemQuotationParametersDto.ofRows(tax, effectiveCount);
+            return SystemQuotationParametersDto.ofRows(tax, effectiveCount, totalRows);
         }
 
         return null;
@@ -208,7 +209,7 @@ public class DefaultQuotationService implements QuotationService {
 
             final int populationPercent = (int) (100 * selectionPopulation / totalPopulation);
 
-            return SystemQuotationParametersDto.ofPopulation(tax, selectionPopulation, populationPercent);
+            return SystemQuotationParametersDto.ofPopulation(tax, selectionPopulation, populationPercent, totalPopulation);
         }
         return null;
     }

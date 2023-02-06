@@ -110,7 +110,7 @@ public class FixedPopulationPricingModelCommandDto extends BasePricingModelComma
     public EffectivePricingModelDto compute(QuotationParametersDto userParams, SystemQuotationParametersDto systemParams) {
         this.checkUserParametersType(userParams);
 
-        if (systemParams != null && systemParams.getPopulation() != null) {
+        if (systemParams != null && systemParams.getSelectedPopulation() != null) {
             final QuotationDto quotation = new QuotationDto();
             BigDecimal         discount  = BigDecimal.ZERO;
 
@@ -118,14 +118,14 @@ public class FixedPopulationPricingModelCommandDto extends BasePricingModelComma
 
             if (this.discountRates != null) {
                 for (final DiscountRateDto r : this.discountRates) {
-                    if (systemParams.getPopulation() > r.getCount()) {
+                    if (systemParams.getSelectedPopulation() > r.getCount()) {
                         discount = r.getDiscount();
                     }
                 }
             }
 
             quotation.setTotalPriceExcludingTax(this.getPrice()
-                .multiply(BigDecimal.valueOf(systemParams.getPopulation()))
+                .multiply(BigDecimal.valueOf(systemParams.getSelectedPopulation()))
                 .divide(new BigDecimal(POPULATION_STEP))
                 .multiply(BigDecimal.valueOf(100).subtract(discount))
                 .divide(new BigDecimal(100))
