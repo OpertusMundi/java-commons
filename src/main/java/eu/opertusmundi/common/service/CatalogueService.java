@@ -15,6 +15,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueHarvestCommandDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDraftDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueJoinableItemDto;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQuery;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
 
@@ -158,6 +159,15 @@ public interface CatalogueService {
      * @throws CatalogueServiceException
      */
     CatalogueItemDetailsDto findOne(String id) throws CatalogueServiceException;
+
+    /**
+     * Find one joinable item by its unique PID
+     *
+     * @param id
+     * @return
+     * @throws CatalogueServiceException
+     */
+    CatalogueJoinableItemDto findOneJoinable(String id) throws CatalogueServiceException;
 
     /**
      * Find one published item by its unique PID

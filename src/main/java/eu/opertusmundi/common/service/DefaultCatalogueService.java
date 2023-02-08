@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cloud.sleuth.Span;
 import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.http.HttpStatus;
@@ -57,6 +58,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDraftDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemStatistics;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueJoinableItemDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumCatalogueType;
 import eu.opertusmundi.common.model.catalogue.client.EnumSpatialDataServiceType;
 import eu.opertusmundi.common.model.catalogue.elastic.ElasticAssetQuery;
@@ -494,6 +496,42 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     @Override
+    @Cacheable(
+        cacheNames = "catalogue-joinable-item",
+        cacheManager = "defaultCacheManager",
+        key = "'item-' + #id"
+    )
+    public CatalogueJoinableItemDto findOneJoinable(String id) throws CatalogueServiceException {
+        try {
+            final var response          = this.catalogueClient.getObject().findOneById(id);
+            final var catalogueResponse = response.getBody();
+
+            if (!catalogueResponse.isSuccess()) {
+                throw CatalogueServiceException.fromService(catalogueResponse.getMessage());
+            }
+
+            final var feature = catalogueResponse.getResult();
+            final var item    = this.featureToItem(feature);
+            final var joinableItem = CatalogueJoinableItemDto.from(item);
+
+            return joinableItem;
+        } catch (final FeignException fex) {
+            // Convert 404 errors to empty results
+            if (fex.status() == HttpStatus.NOT_FOUND.value()) {
+                return null;
+            }
+
+            logger.error("Operation has failed", fex);
+
+            throw new CatalogueServiceException(CatalogueServiceMessageCode.CATALOGUE_SERVICE, fex.getMessage(), fex);
+        } catch (final Exception ex) {
+            logger.error("Operation has failed", ex);
+
+            throw CatalogueServiceException.wrap(ex);
+        }
+    }
+
+    @Override
     public CatalogueItemDetailsDto findOne(
         RequestContext ctx, String id, UUID publisherKey, boolean includeAutomatedMetadata
     ) throws CatalogueServiceException {
@@ -588,6 +626,19 @@ public class DefaultCatalogueService implements CatalogueService {
             }
             item.setOwned(owned);
         }
+    }
+
+    /**
+     * Converts a catalogue feature to a marketplace catalogue item
+     *
+     * <p>
+     * See {@link #featureToItem(RequestContext, CatalogueFeature, UUID, boolean)
+     *
+     * @param feature
+     * @return
+     */
+    private CatalogueItemDetailsDto featureToItem(CatalogueFeature feature) {
+        return this.featureToItem(null, feature, feature.getProperties().getPublisherId(), false);
     }
 
     /**

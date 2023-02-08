@@ -8,6 +8,7 @@ import eu.opertusmundi.common.model.asset.AssetDraftDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueClientCollectionResponse;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
+import eu.opertusmundi.common.model.catalogue.client.CatalogueJoinableItemDto;
 import eu.opertusmundi.common.model.payment.provider.ProviderAccountSubscriptionDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -25,6 +26,11 @@ public class CatalogueEndpointTypes {
 
     @Schema(description = "Asset response")
     public static class ItemResponse extends RestResponse<CatalogueItemDetailsDto> {
+
+    }
+
+    @Schema(description = "Joinable asset response")
+    public static class JoinableItemResponse extends RestResponse<CatalogueJoinableItemDto> {
 
     }
 
