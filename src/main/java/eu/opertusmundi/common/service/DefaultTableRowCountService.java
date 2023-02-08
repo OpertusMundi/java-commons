@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.DataSourceBuilder;
@@ -17,6 +18,7 @@ import eu.opertusmundi.common.model.asset.FileResourceDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.geodata.EnumGeodataWorkspace;
 import eu.opertusmundi.common.service.ogc.UserGeodataConfigurationResolver;
+import eu.opertusmundi.common.util.NutsUtils;
 
 @Service
 public class DefaultTableRowCountService implements TableRowCountService {
@@ -39,9 +41,12 @@ public class DefaultTableRowCountService implements TableRowCountService {
 
     @Override
     public long countRows(CatalogueItemDetailsDto asset, String[] nutCodes) {
-        // Get ingestion data
-        final var ingestInfo = asset.getIngestionInfo();
+        final var effectiveNuts = NutsUtils.removeOverlappingCodes(nutCodes);
+        if (ArrayUtils.isEmpty(effectiveNuts)) {
+            return 0L;
+        }
 
+        final var ingestInfo = asset.getIngestionInfo();
         Assert.isTrue(ingestInfo != null && ingestInfo.size() == 1, "Expected a single ingested resource");
 
         final var ingestedResource = ingestInfo.get(0);
@@ -63,16 +68,16 @@ public class DefaultTableRowCountService implements TableRowCountService {
 
         // Build query
         final var queryTemplate = """
-           select distinct count(t.*)
+           select count(distinct t.*)
            from   "%1$s"."%2$s" t
                     inner join "%3$s"."%4$s" n
                       on ST_Intersects(ST_Transform(ST_SetSRID(t.geom, %5$s), %6$s), ST_SetSRID(n.geom, %6$s))
            where  n.nuts_id in (%7$s)
         """;
-        final var params        = StringUtils.repeat("?", ",", nutCodes.length);
+        final var params        = StringUtils.repeat("?", ",", effectiveNuts.length);
         final var query         = String.format(queryTemplate, schema, tableName, nutsSchema, nutsTableName, crs, DEFAULT_CRS, params);
 
-        final Long result = jdbcTemplate.queryForObject(query, Long.class, (Object[]) nutCodes);
+        final Long result = jdbcTemplate.queryForObject(query, Long.class, (Object[]) effectiveNuts);
 
         return result;
     }

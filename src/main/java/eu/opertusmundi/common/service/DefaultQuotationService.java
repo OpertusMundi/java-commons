@@ -26,6 +26,7 @@ import eu.opertusmundi.common.model.pricing.QuotationParametersDto;
 import eu.opertusmundi.common.model.pricing.SystemQuotationParametersDto;
 import eu.opertusmundi.common.repository.NutsRegionRepository;
 import eu.opertusmundi.common.service.integration.DataProviderManager;
+import eu.opertusmundi.common.util.NutsUtils;
 import io.jsonwebtoken.lang.Assert;
 
 @Service
@@ -167,13 +168,14 @@ public class DefaultQuotationService implements QuotationService {
         Assert.isInstanceOf(FixedRowPricingModelCommandDto.class, model);
         Assert.isInstanceOf(FixedRowQuotationParametersDto.class, params);
 
-        final FixedRowPricingModelCommandDto typedModel  = (FixedRowPricingModelCommandDto) model;
-        final FixedRowQuotationParametersDto typedParams = (FixedRowQuotationParametersDto) params;
-        if (ArrayUtils.isNotEmpty(typedParams.getNuts()) && asset instanceof final CatalogueItemDetailsDto assetDetails) {
-            final var count          = this.tableRowCountService.countRows(assetDetails, typedParams.getNuts());
+        final var typedModel    = (FixedRowPricingModelCommandDto) model;
+        final var typedParams   = (FixedRowQuotationParametersDto) params;
+        final var effectiveNuts = NutsUtils.removeOverlappingCodes(typedParams.getNuts());
+        if (ArrayUtils.isNotEmpty(effectiveNuts) && asset instanceof final CatalogueItemDetailsDto assetDetails) {
+            final var count          = this.tableRowCountService.countRows(assetDetails, effectiveNuts);
             final var totalRows      = asset.getAutomatedMetadata().get(0).get("featureCount").asLong();
             final var effectiveCount = count > typedModel.getMinRows() ? count : typedModel.getMinRows();
-            return SystemQuotationParametersDto.ofRows(tax, effectiveCount, totalRows);
+            return SystemQuotationParametersDto.ofRows(tax, effectiveCount, totalRows, effectiveNuts);
         }
 
         return null;
@@ -193,9 +195,11 @@ public class DefaultQuotationService implements QuotationService {
             return null;
         }
 
-        final FixedPopulationQuotationParametersDto typedParams = (FixedPopulationQuotationParametersDto) params;
-        if (ArrayUtils.isNotEmpty(typedParams.getNuts())) {
-            final var regions             = regionRepository.findByCode(typedParams.getNuts());
+        final var typedParams   = (FixedPopulationQuotationParametersDto) params;
+        final var effectiveNuts = NutsUtils.removeOverlappingCodes(typedParams.getNuts());
+
+        if (ArrayUtils.isNotEmpty(effectiveNuts)) {
+            final var regions             = regionRepository.findByCode(effectiveNuts);
             long      selectionPopulation = 0;
             long      totalPopulation     = 0;
             for (final var r : regions) {
@@ -209,7 +213,7 @@ public class DefaultQuotationService implements QuotationService {
 
             final int populationPercent = (int) (100 * selectionPopulation / totalPopulation);
 
-            return SystemQuotationParametersDto.ofPopulation(tax, selectionPopulation, populationPercent, totalPopulation);
+            return SystemQuotationParametersDto.ofPopulation(tax, selectionPopulation, populationPercent, totalPopulation, effectiveNuts);
         }
         return null;
     }

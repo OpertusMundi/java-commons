@@ -22,6 +22,11 @@ public class SystemQuotationParametersDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @Schema(description = "System-defined parameter of the effective NUTS codes. If the pricing model does not support the "
+                        + "NUTS codes parameter, this property is not set.")
+    @JsonInclude(Include.NON_NULL)
+    private String[] effectiveNuts;
+
     @Schema(description = "System-defined parameter of the number of rows selected. If the pricing model does not support "
                         + "number of rows parameter, this property is not set. This property will be replaced by `selectedRows`"
                         + "property in future releases", deprecated = true)
@@ -72,20 +77,22 @@ public class SystemQuotationParametersDto implements Serializable {
         return p;
     }
 
-    public static SystemQuotationParametersDto ofRows(BigDecimal taxPercent, long selectedRows, long totalRows) {
+    public static SystemQuotationParametersDto ofRows(BigDecimal taxPercent, long selectedRows, long totalRows, String[] effectiveNuts) {
         final SystemQuotationParametersDto p = new SystemQuotationParametersDto();
-        p.rows         = selectedRows;
-        p.selectedRows = selectedRows;
-        p.taxPercent   = taxPercent;
-        p.totalRows    = totalRows;
+        p.effectiveNuts = effectiveNuts;
+        p.rows          = selectedRows;
+        p.selectedRows  = selectedRows;
+        p.taxPercent    = taxPercent;
+        p.totalRows     = totalRows;
         return p;
     }
 
     public static SystemQuotationParametersDto ofPopulation(
-        BigDecimal taxPercent, long selectedPopulation, int selectedPopulationPercent, long totalPopulation
+        BigDecimal taxPercent, long selectedPopulation, int selectedPopulationPercent, long totalPopulation, String[] effectiveNuts
     ) {
 
         final SystemQuotationParametersDto p = new SystemQuotationParametersDto();
+        p.effectiveNuts             = effectiveNuts;
         p.population                = selectedPopulation;
         p.populationPercent         = selectedPopulationPercent;
         p.selectedPopulation        = selectedPopulation;

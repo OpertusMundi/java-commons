@@ -22,6 +22,8 @@ public class FixedRowPricingModelCommandDto extends BasePricingModelCommandDto {
 
     private static final long serialVersionUID = 1L;
 
+    private static int ROWS_STEP = 1000;
+
     public FixedRowPricingModelCommandDto() {
         super(EnumPricingModel.FIXED_PER_ROWS);
     }
@@ -101,6 +103,7 @@ public class FixedRowPricingModelCommandDto extends BasePricingModelCommandDto {
             }
             quotation.setTotalPriceExcludingTax(this.getPrice()
                 .multiply(BigDecimal.valueOf(systemParams.getSelectedRows()))
+                .divide(new BigDecimal(ROWS_STEP))
                 .multiply(BigDecimal.valueOf(100).subtract(discount))
                 .divide(new BigDecimal(100))
                 .setScale(2, RoundingMode.HALF_UP)
