@@ -548,6 +548,6 @@ public interface ProviderAssetService {
      * @return
      * throws AssetDraftException if draft or ingestion data is not found
      */
-    List<ResourceIngestionDataDto> getServices(UUID publisherKey, UUID draftKey) throws AssetDraftException;
+    List<ResourceIngestionDataDto> getServicesFromCache(UUID publisherKey, UUID draftKey) throws AssetDraftException;
 
 }

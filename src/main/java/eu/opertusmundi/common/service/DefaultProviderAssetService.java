@@ -2001,7 +2001,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
         cacheManager = "defaultCacheManager",
         key = "'draft-' + #draftKey + '-' + #resourceKey"
     )
-    public List<ResourceIngestionDataDto> getServices(UUID publisherKey, UUID draftKey) throws AssetDraftException {
+    public List<ResourceIngestionDataDto> getServicesFromCache(UUID publisherKey, UUID draftKey) throws AssetDraftException {
         final AssetDraftDto draft = this.findOneDraft(publisherKey, draftKey, false);
 
         // Draft must exist
