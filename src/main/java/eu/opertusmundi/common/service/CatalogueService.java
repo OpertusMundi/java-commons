@@ -82,29 +82,19 @@ public interface CatalogueService {
      */
     List<CatalogueItemDetailsDto> findAllHistoryAndPublishedById(String[] id) throws CatalogueServiceException;
 
-    /**
-     * Find all items with the specified identifiers
-     *
-     * <p>
-     * See {@link #findAllById(String[], boolean)}
-     *
-     * @param id
-     * @return
-     * @throws CatalogueServiceException
-     */
-    default List<CatalogueItemDetailsDto> findAllPublishedById(String[] id) throws CatalogueServiceException {
-        return this.findAllPublishedById(id, true);
-    }
 
     /**
      * Find all items with the specified identifiers
      *
      * @param id
      * @param throwOnMissing
+     * @param includeAutomatedMetadata
      * @return
      * @throws CatalogueServiceException
      */
-    List<CatalogueItemDetailsDto> findAllPublishedById(String[] id, boolean throwOnMissing) throws CatalogueServiceException;
+    List<CatalogueItemDetailsDto> findAllPublishedById(
+        String[] id, boolean throwOnMissing, boolean includeAutomatedMetadata
+    ) throws CatalogueServiceException;
 
     /**
      * Find all history items with the specified pairs of identifier and version

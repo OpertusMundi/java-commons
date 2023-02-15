@@ -45,7 +45,7 @@ public class DefaultCartService implements CartService {
             final UUID effectiveCartKey = this.ensureCart(command.getCartKey());
             command.setCartKey(effectiveCartKey);
 
-            final CatalogueItemDetailsDto asset = catalogueService.findOne(null, command.getAssetId(), null, false);
+            final CatalogueItemDetailsDto asset = catalogueService.findOne(command.getAssetId());
 
             // Asset must be available to purchase (provider must be KYC
             // validated)

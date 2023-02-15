@@ -1063,7 +1063,7 @@ public class DefaultProviderAssetService implements ProviderAssetService {
                 .collect(Collectors.toList());
 
             final List<CatalogueItemDetailsDto> assets = this.catalogueService
-                .findAllPublishedById(assetKeys.toArray(new String[assetKeys.size()]));
+                .findAllPublishedById(assetKeys.toArray(new String[assetKeys.size()]), true, false);
 
             final List<Geometry> geometries = new ArrayList<>();
             assets.stream()

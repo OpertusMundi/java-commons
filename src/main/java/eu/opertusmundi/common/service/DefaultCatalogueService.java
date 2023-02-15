@@ -326,7 +326,7 @@ public class DefaultCatalogueService implements CatalogueService {
     @Override
     public List<CatalogueItemDetailsDto> findAllHistoryAndPublishedById(String[] id) throws CatalogueServiceException {
         // Search published assets but ignore missing ones
-        final var published = this.findAllPublishedById(id, false);
+        final var published = this.findAllPublishedById(id, false, false);
         if (published.size() == id.length) {
             return published;
         }
@@ -340,7 +340,9 @@ public class DefaultCatalogueService implements CatalogueService {
     }
 
     @Override
-    public List<CatalogueItemDetailsDto> findAllPublishedById(String[] id, boolean throwOnMissing) throws CatalogueServiceException {
+    public List<CatalogueItemDetailsDto> findAllPublishedById(
+        String[] id, boolean throwOnMissing, boolean includeAutomatedMetadata
+    ) throws CatalogueServiceException {
         Assert.notEmpty(id, "Expected a non-empty array of identifiers");
 
         try {
@@ -360,7 +362,7 @@ public class DefaultCatalogueService implements CatalogueService {
             }
 
             return catalogueResponse.getResult().stream()
-                .map(feature -> this.featureToItem(null, feature, feature.getProperties().getPublisherId(), false))
+                .map(feature -> this.featureToItem(null, feature, feature.getProperties().getPublisherId(), includeAutomatedMetadata))
                 .collect(Collectors.toList());
         } catch (final CatalogueServiceException ex) {
             throw ex;

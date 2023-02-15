@@ -69,8 +69,8 @@ public class DefaultFavoriteService implements FavoriteService {
             return PageResultDto.of(pageIndex, pageSize, records, page.getTotalElements());
         }
 
-        final List<CatalogueItemDetailsDto> items          = this.catalogueService.findAllPublishedById(assetId);
-        final List<FavoriteDto>             updatedRecords = records.stream()
+        final var items          = this.catalogueService.findAllPublishedById(assetId, true, false);
+        final var updatedRecords = records.stream()
             .map(r -> {
                 switch (r.getType()) {
                     case ASSET : {
@@ -133,7 +133,7 @@ public class DefaultFavoriteService implements FavoriteService {
 
     private FavoriteDto addFavorite(FavoriteAssetCommandDto command) {
         final var action = command.getAction();
-        final var items  = this.catalogueService.findAllPublishedById(new String[]{command.getPid()});
+        final var items  = this.catalogueService.findAllPublishedById(new String[]{command.getPid()}, true, false);
 
         if (items.isEmpty()) {
             throw new FavoriteException(
