@@ -382,24 +382,47 @@ public class DefaultSentinelHubService implements SentinelHubService {
         final List<SubscriptionPlanDto> result = accountTypes.stream()
             .filter(a -> !a.getName().equalsIgnoreCase("Trial"))
             .map(a -> {
-                return SubscriptionPlanDto.builder()
-                    .id(Long.toString(a.getId()))
-                    .title(a.getName())
-                    .billing(Billing.builder()
-                        .annually(BigDecimal.valueOf(300))
-                        .monthly(BigDecimal.valueOf(25))
-                        .build()
-                    )
-                    .description("Non-Commercial / Research")
-                    .features(Arrays.<String[]>asList(
-                        new String[] {"All free features"},
-                        new String[] {"OGC standard WMS / WCS / WMTS / WFS", "API for advanced features","Configuration Utility tool"}
-                    ))
-                    .processingUnits(ProcessingUnits.builder().minute(300L).month(30000L).build())
-                    .requests(Requests.builder().minute(300L).month(100000L).build())
-                    .license("Creative Commons Attribution-NonCommercial 4.0 International License")
-                    .build();
+                return switch(a.getName()) {
+                    case "Exploration" -> SubscriptionPlanDto.builder()
+                            .id(Long.toString(a.getId()))
+                            .title(a.getName())
+                            .billing(Billing.builder()
+                                .annually(BigDecimal.valueOf(300))
+                                .monthly(BigDecimal.valueOf(25))
+                                .build()
+                            )
+                            .description("Non-Commercial / Research")
+                            .features(Arrays.<String[]>asList(
+                                new String[] {"All free features"},
+                                new String[] {"OGC standard WMS / WCS / WMTS / WFS", "API for advanced features","Configuration Utility tool"}
+                            ))
+                            .processingUnits(ProcessingUnits.builder().minute(300L).month(30000L).build())
+                            .requests(Requests.builder().minute(300L).month(100000L).build())
+                            .license("Creative Commons Attribution-NonCommercial 4.0 International License")
+                            .build();
+
+                    case "Basic"-> SubscriptionPlanDto.builder()
+                            .id(Long.toString(a.getId()))
+                            .title(a.getName())
+                            .billing(Billing.builder()
+                                .annually(BigDecimal.valueOf(999))
+                                .monthly(BigDecimal.valueOf(83.25))
+                                .build()
+                            )
+                            .features(Arrays.<String[]>asList(
+                                new String[] {"All Exploration features"},
+                                new String[] {"Commercial use"}
+                            ))
+                            .processingUnits(ProcessingUnits.builder().minute(500L).month(70000L).build())
+                            .requests(Requests.builder().minute(500L).month(700000L).build())
+                            .license("Creative Commons Attribution 4.0 International License")
+                            .parent("Exploration")
+                            .build();
+
+                    default -> null;
+                };
             })
+            .filter(p -> p != null)
             .collect(Collectors.toList());
 
         return result;
