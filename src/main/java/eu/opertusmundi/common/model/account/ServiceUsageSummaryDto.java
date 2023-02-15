@@ -1,5 +1,6 @@
 package eu.opertusmundi.common.model.account;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -15,21 +16,21 @@ import eu.opertusmundi.common.model.asset.service.UserServiceDto;
 public class ServiceUsageSummaryDto extends ServiceUsageKey
 {
     private static final long serialVersionUID = 1L;
-    
+
     public ServiceUsageSummaryDto(UUID serviceKey, LocalDate startDate)
     {
         super(serviceKey, startDate);
     }
 
     AccountSubscriptionDto subscription;
-    
+
     UserServiceDto userService;
-    
+
     Long calls;
-    
-    Float callsNormalized;
-    
+
+    BigDecimal callsNormalized;
+
     Long responseSizeInBytes;
-    
-    Float responseTimeInSeconds;
+
+    BigDecimal responseTimeInSeconds;
 }
