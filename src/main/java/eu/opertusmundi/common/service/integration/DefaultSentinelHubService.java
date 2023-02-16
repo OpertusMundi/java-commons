@@ -388,7 +388,7 @@ public class DefaultSentinelHubService implements SentinelHubService {
                             .title(a.getName())
                             .billing(Billing.builder()
                                 .annually(BigDecimal.valueOf(300))
-                                .monthly(BigDecimal.valueOf(25))
+                                .monthly(BigDecimal.valueOf(30))
                                 .build()
                             )
                             .description("Non-Commercial / Research")
@@ -406,7 +406,7 @@ public class DefaultSentinelHubService implements SentinelHubService {
                             .title(a.getName())
                             .billing(Billing.builder()
                                 .annually(BigDecimal.valueOf(999))
-                                .monthly(BigDecimal.valueOf(83.25))
+                                .monthly(BigDecimal.valueOf(100))
                                 .build()
                             )
                             .features(Arrays.<String[]>asList(
