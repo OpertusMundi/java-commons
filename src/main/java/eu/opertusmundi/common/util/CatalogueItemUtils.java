@@ -5,11 +5,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +34,7 @@ import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDetailsDto;
 import eu.opertusmundi.common.model.catalogue.client.CatalogueItemDto;
 import eu.opertusmundi.common.model.catalogue.client.EnumContractType;
 import eu.opertusmundi.common.model.catalogue.server.CatalogueFeature;
+import eu.opertusmundi.common.model.contract.ContractSectionOptionDto;
 import eu.opertusmundi.common.model.contract.ContractTermDto;
 import eu.opertusmundi.common.model.contract.CustomContractDto;
 import eu.opertusmundi.common.model.contract.TemplateContractDto;
@@ -234,19 +239,36 @@ public class CatalogueItemUtils {
     private void setContractTermsAndConditions(ProviderTemplateContractHistoryEntity template, TemplateContractDto contract) {
         template.getSections().stream()
             .filter(s -> s.getOption() != null)
-            .map(s -> Pair.<Integer, MasterSectionHistoryEntity>of(s.getOption(), s.getMasterSection()))
-            .map(p -> p.getRight().getOptions().get(p.getLeft()))
-            .filter(s -> s.getIcon() != null)
-            .map(s -> {
-                final Path path = Paths.get(iconFolder, s.getIcon().getFile());
-                try (final InputStream fileStream = resourceLoader.getResource(path.toString()).getInputStream()) {
-                    final byte[] data = IOUtils.toByteArray(fileStream);
-                    return ContractTermDto.of(s.getIcon(), s.getIcon().getCategory(), data, s.getShortDescription());
-                } catch (final IOException ex) {
-                    logger.warn(String.format("Failed to load resource [icon=%s, path=%s]", s.getIcon(), path), ex);
+            .map(s -> Triple.<Integer, List<Integer>, MasterSectionHistoryEntity>of(s.getOption(), s.getSubOption(), s.getMasterSection()))
+            .map(t -> Pair.<List<Integer>, ContractSectionOptionDto>of(t.getMiddle(), t.getRight().getOptions().get(t.getLeft())))
+            .map(t -> {
+                final var section = t.getRight();
+                final var icon = section.getIcon();
+                final var description = section.getShortDescription();
+                final var text = new ArrayList<String>();
+                text.add(description);
+                if (CollectionUtils.isNotEmpty(section.getSubOptions())) {
+                    StreamUtils.from(t.getLeft())
+                        .sorted()
+                        .map(index -> section.getSubOptions().get(index).getBodyHtml())
+                        .filter(value -> !StringUtils.isBlank(value))
+                        .forEach(text::add);
                 }
-                return ContractTermDto.of(s.getIcon(), s.getIcon().getCategory(), null, s.getShortDescription());
+
+                if (icon != null) {
+                    final var category = icon.getCategory();
+                    final var path     = Paths.get(iconFolder, icon.getFile());
+                    try (final InputStream fileStream = resourceLoader.getResource(path.toString()).getInputStream()) {
+                        final byte[] data = IOUtils.toByteArray(fileStream);
+                        return ContractTermDto.of(icon, category, data, description, text);
+                    } catch (final IOException ex) {
+                        logger.warn(String.format("Failed to load resource [icon=%s, path=%s]", icon, path), ex);
+                    }
+                    return ContractTermDto.of(icon, category, null, description, text);
+                }
+                return ContractTermDto.of(null, null, null, description, text);
             })
+            .filter(t -> !StringUtils.isBlank(t.getDescription()) && CollectionUtils.isNotEmpty(t.getText()) && t.getIcon() != null)
             .forEach(contract.getTerms()::add);
     }
 
