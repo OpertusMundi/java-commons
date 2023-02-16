@@ -332,7 +332,7 @@ public class MangoPayPayInService extends BaseMangoPayService implements PayInSe
             final CartItemDto cartItem = cart.getItems().get(0);
 
             // Cart item must be a catalogue published item
-            final CatalogueItemDetailsDto asset = this.catalogueService.findOne(null, cartItem.getAssetId(), null, false);
+            final CatalogueItemDetailsDto asset = this.catalogueService.findOne(cartItem.getAssetId());
             if (asset == null) {
                 throw new PaymentException(PaymentMessageCode.ASSET_NOT_FOUND, "Asset not found");
             }
