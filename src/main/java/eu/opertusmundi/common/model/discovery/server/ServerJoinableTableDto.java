@@ -16,4 +16,7 @@ public class ServerJoinableTableDto {
     @JsonProperty("table_name")
     private String tableName;
 
+    @JsonProperty("table_path")
+    private String tablePath;
+
 }
