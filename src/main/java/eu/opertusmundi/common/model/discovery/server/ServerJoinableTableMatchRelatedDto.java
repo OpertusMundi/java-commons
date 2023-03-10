@@ -7,6 +7,6 @@ import lombok.Setter;
 @Setter
 public class ServerJoinableTableMatchRelatedDto {
 
-    private Integer coma;
+    private Double coma;
 
 }

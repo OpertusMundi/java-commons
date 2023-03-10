@@ -50,7 +50,7 @@ public class ClientJoinableTableMatchDto {
     @Setter
     public static class ClientJoinableTableMatchRelatedDto {
 
-        private Integer coma;
+        private Double coma;
 
         public static ClientJoinableTableMatchRelatedDto from(ServerJoinableTableMatchRelatedDto s) {
             final var c = new ClientJoinableTableMatchRelatedDto();
